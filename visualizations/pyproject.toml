@@ -1,0 +1,30 @@
+[project]
+name = "shufflemath-visualizations"
+version = "0.1.0"
+description = "Manim-slides presentation for the shufflemath literature and formalization roadmap"
+requires-python = ">=3.11,<3.14"
+dependencies = []
+
+[project.optional-dependencies]
+manim = [
+  "manim>=0.19",
+]
+slides = [
+  "manim>=0.19",
+  "manim-slides>=5.1",
+  "pillow>=10",
+]
+test = [
+  "pytest>=8",
+]
+all = [
+  "manim>=0.19",
+  "manim-slides>=5.1",
+  "pillow>=10",
+  "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
