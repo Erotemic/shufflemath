@@ -1,89 +1,110 @@
-import Mathlib
+import Mathlib.Geometry.Convex.ConvexSpace.Defs
+import Mathlib.Tactic
 
 namespace Shufflemath
 
-/-- A finite signed/rational weight. Probability distributions are weights satisfying
-`IsProbability`. Keeping the carrier as a plain function makes exact finite matrix
-calculations straightforward. -/
-abbrev Weight (α : Type*) := α → ℚ
+noncomputable section
 
-namespace Weight
+/-- An exact finite probability distribution with rational weights.
 
-variable {α β γ : Type*}
+`Convexity.StdSimplex` carries nonnegativity and total mass one in the type, so
+there is no separate probability-validity predicate to keep synchronized. -/
+abbrev Dist (alpha : Type*) := Convexity.StdSimplex Rat alpha
 
-/-- Total mass of a finite weight. -/
-def total [Fintype α] (μ : Weight α) : ℚ := ∑ x, μ x
+namespace Dist
 
-/-- Predicate saying that a finite rational weight is a probability distribution. -/
-def IsProbability [Fintype α] (μ : Weight α) : Prop :=
-  (∀ x, 0 ≤ μ x) ∧ total μ = 1
+variable {alpha beta : Type*}
+
+/-- The rational mass assigned to a point. -/
+def mass (mu : Dist alpha) (x : alpha) : Rat :=
+  mu.weights x
+
+@[simp]
+theorem mass_nonneg (mu : Dist alpha) (x : alpha) : 0 <= mass mu x := by
+  exact mu.weights_nonneg x
+
+@[simp]
+theorem sum_mass [Fintype alpha] (mu : Dist alpha) :
+    Finset.sum Finset.univ (fun x => mass mu x) = 1 := by
+  simp [mass]
+
+/-- Construct an exact finite distribution from a normalized rational function.
+
+This is the boundary used to turn a computational vector or stochastic-matrix row
+into the semantic `Dist` representation. -/
+noncomputable def ofFun [Fintype alpha]
+    (f : alpha -> Rat)
+    (hnonneg : forall x, 0 <= f x)
+    (htotal : Finset.sum Finset.univ f = 1) : Dist alpha where
+  weights := Finsupp.equivFunOnFinite.symm f
+  nonneg x := by
+    simpa using hnonneg x
+  total := by
+    rw [Finsupp.sum_fintype _ _ (by simp)]
+    simpa using htotal
+
+@[simp]
+theorem mass_ofFun [Fintype alpha]
+    (f : alpha -> Rat)
+    (hnonneg : forall x, 0 <= f x)
+    (htotal : Finset.sum Finset.univ f = 1)
+    (x : alpha) :
+    mass (ofFun f hnonneg htotal) x = f x := by
+  rfl
 
 /-- Point mass at `x`. -/
-def pointMass [DecidableEq α] (x : α) : Weight α :=
-  fun y => if y = x then 1 else 0
-
-/-- Uniform rational weight on a nonempty finite type. -/
-def uniform [Fintype α] [Nonempty α] : Weight α :=
-  fun _ => 1 / (Fintype.card α : ℚ)
-
-/-- Total-variation distance for finite rational weights. It is a genuine TV metric
-when both inputs are probability distributions. -/
-def tv [Fintype α] (μ ν : Weight α) : ℚ :=
-  (1 / 2 : ℚ) * ∑ x, |μ x - ν x|
+def pointMass (x : alpha) : Dist alpha :=
+  Convexity.StdSimplex.single x
 
 @[simp]
-theorem tv_self [Fintype α] (μ : Weight α) : tv μ μ = 0 := by
-  simp [tv]
+theorem mass_pointMass [DecidableEq alpha] (x y : alpha) :
+    mass (pointMass x) y = if y = x then 1 else 0 := by
+  simp [mass, pointMass, Finsupp.single_apply, eq_comm]
 
-theorem tv_comm [Fintype α] (μ ν : Weight α) : tv μ ν = tv ν μ := by
-  simp only [tv]
-  congr 1
-  apply Finset.sum_congr rfl
-  intro x _
-  rw [abs_sub_comm]
+end Dist
 
-end Weight
+/-- A finite exact Markov kernel. Each row is a probability distribution by
+construction. -/
+abbrev FiniteKernel (alpha beta : Type*) := alpha -> Dist beta
 
-/-- A finite rational transition kernel. `IsMarkov` records row normalization. -/
-abbrev Kernel (α β : Type*) := α → β → ℚ
+namespace FiniteKernel
 
-namespace Kernel
-
-variable {α β γ : Type*}
-
-/-- Apply a kernel to a finite input weight. -/
-def apply [Fintype α] (μ : Weight α) (K : Kernel α β) : Weight β :=
-  fun y => ∑ x, μ x * K x y
-
-/-- Compose kernels in execution order: first `K`, then `L`. -/
-def comp [Fintype β] (K : Kernel α β) (L : Kernel β γ) : Kernel α γ :=
-  fun x z => ∑ y, K x y * L y z
-
-/-- Every row of the kernel is a probability distribution. -/
-def IsMarkov [Fintype β] (K : Kernel α β) : Prop :=
-  ∀ x, Weight.IsProbability (K x)
+variable {alpha beta gamma : Type*}
 
 /-- Kernel induced by a deterministic state transformation. -/
-def deterministic [DecidableEq β] (f : α → β) : Kernel α β :=
-  fun x y => if y = f x then 1 else 0
+def deterministic (f : alpha -> beta) : FiniteKernel alpha beta :=
+  fun x => Dist.pointMass (f x)
 
 /-- Identity kernel. -/
-def identity [DecidableEq α] : Kernel α α := deterministic id
+def identity : FiniteKernel alpha alpha :=
+  deterministic id
+
+/-- Apply a finite kernel to an input distribution. -/
+def apply (mu : Dist alpha) (K : FiniteKernel alpha beta) : Dist beta :=
+  (mu.map K).join
+
+/-- Compose kernels in execution order: first `K`, then `L`. -/
+def comp (K : FiniteKernel alpha beta) (L : FiniteKernel beta gamma) :
+    FiniteKernel alpha gamma :=
+  fun x => ((K x).map L).join
+
+/-- Repeatedly apply a homogeneous kernel. -/
+def run (K : FiniteKernel alpha alpha) : Nat -> Dist alpha -> Dist alpha
+  | 0, mu => mu
+  | n + 1, mu => run K n (apply mu K)
 
 @[simp]
-theorem deterministic_apply_pointMass
-    [Fintype α] [DecidableEq α] [DecidableEq β]
-    (x : α) (f : α → β) :
-    apply (Weight.pointMass x) (deterministic f) = Weight.pointMass (f x) := by
-  funext y
-  classical
-  simp only [apply]
-  rw [Finset.sum_eq_single x]
-  · simp [Weight.pointMass, deterministic]
-  · intro z _ hz
-    simp [Weight.pointMass, hz]
-  · simp
+theorem apply_pointMass (x : alpha) (K : FiniteKernel alpha beta) :
+    apply (Dist.pointMass x) K = K x := by
+  simp [apply, Dist.pointMass]
 
-end Kernel
+@[simp]
+theorem deterministic_apply_pointMass (x : alpha) (f : alpha -> beta) :
+    apply (Dist.pointMass x) (deterministic f) = Dist.pointMass (f x) := by
+  simp [deterministic]
+
+end FiniteKernel
+
+end
 
 end Shufflemath
