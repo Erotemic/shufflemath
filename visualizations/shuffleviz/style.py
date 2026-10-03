@@ -157,12 +157,19 @@ def role_legend() -> VGroup:
 
 
 class DeckSlide(Slide):
-    """Shared chrome and speaker-note-aware build boundaries."""
+    """Shared chrome and speaker-note-aware build boundaries.
+
+    ``handout = False`` marks an animation-first scene whose meaning depends on
+    motion. Such scenes stay in the live/HTML deck but are omitted from the
+    one-frame-per-scene static handout. A neighboring summary scene should carry
+    the static mathematical conclusion.
+    """
 
     title = ""
     kicker = ""
     section = "Shuffling under a working-set constraint"
     depth = ""
+    handout = True
     skip_reversing = True
     wait_time_between_slides = 0.1
 
