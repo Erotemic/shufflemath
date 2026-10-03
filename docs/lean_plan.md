@@ -2,52 +2,49 @@
 
 The guiding rule is to formalize finite exact statements first. Asymptotic probability theory can come later.
 
-## Phase L0: finite algebraic infrastructure
+## L0: finite exact infrastructure -- implemented
 
-- finite signed/probability weights over a `Fintype`;
-- normalization predicate;
-- finite Markov kernels as rational matrices/functions;
-- application and composition;
-- deterministic kernels;
-- total-variation distance;
-- protocol cost as a sum over actions.
+The project now uses mathlib's probability-simplex abstraction directly:
 
-Initial files:
+- `Dist alpha := Convexity.StdSimplex Rat alpha`;
+- `FiniteKernel alpha beta := alpha -> Dist beta`;
+- deterministic kernels, composition, application, and repeated execution;
+- rational stochastic-matrix bridge;
+- exact rational total variation and finite Dobrushin coefficient;
+- additive costed kernels.
 
-- `Shufflemath/Finite.lean`
-- `Shufflemath/Cost.lean`
+The old `Weight + IsProbability` and `Kernel + IsMarkov` duplicate authorities have been removed.
 
-The choice of rational weights is deliberate: the finite Commander calculations are exact and can eventually be checked by kernel reduction rather than trusted floating-point numerics.
+## L1: Commander Bernoulli--Laplace projection -- first executable layer implemented
 
-## Phase L1: Commander Bernoulli--Laplace projection
-
-Formalize the 50-state statistic
+The 50-state statistic is
 
 ```
 X = number of originally-left cards currently in the 50-card left pile.
 ```
 
-For left pile size `m`, right pile size `N-m`, and exchange size `k`, derive the exact hypergeometric transition probability
+The current source defines the exact hypergeometric transition formula and specializes it to `N=99`, `m=50`, `k=25`.
 
-```
-P(x -> y).
-```
+Implemented finite certificates:
 
-Targets:
+1. the 25-card exchange matrix is row stochastic;
+2. the hypergeometric stationary vector normalizes;
+3. that vector is a fixed point of the 25-card exchange matrix;
+4. `k=25` minimizes the absolute first-mode factor over exchanges 1..49;
+5. exact TV values after two and three 25-card exchanges from complete segregation.
 
-1. prove each row is a probability distribution;
-2. prove the hypergeometric stationary distribution;
+Next symbolic targets:
+
+1. prove row normalization for general admissible `N,m,k` using Vandermonde identities;
+2. prove the hypergeometric stationary distribution symbolically;
 3. prove reversibility;
-4. prove/lift the first nonconstant eigenfunction and factor;
-5. specialize to `N=99`, `m=50`;
-6. prove `k=25` minimizes `|lambda_1|` over allowed integer `k`;
-7. certify exact TV bounds after selected sequences, especially `(25,25)`.
+4. prove the first nonconstant eigenfunction and factor;
+5. connect the exact matrix TV certificates to the semantic `Dist`/`FiniteKernel` view;
+6. certify the finite `(25,25)` optimality search rather than only its first-mode surrogate.
 
-The current `BernoulliLaplace.lean` starts only with the arithmetic factor; the spectral interpretation is intentionally marked as future work.
+## L2: ideal GSR local riffle
 
-## Phase L2: ideal GSR local riffle
-
-Formalize one inverse GSR shuffle via independent binary labels. Repeated riffles can then be represented via larger labels (`a=2^r`).
+Formalize one inverse GSR shuffle via independent binary labels. Repeated riffles can then be represented via larger labels (`a = 2^r`).
 
 Targets:
 
@@ -56,9 +53,9 @@ Targets:
 - exact or certified TV distances for working-set sizes 49 and 50;
 - a local-shuffle kernel embedded in the 99-card state space.
 
-## Phase L3: compositional error theorem
+## L3: compositional error theorem
 
-Prove a generic total-variation contraction theorem for finite Markov kernels and a telescoping perturbation theorem.
+Prove exact finite total-variation contraction and a telescoping perturbation theorem.
 
 Desired statement shape:
 
@@ -67,9 +64,9 @@ TV(K0*K1*...*Kn, L0*L1*...*Ln)
   <= sum_i sup_x TV(Ki x, Li x).
 ```
 
-This is a key abstraction boundary: known/tractable local-shuffle error can be combined with known/tractable cross-pile mixing.
+The local finite Dobrushin definition is already in place. The proof strategy should reuse the structure of the existing `or4nge19/MCMC` formalization while using mathlib's stochastic-matrix authority and rational coefficients where possible.
 
-## Phase L4: costed protocol certificates
+## L4: costed protocol certificates
 
 Represent an action alphabet such as:
 
@@ -89,17 +86,18 @@ A search program can produce a candidate protocol and a compact certificate. Lea
 
 The search itself need not initially be formalized.
 
-## Phase L5: biased/clumpy local models
+## L5: biased/clumpy local models
 
 After the GSR baseline is stable:
 
 - biased-cut inverse riffle;
 - Jonasson--Morris Markovian binary-label process;
+- untouched-tail variants;
 - optional robust parameter intervals.
 
 Do not jump directly to a fitted empirical model before the finite GSR infrastructure is validated.
 
-## Phase L6: public theorem statements
+## L6: public theorem statements
 
 Aim for statements with an operational interpretation, e.g.:
 
