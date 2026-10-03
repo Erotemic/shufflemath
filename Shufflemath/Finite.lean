@@ -76,7 +76,13 @@ theorem deterministic_apply_pointMass
     (x : α) (f : α → β) :
     apply (Weight.pointMass x) (deterministic f) = Weight.pointMass (f x) := by
   funext y
-  simp [apply, Weight.pointMass, deterministic]
+  classical
+  simp only [apply]
+  rw [Finset.sum_eq_single x]
+  · simp [Weight.pointMass, deterministic]
+  · intro z _ hz
+    simp [Weight.pointMass, hz]
+  · simp
 
 end Kernel
 
