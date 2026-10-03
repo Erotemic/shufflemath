@@ -78,7 +78,7 @@ class R04DealerVsClumpy(DeckSlide):
         dealer = _bit_cards([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], -0.65, UNIFORM)
         a = tex("clumpy: stay with the same hand", size=23, color=EMPIRICAL).next_to(clumpy, LEFT, buff=0.3)
         b = tex("dealer: alternate hands more strongly", size=23, color=UNIFORM).next_to(dealer, LEFT, buff=0.3)
-        cite = tex(r"Jonasson \\& Morris, \emph{Rapid mixing of dealer shuffles and clumpy shuffles}, 2015", size=19, color=MUTED).shift(DOWN * 2.2)
+        cite = tex(r"Jonasson \& Morris, \emph{Rapid mixing of dealer shuffles and clumpy shuffles}, 2015", size=19, color=MUTED).shift(DOWN * 2.2)
         self.say("Their inverse model replaces independent binary labels with a two-state Markov source. That is almost exactly the kind of local imperfection we want to plug into our working-set layer.\n[Sources] Jonasson & Morris (2015), Rapid mixing of dealer shuffles and clumpy shuffles.")
         self.play(FadeIn(clumpy), FadeIn(a), FadeIn(dealer), FadeIn(b), FadeIn(cite))
 

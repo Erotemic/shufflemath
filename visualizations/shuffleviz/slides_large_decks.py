@@ -73,7 +73,7 @@ class L02NestoridiWhite(DeckSlide):
             for i in range(len(ops) - 1)
         ])
         point = boxed(para(r"Their local packets are \textbf{perfectly randomized}. Once a packet is uniform, another local shuffle has no effect, so local-shuffle count cannot be traded against repartition cost.", 10.5, 27), ORACLE).shift(DOWN * 1.2)
-        cite = tex(r"Nestoridi \\& White, \emph{Shuffling Large Decks of Cards and the Bernoulli--Laplace Urn Model}", size=18, color=MUTED).shift(DOWN * 2.45)
+        cite = tex(r"Nestoridi \& White, \emph{Shuffling Large Decks of Cards and the Bernoulli--Laplace Urn Model}", size=18, color=MUTED).shift(DOWN * 2.45)
         self.say("This work establishes that the broad large-deck question is not novel. We inherit its membership-mixing viewpoint.\n[Sources] Nestoridi & White (2019), Shuffling Large Decks of Cards and the Bernoulli--Laplace Urn Model.")
         self.play(LaggedStart(*[FadeIn(o) for o in ops], lag_ratio=0.1), Create(arrows))
         self.say("The ideal local oracle is precisely the assumption we intend to remove.")
