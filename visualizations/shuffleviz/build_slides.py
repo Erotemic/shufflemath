@@ -32,7 +32,37 @@ MODULES = [CLASSICAL, LARGE, REALISM, CONTROL, ROADMAP]
 SHORT = "shufflemath-short"
 FULL = "shufflemath-full"
 PARTS = {
-    "part1-classical": ["C00Title", "C01ThreeQuestions", "C02InverseRiffle", "C03RepeatedLabels", "C04ExactTV", "C05BayerDiaconis"],
+    "part1-classical": [
+        "C00SevenShuffles",
+        "C01RandomIsADistribution",
+        "C01EntropyLowerBound",
+        "C02RiffleMechanicsLab",
+        "C02GSRForwardMechanics",
+        "C03WhyInvert",
+        "C04InverseRiffleLab",
+        "C04InverseBinaryLabels",
+        "C05RisingSequenceLab",
+        "C05RisingSequences",
+        "C06OneRiffleAlreadyPredictsTheFormula",
+        "C07CompositionLab",
+        "C07RepeatedRifflesBecomeOneAShuffle",
+        "C08TargetPermutationBecomesInequalities",
+        "C09CountCompatibleLabels",
+        "C10BayerDiaconisProbabilityFormula",
+        "C11SanityCheckOnFiveCards",
+        "C12EulerianNumbers",
+        "C12EulerianInsertionRecurrence",
+        "C13FiftyTwoFactorialCollapsesTo52Terms",
+        "C14UniformMomentsFromIndicators",
+        "C14WhatUniformLooksLikeInRisingSequences",
+        "C15WatchTheRiffleDistributionApproachUniform",
+        "C16LikelihoodRatioIsMonotone",
+        "C16TotalVariationBecomesAGuessingGame",
+        "C17TheExact52CardTable",
+        "C18DiscoverTheThreeHalvesScale",
+        "C19WhatSevenActuallyMeans",
+        "C20ClassicalRoadmap",
+    ],
     "part2-large-decks": ["L01WorkingSet", "L02NestoridiWhite", "L03Macrostate", "L04Exchange", "L05K25", "L06CommanderTV", "L07UnequalUrns", "L08BlockDynamics"],
     "part3-realism": ["R01BiasedCuts", "R02BiasedLiterature", "R03ClumpyLabels", "R04DealerVsClumpy", "R05ClumpyTarget", "R06GeneralCuts", "R07ModelLadder"],
     "part4-control": ["O01Protocol", "O02TwoErrors", "O03OracleComparison", "O04Telescope", "O05Costs", "O06Pareto", "O07Robust", "O08OperationalGoal"],
@@ -46,12 +76,10 @@ PART_TITLES = {
     "part5-roadmap": "Part 5 · formalization roadmap",
 }
 DECK_SCENES = {
-    SHORT: [
-        "C00Title", "C01ThreeQuestions", "C02InverseRiffle", "C04ExactTV", "C05BayerDiaconis",
-        "L01WorkingSet", "L02NestoridiWhite", "L03Macrostate", "L05K25", "L06CommanderTV",
-        "R03ClumpyLabels", "R04DealerVsClumpy", "O01Protocol", "O03OracleComparison", "O04Telescope",
-        "M01LiteratureMap", "M08EndToEnd", "M09Closing",
-    ],
+    # The short deck is deliberately the complete classical derivation.  We do
+    # not jump to later literature until the audience owns the seven-riffle
+    # mechanics and the exact TV calculation.
+    SHORT: list(PARTS["part1-classical"]),
     **PARTS,
     FULL: [scene for scenes in PARTS.values() for scene in scenes],
 }
@@ -142,13 +170,23 @@ def assemble(deck_name: str) -> None:
 
 
 def write_handout(deck_name: str, out: Path) -> None:
-    """Write one static PDF page per scene using the last rendered frame."""
+    """Write static summary pages, omitting animation-only scenes.
+
+    A scene can opt out with ``handout = False`` when its explanatory content is
+    carried by motion rather than its final frame. This lets the live deck use
+    genuinely dynamic mechanics while neighboring summary scenes remain useful
+    on paper.
+    """
     from PIL import Image
 
     folder = ROOT / f"slides-{output_name(deck_name)}"
+    owner = _module_of()
     pages = []
     with tempfile.TemporaryDirectory() as tmp:
         for k, scene in enumerate(DECK_SCENES[deck_name]):
+            scene_cls = getattr(importlib.import_module(owner[scene]), scene)
+            if not getattr(scene_cls, "handout", True):
+                continue
             slides = json.loads((folder / f"{scene}.json").read_text())["slides"]
             drawn = [s for s in slides if not s.get("src")]
             frame = Path(tmp) / f"{k:03d}.png"
@@ -157,9 +195,11 @@ def write_handout(deck_name: str, out: Path) -> None:
                 check=True,
             )
             pages.append(Image.open(frame).convert("RGB"))
+    if not pages:
+        raise RuntimeError(f"deck {deck_name!r} has no handout-enabled scenes")
     first, *rest = pages
     first.save(out, save_all=True, append_images=rest, resolution=first.width / 13.333)
-    print(f"wrote {out} ({len(pages)} pages)")
+    print(f"wrote {out} ({len(pages)} summary pages)")
 
 
 def main() -> None:
@@ -171,6 +211,7 @@ def main() -> None:
     parser.add_argument("--scenes", nargs="+")
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--no-render", action="store_true")
+    parser.add_argument("--render-only", action="store_true", help="render selected scenes and stop before conversion")
     parser.add_argument("--html", type=Path)
     parser.add_argument("--one-file", action="store_true")
     parser.add_argument("--pdf", action="store_true")
@@ -185,6 +226,8 @@ def main() -> None:
 
     if not args.no_render:
         render(COMPOSITES.get(args.deck, [args.deck]), args.quality, fps=args.fps, only=args.scenes, jobs=args.jobs)
+    if args.render_only:
+        return
     if args.deck in COMPOSITES:
         assemble(args.deck)
 

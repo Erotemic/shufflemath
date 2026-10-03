@@ -4,6 +4,48 @@ The Manim deck under `visualizations/` is meant to answer a question that the
 Lean theorem ladder alone does not: **how do all of the mathematical models fit
 together, and which interfaces do we actually need to formalize?**
 
+## Pedagogical order: earn the classical result before generalizing
+
+The talk should not begin as a literature census.  Its first job is to make the
+Bayer--Diaconis result feel discoverable.  The classical chapter therefore
+follows this dependency chain:
+
+1. **Start with the puzzle.**  Uniformity needs $\log_2(52!)\approx225.6$ bits;
+   a riffle is driven by only 52 fair source bits, so entropy proves only the
+   lower bound $k\ge5$.  The gap between five and seven motivates structure.
+2. **Physical GSR mechanics.**  Binomial cut + uniformly random order-preserving
+   interleaving.  Show the cancellation that makes every binary source pattern
+   have probability $2^{-n}$.
+3. **Invert the permutation.**  Explicitly distinguish visible deck order from
+   the inverse permutation; inversion preserves total variation but exposes the
+   monotone structure.
+4. **Independent labels.**  One inverse riffle is stable-sort by independent
+   fair bits; repeated riffles concatenate bits into an $a=2^k$ label.
+5. **Rising sequences.**  A target permutation imposes weak label inequalities
+   with strict increases exactly at descents.  This is the surviving statistic.
+6. **Exact probability.**  Remove the forced strict steps and use stars-and-bars
+   to derive $Q_a(\pi)=a^{-n}\binom{a+n-r(\pi)}{n}$.  Check the general formula
+   against the one-riffle case before trusting it.
+7. **Eulerian class sizes.**  Count permutations by descents instead of
+   enumerating $n!$ states, and derive the Eulerian recurrence by inserting the
+   new largest element and counting which slots preserve/create a descent.
+8. **Exact TV collapse.**  Replace the $n!$-state sum by $n$ rising-sequence
+   classes.  Independently derive $E[R]=(n+1)/2$ and $\operatorname{Var}(R)=(n+1)/12$
+   from local descent indicators so the uniform curve is predictable before it
+   is plotted.
+9. **Find the optimal witness.**  Show
+   $L_a(r+1)/L_a(r)=(a-r)/(a+n-r)<1$, so the positive likelihood-ratio region
+   is an initial segment in $R$.  At seven riffles on 52 cards the crossing is
+   between 25 and 26, hence $A=\{R\le25\}$ and TV $\approx0.334$.
+10. **Cutoff scale.**  Expand the likelihood ratio around the typical uniform
+    fluctuation $R=(n+1)/2+O(\sqrt n)$ to motivate $a\asymp n^{3/2}$ and hence
+    $k\asymp(3/2)\log_2 n$ before quoting the sharp theorem.
+
+Only after the audience owns this chain should the presentation introduce
+working-set constraints, Bernoulli--Laplace exchange, imperfect local shuffles,
+and cost optimization.  Each later model should be presented by saying which
+step of this classical chain it preserves, replaces, or weakens.
+
 ## Narrative principle
 
 The deck treats the literature as a set of reusable components:

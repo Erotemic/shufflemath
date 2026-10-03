@@ -129,3 +129,115 @@ def protocol_cost(local_rounds: tuple[int, ...], exchanges: tuple[int, ...], loc
     if len(local_rounds) != len(exchanges) + 1:
         raise ValueError("local_rounds must have one more entry than exchanges")
     return sum(local_rounds) * local_cost + len(exchanges) * exchange_cost
+
+
+def rising_sequences(perm: tuple[int, ...] | list[int]) -> int:
+    """Number of maximal increasing runs in a permutation written in one-line form."""
+    if not perm:
+        return 0
+    return 1 + sum(a > b for a, b in zip(perm, perm[1:]))
+
+
+def stable_sort_cards(order: list[int] | tuple[int, ...], labels: list[int] | tuple[int, ...]) -> list[int]:
+    """Stable-sort card identities by labels attached to the original cards.
+
+    ``order`` contains 1-based card identities. ``labels[i - 1]`` is the label
+    permanently attached to card ``i``. Python's sort is stable, exactly matching
+    the inverse-riffle construction used in the presentation.
+    """
+    if not order:
+        return []
+    if min(order) < 1 or max(order) > len(labels):
+        raise ValueError("order contains a card without a label")
+    return sorted(order, key=lambda card_id: labels[card_id - 1])
+
+
+def gsr_perm_probability(n: int, riffles: int, rising: int) -> Fraction:
+    """Probability of one particular permutation with ``rising`` runs.
+
+    Bayer--Diaconis' ``a``-shuffle formula with ``a = 2**riffles``.
+    """
+    if n < 1:
+        raise ValueError("n must be positive")
+    if riffles < 0:
+        raise ValueError("riffles must be nonnegative")
+    if not 1 <= rising <= n:
+        return Fraction(0)
+    a = 2**riffles
+    top = a + n - rising
+    if top < n:
+        return Fraction(0)
+    return Fraction(comb(top, n), a**n)
+
+
+def uniform_rising_mass(n: int, rising: int) -> Fraction:
+    """Uniform probability that a permutation has ``rising`` increasing runs."""
+    if not 1 <= rising <= n:
+        return Fraction(0)
+    return Fraction(eulerian_row(n)[rising - 1], factorial(n))
+
+
+def gsr_rising_mass(n: int, riffles: int, rising: int) -> Fraction:
+    """GSR probability mass of the entire ``rising``-run class."""
+    if not 1 <= rising <= n:
+        return Fraction(0)
+    return eulerian_row(n)[rising - 1] * gsr_perm_probability(n, riffles, rising)
+
+
+def gsr_likelihood_ratio(n: int, riffles: int, rising: int) -> Fraction:
+    """Likelihood ratio Q/U for any permutation with ``rising`` runs."""
+    return gsr_perm_probability(n, riffles, rising) * factorial(n)
+
+
+def gsr_tv_via_rising(n: int, riffles: int) -> Fraction:
+    """Exact TV after collapsing permutations by their rising-sequence count."""
+    return sum(
+        (
+            abs(gsr_rising_mass(n, riffles, r) - uniform_rising_mass(n, r))
+            for r in range(1, n + 1)
+        ),
+        Fraction(0),
+    ) / 2
+
+
+def gsr_optimal_rising_event(n: int, riffles: int) -> tuple[int, Fraction, Fraction, Fraction]:
+    """The monotone likelihood-ratio TV witness ``R <= threshold``.
+
+    Returns ``(threshold, Q(event), U(event), Q(event)-U(event))``.
+    For GSR the likelihood ratio decreases with the number of rising runs, so
+    this event realizes total variation.
+    """
+    favored = [r for r in range(1, n + 1) if gsr_likelihood_ratio(n, riffles, r) >= 1]
+    threshold = max(favored, default=0)
+    q = sum((gsr_rising_mass(n, riffles, r) for r in range(1, threshold + 1)), Fraction(0))
+    u = sum((uniform_rising_mass(n, r) for r in range(1, threshold + 1)), Fraction(0))
+    return threshold, q, u, q - u
+
+
+def uniform_rising_moments(n: int) -> tuple[Fraction, Fraction]:
+    """Exact mean and variance of the number of rising sequences under uniformity."""
+    if n < 1:
+        raise ValueError("n must be positive")
+    masses = [uniform_rising_mass(n, r) for r in range(1, n + 1)]
+    mean = sum((Fraction(r) * p for r, p in enumerate(masses, start=1)), Fraction(0))
+    second = sum((Fraction(r * r) * p for r, p in enumerate(masses, start=1)), Fraction(0))
+    return mean, second - mean * mean
+
+
+def gsr_likelihood_step_ratio(n: int, riffles: int, rising: int) -> Fraction:
+    """Exact ratio ``L(r+1)/L(r)`` for the GSR likelihood ratio.
+
+    For ``1 <= rising < min(n, 2**riffles + 1)`` this simplifies to
+    ``(a-rising)/(a+n-rising)`` with ``a = 2**riffles``.
+    """
+    if n < 1:
+        raise ValueError("n must be positive")
+    if riffles < 0:
+        raise ValueError("riffles must be nonnegative")
+    if not 1 <= rising < n:
+        raise ValueError("rising must satisfy 1 <= rising < n")
+    current = gsr_likelihood_ratio(n, riffles, rising)
+    following = gsr_likelihood_ratio(n, riffles, rising + 1)
+    if current == 0:
+        raise ZeroDivisionError("likelihood ratio is already zero")
+    return following / current

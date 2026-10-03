@@ -6,9 +6,10 @@ behind `shufflemath`, independent of the Lean proof build.
 The layout deliberately follows the Davis--Kahan visualization project:
 
 - semantic colors are stable across every scene;
-- each scene has a final frame that works as a static slide;
+- explanatory scenes may use motion as part of the mathematics rather than pretending every frame is a static slide;
+- animation-first mechanics labs are paired with neighboring static summary scenes;
 - builds can be presented interactively, exported to HTML/PDF/PPTX, or collected
-  into a one-page-per-scene handout;
+  into a static summary handout that omits scenes marked animation-only;
 - full talks are assembled from independently renderable parts;
 - scene rendering is parallel but the Manim LaTeX/SVG cache is cross-process locked;
 - exact numerical graphics are driven by small checked Python models rather than
@@ -31,7 +32,21 @@ The full deck has five parts:
    which literature results need finite formal interfaces, and where search
    ends and Lean certification begins.
 
-The short deck keeps the conceptual spine and the most important literature.
+The **short deck is now intentionally deep rather than broad**: it is the full
+classical seven-riffle derivation.  It starts from the 52-card puzzle and an
+entropy lower bound that only predicts five, then walks through the physical
+GSR move, inversion, independent labels, rising sequences, stars-and-bars,
+Eulerian numbers (including the insertion recurrence), the exact TV collapse,
+the uniform run-count mean/variance, the monotone likelihood-ratio witness,
+the 52-card table, and the $\tfrac32\log_2 n$ cutoff heuristic.
+
+The mechanics are now deliberately animated rather than diagrammed. Dedicated
+lab scenes show an eight-card cut and card-by-card interleave; the inverse
+construction as independent bits followed by a stable sort; a scan that discovers
+rising sequences from the stable-sort output; and two inverse riffles composing
+into one stable sort by two-bit addresses. The exact run-count distribution also
+morphs from five to eight riffles rather than accumulating static curves. Only
+the full deck proceeds to large decks and our extensions.
 
 ## Semantic colors
 
@@ -60,8 +75,9 @@ Manim also needs the usual Cairo/Pango/FFmpeg/LaTeX host packages.
 ## Build
 
 ```bash
-make short QUALITY=l        # fast draft
-make short                  # 1080p30 + PDF + handout
+make short QUALITY=l        # fast draft of the complete seven-riffle derivation
+make mechanics QUALITY=l    # fast render of only the animation-heavy mechanics labs
+make short                  # 1080p30 + PDF + static-summary handout
 make part2                  # large-deck / BL section only
 make full                   # all five parts + assembled full deck
 make full SCENES="L05K25 L06CommanderTV"
@@ -88,9 +104,11 @@ make lint
 ## Static handouts
 
 `make short` and `make full` write both the normal exported PDF and a
-`*.handout.pdf`. The handout contains exactly one page per scene, using the last
-rendered frame. Every scene is therefore designed so its final frame is useful
-without animation.
+`*.handout.pdf`. Live/HTML presentation is the primary medium for mechanics.
+Scenes with `handout = False` are intentionally animation-first and are omitted
+from the handout; the neighboring summary scenes carry the corresponding static
+mathematics. This lets us use motion when motion is explanatory without making
+the printable document incoherent.
 
 ## Numerical status
 

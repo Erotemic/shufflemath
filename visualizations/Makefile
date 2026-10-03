@@ -3,7 +3,7 @@
 #   make                 # list targets
 #   make all             # short + all five parts + full, 1080p30, HTML/PDF/handouts
 #   make final           # full 1080p60 build
-#   make short           # compact conceptual overview
+#   make short           # deep derivation of the classical seven-riffle result
 #   make part2           # one literature/model section (part1 ... part5)
 #   make full            # render parts in parallel, assemble the full deck
 #   make short QUALITY=l # fast draft
@@ -39,7 +39,7 @@ PARTS      := part1 part2 part3 part4 part5
 DECKS      := short full $(PARTS)
 
 .DEFAULT_GOAL := help
-.PHONY: help setup all final draft rebuild $(DECKS) parts standalone handout test lint clean distclean \
+.PHONY: help setup all final draft rebuild mechanics $(DECKS) parts standalone handout test lint clean distclean \
         $(addprefix standalone-,$(DECKS)) $(addprefix handout-,$(DECKS)) $(addprefix present-,$(DECKS)) $(addprefix clean-,$(DECKS))
 
 help:
@@ -48,7 +48,8 @@ help:
 	@echo '  setup              uv sync with slides + test extras'
 	@echo '  all                short + full + standalone variants'
 	@echo '  final              all at 1080p60'
-	@echo '  short              compact roadmap deck'
+	@echo '  short              deep classical seven-riffle derivation'
+	@echo '  mechanics          render only the animation-first shuffle mechanics labs'
 	@echo '  part1 ... part5    classical / large decks / realism / control / roadmap'
 	@echo '  full               every part, then assembled full deck'
 	@echo '  standalone         self-contained HTML for every deck'
@@ -69,6 +70,11 @@ final:
 
 draft:
 	$(MAKE) all QUALITY=l PDF=0
+
+mechanics:
+	$(RUN) python -m shuffleviz.build_slides $(DECK_part1) --quality $(QUALITY) \
+	    $(if $(FPS),--fps $(FPS)) $(if $(JOBS),--jobs $(JOBS)) --render-only \
+	    --scenes C02RiffleMechanicsLab C04InverseRiffleLab C05RisingSequenceLab C07CompositionLab C15WatchTheRiffleDistributionApproachUniform
 
 rebuild:
 	$(MAKE) clean
