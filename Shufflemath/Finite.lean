@@ -1,4 +1,6 @@
 import Mathlib.Geometry.Convex.ConvexSpace.Defs
+import Mathlib.Data.Finsupp.SMulWithZero
+import Mathlib.Algebra.BigOperators.Finsupp.Basic
 import Mathlib.Tactic
 
 namespace Shufflemath
@@ -123,6 +125,30 @@ def run (K : FiniteKernel alpha alpha) (n : Nat) (mu : Dist alpha) : Dist alpha 
 theorem apply_pointMass (x : alpha) (K : FiniteKernel alpha beta) :
     apply (Dist.pointMass x) K = K x := by
   simp [apply, Dist.pointMass]
+
+/-- Pushing a distribution through a kernel and then reading a mass is the
+`μ`-weighted sum of the corresponding kernel-row masses: the mass of the
+Krein–von Neumann pushforward at `x` is `∑_j μ(j) K(j, x)`. -/
+theorem apply_mass [Fintype alpha] [Fintype beta] [DecidableEq alpha] [DecidableEq beta]
+    (mu : Dist alpha) (K : FiniteKernel alpha beta) (x : beta) :
+    Dist.mass (apply mu K) x = Finset.sum Finset.univ (fun j => Dist.mass mu j * Dist.mass (K j) x) := by
+  unfold apply
+  unfold Dist.mass
+  simp only [Convexity.StdSimplex.weights_join, Convexity.StdSimplex.weights_map]
+  rw [Finsupp.sum_apply]
+  simp [Finsupp.mapDomain, Finsupp.sum_fintype, Finsupp.smul_apply]
+  have h1 : ((Finset.sum Finset.univ fun i => Finsupp.single (K i) (mu.weights i)).sum
+      (fun a₁ b => b * a₁.weights x)) =
+      Finset.sum Finset.univ fun i => (Finsupp.single (K i) (mu.weights i)).sum
+        (fun a₁ b => b * a₁.weights x) := by
+    rw [Finsupp.sum_finsetSum]
+    · intro a
+      ring
+    · intro a m₁ m₂
+      ring
+  rw [h1]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  exact Finsupp.sum_single_index (h_zero := by ring)
 
 @[simp]
 theorem deterministic_apply_pointMass (x : alpha) (f : alpha -> beta) :
