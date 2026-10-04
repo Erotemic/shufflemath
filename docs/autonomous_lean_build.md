@@ -258,20 +258,33 @@ Dobrushin added with C2/D). Add new modules here when created.
   using the B4 kernel contraction on the inherited part and the discrepancy
   bound on the new step. `hybridTelescope_n1` recovers `apply_discrepancy_bound`
   at `n = 1`.
-- **`Shufflemath/Dobrushin.lean`** (Priority D, commit afff9d9):
-  `rowTV K i j`; `pairDistances K` / `pairDistances_nonempty`; `dobrushinCoeff K`
-  (= `(pairDistances K).max' …`, max-TV convention, ≤ 1); `dobrushin2 K :=
-  2 * dobrushinCoeff K` (the contraction constant); `rowTV_le_dobrushin`;
-  `dobrushinCoeff_nonneg` (simp); `dobrushinCoeff_le_one`; `dobrushin2_nonneg`;
-  private workhorses `apply_mass_nonneg` / `apply_sum_mass` / `absSumLeTV` /
-  `rowWeightBound` / `sumOnSEqWeighted` (the `∑_S (Kμ − Kν) =
-  ∑_x (μx − νx) · r_x` Fubini with `r_x := ∑_{y∈S} K x y`);
-  `dobrushin_contraction` (`tv (apply μ K) (apply ν K) ≤ dobrushin2 K * tv μ ν`);
-  `dobrushin2_submult` (`dobrushin2 (comp K L) ≤ dobrushin2 L * dobrushin2 K`);
-  `run_contraction` (`tv (run K n μ) (run K n ν) ≤ (dobrushin2 K) ^ n * tv μ ν`);
+- **`Shufflemath/Dobrushin.lean`** (Priority D, commit afff9d9; **sharpened
+  in session 8, GPT review finding #1**):
+  `rowTV K i j`; `pairDistances K` / `pairDistances_nonempty` (public);
+  `dobrushinCoeff K` (= `(pairDistances K).max' …`, max-TV convention, ≤ 1);
+  `dobrushinCoeff_nonneg` (simp); `dobrushinCoeff_le_one`;
+  `dobrushinCoeff_zero_iff` / `dobrushinCoeff_zero` (coeff 0 ↔ all rows agree
+  as mass functions — stated at mass level, as `Dist.tv_eq_zero` is);
+  public workhorses `absSumLeTV` / `rowWeightBound` / `sumOnSEqWeighted`
+  (the `∑_S (Kμ − Kν) = ∑_x (μx − νx) · r_x` Fubini with
+  `r_x := ∑_{y∈S} K x y`); private `sumUnivIte` (univ-ite-sum = set-sum);
+  **`dobrushin_contraction` — SHARP, no factor of 2:**
+  `tv (apply μ K) (apply ν K) ≤ dobrushinCoeff K * tv μ ν`. Proof: one-sided
+  positive-set argument — output TV = `∑_x (μx − νx) · r_x` with
+  `r_x =` mass of the *output* positive set under `K x`; let `m` = min of `r`
+  and shift `s x := r x − m` (legal because `∑ (μ − ν) = 0`); then
+  `0 ≤ s x ≤ δ(K)` (from `|r x − r x₀| ≤ rowTV ≤ δ`) and only the input side
+  where `μx > νx` (mass `tv μ ν`) can contribute, so
+  `∑ η·s ≤ ∑_A η·s ≤ δ·∑_A η = δ·tv(μ,ν)`.
+  **`dobrushinCoeff_submult`** (`δ (comp K L) ≤ δ K * δ L`, via the sharp
+  contraction applied to `L`); **`run_contraction`**
+  (`tv (run K n μ) (run K n ν) ≤ dobrushinCoeff K ^ n * tv μ ν`);
   `dobrushinCoeff_matrix_link` (kernel coeff of a row-stochastic matrix-as-
-  kernel = `MatrixTV.dobrushinCoeff`; proved by a private `matrixKernel` def
-  via `mem_rowStochastic_iff_sum` + `max'`/`sup'`/`WithBot.unbot_inj`).
+  kernel = `MatrixTV.dobrushinCoeff`; private `matrixKernel` def via
+  `mem_rowStochastic_iff_sum` + `max'`/`sup'`/`WithBot.unbot_inj`).
+  **`dobrushin2` has been deleted** — the coefficient itself is the
+  contraction constant (the old `2·δ` bound is the 2δ version of the same
+  argument via `|·| ≤ δ` on both sides of an absolute value).
 - **Missing (E–G):** Markov theory, general BL symbolic theory, first
   eigenfunction.
 
@@ -442,40 +455,38 @@ add to `Shufflemath.lean` imports after D.)
 **Done:** build green; the `n=1` instance of the telescope must reduce to
 `apply_discrepancy_bound` (add that as a lemma or test).
 
-### D. Dobrushin contraction — NEW `Shufflemath/Dobrushin.lean`
+### D. Dobrushin contraction — NEW `Shufflemath/Dobrushin.lean` — **DONE
+(sharpened in session 8, GPT review finding #1)**
 
 - `dobrushinCoeff (K : FiniteKernel α α) : Rat` — max over `i, j` of
   `Dist.tv (K i) (K j)` (mirror of `MatrixTV.dobrushinCoeff`; same
   `pairDistances`-style Finset image + `max'`). `dobrushinCoeff_nonneg` (simp),
   `dobrushinCoeff_le_one` (via `vectorTV_le_one` — rows are distributions).
-- `dobrushin2 (K) := 2 * dobrushinCoeff K` — the actual contraction constant
-  (document the convention: `MatrixTV.dobrushinCoeff` and this one are max-TV,
-  ≤ 1; `dobrushin2 ≤ 2` and is submultiplicative).
-- **`dobrushin_contraction : Dist.tv (apply μ K) (apply ν K) ≤
-  dobrushin2 K * Dist.tv μ ν`.**
-  Proof (all event-level, no division): by B's `tv_eq_positive_set`,
-  `tv(Kμ, Kν) = max_S ∑_S (Kμ − Kν)`; for any `S`, writing
-  `r x := ∑_{y ∈ S} K x y` (a `[0,1]`-valued weight, nonneg + row-total):
-  `∑_S (Kμ − Kν) = ∑_x (μ x − ν x) · r x` (swap sums). Key sub-lemma:
-  for any `S` and any `i, j`, `|r i − r j| ≤ Dist.tv (K i) (K j)`:
-  because `tv(K i, K j) = max_T ∑_T (K i − K j)`, take `T := S` and
-  `T := Sᶜ` (complement Finset). Then with arbitrary base point `x₀`:
-  `∑_x (μ x − ν x) r x = ∑_x (μ x − ν x) (r x − r x₀) ≤
-  ∑_x |μ x − ν x| · |r x − r x₀| ≤ dobrushinCoeff K · ∑_x |μ x − ν x|
-  = 2 · dobrushinCoeff K · tv(μ, ν) = dobrushin2 K · tv(μ,ν)`
-  (use `∑ (μ − ν) = 0` to insert the `r x₀` term).
-- `dobrushin2_submult : dobrushin2 (comp K L) ≤ dobrushin2 K * dobrushin2 L`:
-  `tv((K∘L) i, (K∘L) j) = tv(apply (K i) L, apply (K j) L) ≤
-  dobrushin2 L · tv(K i, K j) ≤ dobrushin2 L · dobrushinCoeff K ≤
-  (dobrushin2 L · dobrushin2 K) / 2`, i.e. `2·…` works out — verify the
-  constants on paper before coding; state whatever the clean true inequality
-  is with a docstring spelling the convention.
-- `run_contraction (n) : Dist.tv (run K n μ) (run K n ν) ≤
-  (dobrushin2 K) ^ n * Dist.tv μ ν` (induction on `n`).
+- **The coefficient itself is the sharp contraction constant.**
+  `dobrushin_contraction : tv (apply μ K) (apply ν K) ≤ dobrushinCoeff K * tv μ ν`
+  (no factor of 2 — see §3 for the one-sided positive-set proof). The old
+  `dobrushin2 := 2·δ` constant and its `2δ` contraction / submult / run
+  lemmas were **deleted**; `dobrushinCoeff_submult` (`δ(comp K L) ≤ δ K·δ L`)
+  and `run_contraction` (with `δ ^ n`) replace them. `dobrushinCoeff_zero_iff`
+  records when the coefficient vanishes (all rows agree as mass functions).
+- `dobrushinCoeff_matrix_link` (matrix⇄kernel consistency) preserved verbatim.
 
-**Done:** build green; cross-check against `MatrixTV.dobrushinCoeff` via
-`toMatrix` (add `dobrushinCoeff_matrix_link : dobrushinCoeff (ofRowStochastic
-P h) = MatrixTV.dobrushinCoeff P`-style lemma — cheap, proves consistency).
+**Mechanics notes (session 8):** the sharp proof's `r`/`S₀`/`A`/`m` are local
+`let`s — fine because they are only *used* (as arguments to public defs, or in
+`change`/`rfl` kernel-defeq steps), never unfolded by `rw`/`simp`; the one
+exception is the ite-gated sum, handled by the private `sumUnivIte` helper
+(let-bound bodies are invisible to `simp`/`rw` — the F2 lesson). `Finset.mem_univ`
+is a bare `@[simp]` proof (not an iff): after
+`simp only [positiveSet, Finset.mem_filter] at h`, a plain `simp at h` clears
+the `x ∈ univ` conjunct (even under a negation, landing on `nu ≤ mu` / the
+`> ` side as needed). `mul_nonpos_of_nonneg_of_nonpos (ha : 0 ≤ a) (hb : b ≤ 0)
+: a*b ≤ 0` — mind the argument order; `rw [mul_comm]` first if the summand
+is written the other way. `Finset.max'_eq_iff (s) (H) (a)` — all three args
+explicit. `simp using h` does **not** exist in v4.34.0. `Finset.sum_mul` in
+v4.34.0 is the `(∑ f) * a = a * ∑ f` direction; `mul_sum` is
+`a * ∑ f = ∑ (a * f)` — use `← mul_sum` to go `∑ (a·f) → a·∑ f`.
+`Finset.univ_nonempty {α} [Fintype α] [Nonempty α]` exists (parameter name is
+`α`, not `alpha`); `Finset.nonempty_univ` does not.
 
 ### E. Stationarity & reversibility — NEW `Shufflemath/Markov.lean`
 
@@ -702,6 +713,27 @@ symbolically; Commander corollaries committed.
   Dobrushin. `./dev/verify.sh` green after D (3192 jobs, 7/7 Python tests).
 - [x] D. Dobrushin (`Dobrushin.lean`: coeff, contraction, submult, run, matrix link) —
   committed afff9d9.
+- [x] 2026-10-05 (session 8): **D sharpened (GPT review finding #1).**
+  Removed `dobrushin2` (def + `dobrushin2_def`/`_nonneg`/`_submult`)
+  and the private `apply_mass_nonneg`/`apply_sum_mass`; `absSumLeTV`,
+  `rowWeightBound`, `sumOnSEqWeighted` made public. New sharp
+  `dobrushin_contraction : tv (μK, νK) ≤ δ(K) · tv(μ,ν)` (one-sided
+  positive-set + min-shift proof, §4-D), new `dobrushinCoeff_submult`,
+  `run_contraction` now `δ ^ n`, new `dobrushinCoeff_zero_iff`/`_zero`.
+  `dobrushinCoeff_matrix_link` preserved verbatim. Full `lake build` green
+  (3193 jobs), zero warnings, zero sorry. **This commit.**
+  GPT review triage: #1 done (this commit); #2 (perturbation telescoping)
+  + #6 (uniform bound) → next: rewrite `Perturbation.lean`
+  (`crudeTelescope`, `weightedTelescope` with the per-step `Δ·∏δ` bound,
+  `compList_submult`, `hybridTelescope_uniform` without the extra
+  hypothesis); #3 → BL redesign (`BLState (N m)`, `lo := m − (N − m)`,
+  `hi := m`, `blStationary (N m x)`; Commander bridge stays in
+  `BernoulliLaplaceGeneral`); #4 (import direction generic→Commander),
+  #5 (`tv_eq_zero` comment), #7 (Markov docstring overclaim),
+  #9 (Finite.lean hallucinated "Krein–von Neumann" doc), #10 (process) —
+  remaining after #2/#6 and #3. The shelved F2 rewrite
+  (`/tmp/BLG_F2_attempt_final.lean`) was written against the old `BLState
+  (N m k)` design — **obsolete**, re-derive against the §4-F redesign.
 - [x] 2026-10-04 (session 7): **Priority E complete.** Commit 50bdde5 —
   `Markov.lean`: `Stationary` / `stationary_run` (iteration preserves a
   one-step certificate), `DetailedBalance`,
@@ -729,19 +761,20 @@ symbolically; Commander corollaries committed.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** Priority F — NEW `Shufflemath/BernoulliLaplaceGeneral.lean`
-(per §4-F): `BLState` (Fintype of admissible macrostates), symbolic
-`blRowStochastic` (double Vandermonde via `Nat.add_choose_eq` + a
-zero-extension lemma for the truncated `range (k+1)` sums),
-`blStationary` (hypergeometric; total = 1 via Vandermonde with a
-symmetry reindex), `blStationaryDist : Dist (BLState)`,
-`blDetailedBalance` (hardest proof: index bijection in the `a`-sums, or
-fall back to the Rat factorial identity + `Nat.cast_injective`; spot-check
-the Commander instance with `native_decide` first), `blExchangeKernel` via
-`ofRowStochastic`, and the Commander matrix-link theorem tying it to
-`BernoulliLaplace.commanderExchange25`. Reuse
-`BernoulliLaplace.transitionNumerator/Denominator/Weight` verbatim; do not
-modify `BernoulliLaplace.lean`. `./dev/verify.sh` at the end of F.
+**Next action:** GPT review finding #2/#6 — rewrite `Shufflemath/Perturbation.lean`:
+keep `apply_discrepancy_bound`, `kernelDiscrepancy`, `compList`,
+`hybridTelescope_n1`; add `crudeTelescope` (unconditional `∑ Δ_i` bound —
+corollary of the weighted form) and `weightedTelescope`:
+`TV(μ·K₀..Kₙ, μ·L₀..Lₙ) ≤ ∑_i Δ(K_i,L_i) · ∏_{j>i} δ(L_j)`, proved by
+head-removal induction (IH on the tail, same starting distribution; triangle
+through the intermediate point `μ·L₀·Ls'`); bound term is a recursive
+def `weightedTelescopeBound (Δ δ : List Rat)`. Move `compList_submult`
+(δ(compList) ≤ ∏ δ) here (NOT into Dobrushin — import direction). Make
+`hybridTelescope_uniform` a corollary *without* the extra `hdK` hypothesis
+(only `δ(L_j) ≤ d` needed). Import `Shufflemath.Dobrushin` (δ now sharp).
+Then: finding #3 BL redesign (update §4-F spec to `BLState (N m)` with
+`lo := m − (N − m)`, `hi := m` — **not** `min m (N − m)`; the §4-F text
+above is the pre-redesign version). `./dev/verify.sh` at each step.
 
 ## 8. Taste & style rules
 
