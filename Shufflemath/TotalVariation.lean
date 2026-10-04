@@ -27,6 +27,30 @@ theorem vectorTV_nonneg {alpha : Type*} [Fintype alpha]
   unfold vectorTV
   positivity
 
+/-- Triangle inequality: total variation is a metric on finite rational
+vectors. Pointwise, `|p x - r x| = |(p x - q x) + (q x - r x)|` and `abs_add`;
+then the sum splits over the two terms. -/
+theorem vectorTV_triangle {alpha : Type*} [Fintype alpha]
+    (p q r : alpha -> Rat) :
+    vectorTV p r <= vectorTV p q + vectorTV q r := by
+  have hterm : forall x, |p x - r x| <= |p x - q x| + |q x - r x| := by
+    intro x
+    have h : p x - r x = (p x - q x) + (q x - r x) := by ring
+    calc
+      |p x - r x| = |(p x - q x) + (q x - r x)| := by rw [h]
+      _ <= |p x - q x| + |q x - r x| := by exact abs_add_le _ _
+  unfold vectorTV
+  calc
+    (1 / 2 : Rat) * Finset.sum Finset.univ (fun x => |p x - r x|) <=
+        (1 / 2 : Rat) * (Finset.sum Finset.univ (fun x => |p x - q x|) +
+          Finset.sum Finset.univ (fun x => |q x - r x|)) := by
+      rw [← Finset.sum_add_distrib]
+      apply mul_le_mul_of_nonneg_left (Finset.sum_le_sum (fun x _ => hterm x))
+      norm_num
+    _ = vectorTV p q + vectorTV q r := by
+      simp [vectorTV]
+      ring
+
 /-- Probability vectors are at total-variation distance at most one. -/
 theorem vectorTV_le_one_of_probability
     {alpha : Type*} [Fintype alpha]
@@ -70,6 +94,10 @@ theorem tv_comm {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
 theorem tv_nonneg {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
     0 <= tv p q := by
   exact vectorTV_nonneg _ _
+
+theorem tv_triangle {alpha : Type*} [Fintype alpha] (p q r : Dist alpha) :
+    tv p r <= tv p q + tv q r := by
+  simpa [tv] using vectorTV_triangle _ _ _
 
 theorem tv_le_one {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
     tv p q <= 1 := by
