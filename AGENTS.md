@@ -69,6 +69,9 @@ of letting both sides build at once without fighting over the same oleans.
 - `setup-lake-cache.sh` (no args) sets up the cache for the repo at `$PWD`;
   `--status` reports without changing anything; `--unmount` restores the
   host's `.lake`; `--all` re-applies every recorded cache after a reboot.
+- If `.lake` already holds a build, seed the derived cache directory first
+  (`sudo cp -a .lake /var/cache/lake/<repo>/.lake`) so the VM's first build
+  is incremental instead of a cold rebuild.
 - On a checkout already on local disk (ext4/xfs/btrfs/...), the script
   refuses to mount — a cache there buys nothing.
 
