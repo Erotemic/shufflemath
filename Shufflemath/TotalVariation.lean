@@ -1,5 +1,6 @@
 import Shufflemath.Matrix
 import Mathlib.Data.Finset.Max
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 namespace Shufflemath
 
@@ -76,6 +77,34 @@ theorem vectorTV_le_one_of_probability
       rw [Finset.sum_add_distrib, hp1, hq1]
       norm_num
 
+/-- Zero TV distance is exactly equality of the mass functions: a sum of
+nonnegatives is zero iff every term is zero (`Finset.single_le_sum`). -/
+theorem vectorTV_eq_zero {alpha : Type*} [Fintype alpha] (p q : alpha -> Rat) :
+    vectorTV p q = 0 ↔ p = q := by
+  constructor
+  · intro h
+    have hsum : Finset.sum Finset.univ (fun x => |p x - q x|) = 0 := by
+      have h' : (1 / 2 : Rat) * Finset.sum Finset.univ (fun x => |p x - q x|) = 0 := by
+        unfold vectorTV at h
+        exact h
+      calc
+        Finset.sum Finset.univ (fun x => |p x - q x|) =
+            2 * ((1 / 2 : Rat) * Finset.sum Finset.univ (fun x => |p x - q x|)) := by ring
+        _ = 2 * 0 := by rw [h']
+        _ = 0 := by norm_num
+    ext x
+    have hterm : |p x - q x| = 0 := by
+      apply le_antisymm
+      · calc
+          |p x - q x| <= Finset.sum Finset.univ (fun i => |p i - q i|) :=
+            Finset.single_le_sum (fun i _ => abs_nonneg (p i - q i)) (Finset.mem_univ x)
+          _ = 0 := hsum
+      · exact abs_nonneg (p x - q x)
+    rw [abs_eq_zero] at hterm
+    exact sub_eq_zero.mp hterm
+  · intro h
+    rw [h, vectorTV_self]
+
 namespace Dist
 
 /-- Total variation on semantic exact finite distributions. -/
@@ -98,6 +127,15 @@ theorem tv_nonneg {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
 theorem tv_triangle {alpha : Type*} [Fintype alpha] (p q r : Dist alpha) :
     tv p r <= tv p q + tv q r := by
   simpa [tv] using vectorTV_triangle _ _ _
+
+/-- Zero TV distance is exactly pointwise equality of the mass functions.
+(Stated at mass level, not `p = q`: distinct `Dist` representations can
+share the same mass function, e.g. weight zero on a point.) -/
+theorem tv_eq_zero {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
+    tv p q = 0 ↔ ∀ x, mass p x = mass q x := by
+  simp only [tv]
+  rw [vectorTV_eq_zero]
+  exact ⟨fun h => fun x => congrFun h x, fun h => funext h⟩
 
 theorem tv_le_one {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
     tv p q <= 1 := by
