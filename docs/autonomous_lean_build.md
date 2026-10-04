@@ -650,6 +650,44 @@ symbolically; Commander corollaries committed.
    inequalities for the models already built (do not conflate; §1).
 4. Anything else from `docs/lean_plan.md` not covered above (re-read it).
 
+## 4a. GPT review (2026-10-04) — findings and status
+
+Verbatim record: `docs/gpt_review_2026-10-04.md` (recovered from the pi
+session transcript `01a104d1-84ab-75e8-9ce6-86eeb46b1e80`). The review
+judged the overnight work a net positive ("correct it rather than
+replace it") but ordered the fixes below before further BL theory. **This
+section is the authoritative per-finding ledger** — update the status line
+in the same commit as any fix.
+
+| # | Finding (short) | Severity | Status | Commit |
+|---|-----------------|----------|--------|--------|
+| 1 | Dobrushin: drop `dobrushin2`, prove sharp `δ(K)` contraction | High | **DONE** | `b69d00a` (session 8) |
+| 2 | `BLState` must not depend on `k` (phantom param) | High | **IN PROGRESS** | — |
+| 3 | General module must not import the Commander module (bridge module instead) | High-ish | **IN PROGRESS** | — |
+| 4 | Perturbation API: unconditional crude telescope + sharp per-step weighted bound; uniform-`d` as corollary | Medium | **PARTIAL** (crude + uniform-`d` done; sharp weighted `∑ Δ_i·∏_{j>i} δ_j` pending) | `06c2f4b` (crude/uniform) |
+| 5 | `tv_eq_zero` false comment; add real `tv p q = 0 ↔ p = q` | Medium | **TODO** | — |
+| 6 | LLM duplication: private `double_sum_pullout` (a), Dobrushin nonneg/sum-one reproofs (b), matrix vs kernel row-TV/canon (c) | Medium-low | **PARTIAL** (a, b done; c = docstrings pending) | `b69d00a`, `06c2f4b` |
+| 7 | `Markov.lean` self-adjointness docstring overclaims orthogonal eigenbasis | Medium-low | **TODO** | — |
+| 8 | New BL module not imported by `Shufflemath.lean` (not in build graph) | Process | **TODO** | — |
+| 9 | `Finite.lean` "Krein–von Neumann pushforward" hallucinated term | Minor | **TODO** | — |
+| 10 | Commit trailer not followed (wrong name/email) | Workflow | **DONE** (new trailer `Co-authored-by: Qwen3.8-27B-W4A16-AutoRound <noreply@qwen.ai>` on all new commits; history NOT rewritten, per review's own advice and user instruction) | `a09e2b0` onward |
+
+**Order per the review's recommendation:** #1 ✅ → #4 (perturbation API)
+→ #2/#3 (BL state type, import direction, explicit compilation = #8) →
+then continue F (row stochasticity / stationarity / detailed balance).
+#5/#6c/#7/#9 are small fixes and are done as a quick-win batch alongside.
+
+**Decision on #3 vs. the frozen `BernoulliLaplace.lean`:** the §4-F spec
+said "reuse `BernoulliLaplace.transitionNumerator` verbatim, do not
+redefine" and "no changes to `BernoulliLaplace.lean`"; both cannot hold
+simultaneously with #3. Resolution (review-endorsed architecture): the
+general file gets its **own** copy of the exchange-transition formulas
+(the frozen Commander file keeps its copy for the concrete certificates),
+and a new small module `Shufflemath/BernoulliLaplaceCommanderBridge.lean`
+imports **both** and proves the definitions/theorems coincide (the bridge
+is where `blExchangeKernel N m k` = `commanderExchange25` lives).
+`BernoulliLaplace.lean` stays byte-identical.
+
 ## 5. Verified mathlib hooks (v4.34.0, checked on this machine)
 
 - `Convexity.StdSimplex` — `Mathlib/Geometry/Convex/ConvexSpace/Defs.lean`:
