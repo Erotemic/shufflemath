@@ -6,3 +6,4 @@ import Shufflemath.Dobrushin
 import Shufflemath.Markov
 import Shufflemath.Cost
 import Shufflemath.BernoulliLaplace
+import Shufflemath.BernoulliLaplaceGeneral

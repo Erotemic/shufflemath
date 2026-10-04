@@ -95,8 +95,9 @@ separation distance, and event probability.
 ## 3. Current state — exact inventory (as of 2026-10-05, pre-build)
 
 `Shufflemath.lean` imports: `Finite`, `Matrix`, `TotalVariation`,
-`Perturbation`, `Dobrushin`, `Cost`, `BernoulliLaplace` (Perturbation and
-Dobrushin added with C2/D). Add new modules here when created.
+`Perturbation`, `Dobrushin`, `Cost`, `BernoulliLaplace`,
+`BernoulliLaplaceGeneral` (the last added with the GPT-review #8 fix;
+new modules are added here when created).
 
 **`Shufflemath/Finite.lean`** — `namespace Shufflemath`, `noncomputable section`:
 - `Dist α := Convexity.StdSimplex Rat α` (abbrev).
@@ -375,9 +376,13 @@ Stochastic, `Data.Matrix.Mul`, `Data.Matrix.Diagonal`, Finsupp basic/big-ops/smu
   4933350368865509640837610315994582805439728012`;
   **exact 3-step TV** = `172379525755689183991816396516567920780192827919620440221147749 /
   6691837923759692633601708022649918108038775216019298375918637677488`.
-- **Missing (F, G):** general symbolic theory in a *new* file
-  `Shufflemath/BernoulliLaplaceGeneral.lean` — do not restructure this file;
-  it is a stable certificate base.
+- **In progress (F, G):** general symbolic theory in
+  `Shufflemath/BernoulliLaplaceGeneral.lean` (F1: state space — now
+  `BLState (N m)`, `k`-free — + `blStationary`; symbolic F proofs pending)
+  + future `BernoulliLaplaceCommanderBridge.lean` (bridge, §4a). Do NOT
+  restructure `BernoulliLaplace.lean` itself; it is a stable certificate
+  base (byte-identical; the general theory keeps its own copy of the
+  transition formulas and the bridge proves they coincide).
 
 **Docs / other:** `docs/lean_plan.md` (theorem ladder — read it; this document
 supersedes and extends it), `docs/formalization_dependency_audit.md`,
@@ -545,17 +550,31 @@ v4.34.0 is the `(∑ f) * a = a * ∑ f` direction; `mul_sum` is
 **Done:** build green; each theorem docstringed with its downstream use
 (eigen-decomposition in G, Commander certificates in F).
 
-### F. General Bernoulli–Laplace — NEW `Shufflemath/BernoulliLaplaceGeneral.lean`
+### F. General Bernoulli–Laplace — `Shufflemath/BernoulliLaplaceGeneral.lean`
 
 Parameters: `N m k : Nat` with `0 < m < N`, `0 < k`, `k ≤ m`, `k ≤ N − m`
 (two piles of sizes `m` and `N − m`, exchanging `k` from each). Macrostate
 `x` = original-left cards in the left pile.
 
-- `BLState (N m k) (h…) : Type := { x : ℕ // max (m − (N − m)) 0 ≤ x ≤ min m (N − m) }`
-  (Fintype via `Fintype.ofFinset`; keep the bounds lemmas as simp).
+**Redesign (GPT review #2/#3; supersedes the pre-redesign spec below in
+two points):** the state space depends only on `N m` (`k` is a kernel
+parameter, so different `k`-kernels and compositions of them live on one
+state type); the upper bound is `m`, **not** `min m (N − m)` (the
+pre-redesign bound excluded the segregated state whenever `m > N − m`);
+this module does **not** import the Commander file — the
+Commander-link theorems move to a new small bridge module
+`Shufflemath/BernoulliLaplaceCommanderBridge.lean` importing both (see
+§4a for the decision and why).
+
+- `BLState (N m : Nat) := { x : ℕ // max (2*m − N) 0 ≤ x ≤ m }` (lower
+  bound = `m − (N − m)` clamped to 0: the right pile must hold the
+  `m − x` original-left cards; upper bound = left-pile capacity).
+  Fintype via `Fintype.ofFinset`; bounds lemmas simp.
   Commander check: `N=99, m=50` → `1 ≤ x ≤ 50` ✓.
-- Reuse the existing `BernoulliLaplace.transitionNumerator/Denominator/Weight`
-  verbatim (they are already general) — import and use; do **not** redefine.
+- The general module carries its **own copy** of the exchange-transition
+  formulas (`transitionNumerator` / `Denominator` / `Weight` —
+  definitionally the frozen `BernoulliLaplace.lean` formulas; the bridge
+  module proves they coincide — §4a decision).
 - **Row stochasticity (symbolic)**: `blRowStochastic : ∀ x (admissible),
   ∑_y transitionWeight N m k x y = 1` (sum over admissible `y`; out-of-range
   terms are 0 so summing over the admissible Finset suffices — prove the
@@ -662,20 +681,22 @@ in the same commit as any fix.
 | # | Finding (short) | Severity | Status | Commit |
 |---|-----------------|----------|--------|--------|
 | 1 | Dobrushin: drop `dobrushin2`, prove sharp `δ(K)` contraction | High | **DONE** | `b69d00a` (session 8) |
-| 2 | `BLState` must not depend on `k` (phantom param) | High | **IN PROGRESS** | — |
-| 3 | General module must not import the Commander module (bridge module instead) | High-ish | **IN PROGRESS** | — |
+| 2 | `BLState` must not depend on `k` (phantom param) | High | **DONE** | this commit |
+| 3 | General module must not import the Commander module (bridge module instead) | High-ish | **PARTIAL** (import removed; bridge module lands with the F commit) | this commit |
 | 4 | Perturbation API: unconditional crude telescope + sharp per-step weighted bound; uniform-`d` as corollary | Medium | **PARTIAL** (crude + uniform-`d` done; sharp weighted `∑ Δ_i·∏_{j>i} δ_j` pending) | `06c2f4b` (crude/uniform) |
-| 5 | `tv_eq_zero` false comment; add real `tv p q = 0 ↔ p = q` | Medium | **TODO** | — |
-| 6 | LLM duplication: private `double_sum_pullout` (a), Dobrushin nonneg/sum-one reproofs (b), matrix vs kernel row-TV/canon (c) | Medium-low | **PARTIAL** (a, b done; c = docstrings pending) | `b69d00a`, `06c2f4b` |
-| 7 | `Markov.lean` self-adjointness docstring overclaims orthogonal eigenbasis | Medium-low | **TODO** | — |
-| 8 | New BL module not imported by `Shufflemath.lean` (not in build graph) | Process | **TODO** | — |
-| 9 | `Finite.lean` "Krein–von Neumann pushforward" hallucinated term | Minor | **TODO** | — |
+| 5 | `tv_eq_zero` false comment; add real `tv p q = 0 ↔ p = q` | Medium | **DONE** (`tv_zero_iff_eq`) | `734141f` |
+| 6 | LLM duplication: private `double_sum_pullout` (a), Dobrushin nonneg/sum-one reproofs (b), matrix vs kernel row-TV/canon (c) | Medium-low | **DONE** | `b69d00a`, `06c2f4b`, `734141f` |
+| 7 | `Markov.lean` self-adjointness docstring overclaims orthogonal eigenbasis | Medium-low | **DONE** | `734141f` |
+| 8 | New BL module not imported by `Shufflemath.lean` (not in build graph) | Process | **DONE** | this commit |
+| 9 | `Finite.lean` "Krein–von Neumann pushforward" hallucinated term | Minor | **DONE** | `734141f` |
 | 10 | Commit trailer not followed (wrong name/email) | Workflow | **DONE** (new trailer `Co-authored-by: Qwen3.8-27B-W4A16-AutoRound <noreply@qwen.ai>` on all new commits; history NOT rewritten, per review's own advice and user instruction) | `a09e2b0` onward |
 
-**Order per the review's recommendation:** #1 ✅ → #4 (perturbation API)
-→ #2/#3 (BL state type, import direction, explicit compilation = #8) →
-then continue F (row stochasticity / stationarity / detailed balance).
-#5/#6c/#7/#9 are small fixes and are done as a quick-win batch alongside.
+**Order per the review's recommendation:** #1 ✅ → #4 (perturbation API:
+crude + uniform-`d` ✅, sharp weighted form **next**) → #2/#3/#8 ✅ (this
+commit) → then continue F (row stochasticity / stationarity / detailed
+balance, via the general file's own transition formulas + the bridge
+module). #5/#6/#7/#9 done in the quick-win commit `734141f`. **Remaining:
+#4 (completion) + #3 (bridge module, lands with F).**
 
 **Decision on #3 vs. the frozen `BernoulliLaplace.lean`:** the §4-F spec
 said "reuse `BernoulliLaplace.transitionNumerator` verbatim, do not
@@ -811,6 +832,33 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   (7/7). **This commit.** GPT review remaining: #3 (BL redesign, next),
   #4 (import direction), #5 (`tv_eq_zero` comment), #7 (Markov docstring),
   #9 (Finite.lean "Krein–von Neumann" hallucination), #10 (process).
+- [x] 2026-10-05 (session 10, quick-win commit `734141f`): **GPT review
+  #5/#6c/#7/#9.** `tv_zero_iff_eq` added to TotalVariation.lean
+  (`tv p q = 0 ↔ p = q` — StdSimplex ext on the weights Finsupp;
+  `tv_eq_zero`'s false comment about distinct reps sharing a mass
+  function fixed — mass equality determines the `Dist` since proof
+  fields are proof-irrelevant). MatrixTV `rowTV`/`pairDistances`/
+  `dobrushinCoeff` docstrings mark the matrix API as the compatibility
+  view (canonical: kernel versions in Dobrushin.lean; bridge:
+  `dobrushinCoeff_matrix_link`). Markov self-adjointness docstring no
+  longer claims an orthogonal eigenbasis (states the Rat/degeneracy
+  caveats). Finite.lean `apply_mass` docstring: "Krein–von Neumann
+  pushforward" → kernel pushforward / mixture of rows.
+- [x] 2026-10-05 (session 11, this commit): **GPT review #2/#3/#8 —
+  BL architecture.** `BLState (N m)` — the phantom `k` parameter is gone
+  (#2: `k` is a kernel parameter, so different `k`-kernels and
+  compositions of them are comparable on one state type); `blStationary
+  (N m x)`; `Params` keeps `k` (exchange size, with its fit proofs).
+  Removed `import Shufflemath.BernoulliLaplace` from the general file
+  (#3 — the dependency arrow was backwards; the 114-line file used
+  nothing from it); Commander-link theorems move to a new small bridge
+  module `BernoulliLaplaceCommanderBridge` (imports both, proves
+  coincidence — lands with the F commit; §4a records the decision and
+  why the general file gets its own copy of the transition formulas
+  rather than importing the frozen Commander file). `Shufflemath.lean`
+  now imports BernoulliLaplaceGeneral (#8 — the module is in the
+  library build graph). `BernoulliLaplace.lean` byte-identical. §4a
+  ledger updated; §4-F spec rewritten to the post-redesign version.
 - [x] 2026-10-05 (session 8): **D sharpened (GPT review finding #1).**
   Removed `dobrushin2` (def + `dobrushin2_def`/`_nonneg`/`_submult`)
   and the private `apply_mass_nonneg`/`apply_sum_mass`; `absSumLeTV`,
@@ -859,18 +907,30 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** GPT review finding #3 — Bernoulli–Laplace redesign in
-`Shufflemath/BernoulliLaplaceGeneral.lean`: `BLState (N m : Nat)` (drop the
-`k` parameter — the state is the macrostate after `m` draws: lower bound
-`lo := m − (N − m)` (Nat subtraction clamps at 0), upper bound `hi := m`;
-Commander N = 99, m = 50 → range [1, 50]); `blStationary (N m x)` for the
-stationary mass at macrostate `x`. Update the §4-F spec to match (its
-current text is the pre-redesign `BLState (N m k)` version). The shelved
-F2 rewrite (`/tmp/BLG_F2_attempt_final.lean`) is **obsolete** (written
-against the old `(N m k)` design) — re-derive against this spec. Then
-finding #4 (import direction generic→Commander) in the same commit, and
-#5/#7/#9/#10 (comment/doc fixes in TotalVariation, Markov, Finite).
-`./dev/verify.sh` at each step.
+**Next action:** GPT review finding #4 (completion) — add the sharp
+per-step weighted perturbation bound to `Shufflemath/Perturbation.lean`:
+`weightedTelescopeBound (Δ δ : List Rat)` (recursive def: `wtB [] _ = 0`,
+`wtB (Δ₀::Δs) δs = Δ₀·δs.prod + wtB Δs (δs.drop 1)`; for protocols of
+length `n`, `Δ` has `n` entries and `δ` the `n − 1` L-suffix coefficients)
+and `weightedTelescope`:
+`tv (μ·Ks, μ·Ls) ≤ ∑_i Δ_i·∏_{j>i} δ(L_j)` — **no** contraction
+hypotheses at all (only the always-true `δ ∈ [0,1]`); same
+head-removal induction as `hybridTelescope_uniform` (A–C part = IH at
+the same tail with starting `μ·K0`; C–B part =
+`dobrushin_contraction (compList Ls')` + `compList_submult` +
+`apply_discrepancy_bound`; triangle gluing; `List.drop_map` /
+`List.drop_cons_of_pos` for the δ-list bookkeeping). Make
+`hybridTelescope_uniform`, `crudeTelescope`, and the old `hybridTelescope`
+corollaries of it (statements unchanged). Then the F work: re-derive the
+shelved F2 (`/tmp/BLG_F2_attempt_final.lean` — its `lo := min m (N−m)`
+form is obsolete; use `lo := max (2m − N) 0` from the current file)
+against `BLState (N m)`: the general file's own transition-formula
+copies, `blRowStochastic` (double Vandermonde),
+`blStationary_sum_one`, detailed balance, `blExchangeKernel`; then the
+bridge module `Shufflemath/BernoulliLaplaceCommanderBridge.lean`
+(imports both BL files; `transitionNumerator` coincidence — expect `rfl`;
+`blExchangeKernel 99 50 25` = `commanderExchange25` via a state-space
+equiv `Fin 50 ↔ BLState 99 50`). `./dev/verify.sh` at each step.
 
 ## 8. Taste & style rules
 

@@ -1,15 +1,24 @@
 /-
 General Bernoulli--Laplace exchange chains.
 
-`BernoulliLaplace.lean` contains the concrete 99-card 50/49 Commander
-instance. This file builds the general theory: the macrostate space of a
-two-pile exchange with pile sizes `m` and `N - m` exchanging `k` cards,
-symbolic row stochasticity (double Vandermonde), the hypergeometric
-stationary distribution (Vandermonde with a symmetry reindex), detailed
-balance, and the theorem tying the general kernel to the Commander
-matrix.
+This file builds the general theory: the macrostate space of a
+two-pile exchange with pile sizes `m` and `N - m`, symbolic row
+stochasticity (double Vandermonde), the hypergeometric stationary
+distribution (Vandermonde with a symmetry reindex), detailed balance,
+and the exchange kernel `blExchangeKernel N m k : FiniteKernel
+(BLState N m) (BLState N m)`.
 
-Parameters throughout: `N m k : Nat` with `0 < m < N`, `0 < k`, `k ≤ m`,
+Import direction (GPT review finding #3): this module does NOT import
+the concrete `Shufflemath.BernoulliLaplace` Commander module. The
+equality between this general theory and the Commander 99-card instance
+lives in the small bridge module `Shufflemath/BernoulliLaplaceCommanderBridge`
+(which imports both), so the concrete file stays untouched and no
+import cycle can form.
+
+Parameters: the state space depends only on `N m` (finding #2: `k`,
+the exchange size, is a kernel parameter, not a state-space parameter —
+composing or comparing different `k` kernels must live on ONE state
+space). `N m k : Nat` with `0 < m < N`, `0 < k`, `k ≤ m`,
 `k ≤ N - m` (the exchange size fits in both piles).
 
 Macrostate `x` = number of original-left cards currently in the left
@@ -27,7 +36,6 @@ cards, so all `m` original-left cards can sit in it (the segregated
 state), regardless of which pile is smaller.
 -/
 import Shufflemath.Finite
-import Shufflemath.BernoulliLaplace
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Data.Fintype.Defs
 import Mathlib.Data.Finset.Interval
@@ -53,21 +61,21 @@ theorem lo_def (N m : Nat) : lo N m = max (2 * m - N) 0 := rfl
 theorem hi_def (N m : Nat) : hi N m = m := rfl
 
 /-- Macrostate space: the admissible counts of original-left cards in
-the left pile, as a subtype of `ℕ`. `k` is carried for signature
-uniformity (the admissible range itself does not depend on the exchange
-size). -/
-def BLState (N m _ : Nat) : Type := {x : ℕ // lo N m ≤ x ∧ x ≤ hi N m}
+the left pile, as a subtype of `ℕ`. Depends only on `N m` (GPT review
+finding #2): the exchange size `k` is a kernel parameter, so different
+`k`-kernels and compositions of them live on this one state space. -/
+def BLState (N m : Nat) : Type := {x : ℕ // lo N m ≤ x ∧ x ≤ hi N m}
 
 variable {N m k : Nat}
 
 /-- The admissible macrostates form a finite set. -/
-instance fintypeBLState (N m k : Nat) : Fintype (BLState N m k) :=
+instance fintypeBLState (N m : Nat) : Fintype (BLState N m) :=
   Fintype.ofFinset (Finset.Icc (lo N m) (hi N m)) fun _ => Finset.mem_Icc
 
 variable {N m k : Nat}
 
 /-- Projection to the count. -/
-abbrev stateVal (x : BLState N m k) : Nat := x.val
+abbrev stateVal (x : BLState N m) : Nat := x.val
 
 /-- The macrostate Finset: the `Finset ℕ` of admissible counts. This is
 the summation domain for row sums and the stationary total. -/
@@ -77,8 +85,9 @@ variable {N m k : Nat}
 
 /-- Hypergeometric stationary mass at macrostate `x`: the probability a
 uniformly random arrangement of the `N`-card deck has exactly `x`
-original-left cards in the left pile. -/
-def blStationary (N m k : Nat) (x : BLState N m k) : Rat :=
+original-left cards in the left pile. Depends only on `N m`, like the
+state space. -/
+def blStationary (N m : Nat) (x : BLState N m) : Rat :=
   ((Nat.choose m x.val * Nat.choose (N - m) (m - x.val) : Nat) : Rat) /
     (Nat.choose N m : Rat)
 
@@ -105,8 +114,8 @@ structure Params where
   hknm : k ≤ N - m
 
 /-- The stationary mass is nonnegative. -/
-theorem blStationary_nonneg (p : Params) (x : BLState p.N p.m p.k) :
-    0 ≤ blStationary p.N p.m p.k x := by
+theorem blStationary_nonneg (p : Params) (x : BLState p.N p.m) :
+    0 ≤ blStationary p.N p.m x := by
   rw [blStationary]
   exact div_nonneg_iff.mpr (Or.inl ⟨Nat.cast_nonneg' _, Nat.cast_nonneg' _⟩)
 
