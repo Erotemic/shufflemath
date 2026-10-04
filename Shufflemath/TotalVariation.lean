@@ -138,10 +138,10 @@ theorem tv_eq_zero {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
   rw [vectorTV_eq_zero]
   exact ⟨fun h => fun x => congrFun h x, fun h => funext h⟩
 
-/-- Swapping the order of two `univ` sums and pulling a single-index factor out of
-the inner sum, in one induction. The factor `a` depends only on the inner index,
-so it can be factored out of the sum over the outer index. -/
-private theorem double_sum_pullout {alpha beta : Type*} [Fintype alpha] [Fintype beta]
+/-- Fubini for two finite univ-sums with one factor depending only on the
+second index: `\sum_i \sum_j a_j b_{i j} = \sum_j a_j \sum_i b_{i j}`.
+Used for all mass-exchange arguments in the contraction proofs. -/
+theorem double_sum_pullout {alpha beta : Type*} [Fintype alpha] [Fintype beta]
     (a : beta → Rat) (b : alpha → beta → Rat) :
     (∑ i, ∑ j, a j * b i j) = ∑ j, a j * ∑ i, b i j := by
   classical
