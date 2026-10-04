@@ -16,7 +16,15 @@
 3. **Small batches only.** One batch = 1–3 related lemmas/theorems in one file.
    Each batch must end with: `lake build` green → `git add` + `git commit`.
    Never let the working tree carry more than one batch of uncommitted work.
-4. **Commit trailer (exact):** `Co-authored-by: Qwen3.8:27b <noreply@openai.com>`
+4. **Commit trailer (exact, from 2026-10-04 onward):**
+   `Co-authored-by: Qwen3.8-27B-W4A16-AutoRound <noreply@qwen.ai>` — the model
+   is the W4A16-AutoRound quantization of Qwen3.8-27B
+   (`hf://dbirks/Qwen3.8-27B-W4A16-AutoRound`) served through a vLLM
+   `hyperqwen` deployment (image `ghcr.io/syv-ai/hyperqwen:sha-684e927`, MTP
+   spec, long context, prefix caching); the LiteLLM model name is
+   `qwen3.8-27b-dbirks-hyperqwen-long`. Older commits in this session's
+   history carry the earlier `Qwen3.8:27b <noreply@openai.com>` form —
+   **do not rewrite history**; use the new form only for new commits.
    Subject line: short imperative, e.g. `Add kernel composition associativity`.
 5. **Every commit must build.** `lake build` (full repo, not just one file) must
    pass before you commit. `./dev/verify.sh` (lake update + build + python tests)
@@ -243,21 +251,35 @@ Dobrushin added with C2/D). Add new modules here when created.
   (pairDistances P).max' …` (**max of TV**, i.e. ≤ 1, convention note in §4-D);
   `rowTV_le_dobrushin`; `dobrushinCoeff_nonneg` (simp); `dobrushinCoeff_le_one`
   (from `Matrix.rowStochastic`).
-- **`Shufflemath/Perturbation.lean`** (Priority C, commits 3599326 / 39d89b1):
+- **`Shufflemath/Perturbation.lean`** (Priority C, commits 3599326 / 39d89b1;
+  **rewritten session 9, GPT review findings #2/#6**): imports
+  `Shufflemath.Dobrushin` (and `open Dobrushin` — the D decls live in the
+  nested `namespace Dobrushin`, so bare `dobrushinCoeff` is NOT in scope
+  after the import) and carries a file-local
+  `set_option maxHeartbeats 400000` (the protocol calc steps whnf
+  `dobrushinCoeff (compList …)`; see the comment at the option).
   `kernelDiscrepancy (K L) : Rat` (max over `x` of `tv (K x) (L x)`, Finset
-  image + `max'`), `apply_discrepancy_bound` (`tv (apply μ K) (apply μ L) ≤
-  kernelDiscrepancy K L`), `compList` (noncomputable def, foldr over `comp`;
-  execution order `[K1, K2]` = K1 then K2) with `compList_nil` / `compList_cons`
-  (simp) and `apply_compList`, `telescopeBound d Δ` (the damped sum
-  `∑_{i < n} d^(n−1−i)·Δ_i`, with nil/cons simp lemmas), and the flagship
-  `hybridTelescope`: for equal-length protocol lists `Ks Ls`, initial `μ`, and
-  a uniform contraction constant `d` (hypotheses `hdK` / `hdL` bounding the
-  TV contraction of every kernel occurring in either list),
-  `tv (apply μ (compList Ks)) (apply μ (compList Ls)) ≤
-  telescopeBound d (map kernelDiscrepancy (Ks.zip Ls))` — list-pair induction
-  using the B4 kernel contraction on the inherited part and the discrepancy
-  bound on the new step. `hybridTelescope_n1` recovers `apply_discrepancy_bound`
-  at `n = 1`.
+  image + `max'`; `rowTV_le_kernelDiscrepancy`, `_nonneg` (simp),
+  `_le_one`); `apply_discrepancy_bound` (`tv (apply μ K) (apply μ L) ≤
+  kernelDiscrepancy K L`, now via the public `Dist.double_sum_pullout`);
+  `compList` (noncomputable def, foldr over `comp`; execution order `[K1, K2]`
+  = K1 then K2) with `compList_nil` / `compList_cons` (simp) and
+  `apply_compList`; `telescopeBound d Δ` (the damped sum `Δ₀·dⁿ⁻¹ + … +
+  Δₙ₋₁`, nil/cons simp); **`compList_submult`
+  (`δ(compList Ks) ≤ (map δ Ks).prod`** — lives here, not in Dobrushin,
+  import direction); **`hybridTelescope_uniform`** — the flagship: equal-length
+  `Ks Ls` from `μ`, single hypothesis `∀ K ∈ Ls, δ K ≤ d` (`0 ≤ d`),
+  `tv (μ·Ks, μ·Ls) ≤ telescopeBound d (map disc (Ks.zip Ls))` — the K side
+  needs **no** contraction hypothesis (it only ever enters through the
+  one-step discrepancy); head-removal induction: same-input-tail part = IH,
+  same-tail-different-input part = `dobrushin_contraction (compList Ls'')`
+  + `compList_submult` + `apply_discrepancy_bound`, triangle gluing; private
+  `list_prod_le_pow_of_le` (factors in `[0, d]` → product ≤ `d^len`);
+  **`crudeTelescope`** — the unconditional `d := 1` corollary (`∑ Δ_i`,
+  uses `dobrushinCoeff_le_one`); `hybridTelescope` (the symmetric d-form
+  with `hdK`/`hdL` contraction hypotheses, kept, private helper
+  `compList_contraction`); `hybridTelescope_n1` (n = 1 recovers
+  `apply_discrepancy_bound`).
 - **`Shufflemath/Dobrushin.lean`** (Priority D, commit afff9d9; **sharpened
   in session 8, GPT review finding #1**):
   `rowTV K i j`; `pairDistances K` / `pairDistances_nonempty` (public);
@@ -422,6 +444,14 @@ done-criteria. Work strictly in this order; later items use earlier ones.
 briefly if it comes out shorter (optional, only if strictly cleaner).
 
 ### C. Perturbation / hybrid protocols — NEW `Shufflemath/Perturbation.lean`
+
+(Superseded by the session-9 rewrite — the final design, recorded in §3:
+`apply_discrepancy_bound`, `compList`, `telescopeBound`, `compList_submult`,
+`hybridTelescope_uniform` (no K-side hypothesis; per-step `δ(L_j) ≤ d`
+damping via the sharp `dobrushinCoeff`), `crudeTelescope` (`d := 1`),
+`hybridTelescope` (symmetric d-form, kept). The original spec below
+anticipated the pre-sharpening `dobrushin2` constants; the delivered form
+replaces `d2` with `δ` and drops the uniform-both-sides requirement.)
 
 (Import `Shufflemath.TotalVariation`, `Shufflemath.Dobrushin` once D exists;
 add to `Shufflemath.lean` imports after D.)
@@ -713,6 +743,36 @@ symbolically; Commander corollaries committed.
   Dobrushin. `./dev/verify.sh` green after D (3192 jobs, 7/7 Python tests).
 - [x] D. Dobrushin (`Dobrushin.lean`: coeff, contraction, submult, run, matrix link) —
   committed afff9d9.
+- [x] 2026-10-05 (session 9): **GPT review findings #2/#6 done —
+  `Perturbation.lean` rewritten.** Added `compList_submult` (δ(compList) ≤
+  ∏ δ — here, not Dobrushin: import direction), `hybridTelescope_uniform`
+  (flagship: only `∀ K ∈ Ls, δ K ≤ d` — **no** K-side contraction
+  hypothesis; head-removal induction: same-input-tail = IH, same-tail =
+  `dobrushin_contraction (compList Ls'')` + `compList_submult` +
+  `apply_discrepancy_bound`, triangle gluing), `crudeTelescope` (unconditional
+  `d := 1`, via `dobrushinCoeff_le_one`), private
+  `list_prod_le_pow_of_le`. Private `double_sum_pullout` deleted (use public
+  `Dist.double_sum_pullout`). `hybridTelescope` (symmetric d-form) and
+  `hybridTelescope_n1` preserved verbatim. New imports: `Shufflemath.Dobrushin`
+  (+ `open Dobrushin` — D's decls are in the nested `namespace Dobrushin`;
+  bare `dobrushinCoeff` is not in scope from the import alone) and
+  `Mathlib.Algebra.Group.Monoid` (`pow_succ'`). File-local
+  `set_option maxHeartbeats 400000`: the main calc whnfs
+  `dobrushinCoeff (compList …)` while checking the triangle step — **the
+  calc's first step must be preceded by `rw [compList_cons, compList_cons,
+  ← apply_comp, ← apply_comp]`** or the compiler stalls in whnf trying to
+  unify `apply μ (compList (K0::Ks'))` with `apply (apply μ K0) (compList
+  Ks')` (same stall family as the `run` comment in Finite.lean). Also: a
+  `calc` whose LAST step is an equality whose two sides only differ by a
+  length-map equality can orient the bridge as an unprovable inequality —
+  avoid by ending the calc at the heavier term (or using the direct proof
+  term). `List.mem_cons_self` takes NO explicit args in v4.34 (implicits
+  only); `List.prod_cons` likewise. `mul_le_mul_of_nonneg_left (h : b ≤ c)
+  (hc : 0 ≤ a)` / `_right` — inequality first, nonnegativity second. Full
+  `lake build` green, zero warnings, zero sorry; `./dev/verify.sh` green
+  (7/7). **This commit.** GPT review remaining: #3 (BL redesign, next),
+  #4 (import direction), #5 (`tv_eq_zero` comment), #7 (Markov docstring),
+  #9 (Finite.lean "Krein–von Neumann" hallucination), #10 (process).
 - [x] 2026-10-05 (session 8): **D sharpened (GPT review finding #1).**
   Removed `dobrushin2` (def + `dobrushin2_def`/`_nonneg`/`_submult`)
   and the private `apply_mass_nonneg`/`apply_sum_mass`; `absSumLeTV`,
@@ -731,7 +791,7 @@ symbolically; Commander corollaries committed.
   `BernoulliLaplaceGeneral`); #4 (import direction generic→Commander),
   #5 (`tv_eq_zero` comment), #7 (Markov docstring overclaim),
   #9 (Finite.lean hallucinated "Krein–von Neumann" doc), #10 (process) —
-  remaining after #2/#6 and #3. The shelved F2 rewrite
+  remaining after #2/#6 (done in session 9) and #3. The shelved F2 rewrite
   (`/tmp/BLG_F2_attempt_final.lean`) was written against the old `BLState
   (N m k)` design — **obsolete**, re-derive against the §4-F redesign.
 - [x] 2026-10-04 (session 7): **Priority E complete.** Commit 50bdde5 —
@@ -761,20 +821,18 @@ symbolically; Commander corollaries committed.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** GPT review finding #2/#6 — rewrite `Shufflemath/Perturbation.lean`:
-keep `apply_discrepancy_bound`, `kernelDiscrepancy`, `compList`,
-`hybridTelescope_n1`; add `crudeTelescope` (unconditional `∑ Δ_i` bound —
-corollary of the weighted form) and `weightedTelescope`:
-`TV(μ·K₀..Kₙ, μ·L₀..Lₙ) ≤ ∑_i Δ(K_i,L_i) · ∏_{j>i} δ(L_j)`, proved by
-head-removal induction (IH on the tail, same starting distribution; triangle
-through the intermediate point `μ·L₀·Ls'`); bound term is a recursive
-def `weightedTelescopeBound (Δ δ : List Rat)`. Move `compList_submult`
-(δ(compList) ≤ ∏ δ) here (NOT into Dobrushin — import direction). Make
-`hybridTelescope_uniform` a corollary *without* the extra `hdK` hypothesis
-(only `δ(L_j) ≤ d` needed). Import `Shufflemath.Dobrushin` (δ now sharp).
-Then: finding #3 BL redesign (update §4-F spec to `BLState (N m)` with
-`lo := m − (N − m)`, `hi := m` — **not** `min m (N − m)`; the §4-F text
-above is the pre-redesign version). `./dev/verify.sh` at each step.
+**Next action:** GPT review finding #3 — Bernoulli–Laplace redesign in
+`Shufflemath/BernoulliLaplaceGeneral.lean`: `BLState (N m : Nat)` (drop the
+`k` parameter — the state is the macrostate after `m` draws: lower bound
+`lo := m − (N − m)` (Nat subtraction clamps at 0), upper bound `hi := m`;
+Commander N = 99, m = 50 → range [1, 50]); `blStationary (N m x)` for the
+stationary mass at macrostate `x`. Update the §4-F spec to match (its
+current text is the pre-redesign `BLState (N m k)` version). The shelved
+F2 rewrite (`/tmp/BLG_F2_attempt_final.lean`) is **obsolete** (written
+against the old `(N m k)` design) — re-derive against this spec. Then
+finding #4 (import direction generic→Commander) in the same commit, and
+#5/#7/#9/#10 (comment/doc fixes in TotalVariation, Markov, Finite).
+`./dev/verify.sh` at each step.
 
 ## 8. Taste & style rules
 
@@ -791,4 +849,5 @@ above is the pre-redesign version). `./dev/verify.sh` at each step.
   with a `have` cast lemma rather than fighting `Nat` lemmas; exactness is
   preserved because everything lives in `ℚ` at the end.
 - Commit messages: `Add <thing>`, `Prove <theorem>`, `Fix <bug>`; body may
-  explain the proof idea in 1–3 lines; always the Qwen trailer.
+  explain the proof idea in 1–3 lines; always the co-author trailer (§2 rule
+  4: `Qwen3.8-27B-W4A16-AutoRound <noreply@qwen.ai>`).
