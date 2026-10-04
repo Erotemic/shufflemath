@@ -106,8 +106,7 @@ separation distance, and event probability.
   (simp, definitional); `run_succ` / `run_succ_add` / `run_apply_self` (simp)
   via private simultaneous induction (`run_rec_eq` bridges `n + 1` / `Nat.succ`
   forms); `run_compPow` (simp: `run K n mu = apply mu (compPow K n)`).
-- **Missing (Priority A):** matrix bridges in `Matrix.lean` (`toMatrix_comp`,
-  `toMatrix_compPow`/`toMatrix_run`).
+  (Priority A complete; the matrix bridges live in `Matrix.lean`, see below.)
 
 **Lean-mechanics notes learned the hard way (keep these!):**
 - The compiler turns tail-recursive `def`s into `Nat.brecOn` with an opaque
@@ -125,6 +124,25 @@ separation distance, and event probability.
   defs; only pure syntactic pattern matching is safe.
 - `unfold apply, comp` is a parse bomb (comma after a tactic name); use two
   separate `unfold` lines.
+- **`@[defeq]` lemmas are invisible to `rw`.** `Finsupp.smul_apply`
+  `((b • v) a = b • v a)` is `@[defeq]`: `rw` reports "Did not find an
+  occurrence of the pattern" even when the target visibly contains it. Bridge
+  with `change` (kernel defeq includes `@[defeq]` transparency), then continue
+  with `rw`/`rfl`.
+- **Keep `Matrix`-typed arguments until after the matrix `*`/`vecMul`
+  rewrite.** `Matrix` is an opaque `def` at the `implicit` transparency level:
+  if you `unfold toMatrix` before `Matrix.mul_apply`, the `HMul`/application
+  subterms stop being type-correct and the following `rw`/`simp` fail ("Did
+  not find an occurrence" / "made no progress" / "function expected"). Do the
+  matrix-shaped rewrites first, then unfold, then finish with `change` + `rfl`.
+- **Def equation theorems can refuse to rewrite dot-notation forms**
+  ("Failed to rewrite using equation theorems for `toMatrix`" on
+  `(K.compPow n).toMatrix`). A `change` to the fully-unfolded target
+  (kernel defeq) is the robust escape hatch.
+- `rw [h1, h2]` requires **every** listed rule to fire; a rule that matches
+  nothing fails the whole `rw`. And `rw` auto-closes a goal that becomes
+  syntactically `x = x` after the last rewrite (no trailing `rfl` needed then;
+  a trailing `rfl` on an already-closed goal is a "No goals" error).
 
 **`Shufflemath/TotalVariation.lean`** — imports `Shufflemath.Matrix`:
 - `vectorTV p q := (1/2) * ∑_x |p x − q x|` over `Fintype` univ.
@@ -141,12 +159,35 @@ separation distance, and event probability.
   characterization, kernel contraction. **Missing (C/D):** discrepancy, hybrid
   telescope, kernel Dobrushin + contraction + submultiplicativity.
 
-**`Shufflemath/Matrix.lean`** — `namespace FiniteKernel`:
+**`Shufflemath/Matrix.lean`** — `namespace FiniteKernel` (imports `Shufflemath.Finite`,
+Stochastic, `Data.Matrix.Mul`, `Data.Matrix.Diagonal`, Finsupp basic/big-ops/smul,
+`Algebra.Group.Monoid`):
 - `toMatrix K := fun x y => Dist.mass (K x) y`.
 - `toMatrix_mem_rowStochastic` (`Fintype` + `DecidableEq`).
 - `ofRowStochastic P hP : FiniteKernel α α` (noncomputable);
   `toMatrix_ofRowStochastic` (simp).
-- **Missing (A):** `toMatrix_comp`, `toMatrix_run`.
+- **Done (Priority A, commits 40b05a0, a08ae2f):**
+  - `toMatrix_comp [Fintype β] : toMatrix (comp K L) = toMatrix K * toMatrix L` (simp).
+    Proof: `ext`; `change` the LHS to `Dist` level (`unfold toMatrix` would also hit
+    the RHS, whose `HMul` instance needs `Matrix`-typed arguments); `simp` the
+    join/map to Finsupp; `Finsupp.sum_mapDomain_index` (with explicit `f, s, h`,
+    `h_zero := fun b => zero_smul Rat b.weights`, `h_add := fun _ _ _ => add_smul _ _ _`)
+    rearranges the pushforward; `Finsupp.sum_apply` pushes the evaluation in;
+    `Matrix.mul_apply` **before** unfolding `toMatrix` on the RHS; final `change`
+    (crosses the `@[defeq]` `Finsupp.smul_apply` gap) + `Finsupp.sum_fintype` + `rfl`.
+  - `toMatrix_identity [DecidableEq α] : toMatrix (identity : FiniteKernel α α) = 1`
+    (simp). NOTE: the statement needs the type ascription — bare `identity`
+    (= `deterministic id`) has undetermined domain and the `OfNat (Matrix _ _ _) 1`
+    instance search gets stuck.
+  - `toMatrix_compPow [Fintype α] [DecidableEq α] : toMatrix (compPow K n) = (toMatrix K) ^ n`
+    (simp), by `induction n with | zero | succ n ih` — explicit pattern form (plain
+    `induction n` misbehaved here: "Unknown identifier ih"). `compPow`'s execution
+    order matches `pow_succ` exactly, so no commutativity is needed.
+  - `toMatrix_run : mass (run K n mu) x = Matrix.vecMul (fun y => mass mu y) (toMatrix K ^ n) x`.
+    Same weights-level machinery as `toMatrix_comp` with `mu` in place of a point
+    mass; RHS goes `Matrix.vecMul_apply_eq_sum` → `← toMatrix_compPow` → one `change`
+    (the `toMatrix` equation theorem refuses to rewrite the dot-notation form
+    `(K.compPow n).toMatrix`; kernel defeq unfolds it directly).
 
 **`Shufflemath/Cost.lean`**:
 - `structure CostedKernel α : step : FiniteKernel α α; cost : Rat; cost_nonneg`.
@@ -462,6 +503,20 @@ symbolically; Commander corollaries committed.
   `mem_rowStochastic_iff_sum`, `nonneg_of_mem_rowStochastic`,
   `sum_row_of_mem_rowStochastic`.
 - `Matrix.mul_apply` — `Mathlib/Data/Matrix/Mul.lean`.
+  `Matrix.vecMul` / `Matrix.vecMul_apply_eq_sum` (`(v ᵥ* M) i = ∑ j, v j * M j i`,
+  an `rfl` lemma) — same file (line ~717/726). `Matrix.one_apply` —
+  `Mathlib/Data/Matrix/Diagonal.lean`.
+- Finsupp Fubini/evaluation hooks (all verified this session):
+  `Finsupp.sum_mapDomain_index` (additive of `prod_mapDomain_index`;
+  explicit args `f, s, h, h_zero, h_add`; `h_zero` needs `zero_smul`,
+  `h_add` needs `add_smul` — NOT `smul_add`, which is the other direction);
+  `Finsupp.sum_apply` (`(f.sum g) a = f.sum fun a₁ b => g a₁ b a`);
+  `Finsupp.sum_fintype` (`f.sum g = ∑ i, g i (f i)`, `h : ∀ i, g i 0 = 0`);
+  `Finsupp.smul_apply` is **`@[defeq]`** (usable by `rfl`/`change`, not `rw`);
+  `zero_smul` has an explicit type argument: `zero_smul Rat _`.
+- `pow_succ : a ^ (n + 1) = a ^ n * a` — `Mathlib/Algebra/Group/Monoid.lean`
+  (import `Mathlib.Algebra.Group.Monoid`); `Mathlib.Algebra.GroupPower.Basic`
+  does **not** exist in v4.34.0. `pow_zero` / `a ^ 0` are definitional (`rfl`).
 - `Finset.powerset_nonempty` — `Mathlib/Data/Finset/Powerset.lean`.
 - `Finset.sum_eq_zero_iff_of_nonneg` — exists (grep `Data/Finset` for the
   exact namespace/form before use).
@@ -494,8 +549,14 @@ symbolically; Commander corollaries committed.
   `run_apply_self`, `run_compPow`, plus the `join`↔`sConvexComb` bridge and
   private Finsupp-level associativity lemmas. Root-caused and worked around
   the `run` big-recursion kernel stall (see §3 mechanics notes).
-- [ ] A. Kernel algebra — `Finite.lean` part **done**; remaining:
-  `Matrix.lean` bridges (`toMatrix_comp`, `toMatrix_compPow`, `toMatrix_run`).
+- [x] 2026-10-05 (session 3): commit 40b05a0 — `Matrix.lean` `toMatrix_comp`,
+  `toMatrix_identity`, `toMatrix_compPow`; commit a08ae2f — `toMatrix_run`
+  (vector–matrix bridge). **Priority A complete** (see §3 for the new
+  mechanics notes: `@[defeq]`/rw gap, Matrix-type opacity, dot-notation
+  equation-theorem refusal, rw all-must-fire/auto-close).
+- [x] A. Kernel algebra — `Finite.lean` monad laws + `Matrix.lean` bridges
+  (`toMatrix_comp`, `toMatrix_identity`, `toMatrix_compPow`, `toMatrix_run`),
+  all committed, full build green.
 - [ ] B. TV laws (triangle, eq_zero, positive-set, kernel contraction).
 - [ ] C. Perturbation (`Perturbation.lean`: discrepancy, compList, hybridTelescope).
 - [ ] D. Dobrushin (`Dobrushin.lean`: coeff, contraction, submult, run).
@@ -507,11 +568,11 @@ symbolically; Commander corollaries committed.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** Priority A (matrix half) — `toMatrix_comp` in
-`Shufflemath/Matrix.lean`: `toMatrix (comp K L) = toMatrix K * toMatrix L`
-(weights-level Fubini), then `toMatrix_compPow` by induction using
-`compPow_succ` + `toMatrix_comp` + `Matrix.pow_succ'`, then the `toMatrix_run`
-bridge via `run_compPow` + `apply_pointMass`.
+**Next action:** Priority B — TV laws in `Shufflemath/TotalVariation.lean`:
+`vectorTV_triangle`, `vectorTV_eq_zero`, the workhorse `vectorTV_eq_positive_set`
+(max-event characterization), and `kernel_contraction` (statement sketches and
+proof strategies in §4-B). Then run `./dev/verify.sh` at the end of the
+priority (also still owed for A — run it now before starting B).
 
 ## 8. Taste & style rules
 
