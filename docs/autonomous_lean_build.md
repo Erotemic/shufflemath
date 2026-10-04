@@ -99,7 +99,32 @@ separation distance, and event probability.
   `apply μ K := (μ.map K).join`; `comp K L := fun x => ((K x).map L).join`;
   `run K : Nat → Dist α → Dist α` (recursion on n).
 - `apply_pointMass` (simp), `deterministic_apply_pointMass` (simp).
-- **Missing (Priority A):** associativity/identity laws, `apply_comp`, matrix bridges.
+- **Done (Priority A, commit 754dfa9):** `Dist.join_sConvexComb`; private
+  weights-level `map_join_kernels` / `join_join_kernels`; `apply_comp` (simp),
+  `comp_assoc` (simp), `comp_id_right` (simp), `comp_id_left` (simp),
+  `apply_id_left` (simp); `compPow` with `compPow_zero` / `compPow_succ`
+  (simp, definitional); `run_succ` / `run_succ_add` / `run_apply_self` (simp)
+  via private simultaneous induction (`run_rec_eq` bridges `n + 1` / `Nat.succ`
+  forms); `run_compPow` (simp: `run K n mu = apply mu (compPow K n)`).
+- **Missing (Priority A):** matrix bridges in `Matrix.lean` (`toMatrix_comp`,
+  `toMatrix_compPow`/`toMatrix_run`).
+
+**Lean-mechanics notes learned the hard way (keep these!):**
+- The compiler turns tail-recursive `def`s into `Nat.brecOn` with an opaque
+  `_f` wrapper that stalls whnf on variable-level successors inside heavy
+  `StdSimplex` proof terms. `run` is therefore written with an explicit
+  `Nat.recOn`; the kernel then reduces `run K (Nat.succ n) _` by clean
+  recursor steps. Non-tail-recursive defs (`compPow`) compile to plain
+  matches whose equation lemmas are `rfl`.
+- `Nat.recOn` / `Nat.rec` zero/successor reductions fire under **kernel
+  defeq** (`rfl`, `exact`) but **not** under `simp`'s normalizer. In zero
+  branches use `rw [theorem]` for the non-reducible side, then `rfl`.
+- `induction n` hands succ-branch goals over in `n + 1` (add) form, not
+  `Nat.succ` form; `rw [Nat.succ_eq_add_one]` / `[← Nat.succ_eq_add_one]`
+  switches between the two display forms. `rw` never reduces recursive
+  defs; only pure syntactic pattern matching is safe.
+- `unfold apply, comp` is a parse bomb (comma after a tactic name); use two
+  separate `unfold` lines.
 
 **`Shufflemath/TotalVariation.lean`** — imports `Shufflemath.Matrix`:
 - `vectorTV p q := (1/2) * ∑_x |p x − q x|` over `Fintype` univ.
@@ -463,7 +488,14 @@ symbolically; Commander corollaries committed.
 
 - [x] 2026-10-05 (session 1): repo audit; `lake build` verified green; this
   handoff document written. No formalization code yet.
-- [ ] A. Kernel algebra (`Finite.lean`, `Matrix.lean`).
+- [x] 2026-10-05 (session 2): commit 754dfa9 — `Finite.lean` kernel algebra
+  complete: `apply_comp`, `comp_assoc`, `comp_id_right`, `comp_id_left`,
+  `apply_id_left`, `compPow` (+zero/succ), `run_succ`/`run_succ_add`/
+  `run_apply_self`, `run_compPow`, plus the `join`↔`sConvexComb` bridge and
+  private Finsupp-level associativity lemmas. Root-caused and worked around
+  the `run` big-recursion kernel stall (see §3 mechanics notes).
+- [ ] A. Kernel algebra — `Finite.lean` part **done**; remaining:
+  `Matrix.lean` bridges (`toMatrix_comp`, `toMatrix_compPow`, `toMatrix_run`).
 - [ ] B. TV laws (triangle, eq_zero, positive-set, kernel contraction).
 - [ ] C. Perturbation (`Perturbation.lean`: discrepancy, compList, hybridTelescope).
 - [ ] D. Dobrushin (`Dobrushin.lean`: coeff, contraction, submult, run).
@@ -475,7 +507,11 @@ symbolically; Commander corollaries committed.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** Priority A — start with `apply_comp` in `Shufflemath/Finite.lean`.
+**Next action:** Priority A (matrix half) — `toMatrix_comp` in
+`Shufflemath/Matrix.lean`: `toMatrix (comp K L) = toMatrix K * toMatrix L`
+(weights-level Fubini), then `toMatrix_compPow` by induction using
+`compPow_succ` + `toMatrix_comp` + `Matrix.pow_succ'`, then the `toMatrix_run`
+bridge via `run_compPow` + `apply_pointMass`.
 
 ## 8. Taste & style rules
 
