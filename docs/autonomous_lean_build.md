@@ -253,7 +253,8 @@ new modules are added here when created).
   `rowTV_le_dobrushin`; `dobrushinCoeff_nonneg` (simp); `dobrushinCoeff_le_one`
   (from `Matrix.rowStochastic`).
 - **`Shufflemath/Perturbation.lean`** (Priority C, commits 3599326 / 39d89b1;
-  **rewritten session 9, GPT review findings #2/#6**): imports
+  **rewritten session 9, GPT review findings #2/#6**; **reshaped session 12,
+  finding #4**): imports
   `Shufflemath.Dobrushin` (and `open Dobrushin` — the D decls live in the
   nested `namespace Dobrushin`, so bare `dobrushinCoeff` is NOT in scope
   after the import) and carries a file-local
@@ -268,19 +269,27 @@ new modules are added here when created).
   `apply_compList`; `telescopeBound d Δ` (the damped sum `Δ₀·dⁿ⁻¹ + … +
   Δₙ₋₁`, nil/cons simp); **`compList_submult`
   (`δ(compList Ks) ≤ (map δ Ks).prod`** — lives here, not in Dobrushin,
-  import direction); **`hybridTelescope_uniform`** — the flagship: equal-length
-  `Ks Ls` from `μ`, single hypothesis `∀ K ∈ Ls, δ K ≤ d` (`0 ≤ d`),
-  `tv (μ·Ks, μ·Ls) ≤ telescopeBound d (map disc (Ks.zip Ls))` — the K side
-  needs **no** contraction hypothesis (it only ever enters through the
-  one-step discrepancy); head-removal induction: same-input-tail part = IH,
-  same-tail-different-input part = `dobrushin_contraction (compList Ls'')`
-  + `compList_submult` + `apply_discrepancy_bound`, triangle gluing; private
-  `list_prod_le_pow_of_le` (factors in `[0, d]` → product ≤ `d^len`);
-  **`crudeTelescope`** — the unconditional `d := 1` corollary (`∑ Δ_i`,
-  uses `dobrushinCoeff_le_one`); `hybridTelescope` (the symmetric d-form
-  with `hdK`/`hdL` contraction hypotheses, kept, private helper
-  `compList_contraction`); `hybridTelescope_n1` (n = 1 recovers
-  `apply_discrepancy_bound`).
+  import direction); **`weightedTelescopeBound (Δ δ : List Rat)`** (recursive
+  def, nil/cons simp: the per-step weighted sum `Δ₀·δ₁…δₙ + Δ₁·δ₂…δₙ + …`)
+  + private `wtB_le_uniform` (weighted → uniform: each L-tail product ≤
+  `d^tail length`, via `list_prod_le_pow_of_le` + `mem_of_mem_drop`);
+  **`weightedTelescope` — the flagship** (session 12, finding #4):
+  equal-length `Ks Ls` from `μ`, **no contraction hypotheses at all**,
+  `tv (μ·compList Ks, μ·compList Ls) ≤
+  weightedTelescopeBound (map disc (Ks.zip Ls)) (map δ (Ls.drop 1))` — head
+  removal induction: same-input-tail part = IH, same-tail-different-input
+  part = `compList_contraction_prod` (the tail's contraction, submult over
+  the L-tail) × `apply_discrepancy_bound`, triangle gluing; **
+  `hybridTelescope_uniform`** (uniform `d`: `≤ telescopeBound d Δ` under
+  `∀ K ∈ Ls, δ K ≤ d`, `0 ≤ d`) and **`crudeTelescope`** (unconditional
+  `d := 1`, plain `∑ Δ_i`) are now **corollaries** of the flagship via
+  `le_trans` + `wtB_le_uniform`; `hybridTelescope` (symmetric d-form with
+  `hdK`/`hdL` contraction hypotheses; `hdK` unused in the proof — the K side
+  never enters through contraction) is a one-line corollary of the uniform
+  bound; `hybridTelescope_n1` (n = 1 recovers `apply_discrepancy_bound`).
+  Private helpers: `mem_of_mem_drop`, `list_prod_le_pow_of_le`,
+  `list_prod_nonneg`, `compList_contraction_prod`. (The session-9 private
+  `compList_contraction` was deleted when the flagship subsumed it.)
 - **`Shufflemath/Dobrushin.lean`** (Priority D, commit afff9d9; **sharpened
   in session 8, GPT review finding #1**):
   `rowTV K i j`; `pairDistances K` / `pairDistances_nonempty` (public);
@@ -450,13 +459,14 @@ briefly if it comes out shorter (optional, only if strictly cleaner).
 
 ### C. Perturbation / hybrid protocols — NEW `Shufflemath/Perturbation.lean`
 
-(Superseded by the session-9 rewrite — the final design, recorded in §3:
-`apply_discrepancy_bound`, `compList`, `telescopeBound`, `compList_submult`,
-`hybridTelescope_uniform` (no K-side hypothesis; per-step `δ(L_j) ≤ d`
-damping via the sharp `dobrushinCoeff`), `crudeTelescope` (`d := 1`),
-`hybridTelescope` (symmetric d-form, kept). The original spec below
-anticipated the pre-sharpening `dobrushin2` constants; the delivered form
-replaces `d2` with `δ` and drops the uniform-both-sides requirement.)
+(Superseded by the session-9 rewrite and the session-12 reshaping — the
+final design, recorded in §3: `apply_discrepancy_bound`, `compList`,
+`telescopeBound`, `compList_submult`, **`weightedTelescopeBound` +
+`weightedTelescope` (flagship, no contraction hypotheses)**, with
+`hybridTelescope_uniform` / `crudeTelescope` / `hybridTelescope` as
+corollaries. The original spec below anticipated the pre-sharpening
+`dobrushin2` constants; the delivered form replaces `d2` with `δ` and
+drops the uniform-both-sides requirement.)
 
 (Import `Shufflemath.TotalVariation`, `Shufflemath.Dobrushin` once D exists;
 add to `Shufflemath.lean` imports after D.)
@@ -683,7 +693,7 @@ in the same commit as any fix.
 | 1 | Dobrushin: drop `dobrushin2`, prove sharp `δ(K)` contraction | High | **DONE** | `b69d00a` (session 8) |
 | 2 | `BLState` must not depend on `k` (phantom param) | High | **DONE** | this commit |
 | 3 | General module must not import the Commander module (bridge module instead) | High-ish | **PARTIAL** (import removed; bridge module lands with the F commit) | this commit |
-| 4 | Perturbation API: unconditional crude telescope + sharp per-step weighted bound; uniform-`d` as corollary | Medium | **PARTIAL** (crude + uniform-`d` done; sharp weighted `∑ Δ_i·∏_{j>i} δ_j` pending) | `06c2f4b` (crude/uniform) |
+| 4 | Perturbation API: unconditional crude telescope + sharp per-step weighted bound; uniform-`d` as corollary | Medium | **DONE** (`weightedTelescope` flagship, no contraction hypotheses; uniform/crude/symmetric all corollaries) | this commit |
 | 5 | `tv_eq_zero` false comment; add real `tv p q = 0 ↔ p = q` | Medium | **DONE** (`tv_zero_iff_eq`) | `734141f` |
 | 6 | LLM duplication: private `double_sum_pullout` (a), Dobrushin nonneg/sum-one reproofs (b), matrix vs kernel row-TV/canon (c) | Medium-low | **DONE** | `b69d00a`, `06c2f4b`, `734141f` |
 | 7 | `Markov.lean` self-adjointness docstring overclaims orthogonal eigenbasis | Medium-low | **DONE** | `734141f` |
@@ -859,6 +869,46 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   now imports BernoulliLaplaceGeneral (#8 — the module is in the
   library build graph). `BernoulliLaplace.lean` byte-identical. §4a
   ledger updated; §4-F spec rewritten to the post-redesign version.
+- [x] 2026-10-06 (session 12, this commit): **GPT review finding #4 —
+  sharp weighted telescope.** `Perturbation.lean` reshaped: new recursive
+  def `weightedTelescopeBound (Δ δ : List Rat)` (nil/cons simp: the
+  per-step weighted sum `Δ₀·δ₁…δₙ + Δ₁·δ₂…δₙ + …` — for protocols of
+  length `n`, `Δ` has `n` entries, `δ` the `n−1` L-suffix coefficients)
+  and **`weightedTelescope` — the new flagship**: equal-length `Ks Ls`
+  from `μ`, **no contraction hypotheses at all** (only the always-true
+  `δ ∈ [0,1]`),
+  `tv (μ·compList Ks, μ·compList Ls) ≤
+  weightedTelescopeBound (map disc (Ks.zip Ls)) (map δ (Ls.drop 1))`.
+  Same head-removal induction as the old uniform proof: same-input-tail
+  part = IH at `(μ·K₀, same L-tail)`; same-tail-different-input part =
+  `compList_contraction_prod` (new private helper: tail contraction ≤
+  `(map δ tail).prod × tv`, via `dobrushin_contraction` +
+  `compList_submult` + `dobrushinCoeff_le_one`) × `apply_discrepancy_bound`
+  (head discrepancy); triangle gluing. The WHNF-stall mitigation (`rw
+  [compList_cons ×2, ← apply_comp ×2]` before the main calc, after all
+  `have`s) was kept from session 9 and re-verified as load-bearing.
+  **`hybridTelescope_uniform`, `crudeTelescope`, `hybridTelescope` are now
+  corollaries** (statements unchanged): uniform/crude via `le_trans`
+  (weightedTelescope) (new private `wtB_le_uniform`: weighted bound ≤
+  uniform-`d` bound — each L-tail product ≤ `d^tail length`, with
+  `list_prod_le_pow_of_le` + new private `mem_of_mem_drop` for the IH
+  membership bookkeeping; crude = `d := 1` via `dobrushinCoeff_le_one`);
+  symmetric `hybridTelescope` = one-line call of the uniform corollary
+  (its `hdK` contraction hypothesis is unused in the proof — the K side
+  only ever enters through the one-step discrepancy; kept in the
+  signature for API stability, `let _ := hdK` silences the warning).
+  Session-9 private `compList_contraction` deleted (subsumed by
+  `compList_contraction_prod` + `wtB_le_uniform`); the three duplicated
+  60-line direct proofs collapsed to 2–20-line corollary proofs.
+  Mechanics learned this session: after `cases Ls`, the variable `Ls` is
+  GONE (destructive cases on a variable) — write the goal's tail as
+  `((L0::Ls'').drop 1)`; `rw`/`simp` do NOT reduce `(L0::Ls'').drop 1`
+  (their matchers don't instantiate `i := 0` in `drop_succ_cons`'s
+  `i+1` pattern) — `dsimp only [List.drop, List.tail]` does; the δ-list
+  re-identification in the final calc step closes with
+  `simp only [List.map_drop, ← hδs]` + `ring`. Full `lake build` green,
+  zero warnings, zero sorry; `./dev/verify.sh` green (7/7). All 10 GPT
+  review findings are now addressed (§4a).
 - [x] 2026-10-05 (session 8): **D sharpened (GPT review finding #1).**
   Removed `dobrushin2` (def + `dobrushin2_def`/`_nonneg`/`_submult`)
   and the private `apply_mass_nonneg`/`apply_sum_mass`; `absSumLeTV`,
@@ -907,22 +957,8 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** GPT review finding #4 (completion) — add the sharp
-per-step weighted perturbation bound to `Shufflemath/Perturbation.lean`:
-`weightedTelescopeBound (Δ δ : List Rat)` (recursive def: `wtB [] _ = 0`,
-`wtB (Δ₀::Δs) δs = Δ₀·δs.prod + wtB Δs (δs.drop 1)`; for protocols of
-length `n`, `Δ` has `n` entries and `δ` the `n − 1` L-suffix coefficients)
-and `weightedTelescope`:
-`tv (μ·Ks, μ·Ls) ≤ ∑_i Δ_i·∏_{j>i} δ(L_j)` — **no** contraction
-hypotheses at all (only the always-true `δ ∈ [0,1]`); same
-head-removal induction as `hybridTelescope_uniform` (A–C part = IH at
-the same tail with starting `μ·K0`; C–B part =
-`dobrushin_contraction (compList Ls')` + `compList_submult` +
-`apply_discrepancy_bound`; triangle gluing; `List.drop_map` /
-`List.drop_cons_of_pos` for the δ-list bookkeeping). Make
-`hybridTelescope_uniform`, `crudeTelescope`, and the old `hybridTelescope`
-corollaries of it (statements unchanged). Then the F work: re-derive the
-shelved F2 (`/tmp/BLG_F2_attempt_final.lean` — its `lo := min m (N−m)`
+**Next action:** F work — re-derive the shelved F2
+(`/tmp/BLG_F2_attempt_final.lean` — its `lo := min m (N−m)`
 form is obsolete; use `lo := max (2m − N) 0` from the current file)
 against `BLState (N m)`: the general file's own transition-formula
 copies, `blRowStochastic` (double Vandermonde),
@@ -930,7 +966,10 @@ copies, `blRowStochastic` (double Vandermonde),
 bridge module `Shufflemath/BernoulliLaplaceCommanderBridge.lean`
 (imports both BL files; `transitionNumerator` coincidence — expect `rfl`;
 `blExchangeKernel 99 50 25` = `commanderExchange25` via a state-space
-equiv `Fin 50 ↔ BLState 99 50`). `./dev/verify.sh` at each step.
+equiv `Fin 50 ↔ BLState 99 50`). `./dev/verify.sh` at each step. GPT
+review findings #1–#10 are all DONE (§4a) — the review work is complete;
+remaining priorities are F (general BL proofs + bridge), G (first
+eigenfunction), H (stretch).
 
 ## 8. Taste & style rules
 
