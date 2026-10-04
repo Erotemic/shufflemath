@@ -128,7 +128,8 @@ theorem apply_pointMass (x : alpha) (K : FiniteKernel alpha beta) :
 
 /-- Pushing a distribution through a kernel and then reading a mass is the
 `μ`-weighted sum of the corresponding kernel-row masses: the mass of the
-Krein–von Neumann pushforward at `x` is `∑_j μ(j) K(j, x)`. -/
+kernel pushforward (the `μ`-weighted mixture of rows) at `x` is
+`∑_j μ(j) K(j, x)`. -/
 theorem apply_mass [Fintype alpha] [Fintype beta] [DecidableEq alpha] [DecidableEq beta]
     (mu : Dist alpha) (K : FiniteKernel alpha beta) (x : beta) :
     Dist.mass (apply mu K) x = Finset.sum Finset.univ (fun j => Dist.mass mu j * Dist.mass (K j) x) := by

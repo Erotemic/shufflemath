@@ -130,13 +130,30 @@ theorem tv_triangle {alpha : Type*} [Fintype alpha] (p q r : Dist alpha) :
   simpa [tv] using vectorTV_triangle _ _ _
 
 /-- Zero TV distance is exactly pointwise equality of the mass functions.
-(Stated at mass level, not `p = q`: distinct `Dist` representations can
-share the same mass function, e.g. weight zero on a point.) -/
+(Mass level: for `StdSimplex` this already determines the distribution
+itself — see `tv_zero_iff_eq`. Equal mass functions give equal `Finsupp`
+weights, and the two proof fields are proof-irrelevant.) -/
 theorem tv_eq_zero {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
     tv p q = 0 ↔ ∀ x, mass p x = mass q x := by
   simp only [tv]
   rw [vectorTV_eq_zero]
   exact ⟨fun h => fun x => congrFun h x, fun h => funext h⟩
+
+/-- Total variation separates points: `tv p q = 0` iff `p = q`. The
+`StdSimplex` structure is determined by its `Finsupp` weight field (the
+`nonneg`/`total` proof fields are proof-irrelevant), so pointwise equality
+of the mass functions determines the distribution. This is the metric
+separation fact the mass-level `tv_eq_zero` stops short of. -/
+theorem tv_zero_iff_eq {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
+    tv p q = 0 ↔ p = q := by
+  constructor
+  · intro h
+    rw [tv_eq_zero] at h
+    ext x
+    simpa [mass] using h x
+  · intro h
+    rw [h]
+    exact tv_self _
 
 /-- Fubini for two finite univ-sums with one factor depending only on the
 second index: `\sum_i \sum_j a_j b_{i j} = \sum_j a_j \sum_i b_{i j}`.
@@ -410,11 +427,15 @@ namespace MatrixTV
 
 variable {alpha : Type*}
 
-/-- TV distance between two rows of a rational transition matrix. -/
+/-- TV distance between two rows of a rational transition matrix.
+Compatibility view on fixed-size matrices; the canonical (semantic)
+kernel version is `Dobrushin.rowTV`, with `dobrushinCoeff_matrix_link`
+bridging the two for row-stochastic matrices. -/
 def rowTV [Fintype alpha] (P : Matrix alpha alpha Rat) (i j : alpha) : Rat :=
   vectorTV (P i) (P j)
 
-/-- The finite set of all pairwise row distances. -/
+/-- The finite set of all pairwise row distances.
+Compatibility view (canonical kernel version: `Dobrushin.pairDistances`). -/
 def pairDistances [Fintype alpha] [DecidableEq alpha]
     (P : Matrix alpha alpha Rat) : Finset Rat :=
   ((Finset.univ : Finset alpha).product Finset.univ).image
@@ -427,7 +448,9 @@ theorem pairDistances_nonempty
   let x : alpha := Classical.choice (inferInstance : Nonempty alpha)
   exact ⟨rowTV P x x, by simp [pairDistances, x]⟩
 
-/-- Exact finite Dobrushin coefficient: maximum TV distance between matrix rows. -/
+/-- Exact finite Dobrushin coefficient: maximum TV distance between matrix
+rows. Compatibility view (canonical kernel version: `Dobrushin.dobrushinCoeff`;
+equality via `dobrushinCoeff_matrix_link`). -/
 def dobrushinCoeff
     [Fintype alpha] [DecidableEq alpha] [Nonempty alpha]
     (P : Matrix alpha alpha Rat) : Rat :=

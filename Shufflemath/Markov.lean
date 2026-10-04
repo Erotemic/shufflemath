@@ -74,10 +74,12 @@ def weightedInner [Fintype alpha] (mu : Dist alpha) (f g : alpha → Rat) : Rat 
 /-- Under detailed balance, the row action of the kernel is
 self-adjoint in the `mu`-weighted inner product:
 `<f, K.applyFn g>_mu = <g, K.applyFn f>_mu`. This is the finite, exact
-form of the standard reversibility ⇒ self-adjointness fact; it is the
-bridge that makes the row operator diagonalizable by an orthogonal
-eigenbasis in the stationary inner product (used by the eigenmode
-work in `BernoulliLaplaceGeneral.lean`). -/
+form of reversibility ⇒ self-adjointness. Note the algebraic scope: the
+coefficients live in `Rat`, the weighted form is degenerate at points
+with `mu x = 0`, and a rational self-adjoint operator need not be
+diagonalizable over `Q` — the real spectral statement (orthogonal
+eigenbasis in the stationary inner product) requires moving to `R` and
+handling support/positivity, which is out of scope for this file. -/
 theorem selfAdjoint_of_detailedBalance
     [Fintype alpha]
     (mu : Dist alpha) (K : FiniteKernel alpha alpha)
