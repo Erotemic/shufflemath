@@ -194,7 +194,7 @@ class MD10MasterGlossary(DeckSlide):
 
     def body(self):
         grid = glossary_grid([
-            ("GSR", r"ideal riffle: binomial cut + order-preserving proportional interleave; inverse = fair independent labels + stable sort"),
+            ("Gilbert--Shannon--Reeds (GSR)", r"ideal riffle: binomial cut + order-preserving proportional interleave; inverse = fair independent labels + stable sort"),
             (r"$a$-shuffle", r"uniform independent $a$-valued inverse labels + stable sort"),
             (r"$\mathbf p$-shuffle", r"biased independent categorical inverse labels + stable sort"),
             ("clumpy/dealer", r"correlated left/right source labels favoring repeats / alternation"),

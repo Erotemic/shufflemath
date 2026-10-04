@@ -46,7 +46,7 @@ class CS01TVReminder(DeckSlide):
             ("Not entropy alone", r"Having enough random bits is necessary, but it does not say how evenly those bits cover permutations."),
             ("Our target", r"Compute the exact law $Q$ induced by riffles, compare it with $U$, and exploit structure to avoid summing $n!$ unrelated terms."),
         ], width=10.5, body_size=22).shift(DOWN * 1.15)
-        self.say("This reminder is important because the phrase seven shuffles often gets repeated without saying which metric or model produced it. Here the model is ideal GSR and the distance is total variation.")
+        self.say("This reminder is important because the phrase seven shuffles often gets repeated without saying which metric or model produced it. Here the model is the ideal Gilbert--Shannon--Reeds (GSR) riffle and the distance is total variation.")
         self.play(FadeIn(rem), FadeIn(rows))
 
 
@@ -144,7 +144,7 @@ class CS21ClassicalGlossary(DeckSlide):
 
     def body(self):
         grid = glossary_grid([
-            ("GSR riffle", r"binomial cut plus uniformly random order-preserving interleaving"),
+            ("Gilbert--Shannon--Reeds (GSR) riffle", r"binomial cut plus uniformly random order-preserving interleaving"),
             ("inverse riffle", r"independent card labels followed by a stable sort"),
             ("stable sort", r"sort by label while preserving old relative order among equal labels"),
             (r"$a$-shuffle", r"assign independent uniform labels in $\{0,\ldots,a-1\}$ and stable-sort"),

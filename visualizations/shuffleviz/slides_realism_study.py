@@ -14,7 +14,7 @@ SOURCE_SSW = "Sellke, Shi, and Wang (2025), Universality of Cutoff for Riffle Sh
 
 
 class RD00PartPrimer(DeckSlide):
-    title = "Part 3 vocabulary: three different ways a human riffle can deviate from GSR"
+    title = "Part 3 vocabulary: three different ways a human riffle can deviate from Gilbert--Shannon--Reeds (GSR)"
     section = "Part 3 · more realistic local shuffles"
 
     def body(self):
@@ -405,5 +405,5 @@ class RD08CDescentPositionMatters(DeckSlide):
         left = boxed(math(r"D=\{1\}:\ i_1<i_2\le i_3\Rightarrow(0,1,1)\Rightarrow p(1-p)^2", size=24, color=LOCAL), LOCAL, 0.20).shift(LEFT * 2.9 + DOWN * 0.35)
         right = boxed(math(r"D=\{2\}:\ i_1\le i_2<i_3\Rightarrow(0,0,1)\Rightarrow p^2(1-p)", size=24, color=UNIFORM), UNIFORM, 0.20).shift(RIGHT * 2.9 + DOWN * 0.35)
         conclusion = remember_box(r"For $p=1/2$ both weights are $1/8$, so only the number of descents matters.  For $p\ne1/2$, their locations matter: the sufficient statistic refines from descent count to inverse descent set.", width=10.7, size=21).shift(DOWN * 1.75)
-        self.say("This is the crucial conceptual upgrade from fair to biased labels. Fair GSR collapses permutations by how many rising sequences they have. Bias breaks that collapse: where the strict steps occur affects the product of label probabilities.")
+        self.say("This is the crucial conceptual upgrade from fair to biased labels. Fair Gilbert--Shannon--Reeds (GSR) collapses permutations by how many rising sequences they have. Bias breaks that collapse: where the strict steps occur affects the product of label probabilities.")
         self.play(FadeIn(setup), FadeIn(left), FadeIn(right), FadeIn(conclusion))

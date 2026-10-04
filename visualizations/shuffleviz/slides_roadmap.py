@@ -38,7 +38,7 @@ class M01LiteratureMap(DeckSlide):
         ]
         tl = timeline(events, y=0.15)
         note = boxed(para(r"Our program formalizes the pieces needed to assemble a finite, costed working-set theorem. We do \emph{not} need to formalize every result from every paper before composing them.", 10.4, 25), UNIFORM).shift(DOWN * 2.05)
-        self.say("This sequence shows why the novelty claim must be narrow: nearly every individual ingredient already has a literature.\n[Sources] Bayer--Diaconis 1992; Fulman 1998; Assaf--Diaconis--Soundararajan 2012; Jonasson--Morris 2015; Nestoridi--White 2019; Diaconis--Fulman 2023; Griffin et al. 2023; Nestoridi--Priestley--Schmid 2024; Sellke--Shi--Wang 2025.")
+        self.say("The 1992 entry is the Gilbert--Shannon--Reeds (GSR) exact-mixing result. This sequence shows why the novelty claim must be narrow: nearly every individual ingredient already has a literature.\n[Sources] Bayer--Diaconis 1992; Fulman 1998; Assaf--Diaconis--Soundararajan 2012; Jonasson--Morris 2015; Nestoridi--White 2019; Diaconis--Fulman 2023; Griffin et al. 2023; Nestoridi--Priestley--Schmid 2024; Sellke--Shi--Wang 2025.")
         self.play(FadeIn(tl))
         self.say("The roadmap is therefore interface-driven: formalize the exact finite statements needed at each model boundary.")
         self.play(FadeIn(note))
