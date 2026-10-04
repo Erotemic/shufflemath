@@ -138,6 +138,82 @@ theorem tv_eq_zero {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
   rw [vectorTV_eq_zero]
   exact ⟨fun h => fun x => congrFun h x, fun h => funext h⟩
 
+/-- Swapping the order of two `univ` sums and pulling a single-index factor out of
+the inner sum, in one induction. The factor `a` depends only on the inner index,
+so it can be factored out of the sum over the outer index. -/
+private theorem double_sum_pullout {alpha beta : Type*} [Fintype alpha] [Fintype beta]
+    (a : beta → Rat) (b : alpha → beta → Rat) :
+    (∑ i, ∑ j, a j * b i j) = ∑ j, a j * ∑ i, b i j := by
+  classical
+  have : (∑ i ∈ (Finset.univ : Finset alpha), ∑ j ∈ (Finset.univ : Finset beta), a j * b i j) =
+        ∑ j ∈ (Finset.univ : Finset beta), a j * ∑ i ∈ (Finset.univ : Finset alpha), b i j := by
+    classical
+    induction (Finset.univ : Finset alpha) using Finset.induction with
+    | empty => simp
+    | insert c t hc ih =>
+      rw [Finset.sum_insert hc]
+      rw [ih]
+      rw [← Finset.sum_add_distrib]
+      rw [Finset.sum_congr rfl fun j _ =>
+          (mul_add (a j) (b c j) (Finset.sum t (fun i => b i j))).symm]
+      rw [Finset.sum_congr rfl fun j _ =>
+          congrArg (fun u => a j * u) (Finset.sum_insert hc (f := fun i => b i j)).symm]
+  simpa using this
+
+/-- Total variation contracts under kernel application: pushing two distributions
+through the same (row-stochastic) kernel cannot increase their TV distance.
+`TV(Kμ, Kν) ≤ TV(μ, ν)`. Proof: pointwise triangle inequality in the weighted
+form `|∑_j a_j w_j| ≤ ∑_j |a_j| w_j` for nonnegative weights, then Fubini
+(double_sum_pullout) and the row-stochasticity `∑_i K(j, i) = 1`. -/
+theorem kernel_contraction {alpha beta : Type*} [Fintype alpha] [Fintype beta]
+    [DecidableEq alpha] [DecidableEq beta]
+    (K : FiniteKernel alpha beta) (mu nu : Dist alpha) :
+    tv (FiniteKernel.apply mu K) (FiniteKernel.apply nu K) ≤ tv mu nu := by
+  simp only [tv, vectorTV, FiniteKernel.apply_mass]
+  have hdiff : ∀ (i : beta), (∑ j, mass mu j * mass (K j) i) -
+      (∑ j, mass nu j * mass (K j) i) =
+      ∑ j, (mass mu j - mass nu j) * mass (K j) i := by
+    intro i
+    rw [← Finset.sum_sub_distrib]
+    apply Finset.sum_congr rfl
+    intro j _
+    ring
+  rw [Finset.sum_congr rfl fun i _ => congrArg abs (hdiff i)]
+  have hpointwise : ∀ (i : beta),
+      |∑ j, (mass mu j - mass nu j) * mass (K j) i| ≤
+      ∑ j, |mass mu j - mass nu j| * mass (K j) i := by
+    intro i
+    calc
+      _ ≤ ∑ j, |((mass mu j - mass nu j) * mass (K j) i)| :=
+          Finset.abs_sum_le_sum_abs
+            (fun j => (mass mu j - mass nu j) * mass (K j) i) Finset.univ
+      _ = ∑ j, |mass mu j - mass nu j| * mass (K j) i := by
+        apply Finset.sum_congr rfl
+        intro j _
+        rw [abs_mul, abs_of_nonneg (mass_nonneg (K j) i)]
+  calc
+    (1 / 2 : Rat) * ∑ i, |∑ j, (mass mu j - mass nu j) * mass (K j) i| ≤
+        (1 / 2 : Rat) * ∑ i, ∑ j, |mass mu j - mass nu j| * mass (K j) i := by
+      apply mul_le_mul_of_nonneg_left
+      · apply Finset.sum_le_sum
+        intro i _
+        exact hpointwise i
+      · norm_num
+    _ = (1 / 2 : Rat) * ∑ j, |mass mu j - mass nu j| * ∑ i, mass (K j) i := by
+      apply congrArg _
+      rw [double_sum_pullout (fun j => |mass mu j - mass nu j|)
+          (fun i j => mass (K j) i)]
+    _ = (1 / 2 : Rat) * ∑ j, |mass mu j - mass nu j| * 1 := by
+      apply congrArg _
+      apply Finset.sum_congr rfl
+      intro j _
+      rw [sum_mass]
+    _ = (1 / 2 : Rat) * ∑ j, |mass mu j - mass nu j| := by
+      apply congrArg _
+      apply Finset.sum_congr rfl
+      intro j _
+      rw [mul_one]
+
 theorem tv_le_one {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
     tv p q <= 1 := by
   apply vectorTV_le_one_of_probability
