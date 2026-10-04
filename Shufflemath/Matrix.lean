@@ -97,6 +97,50 @@ theorem toMatrix_compPow [Fintype alpha] [DecidableEq alpha]
   | succ n ih =>
       rw [compPow_succ, toMatrix_comp, ih, pow_succ]
 
+/-- `run` is the vector–matrix product: the mass at `x` after `n`
+applications of `K` is the distribution `mu` (as a row vector) against the
+`n`-th power of the transition matrix:
+
+`mass (run K n mu) x = (fun y => mass mu y) ᵥ* (toMatrix K ^ n) x`.
+
+The proof is the same Finsupp weights-level computation as `toMatrix_comp`,
+with the distribution `mu` in place of the point mass. -/
+theorem toMatrix_run [Fintype alpha] [DecidableEq alpha]
+    (K : FiniteKernel alpha alpha) (n : Nat) (mu : Dist alpha) (x : alpha) :
+    Dist.mass (run K n mu) x =
+      Matrix.vecMul (fun y => Dist.mass mu y) (toMatrix K ^ n) x := by
+  set Kp := compPow K n
+  rw [run_compPow]
+  unfold apply
+  -- LHS: Dist.mass ((mu.map Kp).join) x
+  simp only [Dist.mass, Dist.join_sConvexComb, Convexity.StdSimplex.weights_sConvexComb,
+    Convexity.StdSimplex.map]
+  -- LHS: ((mu.weights.mapDomain Kp).sum (fun d r => r • d.weights)) x
+  rw [Finsupp.sum_mapDomain_index (f := Kp) (s := mu.weights)
+      (h := fun d r => r • d.weights)
+      (h_zero := fun b => zero_smul Rat b.weights)
+      (h_add := fun _ _ _ => add_smul _ _ _)]
+  -- LHS: mu.weights.sum (fun y r => r • (Kp y).weights) x
+  rw [Finsupp.sum_apply]
+  -- LHS: mu.weights.sum (fun y r => (r • (Kp y).weights) x)
+  -- Do the RHS next: `Matrix.vecMul_apply_eq_sum` needs `Matrix`-typed
+  -- arguments, exactly as in `toMatrix_comp`.
+  rw [Matrix.vecMul_apply_eq_sum]
+  -- RHS: ∑ y, (mu.weights y) * (toMatrix K ^ n) y x
+  -- (the `Dist.mass` in the row-vector lambda was already unfolded by `rw`)
+  rw [← toMatrix_compPow]
+  -- RHS: ∑ y, (mu.weights y) * (toMatrix Kp) y x
+  -- `Finsupp.smul_apply` is `@[defeq]`, which `rw` cannot cross, and
+  -- `toMatrix`'s equation theorem does not rewrite the dot-notation form
+  -- here, so `change` (kernel defeq, which unfolds `toMatrix`) takes the
+  -- goal to its final shape; in `Rat`, `•` is ordinary `*`.
+  change mu.weights.sum (fun y r => r • (Kp y).weights x) =
+      (∑ y, (mu.weights y) * (Kp y).weights x)
+  rw [Finsupp.sum_fintype (f := mu.weights) (g := fun y r => r • (Kp y).weights x)
+      (h := fun _ => zero_smul Rat _)]
+  -- LHS: ∑ y, (mu.weights y) • (Kp y).weights x = RHS, by definitionality.
+  rfl
+
 /-- Build a semantic finite kernel from a row-stochastic rational matrix.
 
 The matrix remains the computational representation; this constructor packages
