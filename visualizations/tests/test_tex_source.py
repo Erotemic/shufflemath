@@ -15,3 +15,11 @@ def test_no_double_escaped_latex_ampersands():
         "r'\\\\&' becomes a LaTeX linebreak followed by an illegal alignment '&'.\n"
         + "\n".join(offenders)
     )
+
+
+def test_riffle_code_does_not_introspect_mobject_angle():
+    source = (Path(__file__).parents[1] / "shuffleviz" / "slides_classical.py").read_text()
+    assert ".get_angle()" not in source, (
+        "Manim VGroup has no readable angle property. Track riffle card orientation "
+        "explicitly with riffle_angle instead."
+    )

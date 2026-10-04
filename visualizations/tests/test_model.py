@@ -108,3 +108,52 @@ def test_two_inverse_riffles_equal_one_two_bit_address_sort():
     assert after_first == [2, 5, 6, 8, 1, 3, 4, 7]
     assert after_second == [6, 1, 3, 7, 2, 5, 8, 4]
     assert after_second == direct
+
+
+def test_riffle_hero_preview_deck_is_single_scene():
+    from shuffleviz.build_slides import DECK_SCENES
+    assert DECK_SCENES["riffle-hero"] == ["C00TitleRiffleHero"]
+
+
+def test_general_bl_toy_transition_row():
+    # N=8, m=4, r=4, k=1, x=3: left is 3R/1B, right 1R/3B.
+    row = [model.bl_transition(8, 4, 4, 1, 3, y) for y in range(5)]
+    assert row == [Fraction(0), Fraction(0), Fraction(9, 16), Fraction(6, 16), Fraction(1, 16)]
+    assert sum(row, Fraction(0)) == 1
+
+
+def test_general_bl_toy_stationary_and_detailed_balance():
+    pi = [model.bl_stationary(8, 4, 4, x) for x in range(5)]
+    assert pi == [Fraction(1, 70), Fraction(16, 70), Fraction(36, 70), Fraction(16, 70), Fraction(1, 70)]
+    assert sum(pi, Fraction(0)) == 1
+    for x in range(5):
+        for y in range(5):
+            assert pi[x] * model.bl_transition(8, 4, 4, 1, x, y) == pi[y] * model.bl_transition(8, 4, 4, 1, y, x)
+
+
+def test_general_bl_first_centered_mode():
+    N, m, r, k = 8, 4, 4, 1
+    mu = model.bl_stationary_mean(N, m, r)
+    lam = model.bl_centered_mean_factor(N, m, k)
+    assert mu == 2
+    assert lam == Fraction(1, 2)
+    for x in model.bl_support(N, m, r):
+        assert model.bl_centered_drift(N, m, r, k, x) == lam * (Fraction(x) - mu)
+
+
+def test_general_bl_commander_support_and_first_mode():
+    assert list(model.bl_support(99, 50, 50)) == list(range(1, 51))
+    assert model.bl_stationary_mean(99, 50, 50) == Fraction(2500, 99)
+    assert model.bl_centered_mean_factor(99, 50, 25) == Fraction(-1, 98)
+
+
+def test_study_deck_registry_resolves_every_scene():
+    from shuffleviz.build_slides import DECK_SCENES, MODULES, _module_of
+    owner = _module_of()
+    study = DECK_SCENES["shufflemath-study"]
+    missing = [scene for scene in study if scene not in owner]
+    assert not missing
+    assert len(study) >= 150
+    assert len(DECK_SCENES["shufflemath-glossary"]) == 6
+    assert len(DECK_SCENES["shufflemath-advanced-math"]) >= 15
+    assert len(MODULES) >= 10

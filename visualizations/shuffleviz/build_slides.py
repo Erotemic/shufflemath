@@ -3,6 +3,8 @@
 Examples
 --------
 python -m shuffleviz.build_slides shufflemath-short --quality l --pdf --handout
+python -m shuffleviz.build_slides shufflemath-study --quality l
+python -m shuffleviz.build_slides shufflemath-advanced-math --quality l
 python -m shuffleviz.build_slides shufflemath-full --quality h --fps 30 --pdf --handout
 """
 from __future__ import annotations
@@ -22,68 +24,225 @@ from shuffleviz.palette import OUTPUT_SUFFIX
 
 ROOT = Path(__file__).resolve().parents[1]
 
+FOUNDATIONS = "shuffleviz.slides_foundations"
 CLASSICAL = "shuffleviz.slides_classical"
+CLASSICAL_STUDY = "shuffleviz.slides_classical_study"
 LARGE = "shuffleviz.slides_large_decks"
+LARGE_STUDY = "shuffleviz.slides_large_decks_study"
 REALISM = "shuffleviz.slides_realism"
+REALISM_STUDY = "shuffleviz.slides_realism_study"
 CONTROL = "shuffleviz.slides_control"
+CONTROL_STUDY = "shuffleviz.slides_control_study"
 ROADMAP = "shuffleviz.slides_roadmap"
-MODULES = [CLASSICAL, LARGE, REALISM, CONTROL, ROADMAP]
+ROADMAP_STUDY = "shuffleviz.slides_roadmap_study"
+MODULES = [
+    FOUNDATIONS,
+    CLASSICAL, CLASSICAL_STUDY,
+    LARGE, LARGE_STUDY,
+    REALISM, REALISM_STUDY,
+    CONTROL, CONTROL_STUDY,
+    ROADMAP, ROADMAP_STUDY,
+]
 
+HERO = "riffle-hero"
 SHORT = "shufflemath-short"
+STUDY = "shufflemath-study"
 FULL = "shufflemath-full"
+GLOSSARY = "shufflemath-glossary"
+ADVANCED = "shufflemath-advanced-math"
 PARTS = {
+    "part0-foundations": [
+        "F00StudyCourse", "F01StateSpace", "F02Distribution", "F03PermutationConvention",
+        "F04RandomVariableAndLaw", "F04BProjectionAndLumping", "F05MarkovKernel", "F06MatrixUpdate", "F07KernelComposition",
+        "F08Stationary", "F09Reversible", "F10TVDefinition", "F11TVEventForm",
+        "F12TVContraction", "F13MarkovEigenfunction", "F14MixingTime", "F15Cutoff",
+        "F16FoundationsGlossary",
+    ],
     "part1-classical": [
+        "C00TitleRiffleHero",
+        "CS00ClassicalNotation",
         "C00SevenShuffles",
         "C01RandomIsADistribution",
+        "CS01TVReminder",
         "C01EntropyLowerBound",
         "C02RiffleMechanicsLab",
         "C02GSRForwardMechanics",
         "C03WhyInvert",
         "C04InverseRiffleLab",
         "C04InverseBinaryLabels",
+        "CS05DescentDefinition",
         "C05RisingSequenceLab",
         "C05RisingSequences",
         "C06OneRiffleAlreadyPredictsTheFormula",
         "C07CompositionLab",
         "C07RepeatedRifflesBecomeOneAShuffle",
         "C08TargetPermutationBecomesInequalities",
+        "CS09StarsAndBarsPrimer",
         "C09CountCompatibleLabels",
         "C10BayerDiaconisProbabilityFormula",
         "C11SanityCheckOnFiveCards",
+        "CS12EulerianDefinition",
         "C12EulerianNumbers",
         "C12EulerianInsertionRecurrence",
+        "CS13TVClassCollapsePrimer",
         "C13FiftyTwoFactorialCollapsesTo52Terms",
         "C14UniformMomentsFromIndicators",
         "C14WhatUniformLooksLikeInRisingSequences",
         "C15WatchTheRiffleDistributionApproachUniform",
+        "CS16LikelihoodRatioPrimer",
         "C16LikelihoodRatioIsMonotone",
         "C16TotalVariationBecomesAGuessingGame",
         "C17TheExact52CardTable",
+        "CS18CutoffReminder",
         "C18DiscoverTheThreeHalvesScale",
         "C19WhatSevenActuallyMeans",
         "C20ClassicalRoadmap",
+        "CS21ClassicalGlossary",
     ],
-    "part2-large-decks": ["L01WorkingSet", "L02NestoridiWhite", "L03Macrostate", "L04Exchange", "L05K25", "L06CommanderTV", "L07UnequalUrns", "L08BlockDynamics"],
-    "part3-realism": ["R01BiasedCuts", "R02BiasedLiterature", "R03ClumpyLabels", "R04DealerVsClumpy", "R05ClumpyTarget", "R06GeneralCuts", "R07ModelLadder"],
-    "part4-control": ["O01Protocol", "O02TwoErrors", "O03OracleComparison", "O04Telescope", "O05Costs", "O06Pareto", "O07Robust", "O08OperationalGoal"],
-    "part5-roadmap": ["M01LiteratureMap", "M02Status", "M03BLTheorems", "M04GSRTheorems", "M05Composition", "M06ProtocolCertificates", "M07RealismRoadmap", "M08EndToEnd", "M09Closing"],
+    "part2-large-decks": [
+        "LD00PartPrimer",
+        "L01WorkingSet",
+        "LD01NestoridiWhiteProcedure",
+        "LD02PerfectLocalOracle",
+        "LD03MembershipMicrostates",
+        "LD04DefineStateX",
+        "LD05HypergeometricPrimer",
+        "LD06StationaryCounting",
+        "LD07ExchangeVariables",
+        "LD08TransitionDerivation",
+        "LD09ToyExample",
+        "LD10RowStochastic",
+        "LD11DetailedBalanceDefinition",
+        "LD12DetailedBalanceToy",
+        "LD13ReversibilityStationarity",
+        "LD14ConditionalExpectation",
+        "LD15FirstEigenfunction",
+        "LD16LambdaInterpretation",
+        "LD17CommanderParameters",
+        "L05K25",
+        "L06CommanderTV",
+        "LD18ProjectionFullDeckCaveat",
+        "LD19MixingTheorems",
+        "LD19ACoupling",
+        "LD19BPathCoupling",
+        "LD19CSpectralDecomposition",
+        "LD19D4SelfAdjointProof",
+        "LD19D2SymmetryReduction",
+        "LD19D3GelfandPairPrimer",
+        "LD19DDualHahn",
+        "LD19ESecondMomentLowerBound",
+        "L07UnequalUrns",
+        "LD21SKBlockDynamicsDeep",
+        "L08BlockDynamics",
+        "LD20LargeDeckGlossary",
+    ],
+    "part3-realism": [
+        "RD00PartPrimer",
+        "RD01BiasedTwoShuffle",
+        "RD02InverseBiasedLabels",
+        "RD03GeneralPShuffle",
+        "RD04CompositionTensor",
+        "RD05CollisionProbability",
+        "RD06SSTDefinition",
+        "RD06StrongUniformTime",
+        "RD06AExactFulmanBound",
+        "RD07DistanceMetrics",
+        "RD08BiasedCutLiterature",
+        "RD08A0QuasisymmetricPrimer",
+        "RD08AQuasisymmetricBridge",
+        "RD08CDescentPositionMatters",
+        "RD08BExtremalPermutations",
+        "RD09CutBiasVsClumping",
+        "RD10CorrelatedSource",
+        "RD11RunLength",
+        "RD12Nonexchangeability",
+        "RD13JonassonMorrisTheorem",
+        "RD14GeneralCutLaw",
+        "RD15ModelInterfaces",
+        "RD16RealismGlossary",
+    ],
+    "part4-control": [
+        "OD00PartPrimer",
+        "OD01ProtocolComposition",
+        "OD02OracleProtocol",
+        "OD03KernelDistance",
+        "OD04KernelDistanceProof",
+        "OD05CommonSuffixContraction",
+        "OD06ThreeStepTelescope",
+        "OD07GeneralTelescope",
+        "OD08DobrushinDefinition",
+        "OD09DobrushinContraction",
+        "OD10WeightedTelescope",
+        "OD10AWeightedTelescopeProof",
+        "OD11TotalErrorBudget",
+        "OD12CostModel",
+        "OD13OptimizationProblem",
+        "OD14ParetoDominance",
+        "OD15SearchVsCertificate",
+        "OD16RobustOptimization",
+        "OD17OperationalTheorem",
+        "OD18ControlGlossary",
+    ],
+    "part5-roadmap": [
+        "MD00RoadmapPrimer",
+        "M01LiteratureMap",
+        "MD01DependencyDAG",
+        "MD02MathLeanDictionary",
+        "M02Status",
+        "MD03BLFormalTargets",
+        "M03BLTheorems",
+        "MD04GSRFormalTargets",
+        "M04GSRTheorems",
+        "MD05CompositionFormalTargets",
+        "M05Composition",
+        "M06ProtocolCertificates",
+        "MD06RealismFormalTargets",
+        "M07RealismRoadmap",
+        "MD07WhatNotToFormalizeFirst",
+        "MD08ProofVsComputation",
+        "M08EndToEnd",
+        "MD09StudyChecklist",
+        "MD10MasterGlossary",
+        "M09Closing",
+    ],
 }
 PART_TITLES = {
+    "part0-foundations": "Part 0 · mathematical foundations",
     "part1-classical": "Part 1 · classical riffle foundations",
     "part2-large-decks": "Part 2 · large decks and Bernoulli--Laplace",
     "part3-realism": "Part 3 · more realistic local shuffles",
     "part4-control": "Part 4 · the costed working-set control problem",
     "part5-roadmap": "Part 5 · formalization roadmap",
 }
+ALL_PARTS = list(PARTS)
+GLOSSARY_SCENES = [
+    "F16FoundationsGlossary",
+    "CS21ClassicalGlossary",
+    "LD20LargeDeckGlossary",
+    "RD16RealismGlossary",
+    "OD18ControlGlossary",
+    "MD10MasterGlossary",
+]
+ADVANCED_SCENES = [
+    "LD19ACoupling", "LD19BPathCoupling", "LD19CSpectralDecomposition", "LD19D4SelfAdjointProof",
+    "LD19D2SymmetryReduction", "LD19D3GelfandPairPrimer", "LD19DDualHahn", "LD19ESecondMomentLowerBound",
+    "RD06SSTDefinition", "RD06AExactFulmanBound", "RD08A0QuasisymmetricPrimer", "RD08AQuasisymmetricBridge",
+    "RD08CDescentPositionMatters", "RD08BExtremalPermutations", "OD08DobrushinDefinition", "OD09DobrushinContraction",
+    "OD10WeightedTelescope", "OD10AWeightedTelescopeProof",
+]
 DECK_SCENES = {
-    # The short deck is deliberately the complete classical derivation.  We do
-    # not jump to later literature until the audience owns the seven-riffle
-    # mechanics and the exact TV calculation.
+    HERO: ["C00TitleRiffleHero"],
     SHORT: list(PARTS["part1-classical"]),
+    GLOSSARY: GLOSSARY_SCENES,
+    ADVANCED: ADVANCED_SCENES,
     **PARTS,
+    STUDY: [scene for scenes in PARTS.values() for scene in scenes],
     FULL: [scene for scenes in PARTS.values() for scene in scenes],
 }
-COMPOSITES = {FULL: list(PARTS)}
+COMPOSITES = {
+    STUDY: ALL_PARTS,
+    FULL: ALL_PARTS,
+}
 DECKS = list(DECK_SCENES)
 
 

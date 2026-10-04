@@ -20,6 +20,7 @@ from manim import (
     LEFT,
     RIGHT,
     UP,
+    AnimationGroup,
     ArcBetweenPoints,
     Arrow,
     Axes,
@@ -78,6 +79,88 @@ def numbered_row(values, color=LOCAL, width=0.62, height=0.82, buff=0.08, size=2
     return out
 
 
+def stacked_packet(values, color=LOCAL, width=0.72, height=0.98, dx=0.08, dy=-0.05, size=25):
+    """A slightly overlapped packet that reads as a hand-held half-deck."""
+    out = VGroup()
+    for j, value in enumerate(values):
+        box = card(width, height, color=color, fill_opacity=0.08, stroke_width=1.8)
+        label = tex(str(value), size=size, color=FG).move_to(box)
+        mob = VGroup(box, label)
+        mob.shift(RIGHT * dx * j + UP * dy * j)
+        out.add(mob)
+    out.center()
+    return out
+
+
+def riffle_back(width=0.82, height=1.12, color=LOCAL, fill_opacity=0.18):
+    """Simple playing-card back for physical riffle animations."""
+    outer = card(width, height, color=color, fill_opacity=fill_opacity, stroke_width=1.8)
+    inner = Rectangle(
+        width=width * 0.67,
+        height=height * 0.72,
+        stroke_color=color,
+        stroke_width=0.9,
+        fill_opacity=0,
+    ).move_to(outer)
+    slash1 = Line(inner.get_corner(LEFT + DOWN), inner.get_corner(RIGHT + UP), color=color, stroke_width=0.65)
+    slash2 = Line(inner.get_corner(LEFT + UP), inner.get_corner(RIGHT + DOWN), color=color, stroke_width=0.65)
+    mob = VGroup(outer, inner, slash1, slash2)
+    mob.riffle_angle = 0.0
+    return mob
+
+
+def riffle_packet(count, center, angle, color=LOCAL, dx=0.055, dy=0.026):
+    """Top-down packet with enough overlap to read as a physical stack."""
+    cards = VGroup(*[riffle_back(color=color) for _ in range(count)])
+    for j, mob in enumerate(cards):
+        mob.shift(RIGHT * dx * j + UP * dy * j)
+    cards.center().rotate(angle).move_to(center)
+    for mob in cards:
+        mob.riffle_angle = angle
+    return cards
+
+
+def riffle_bridge(count, center=DOWN * 0.45, color=LOCAL, span=4.7, rise=0.92):
+    """Templates for the arched bridge phase after the packets interleave."""
+    cards = VGroup()
+    for j in range(count):
+        t = -1.0 + 2.0 * j / max(count - 1, 1)
+        x = span * 0.5 * t
+        y = rise * (1.0 - t * t)
+        slope = -2.0 * rise * t / (span * 0.5)
+        angle = 0.23 * slope
+        mob = riffle_back(width=0.70, height=0.98, color=color, fill_opacity=0.12)
+        mob.rotate(angle).move_to(center + RIGHT * x + UP * y)
+        mob.riffle_angle = angle
+        cards.add(mob)
+    return cards
+
+
+def riffle_settled_stack(count, center=DOWN * 0.45, color=LOCAL):
+    """Squared deck after the bridge falls."""
+    cards = VGroup(*[riffle_back(width=0.82, height=1.12, color=color, fill_opacity=0.16) for _ in range(count)])
+    for j, mob in enumerate(cards):
+        mob.shift(RIGHT * 0.012 * j + UP * 0.012 * j)
+    cards.center().move_to(center)
+    return cards
+
+
+def match_to_template(mob, template, target_angle=None):
+    """Move a card to a template while tracking orientation explicitly.
+
+    Manim ``VGroup`` does not expose a readable angle.  Riffle scenes therefore
+    keep a tiny piece of animation state on each card instead of trying to
+    introspect orientation from the mobject.
+    """
+    if target_angle is None:
+        target_angle = getattr(template, "riffle_angle", 0.0)
+    current_angle = getattr(mob, "riffle_angle", 0.0)
+    scale = template.width / mob.width if mob.width else 1.0
+    anim = mob.animate.scale(scale).rotate(target_angle - current_angle).move_to(template.get_center())
+    mob.riffle_angle = target_angle
+    return anim
+
+
 def bit_row(bits, cards, color=LOCAL):
     return VGroup(*[tex(str(bit), size=22, color=color).next_to(c, UP, buff=0.08) for bit, c in zip(bits, cards)])
 
@@ -119,6 +202,117 @@ def arc_move(mob, target_center, angle=0.42, run_time=0.34):
     """Move a card on a visible arc instead of teleporting between layouts."""
     path = ArcBetweenPoints(mob.get_center(), target_center, angle=angle)
     return MoveAlongPath(mob, path, run_time=run_time)
+
+
+def arc_move_to_template(mob, template, angle=0.42, run_time=0.34, target_angle=None):
+    """Arc a card to a template while rotating toward explicit target state."""
+    if target_angle is None:
+        target_angle = getattr(template, "riffle_angle", 0.0)
+    current_angle = getattr(mob, "riffle_angle", 0.0)
+    scale = template.width / mob.width if mob.width else 1.0
+    anim = mob.animate(run_time=run_time, path_arc=angle).scale(scale).rotate(
+        target_angle - current_angle
+    ).move_to(template.get_center())
+    mob.riffle_angle = target_angle
+    return anim
+
+
+class C00TitleRiffleHero(DeckSlide):
+    title = "Shufflemath"
+    kicker = "What actually happens in a riffle shuffle?"
+    section = "Part 1 · discovering the classical riffle result"
+    handout = False
+
+    def body(self):
+        n = 18
+        half = n // 2
+
+        # Start as a single squared packet, then physically split it into two
+        # opposed, slightly fanned packets.  There are deliberately no card
+        # numbers here: this scene is about the gesture, not the combinatorics.
+        deck = riffle_settled_stack(n, center=DOWN * 0.15, color=LOCAL)
+        self.say("The opening should look like the physical move before it explains anything. One squared deck, split into two packets, inner corners brought together, released into an interleave, then bridged back into one deck.")
+        self.play(LaggedStart(*[FadeIn(c, shift=UP * 0.05) for c in deck], lag_ratio=0.025), run_time=0.8)
+
+        left_template = riffle_packet(half, LEFT * 2.55 + DOWN * 0.15, angle=-0.26, color=LOCAL)
+        right_template = riffle_packet(half, RIGHT * 2.55 + DOWN * 0.15, angle=0.26, color=LOCAL)
+        split = []
+        for j in range(half):
+            split.append(match_to_template(deck[j], left_template[j]))
+        for j in range(half):
+            split.append(match_to_template(deck[half + j], right_template[j]))
+        self.play(LaggedStart(*split, lag_ratio=0.025), run_time=1.15)
+
+        # Bring the inner corners together and fan/bend the packets. The cards
+        # are still top-down rectangles, but the opposed rotation and fan make
+        # the two-hand posture unmistakable.
+        left_bent = riffle_packet(half, LEFT * 1.48 + DOWN * 0.18, angle=-0.43, color=LOCAL, dx=0.075, dy=0.035)
+        right_bent = riffle_packet(half, RIGHT * 1.48 + DOWN * 0.18, angle=0.43, color=LOCAL, dx=0.075, dy=0.035)
+        bend_anims = []
+        for j in range(half):
+            bend_anims.append(match_to_template(deck[j], left_bent[j]))
+            bend_anims.append(match_to_template(deck[half + j], right_bent[j]))
+        self.play(LaggedStart(*bend_anims, lag_ratio=0.018), run_time=0.95)
+
+        thumb_l = Dot(LEFT * 0.72 + DOWN * 0.08, radius=0.09, color=FG)
+        thumb_r = Dot(RIGHT * 0.72 + DOWN * 0.08, radius=0.09, color=FG)
+        self.play(FadeIn(thumb_l), FadeIn(thumb_r), run_time=0.25)
+        self.say("The inner corners are the release points. A riffle is not arbitrary motion: the two packets keep their internal order while individual cards peel off from the two inner edges.")
+
+        # A visible center stack receives alternating cards. Use an imperfect
+        # L/R pattern so the motion looks like a real riffle rather than a
+        # perfectly alternating weave.
+        source = list("LRRLRLLRLRRLLRLRRL")
+        left_ids = list(range(half - 1, -1, -1))
+        right_ids = list(range(n - 1, half - 1, -1))
+        order = []
+        for letter in source:
+            if letter == "L" and left_ids:
+                order.append(left_ids.pop(0))
+            elif letter == "R" and right_ids:
+                order.append(right_ids.pop(0))
+        order.extend(left_ids)
+        order.extend(right_ids)
+        assert len(order) == n
+
+        interleaved = VGroup()
+        for j in range(n):
+            target = riffle_back(width=0.78, height=1.06, color=LOCAL, fill_opacity=0.14)
+            target_angle = -0.055 if j % 2 == 0 else 0.055
+            target.rotate(target_angle)
+            target.riffle_angle = target_angle
+            target.shift(RIGHT * (0.018 * (j - n / 2)) + UP * (0.012 * j))
+            interleaved.add(target)
+        interleaved.center().move_to(DOWN * 0.38)
+
+        release_anims = []
+        for j, idx in enumerate(order):
+            angle = 0.46 if idx < half else -0.46
+            release_anims.append(arc_move_to_template(deck[idx], interleaved[j], angle=angle, run_time=0.34))
+        self.play(LaggedStart(*release_anims, lag_ratio=0.075), FadeOut(thumb_l), FadeOut(thumb_r), run_time=2.35)
+
+        # The bridge is intentionally exaggerated so it reads from the back of
+        # a room: the interleaved cards bow into a rainbow, then collapse to a
+        # squared packet.
+        bridge = riffle_bridge(n, center=DOWN * 0.45, color=LOCAL, span=5.1, rise=1.05)
+        self.say("Once interleaved, the combined packet can be bridged: bow the cards upward, then let the stored bend release so the cards cascade down into one squared deck.")
+        self.play(*[match_to_template(deck[idx], bridge[j]) for j, idx in enumerate(order)], run_time=1.05)
+
+        settled = riffle_settled_stack(n, center=DOWN * 0.38, color=LOCAL)
+        # Fall from the two ends toward the middle rather than all at once.
+        collapse = []
+        for j, idx in enumerate(order):
+            collapse.append(match_to_template(deck[idx], settled[j]))
+        self.play(LaggedStart(*collapse, lag_ratio=0.03), run_time=1.15)
+
+        caption = colored_math(
+            (r"\text{split}", LOCAL),
+            (r"\;\longrightarrow\;\text{interleave}", LOCAL),
+            (r"\;\longrightarrow\;\text{bridge}", UNIFORM),
+            size=31,
+        ).shift(DOWN * 2.35)
+        self.play(FadeIn(caption))
+        self.say("That is the physical object the rest of the talk models. The mathematics will replace the visible hand motion by an equivalent random mechanism, but it should always be possible to mentally map back to this shuffle.")
 
 
 class C00SevenShuffles(DeckSlide):
@@ -205,17 +399,19 @@ class C02RiffleMechanicsLab(DeckSlide):
         self.say("Start with eight ordered cards so every motion is traceable. The GSR cut chooses a packet size; this realization cuts after card 3.")
         self.play(FadeIn(cards), Create(cut_mark))
 
-        left_target = numbered_row(values[:cut]).scale(0.82).move_to(LEFT * 2.65 + UP * 0.22)
-        right_target = numbered_row(values[cut:]).scale(0.82).move_to(RIGHT * 2.35 + UP * 0.22)
+        left_target = stacked_packet(values[:cut], width=0.62, height=0.84, dx=0.06, dy=-0.05, size=22)
+        right_target = stacked_packet(values[cut:], width=0.62, height=0.84, dx=0.06, dy=-0.05, size=22)
+        left_target.rotate(0.48).move_to(LEFT * 2.75 + UP * 0.32)
+        right_target.rotate(-0.48).move_to(RIGHT * 2.45 + UP * 0.32)
         cut_anims = []
         for j in range(cut):
-            cut_anims.append(cards[j].animate.scale(0.82).move_to(left_target[j].get_center()))
+            cut_anims.append(match_to_template(cards[j], left_target[j], target_angle=0.48))
         for j in range(cut, len(values)):
-            cut_anims.append(cards[j].animate.scale(0.82).move_to(right_target[j - cut].get_center()))
+            cut_anims.append(match_to_template(cards[j], right_target[j - cut], target_angle=-0.48))
         self.play(FadeOut(cut_mark), *cut_anims, run_time=0.85)
 
-        left_lab = tex("left packet", size=20, color=LOCAL).next_to(VGroup(*cards[:cut]), UP, buff=0.14)
-        right_lab = tex("right packet", size=20, color=LOCAL).next_to(VGroup(*cards[cut:]), UP, buff=0.14)
+        left_lab = tex("left packet", size=20, color=LOCAL).next_to(VGroup(*cards[:cut]), LEFT, buff=0.22)
+        right_lab = tex("right packet", size=20, color=LOCAL).next_to(VGroup(*cards[cut:]), RIGHT, buff=0.22)
         rule = math(
             r"\Pr(\text{next}=L)=\frac{\ell}{\ell+r},\qquad"
             r"\Pr(\text{next}=R)=\frac{r}{\ell+r}",
@@ -243,7 +439,7 @@ class C02RiffleMechanicsLab(DeckSlide):
                 angle = -0.48
             new_counter = mono(f"remaining: L={lrem}  R={rrem}", size=20, color=MUTED).move_to(counter)
             self.play(
-                arc_move(cards[idx], output_target[j].get_center(), angle=angle, run_time=0.32),
+                arc_move_to_template(cards[idx], output_target[j], angle=angle, run_time=0.32, target_angle=0.0),
                 FadeIn(source_markers[j], shift=DOWN * 0.08),
                 Transform(counter, new_counter),
             )

@@ -241,3 +241,78 @@ def gsr_likelihood_step_ratio(n: int, riffles: int, rising: int) -> Fraction:
     if current == 0:
         raise ZeroDivisionError("likelihood ratio is already zero")
     return following / current
+
+
+def hypergeom_pmf(good: int, bad: int, draws: int, got_good: int) -> Fraction:
+    """Exact hypergeometric probability.
+
+    There are ``good`` marked objects and ``bad`` unmarked objects. Draw
+    ``draws`` uniformly without replacement. Return the probability of seeing
+    exactly ``got_good`` marked objects.
+    """
+    if min(good, bad, draws) < 0 or draws > good + bad:
+        raise ValueError("invalid hypergeometric parameters")
+    if got_good < 0 or got_good > draws or got_good > good or draws - got_good > bad:
+        return Fraction(0)
+    return Fraction(comb(good, got_good) * comb(bad, draws - got_good), comb(good + bad, draws))
+
+
+def bl_support(N: int, m: int, r: int) -> range:
+    """Feasible values of X = number of red cards in the left pile."""
+    if not (0 <= r <= N and 0 <= m <= N):
+        raise ValueError("require 0 <= r,m <= N")
+    lo = max(0, m - (N - r))
+    hi = min(m, r)
+    return range(lo, hi + 1)
+
+
+def bl_stationary(N: int, m: int, r: int, x: int) -> Fraction:
+    """Hypergeometric stationary law for the two-urn membership chain."""
+    if x not in bl_support(N, m, r):
+        return Fraction(0)
+    return Fraction(comb(r, x) * comb(N - r, m - x), comb(N, m))
+
+
+def bl_transition(N: int, m: int, r: int, k: int, x: int, y: int) -> Fraction:
+    """Exact Bernoulli--Laplace transition probability P(X'=y | X=x).
+
+    The left pile has ``m`` cards and the right pile has ``N-m``. There are
+    ``r`` red cards total. A step samples ``k`` cards uniformly from each pile
+    and swaps the two samples.
+    """
+    if not (0 <= k <= min(m, N - m)):
+        raise ValueError("exchange size exceeds one of the piles")
+    if x not in bl_support(N, m, r) or y not in bl_support(N, m, r):
+        return Fraction(0)
+    total = Fraction(0)
+    # A = red cards leaving the left; B = red cards entering from the right.
+    for a in range(k + 1):
+        b = y - x + a
+        p_leave = hypergeom_pmf(x, m - x, k, a)
+        p_enter = hypergeom_pmf(r - x, (N - m) - (r - x), k, b)
+        total += p_leave * p_enter
+    return total
+
+
+def bl_conditional_mean(N: int, m: int, r: int, k: int, x: int) -> Fraction:
+    """Exact E[X' | X=x] from the two hypergeometric sample means."""
+    if x not in bl_support(N, m, r):
+        raise ValueError("infeasible state")
+    if not (0 <= k <= min(m, N - m)):
+        raise ValueError("exchange size exceeds one of the piles")
+    return Fraction(x) - Fraction(k * x, m) + Fraction(k * (r - x), N - m)
+
+
+def bl_stationary_mean(N: int, m: int, r: int) -> Fraction:
+    """Mean of the hypergeometric stationary count X."""
+    return Fraction(m * r, N)
+
+
+def bl_centered_mean_factor(N: int, m: int, k: int) -> Fraction:
+    """First centered-count eigenvalue lambda for Bernoulli--Laplace."""
+    return Fraction(1) - Fraction(N * k, m * (N - m))
+
+
+def bl_centered_drift(N: int, m: int, r: int, k: int, x: int) -> Fraction:
+    """Return E[X'-mu | X=x], where mu=m*r/N."""
+    return bl_conditional_mean(N, m, r, k, x) - bl_stationary_mean(N, m, r)
