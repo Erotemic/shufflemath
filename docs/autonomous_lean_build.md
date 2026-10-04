@@ -702,7 +702,26 @@ symbolically; Commander corollaries committed.
   Dobrushin. `./dev/verify.sh` green after D (3192 jobs, 7/7 Python tests).
 - [x] D. Dobrushin (`Dobrushin.lean`: coeff, contraction, submult, run, matrix link) —
   committed afff9d9.
-- [ ] E. Markov (`Markov.lean`: stationary, detailed balance, self-adjointness).
+- [x] 2026-10-04 (session 7): **Priority E complete.** Commit 50bdde5 —
+  `Markov.lean`: `Stationary` / `stationary_run` (iteration preserves a
+  one-step certificate), `DetailedBalance`,
+  `detailedBalance_implies_stationary` (single-sum argument: sum the
+  balance equation over `x` at fixed `y`; only row-mass-1 of `K` needed),
+  `applyFn` (row action on functions) / `weightedInner` (mu-weighted inner
+  product), `selfAdjoint_of_detailedBalance` (reversible row operator is
+  self-adjoint in the stationary inner product: double-sum expansion,
+  termwise balance swap, regroup via `Dist.double_sum_pullout`),
+  `stationary_of_detailedBalance`. `Shufflemath.lean` now imports Markov.
+  `./dev/verify.sh` green after E (3193 jobs, 7/7 Python tests). Mechanics
+  notes: `applyFn`/`weightedInner` defs need explicit `[Fintype]` args
+  (bodies use `Finset.univ`); `rw` of a def equation theorem fails on the
+  eta form `(def K f) x` — use `simp only [def]`; a `calc` whose targets
+  are themselves equalities (Props) needs `congrArg` gymnastics — restructure
+  as a chain of `have`-proved term equalities instead; `nlinarith` cannot
+  multiply a hypothesis by a compound monomial — do the factor swap as a
+  3-step `ring`/`rw [hdb]`/`ring` calc.
+- [x] E. Markov (`Markov.lean`: stationary, detailed balance, self-adjointness) —
+  committed 50bdde5.
 - [ ] F. General BL (`BernoulliLaplaceGeneral.lean`: states, row stochasticity,
   stationary, detailed balance, Commander link).
 - [ ] G. First eigenfunction (general + Commander corollaries).
@@ -710,12 +729,19 @@ symbolically; Commander corollaries committed.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** Priority E — NEW `Shufflemath/Markov.lean` (per §4-E):
-`Stationary μ K : apply μ K = μ`, `Stationary.run`, `DetailedBalance μ K`,
-`detailedBalance_implies_stationary`, `weightedInner` +
-`selfAdjoint_of_detailedBalance`, `stationary_of_detailedBalance`.
-Add `import Shufflemath.Markov` to `Shufflemath.lean`; `./dev/verify.sh`
-at the end of E.
+**Next action:** Priority F — NEW `Shufflemath/BernoulliLaplaceGeneral.lean`
+(per §4-F): `BLState` (Fintype of admissible macrostates), symbolic
+`blRowStochastic` (double Vandermonde via `Nat.add_choose_eq` + a
+zero-extension lemma for the truncated `range (k+1)` sums),
+`blStationary` (hypergeometric; total = 1 via Vandermonde with a
+symmetry reindex), `blStationaryDist : Dist (BLState)`,
+`blDetailedBalance` (hardest proof: index bijection in the `a`-sums, or
+fall back to the Rat factorial identity + `Nat.cast_injective`; spot-check
+the Commander instance with `native_decide` first), `blExchangeKernel` via
+`ofRowStochastic`, and the Commander matrix-link theorem tying it to
+`BernoulliLaplace.commanderExchange25`. Reuse
+`BernoulliLaplace.transitionNumerator/Denominator/Weight` verbatim; do not
+modify `BernoulliLaplace.lean`. `./dev/verify.sh` at the end of F.
 
 ## 8. Taste & style rules
 
