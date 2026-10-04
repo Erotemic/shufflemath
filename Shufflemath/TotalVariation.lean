@@ -1,6 +1,7 @@
 import Shufflemath.Matrix
 import Mathlib.Data.Finset.Max
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Algebra.Order.Sub.Basic
 
 namespace Shufflemath
 
@@ -146,6 +147,188 @@ theorem tv_le_one {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
   · exact sum_mass q
 
 end Dist
+
+section PositiveSet
+
+variable {alpha : Type*} [Fintype alpha] [DecidableEq alpha]
+
+/-- The set of coordinates where `p` strictly exceeds `q`. -/
+def positiveSet (p q : alpha -> Rat) : Finset alpha :=
+  (Finset.univ : Finset alpha).filter (fun x => p x > q x)
+
+/-- Total mass by which `p` exceeds `q`, counted only at the coordinates
+where it is larger. For probability vectors this equals the TV distance
+(vectorTV_eq_positive_set) and upper-bounds `\sum_S (p - q)` for every
+`S` (vectorTV_sum_le_positive_set). -/
+def positiveSum (p q : alpha -> Rat) : Rat :=
+  Finset.sum (positiveSet p q) (fun x => p x - q x)
+
+/-- Pointwise: the positive parts of `a - b` and `b - a` add to `|a - b|`
+and differ by `a - b`. -/
+private theorem maxDiffAbs {a b : Rat} :
+    max 0 (a - b) + max 0 (b - a) = |a - b| := by
+  cases le_total a b with
+  | inl h =>
+    have h1 : max 0 (a - b) = 0 := by
+      exact max_eq_left (sub_nonpos_of_le h)
+    have h2 : max 0 (b - a) = b - a := by
+      exact max_eq_right (sub_nonneg_of_le h)
+    rw [h1, h2]
+    simpa only [zero_add, abs_sub_comm] using (abs_of_nonneg (sub_nonneg_of_le h)).symm
+  | inr h =>
+    have h1 : max 0 (a - b) = a - b := by
+      exact max_eq_right (sub_nonneg_of_le h)
+    have h2 : max 0 (b - a) = 0 := by
+      exact max_eq_left (sub_nonpos_of_le h)
+    rw [h1, h2]
+    simpa only [add_zero] using (abs_of_nonneg (sub_nonneg_of_le h)).symm
+
+private theorem maxDiffSub {a b : Rat} :
+    max 0 (a - b) - max 0 (b - a) = a - b := by
+  cases le_total a b with
+  | inl h =>
+    have h1 : max 0 (a - b) = 0 := by
+      exact max_eq_left (sub_nonpos_of_le h)
+    have h2 : max 0 (b - a) = b - a := by
+      exact max_eq_right (sub_nonneg_of_le h)
+    rw [h1, h2]
+    simpa only [zero_sub] using neg_sub b a
+  | inr h =>
+    have h1 : max 0 (a - b) = a - b := by
+      exact max_eq_right (sub_nonneg_of_le h)
+    have h2 : max 0 (b - a) = 0 := by
+      exact max_eq_left (sub_nonpos_of_le h)
+    rw [h1, h2]
+    simp only [sub_zero]
+
+/-- The univ-sum of the positive part of `p - q` is exactly the positive
+sum: off the positive set the positive part vanishes, and on it it is
+`p - q` itself. (Probability hypotheses are only used to state the result
+in TV-friendly form; the identity itself is pointwise. -/
+private theorem sumPosPartEqPositiveSum
+    (p q : alpha -> Rat) :
+    Finset.sum Finset.univ (fun x => max 0 (p x - q x)) = positiveSum p q := by
+  let u := fun x => max 0 (p x - q x)
+  have hzero : forall x, x ∈ Finset.univ \ positiveSet p q -> u x = 0 := by
+    intro x hx
+    have hnot : ¬ p x > q x := by
+      have hnot2 : x ∉ positiveSet p q := (Finset.mem_sdiff.mp hx).2
+      intro hpos
+      have hm : x ∈ positiveSet p q := by
+        rw [positiveSet, Finset.mem_filter]
+        exact ⟨Finset.mem_univ x, hpos⟩
+      exact hnot2 hm
+    have hle : p x <= q x := by
+      exact not_lt.mp hnot
+    change max 0 (p x - q x) = 0
+    exact max_eq_left (sub_nonpos_of_le hle)
+  have hzero2 : Finset.sum (Finset.univ \ positiveSet p q) u = 0 := by
+    rw [Finset.sum_congr rfl (fun x hx => hzero x hx)]
+    rw [Finset.sum_const_zero]
+  rw [← Finset.sum_sdiff (Finset.subset_univ (positiveSet p q)), hzero2, zero_add,
+      positiveSum]
+  refine Finset.sum_congr rfl fun x hx => ?_
+  have hpos : p x > q x := by
+    rw [positiveSet, Finset.mem_filter] at hx
+    exact hx.2
+  change max 0 (p x - q x) = p x - q x
+  exact max_eq_right (le_of_lt (sub_pos_of_lt hpos))
+
+/-- For probability vectors, the TV distance equals the excess mass of `p`
+over `q` on the positive set (equivalently, the maximum of
+`\sum_S (p - q)` over all `S`, attained at the positive set).
+
+Proof: with `u x = max 0 (p x - q x)` and
+`v x = max 0 (q x - p x)`, pointwise `|p x - q x| = u x + v x` and
+`u x - v x = p x - q x`; since `\sum (p - q) = 0` the univ sums of `u` and
+`v` coincide, so `\sum |p - q| = 2 * \sum u` and the factor `1 / 2` cancels.
+-/
+theorem vectorTV_eq_positive_set
+    (p q : alpha -> Rat)
+    (_hp : forall x, 0 <= p x) (_hq : forall x, 0 <= q x)
+    (hp1 : Finset.sum Finset.univ p = 1) (hq1 : Finset.sum Finset.univ q = 1) :
+    vectorTV p q = positiveSum p q := by
+  let u := fun x => max 0 (p x - q x)
+  let v := fun x => max 0 (q x - p x)
+  have hterm : forall x, |p x - q x| = u x + v x := by
+    intro x
+    change |p x - q x| = max 0 (p x - q x) + max 0 (q x - p x)
+    exact (maxDiffAbs (a := p x) (b := q x)).symm
+  have hdiff : forall x, u x - v x = p x - q x := by
+    intro x
+    change max 0 (p x - q x) - max 0 (q x - p x) = p x - q x
+    exact maxDiffSub (a := p x) (b := q x)
+  have hsum0 : Finset.sum Finset.univ (fun x => u x - v x) = 0 := by
+    rw [Finset.sum_congr rfl (fun x _ => hdiff x)]
+    rw [Finset.sum_sub_distrib, hp1, hq1]
+    norm_num
+  have hsumuv : Finset.sum Finset.univ u = Finset.sum Finset.univ v := by
+    rw [Finset.sum_sub_distrib] at hsum0
+    exact sub_eq_zero.mp hsum0
+  have hsumabs : Finset.sum Finset.univ (fun x => |p x - q x|) =
+      2 * Finset.sum Finset.univ u := by
+    rw [Finset.sum_congr rfl (fun x _ => hterm x)]
+    rw [Finset.sum_add_distrib]
+    rw [hsumuv]
+    ring
+  unfold vectorTV
+  rw [hsumabs]
+  ring_nf
+  exact sumPosPartEqPositiveSum p q
+
+/-- For probability vectors, the signed mass `p - q` accumulated on any set
+is at most the positive sum, i.e. at most the TV distance: this is the
+max-event characterization `TV(p, q) = sup {\sum_S (p - q) | S}` with the
+supremum attained at the positive set. (The inequality actually holds for
+arbitrary `p q`; the probability hypotheses are kept so the statement
+reads as the TV statement.) -/
+theorem vectorTV_sum_le_positive_set
+    (p q : alpha -> Rat)
+    (_hp : forall x, 0 <= p x) (_hq : forall x, 0 <= q x)
+    (_hp1 : Finset.sum Finset.univ p = 1) (_hq1 : Finset.sum Finset.univ q = 1)
+    (S : Finset alpha) :
+    Finset.sum S (fun x => p x - q x) <= positiveSum p q := by
+  let u := fun x => max 0 (p x - q x)
+  let v := fun x => max 0 (q x - p x)
+  have hdiff : forall x, u x - v x = p x - q x := by
+    intro x
+    change max 0 (p x - q x) - max 0 (q x - p x) = p x - q x
+    exact maxDiffSub (a := p x) (b := q x)
+  have hsumu : Finset.sum Finset.univ u = positiveSum p q :=
+    sumPosPartEqPositiveSum p q
+  have hvn : 0 <= Finset.sum S v :=
+    Finset.sum_nonneg fun _ _ => le_max_left 0 _
+  -- Embed the `S`-sum as a `univ`-sum of an ite: the resulting fold is
+  -- over `univ` (cheap) rather than over `univ \ S` (its sdiff fold
+  -- whnfs badly in the kernel while `S` is a variable, and times out
+  -- even with a raised heartbeat).
+  have hite : Finset.sum S u = Finset.sum Finset.univ (fun x => if x ∈ S then u x else 0) := by
+    simp
+  have hpt : forall x, (if x ∈ S then u x else 0) <= u x := by
+    intro x
+    split_ifs with hx
+    · exact le_rfl
+    · change 0 <= max 0 (p x - q x)
+      exact le_max_left 0 (p x - q x)
+  calc
+    Finset.sum S (fun x => p x - q x) = Finset.sum S u - Finset.sum S v := by
+      have h1 : Finset.sum S (fun x => p x - q x) =
+          Finset.sum S (fun x => u x - v x) :=
+        Finset.sum_congr rfl fun x _ => (hdiff x).symm
+      have h2 : Finset.sum S (fun x => u x - v x) =
+          Finset.sum S u - Finset.sum S v :=
+        Finset.sum_sub_distrib (fun x => u x) (fun x => v x)
+      exact Eq.trans h1 h2
+    _ <= Finset.sum S u :=
+      sub_le_self _ hvn
+    _ = Finset.sum Finset.univ (fun x => if x ∈ S then u x else 0) :=
+      hite
+    _ <= Finset.sum Finset.univ u :=
+      Finset.sum_le_sum fun x _ => hpt x
+    _ = positiveSum p q :=
+      hsumu
+
+end PositiveSet
 
 namespace MatrixTV
 
