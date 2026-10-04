@@ -86,8 +86,9 @@ separation distance, and event probability.
 
 ## 3. Current state — exact inventory (as of 2026-10-05, pre-build)
 
-`Shufflemath.lean` imports: `Finite`, `Matrix`, `TotalVariation`, `Cost`,
-`BernoulliLaplace`. Add new modules here when created.
+`Shufflemath.lean` imports: `Finite`, `Matrix`, `TotalVariation`,
+`Perturbation`, `Dobrushin`, `Cost`, `BernoulliLaplace` (Perturbation and
+Dobrushin added with C2/D). Add new modules here when created.
 
 **`Shufflemath/Finite.lean`** — `namespace Shufflemath`, `noncomputable section`:
 - `Dist α := Convexity.StdSimplex Rat α` (abbrev).
@@ -235,13 +236,44 @@ separation distance, and event probability.
     b_{ij}`, one `Finset.induction`, all rewrites explicit-lambda `sum_congr`
     to dodge `rw`'s binder-capture restriction) and `apply_mass` from
     `Finite.lean`. **Priority B complete**; `verify.sh` green after B4.
+  - `double_sum_pullout` is now **public** (`Dist.double_sum_pullout`) —
+    used by `Perturbation.lean` and `Dobrushin.lean`.
 - `namespace MatrixTV`: `rowTV P i j`; `pairDistances P` (`Finset Rat`, image over
   `univ × univ`); `pairDistances_nonempty`; `dobrushinCoeff P :=
   (pairDistances P).max' …` (**max of TV**, i.e. ≤ 1, convention note in §4-D);
   `rowTV_le_dobrushin`; `dobrushinCoeff_nonneg` (simp); `dobrushinCoeff_le_one`
   (from `Matrix.rowStochastic`).
-- **Missing (C/D):** discrepancy, hybrid telescope, kernel Dobrushin +
-  contraction + submultiplicativity.
+- **`Shufflemath/Perturbation.lean`** (Priority C, commits 3599326 / 39d89b1):
+  `kernelDiscrepancy (K L) : Rat` (max over `x` of `tv (K x) (L x)`, Finset
+  image + `max'`), `apply_discrepancy_bound` (`tv (apply μ K) (apply μ L) ≤
+  kernelDiscrepancy K L`), `compList` (noncomputable def, foldr over `comp`;
+  execution order `[K1, K2]` = K1 then K2) with `compList_nil` / `compList_cons`
+  (simp) and `apply_compList`, `telescopeBound d Δ` (the damped sum
+  `∑_{i < n} d^(n−1−i)·Δ_i`, with nil/cons simp lemmas), and the flagship
+  `hybridTelescope`: for equal-length protocol lists `Ks Ls`, initial `μ`, and
+  a uniform contraction constant `d` (hypotheses `hdK` / `hdL` bounding the
+  TV contraction of every kernel occurring in either list),
+  `tv (apply μ (compList Ks)) (apply μ (compList Ls)) ≤
+  telescopeBound d (map kernelDiscrepancy (Ks.zip Ls))` — list-pair induction
+  using the B4 kernel contraction on the inherited part and the discrepancy
+  bound on the new step. `hybridTelescope_n1` recovers `apply_discrepancy_bound`
+  at `n = 1`.
+- **`Shufflemath/Dobrushin.lean`** (Priority D, commit afff9d9):
+  `rowTV K i j`; `pairDistances K` / `pairDistances_nonempty`; `dobrushinCoeff K`
+  (= `(pairDistances K).max' …`, max-TV convention, ≤ 1); `dobrushin2 K :=
+  2 * dobrushinCoeff K` (the contraction constant); `rowTV_le_dobrushin`;
+  `dobrushinCoeff_nonneg` (simp); `dobrushinCoeff_le_one`; `dobrushin2_nonneg`;
+  private workhorses `apply_mass_nonneg` / `apply_sum_mass` / `absSumLeTV` /
+  `rowWeightBound` / `sumOnSEqWeighted` (the `∑_S (Kμ − Kν) =
+  ∑_x (μx − νx) · r_x` Fubini with `r_x := ∑_{y∈S} K x y`);
+  `dobrushin_contraction` (`tv (apply μ K) (apply ν K) ≤ dobrushin2 K * tv μ ν`);
+  `dobrushin2_submult` (`dobrushin2 (comp K L) ≤ dobrushin2 L * dobrushin2 K`);
+  `run_contraction` (`tv (run K n μ) (run K n ν) ≤ (dobrushin2 K) ^ n * tv μ ν`);
+  `dobrushinCoeff_matrix_link` (kernel coeff of a row-stochastic matrix-as-
+  kernel = `MatrixTV.dobrushinCoeff`; proved by a private `matrixKernel` def
+  via `mem_rowStochastic_iff_sum` + `max'`/`sup'`/`WithBot.unbot_inj`).
+- **Missing (E–G):** Markov theory, general BL symbolic theory, first
+  eigenfunction.
 
 **`Shufflemath/Matrix.lean`** — `namespace FiniteKernel` (imports `Shufflemath.Finite`,
 Stochastic, `Data.Matrix.Mul`, `Data.Matrix.Diagonal`, Finsupp basic/big-ops/smul,
@@ -651,8 +683,25 @@ symbolically; Commander corollaries committed.
   (3190 jobs, 7/7 Python tests).
 - [x] B. TV laws (triangle, eq_zero, positive-set, kernel contraction) —
   all in `Shufflemath/TotalVariation.lean` + `apply_mass` in `Finite.lean`.
-- [ ] C. Perturbation (`Perturbation.lean`: discrepancy, compList, hybridTelescope).
-- [ ] D. Dobrushin (`Dobrushin.lean`: coeff, contraction, submult, run).
+- [x] 2026-10-05 (session 5): **Priority C complete.** C1 commit 3599326 —
+  `Perturbation.lean`: `kernelDiscrepancy` (+nonneg/le_one/rowTV bounds),
+  `apply_discrepancy_bound`, `compList` (+nil/cons simp, `apply_compList`),
+  `telescopeBound`. C2 commit 39d89b1 — `hybridTelescope` flagship
+  (uniform contraction constant `d`, list-pair induction) +
+  `hybridTelescope_n1` (n=1 reduces to `apply_discrepancy_bound`).
+- [x] C. Perturbation (`Perturbation.lean`: discrepancy, compList, hybridTelescope) —
+  committed 3599326 / 39d89b1.
+- [x] 2026-10-05 (session 6): **Priority D complete.** Commit afff9d9 —
+  `Dobrushin.lean`: `dobrushinCoeff` / `dobrushin2` + nonneg/le_one
+  bounds, `dobrushin_contraction` (positive-set pivot: `tv(Kμ, Kν) =
+  positiveSum = ∑_S signed mass = ∑_x (μx−νx)·r_x ≤ cK·∑|μ−ν| =
+  dobrushin2·tv(μ,ν)`, via private `sumOnSEqWeighted` / `rowWeightBound`),
+  `dobrushin2_submult`, `run_contraction`, `dobrushinCoeff_matrix_link`
+  (matrix⇄kernel consistency). `double_sum_pullout` made public in
+  `TotalVariation.lean`; `Shufflemath.lean` now imports Perturbation +
+  Dobrushin. `./dev/verify.sh` green after D (3192 jobs, 7/7 Python tests).
+- [x] D. Dobrushin (`Dobrushin.lean`: coeff, contraction, submult, run, matrix link) —
+  committed afff9d9.
 - [ ] E. Markov (`Markov.lean`: stationary, detailed balance, self-adjointness).
 - [ ] F. General BL (`BernoulliLaplaceGeneral.lean`: states, row stochasticity,
   stationary, detailed balance, Commander link).
@@ -661,14 +710,12 @@ symbolically; Commander corollaries committed.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** Priority C — NEW `Shufflemath/Perturbation.lean` (per §4-C):
-`kernelDiscrepancy` (max row-TV between two kernels), `apply_discrepancy_bound`
-(same swap argument as B4 with the same input on both sides), `compList` +
-`compList_cons`, and the flagship `hybridTelescope` telescoping bound. Imports:
-`Shufflemath.TotalVariation` (+ `Shufflemath.Dobrushin` once D exists — do not
-import D until it exists; §4-C says add to `Shufflemath.lean` imports after D).
-The `n=1` telescope instance must reduce to `apply_discrepancy_bound`.
-`verify.sh` at the end of C.
+**Next action:** Priority E — NEW `Shufflemath/Markov.lean` (per §4-E):
+`Stationary μ K : apply μ K = μ`, `Stationary.run`, `DetailedBalance μ K`,
+`detailedBalance_implies_stationary`, `weightedInner` +
+`selfAdjoint_of_detailedBalance`, `stationary_of_detailedBalance`.
+Add `import Shufflemath.Markov` to `Shufflemath.lean`; `./dev/verify.sh`
+at the end of E.
 
 ## 8. Taste & style rules
 
