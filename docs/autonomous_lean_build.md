@@ -107,6 +107,13 @@ separation distance, and event probability.
   via private simultaneous induction (`run_rec_eq` bridges `n + 1` / `Nat.succ`
   forms); `run_compPow` (simp: `run K n mu = apply mu (compPow K n)`).
   (Priority A complete; the matrix bridges live in `Matrix.lean`, see below.)
+- **Done (Priority B, commit 90fa10c):** `apply_mass [Fintype α] [Fintype β]
+  [DecidableEq α] [DecidableEq β] (μ : Dist α) (K : FiniteKernel α β) (x : β) :
+  mass (apply μ K) x = ∑_j mass μ j * mass (K j) x` — the mass-level Fubini
+  bridge for kernel pushforward (weights_join + weights_map + Finsupp.sum_apply
+  + Finsupp.sum_finsetSum + Finsupp.sum_single_index; NOT @[simp] — it
+  re-introduces sums). The `FiniteKernel` variable block carries **no**
+  instances, so Fintype theorems state them per-theorem (file idiom).
 
 **Lean-mechanics notes learned the hard way (keep these!):**
 - The compiler turns tail-recursive `def`s into `Nat.brecOn` with an opaque
@@ -143,21 +150,98 @@ separation distance, and event probability.
   nothing fails the whole `rw`. And `rw` auto-closes a goal that becomes
   syntactically `x = x` after the last rewrite (no trailing `rfl` needed then;
   a trailing `rfl` on an already-closed goal is a "No goals" error).
+- **`rw` has a binder-capture restriction (bit us hard in B4).** A rewrite
+  pattern's metavariables cannot be instantiated with terms containing
+  variables bound *outside* the matched subterm: rewriting the inner sum
+  `∑ i ∈ s, b i j` inside a goal `∑ j, a j * (…)` fails ("Did not find an
+  occurrence") because `?f` would have to capture the outer `j`. Workaround:
+  provide the lambda **explicitly** — `rw [Finset.sum_congr rfl fun j _ =>
+  (Finset.sum_insert hc (f := fun i => b i j)).symm]` — and wrap coefficient
+  factors in `congrArg (fun u => a j * u)`. `conv` is the alternative but
+  multi-line `conv in (…)` lambdas are parse bombs.
+- **`set_option` is NOT a tactic.** Inside `by` it's a parse error; at the
+  top level of a proof term use `:= set_option maxHeartbeats N in by …`,
+  **but the `in` scope does not cover the final kernel check** (it runs at
+  declaration end, under the default heartbeat) — raising the heartbeat this
+  way did NOT fix whnf timeouts. Command-level `set_option` before the
+  declaration works for linter options (e.g.
+  `set_option linter.overlappingInstances false`).
+- **`end section` must be `end <section-name>`** (`end PositiveSet`).
+- **`max` on `Rat` displays as `⊔` (sup) at kernel level**; the unifier does
+  not delta-reduce `max` to `⊔`, so `exact maxDiffAbs` with implicit `{a b}`
+  fails to unify. Name the implicit args: `maxDiffAbs (a := p x) (b := q x)`.
+- **v4.34.0 Finset/order lemma inventory (grep results):** `le_or_lt` /
+  `lt_or_lt` do NOT exist — only `le_total : a ≤ b ∨ b ≤ a`; `abs_add` does
+  not exist — use `abs_add_le (a b) : |a + b| ≤ |a| + |b|`; `Or.resolveLeft`
+  does not exist; `Finset.sum_congr` takes **two** explicit args `(h : s₁ =
+  s₂) (h₂ : ∀ x ∈ s₂, f x = g x)`; `Finset.sum_nonneg` (not deprecated
+  `sum_nonneg'`) has the membership arg `(i, x ∈ s)`; `Finset.single_le_sum`
+  exists, `Finset.le_sum_of_nonneg` does not; `max_nonneg` does not exist —
+  use `le_max_left 0 x`; `Finset.abs_sum_le_sum_abs (f) (s) : |∑ i ∈ s, f i|
+  ≤ ∑ i ∈ s, |f i|`; `Fintype.sum_mul_sum` (product of two sums = double sum
+  of products — only for **separable** factors); `Finset.sum_univ_pi` /
+  `prod_univ_sum` (univ.pi ↔ piFinset) exist but there is **no plain
+  `∑_i ∑_j f i j = ∑_j ∑_i f i j` swap lemma** — prove it locally (see
+  `Dist.double_sum_pullout`).
+- **Finsupp sum machinery (verified B4):** `Finsupp.sum` is definitionally
+  `∑ a ∈ f.support, g a (f a)`; `Finsupp.sum_apply` pushes an evaluation
+  inside `.sum`; `Finsupp.sum_fintype` (needs `g i 0 = 0`) converts to univ
+  sums; `Finsupp.sum_finsetSum` (`(∑ i ∈ s, f i).sum g = ∑ i ∈ s, (f i).sum
+  g`, needs zero + additive `g`; `rw` generates subgoals for the hypotheses);
+  `Finsupp.sum_single_index` (`(single a b).sum h = h a b`, needs `h a 0 = 0`);
+  `Finsupp.mapDomain_apply` (fiber-sum form); `Finsupp.smul_apply` is not
+  only `@[defeq]` but has an **instance-mismatch problem** (two SMul
+  instances for `Rat →₀ Rat`: `smulZeroClass` vs `distribSMul`) — `rw`
+  refuses even on visual matches inside nested lambdas; convert smuls to
+  muls with `Finsupp.sum_smul_index` instead.
+- **`Finset.insert` is not a constant** — Finset insert is the `Insert`
+  typeclass (`Insert.insert`); write `insert a s` (unqualified) or `a ∈`
+  forms, never `Finset.insert`.
+- **`∑ i, f i` (Fintype univ notation) is definitionally `Finset.sum
+  Finset.univ f`** (`rfl` bridges them); `Finset.sum` over `univ` and the
+  notation are interchangeable in `change`/`exact`.
 
-**`Shufflemath/TotalVariation.lean`** — imports `Shufflemath.Matrix`:
+**`Shufflemath/TotalVariation.lean`** — imports `Shufflemath.Matrix`,
+`Mathlib.Data.Finset.Max`, `Mathlib.Algebra.Order.BigOperators.Group.Finset`,
+`Mathlib.Algebra.Order.Sub.Basic`:
 - `vectorTV p q := (1/2) * ∑_x |p x − q x|` over `Fintype` univ.
 - `vectorTV_self` (simp), `vectorTV_comm`, `vectorTV_nonneg`,
   `vectorTV_le_one_of_probability` (four hypotheses: nonneg×2, total×2).
 - `Dist.tv p q := vectorTV (mass p) (mass q)`; `tv_self` (simp), `tv_comm`,
   `tv_nonneg`, `tv_le_one`.
+- **Done (Priority B, commits B1/B2/B3/B4):**
+  - `vectorTV_triangle` / `Dist.tv_triangle` (B1): pointwise
+    `|p x − r x| = |(p x − q x) + (q x − r x)|` + `abs_add_le`, then
+    `mul_le_mul_of_nonneg_left` + `Finset.sum_le_sum` + `sum_add_distrib`.
+  - `vectorTV_eq_zero` / `Dist.tv_eq_zero` (B2): stated **at mass level**
+    (`tv p q = 0 ↔ ∀ x, mass p x = mass q x`), not `p = q` (distinct `Dist`
+    reps can share a mass function).
+  - `section PositiveSet` (B3, commit bb49a50): `positiveSet p q :=
+    (Finset.univ : Finset α).filter (fun x => p x > q x)`; `positiveSum p q :=
+    ∑_{x ∈ positiveSet} (p x − q x)`; private `maxDiffAbs` / `maxDiffSub`
+    (pointwise max identities; call with explicit named args `(a := p x)
+    (b := q x)` — see mechanics note on `max`/`⊔`); `sumPosPartEqPositiveSum`
+    (no probability hypotheses — the pointwise max identities don't need
+    them); `vectorTV_eq_positive_set` (probability vectors: `vectorTV p q =
+    positiveSum p q`); `vectorTV_sum_le_positive_set` (for every `S`,
+    `∑_S (p − q) ≤ positiveSum p q`; proved by **ite-embedding** —
+    `∑_S u = ∑_univ (fun x => if x ∈ S then u x else 0)` by bare `simp`,
+    then `Finset.sum_le_sum` — avoids the sdiff/Fintype-fold whnf timeout
+    that even `set_option maxHeartbeats 0` couldn't fix).
+  - `Dist.kernel_contraction` (B4, commit df58ecd):
+    `tv (apply μ K) (apply ν K) ≤ tv μ ν` for any finite kernel `K` —
+    classic weighted-triangle + Fubini + row-stochasticity proof; uses
+    private `Dist.double_sum_pullout` (`∑_i ∑_j a_j b_{ij} = ∑_j a_j ∑_i
+    b_{ij}`, one `Finset.induction`, all rewrites explicit-lambda `sum_congr`
+    to dodge `rw`'s binder-capture restriction) and `apply_mass` from
+    `Finite.lean`. **Priority B complete**; `verify.sh` green after B4.
 - `namespace MatrixTV`: `rowTV P i j`; `pairDistances P` (`Finset Rat`, image over
   `univ × univ`); `pairDistances_nonempty`; `dobrushinCoeff P :=
   (pairDistances P).max' …` (**max of TV**, i.e. ≤ 1, convention note in §4-D);
   `rowTV_le_dobrushin`; `dobrushinCoeff_nonneg` (simp); `dobrushinCoeff_le_one`
   (from `Matrix.rowStochastic`).
-- **Missing (Priority B):** triangle, `eq_zero`, positive-set/max-event
-  characterization, kernel contraction. **Missing (C/D):** discrepancy, hybrid
-  telescope, kernel Dobrushin + contraction + submultiplicativity.
+- **Missing (C/D):** discrepancy, hybrid telescope, kernel Dobrushin +
+  contraction + submultiplicativity.
 
 **`Shufflemath/Matrix.lean`** — `namespace FiniteKernel` (imports `Shufflemath.Finite`,
 Stochastic, `Data.Matrix.Mul`, `Data.Matrix.Diagonal`, Finsupp basic/big-ops/smul,
@@ -557,7 +641,16 @@ symbolically; Commander corollaries committed.
 - [x] A. Kernel algebra — `Finite.lean` monad laws + `Matrix.lean` bridges
   (`toMatrix_comp`, `toMatrix_identity`, `toMatrix_compPow`, `toMatrix_run`),
   all committed, full build green.
-- [ ] B. TV laws (triangle, eq_zero, positive-set, kernel contraction).
+- [x] 2026-10-05 (session 4): **Priority B complete.** Commits: B1
+  `vectorTV_triangle`/`tv_triangle`; B2 `4eeddcc` `vectorTV_eq_zero` /
+  `tv_eq_zero`; B3 `bb49a50` PositiveSet section (max-event characterization:
+  `vectorTV_eq_positive_set`, `vectorTV_sum_le_positive_set`, pointwise max
+  workhorses); B4a `90fa10c` `Finite.lean apply_mass` (kernel pushforward
+  mass = weighted row sum); B4b `df58ecd` `Dist.kernel_contraction` (+
+  private `double_sum_pullout` Fubini). `./dev/verify.sh` green after B4
+  (3190 jobs, 7/7 Python tests).
+- [x] B. TV laws (triangle, eq_zero, positive-set, kernel contraction) —
+  all in `Shufflemath/TotalVariation.lean` + `apply_mass` in `Finite.lean`.
 - [ ] C. Perturbation (`Perturbation.lean`: discrepancy, compList, hybridTelescope).
 - [ ] D. Dobrushin (`Dobrushin.lean`: coeff, contraction, submult, run).
 - [ ] E. Markov (`Markov.lean`: stationary, detailed balance, self-adjointness).
@@ -568,11 +661,14 @@ symbolically; Commander corollaries committed.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** Priority B — TV laws in `Shufflemath/TotalVariation.lean`:
-`vectorTV_triangle`, `vectorTV_eq_zero`, the workhorse `vectorTV_eq_positive_set`
-(max-event characterization), and `kernel_contraction` (statement sketches and
-proof strategies in §4-B). Then run `./dev/verify.sh` at the end of the
-priority (also still owed for A — run it now before starting B).
+**Next action:** Priority C — NEW `Shufflemath/Perturbation.lean` (per §4-C):
+`kernelDiscrepancy` (max row-TV between two kernels), `apply_discrepancy_bound`
+(same swap argument as B4 with the same input on both sides), `compList` +
+`compList_cons`, and the flagship `hybridTelescope` telescoping bound. Imports:
+`Shufflemath.TotalVariation` (+ `Shufflemath.Dobrushin` once D exists — do not
+import D until it exists; §4-C says add to `Shufflemath.lean` imports after D).
+The `n=1` telescope instance must reduce to `apply_discrepancy_bound`.
+`verify.sh` at the end of C.
 
 ## 8. Taste & style rules
 
