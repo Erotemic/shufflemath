@@ -952,26 +952,67 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   3-step `ring`/`rw [hdb]`/`ring` calc.
 - [x] E. Markov (`Markov.lean`: stationary, detailed balance, self-adjointness) —
   committed 50bdde5.
+- [x] 2026-10-04 (session 13): **F part 1 — general BL states, row
+  stochasticity, exchange kernel.** `Shufflemath/BernoulliLaplaceGeneral.lean`
+  rewritten to a free `r` parameter: `BLState N m r := {x : Nat // blLo ≤ x ∧
+  x ≤ blHi}` with `blLo := max (r - (N - m)) 0`, `blHi := min m r`; parameterless
+  `ExchangeAdmissible` structure (N, m, r, k + six admissibility proofs);
+  generalized `transitionNumerator`/`transitionDenominator`/`transitionWeight`.
+  **`blRowStochastic` (double Vandermonde, row sum = 1)** — the general-`r`
+  proof restructures the y-split into three window cases (below lo / in
+  `[lo, min m r]` / above hi). Since the window predicates now only give
+  `y ≤ r`, the "all three windows hold" branch splits on `y ≤ m`: `y ≤ m`
+  forces `y ∈ As`, a contradiction; `y > m` kills the second factor
+  `choose (m-x) (k-a)` via the contradiction argument
+  `y ≤ (x-a)+k ≤ (x-a)+((m-x)+a) = m`. The inner `a↔b` bijection is
+  truncated when `r > m`: the image set splits into `Bs1 := {b ≤ r-x,
+  b < m+1-(x-a)}` (where the bijection holds) and `Bs \ Bs1` (terms vanish —
+  second factor zero for `a ≤ x`, first factor zero for `a > x`).
+  **`blExchangeKernel`** is the `FiniteKernel (BLState N m r) (BLState N m r)`
+  via `Dist.ofFun`; its total-mass argument bridges `Finset.univ` (the pmap
+  finset of the `Fintype.ofFinset` instance) to `stateFinset` with
+  `Finset.sum_bij (fun y _ => y.val)` — the v4.34 signature is the dependent
+  5-argument form (image / injective / surjective / term-equality bullets;
+  injective bullet needs `Subtype.coe_injective`, surjective bullet closes
+  with `Fintype.complete`, not `by simp`). Mechanics learned: `rw [← hk]`
+  with `hk : (k-a)+a = k` rewrites the `k` *inside* `(k-a)` — scope it with
+  `conv in (x - a + k) => ...`; `rw [def]` of a let/ite body fails at
+  subterm positions inside a sum — bridge with `change`; `rw [hlo]` on a
+  `have` with a non-rfl body fails — re-derive with `have h' := by simpa
+  using h`; `Finset.sum_bij`'s surjectivity bullet desugars to a 3-level
+  `∧` chain plus the equality, so simp the goal before the 5-leaf refine;
+  `Finset.mem_Icc` / `Fintype.complete` are the v4.34 membership lemmas;
+  `Nat.add_sub_cancel_left/right`, `Nat.sub_add_cancel`,
+  `Nat.choose_eq_zero_of_lt`, `Nat.choose_symm`, `min_eq_left/right`
+  (one-way, no `.mpr`), `Nat.sub_le_iff_le_add`, `Nat.le_max_left` for
+  extracting the `blLo` bound; `Nat.cast_sum` before `Finset.sum_nonneg`;
+  `div_nonneg_iff` wants `0 ≤ den`, feed `Nat.cast_nonneg`. Full `lake build`
+  green, zero warnings; tests 7/7.
 - [ ] F. General BL (`BernoulliLaplaceGeneral.lean`: states, row stochasticity,
-  stationary, detailed balance, Commander link).
+  stationary, detailed balance, Commander link) — **part 1 done (session 13)**:
+  `BLState N m r` / `blLo` / `blHi` / `stateFinset` / `ExchangeAdmissible`,
+  generalized `transitionNumerator`/`transitionWeight`, `blRowStochastic`
+  (double Vandermonde, general `r`), `transitionWeight_nonneg`,
+  `transitionDenominator_pos`, `blExchangeKernel`. Remaining: stationary
+  sum-one + `blStationaryDist`, detailed balance, Commander bridge module.
 - [ ] G. First eigenfunction (general + Commander corollaries).
 - [ ] H. Stretch: GSR, higher modes, separation distance.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** F work — re-derive the shelved F2
-(`/tmp/BLG_F2_attempt_final.lean` — its `lo := min m (N−m)`
-form is obsolete; use `lo := max (2m − N) 0` from the current file)
-against `BLState (N m)`: the general file's own transition-formula
-copies, `blRowStochastic` (double Vandermonde),
-`blStationary_sum_one`, detailed balance, `blExchangeKernel`; then the
-bridge module `Shufflemath/BernoulliLaplaceCommanderBridge.lean`
-(imports both BL files; `transitionNumerator` coincidence — expect `rfl`;
-`blExchangeKernel 99 50 25` = `commanderExchange25` via a state-space
-equiv `Fin 50 ↔ BLState 99 50`). `./dev/verify.sh` at each step. GPT
-review findings #1–#10 are all DONE (§4a) — the review work is complete;
-remaining priorities are F (general BL proofs + bridge), G (first
-eigenfunction), H (stretch).
+**Next action:** F part 2 — stationary sum-one
+(`blStationary_total`, Vandermonde over the whole state space) and
+`blStationaryDist : Dist (BLState N m r)`, then the combinatorial
+4-tuple `(S, A, B)` involution detailed-balance proof (reuse
+`Markov.lean`'s `stationary_of_detailedBalance`); then the bridge module
+`Shufflemath/BernoulliLaplaceCommanderBridge.lean` (imports both BL
+files; `transitionNumerator` coincidence — expect `rfl`;
+`blExchangeKernel` at `(99, 50, 50, 25)` equals the frozen
+`commanderExchange25`/`commanderFirstMode` via a state-space equivalence
+`Fin 50 ↔ BLState 99 50 50`). `./dev/verify.sh` at each step. GPT review
+findings #1–#10 are all DONE (§4a) — the review work is complete;
+remaining priorities are F (stationary + detailed balance + bridge),
+G (first eigenfunction), H (stretch).
 
 ## 8. Taste & style rules
 
