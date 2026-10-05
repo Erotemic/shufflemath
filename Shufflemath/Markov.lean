@@ -1,6 +1,6 @@
 /-
 Markov-chain theory for finite kernels: stationarity, detailed balance,
-and self-adjointness of the row operator in the stationary inner product.
+and self-adjointness of the row operator in the stationary-weighted form.
 
 Abstract theory only — no concrete chain (the Commander chain lives in
 `BernoulliLaplace.lean`; the general Bernoulli–Laplace theory lives in
@@ -67,25 +67,29 @@ def applyFn [Fintype alpha] [Fintype beta] (K : FiniteKernel alpha beta)
     (f : beta → Rat) (x : alpha) : Rat :=
   Finset.sum (Finset.univ : Finset beta) (fun y => Dist.mass (K x) y * f y)
 
-/-- Inner product on functions weighted by the distribution `mu`. -/
+/-- Bilinear form on functions weighted by the distribution `mu`:
+`∑ x, mu x * f x * g x`. It is degenerate at states with `mu x = 0`,
+so it is not an inner product in the strict sense (over `R`, on the
+support of `mu`, it is positive-semidefinite). The name follows the
+looser Markov-chain usage. -/
 def weightedInner [Fintype alpha] (mu : Dist alpha) (f g : alpha → Rat) : Rat :=
   Finset.sum (Finset.univ : Finset alpha) (fun x => Dist.mass mu x * f x * g x)
 
 /-- Under detailed balance, the row action of the kernel is
-self-adjoint in the `mu`-weighted inner product:
-`<f, K.applyFn g>_mu = <g, K.applyFn f>_mu`. This is the finite, exact
+self-adjoint in the `mu`-weighted bilinear form:
+`weightedInner mu f (K.applyFn g) = weightedInner mu g (K.applyFn f)`. This is the finite, exact
 form of reversibility ⇒ self-adjointness. Note the algebraic scope: the
 coefficients live in `Rat`, the weighted form is degenerate at points
 with `mu x = 0`, and a rational self-adjoint operator need not be
 diagonalizable over `Q` — the real spectral statement (orthogonal
-eigenbasis in the stationary inner product) requires moving to `R` and
+eigenbasis in the stationary-weighted form) requires moving to `R` and
 handling support/positivity, which is out of scope for this file. -/
 theorem selfAdjoint_of_detailedBalance
     [Fintype alpha]
     (mu : Dist alpha) (K : FiniteKernel alpha alpha)
     (hdb : DetailedBalance mu K) (f g : alpha → Rat) :
     weightedInner mu f (applyFn K g) = weightedInner mu g (applyFn K f) := by
-  -- Expand the left-hand weighted inner product to a double sum.
+  -- Expand the left-hand weighted form to a double sum.
   have hL : weightedInner mu f (applyFn K g) =
       Finset.sum (Finset.univ : Finset alpha)
         (fun x => Finset.sum (Finset.univ : Finset alpha)

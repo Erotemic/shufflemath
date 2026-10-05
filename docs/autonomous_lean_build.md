@@ -935,9 +935,11 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   one-step certificate), `DetailedBalance`,
   `detailedBalance_implies_stationary` (single-sum argument: sum the
   balance equation over `x` at fixed `y`; only row-mass-1 of `K` needed),
-  `applyFn` (row action on functions) / `weightedInner` (mu-weighted inner
-  product), `selfAdjoint_of_detailedBalance` (reversible row operator is
-  self-adjoint in the stationary inner product: double-sum expansion,
+  `applyFn` (row action on functions) / `weightedInner` (mu-weighted
+  bilinear form; degenerate at states with mass 0, so not an inner
+  product in the strict sense), `selfAdjoint_of_detailedBalance`
+  (reversible row operator is
+  self-adjoint in the stationary-weighted form: double-sum expansion,
   termwise balance swap, regroup via `Dist.double_sum_pullout`),
   `stationary_of_detailedBalance`. `Shufflemath.lean` now imports Markov.
   `./dev/verify.sh` green after E (3193 jobs, 7/7 Python tests). Mechanics

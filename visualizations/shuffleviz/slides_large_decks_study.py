@@ -425,7 +425,7 @@ class LD19CSpectralDecomposition(DeckSlide):
             color=LOCAL,
         ).shift(UP * 1.0)
         steps = derivation_steps([
-            ("Reversible chain", r"Detailed balance makes the Markov operator self-adjoint in the weighted inner product $\langle f,g\rangle_\pi=\sum_x\pi(x)f(x)g(x)$."),
+            ("Reversible chain", r"Detailed balance makes the Markov operator self-adjoint in the weighted form $\langle f,g\rangle_\pi=\sum_x\pi(x)f(x)g(x)$ (a bilinear form, degenerate where $\pi(x)=0$)."),
             ("Orthogonal modes", r"Self-adjoint finite operators admit an orthogonal eigenbasis. A general density/error can be decomposed into those modes."),
             ("Time evolution", r"After $t$ steps, a mode with eigenvalue $\lambda_j$ is multiplied by $\lambda_j^t$."),
             ("Slowest modes", r"Eigenvalues closest to $\pm1$ control long-lived memory; modes near zero disappear rapidly."),
@@ -533,7 +533,7 @@ class LD19D4SelfAdjointProof(DeckSlide):
 
     def body(self):
         steps = derivation_steps([
-            ("Weighted inner product", r"Define $\langle f,g\rangle_\pi=\sum_x\pi(x)f(x)g(x)$."),
+            ("Weighted form", r"Define $\langle f,g\rangle_\pi=\sum_x\pi(x)f(x)g(x)$: bilinear, positive-semidefinite on the support of $\pi$."),
             ("Expand", r"$\langle f,Pg\rangle_\pi=\sum_{x,y}\pi(x)f(x)P(x,y)g(y)$."),
             ("Balance", r"Use $\pi(x)P(x,y)=\pi(y)P(y,x)$ to replace the stationary flow."),
             ("Swap dummy names", r"The sum becomes $\sum_{x,y}\pi(y)P(y,x)f(x)g(y)=\langle Pf,g\rangle_\pi$."),

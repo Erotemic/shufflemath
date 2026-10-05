@@ -177,7 +177,7 @@ The advanced slides then teach rather than merely list:
 
 - coupling and the coupling inequality;
 - path coupling;
-- reversibility as self-adjointness in the `pi`-weighted inner product;
+- reversibility as self-adjointness in the `pi`-weighted bilinear form;
 - the microstate space as an `m`-subset walk under the `S_N` action;
 - the working definition of the Gelfand pair
   `(S_N, S_m x S_{N-m})`;
