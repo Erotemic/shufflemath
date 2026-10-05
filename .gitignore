@@ -3,6 +3,7 @@
 __pycache__/
 *.pyc
 .venv/
+*.tar.gz
 
 # >>> llm_resource_tally local state (managed) >>>
 /.llm_resource_tally/local/
