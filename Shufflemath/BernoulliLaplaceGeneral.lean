@@ -1299,10 +1299,10 @@ abbrev fiber7Pred (p : ExchangeAdmissible) (x y : Nat) : fiber7Tuple p → Prop 
 private def fiber7Set (p : ExchangeAdmissible) (x y : Nat) : Finset (fiber7Tuple p) := by
   exact (fiber7Univ p).filter (fiber7Pred p x y)
 
-/-- The 7-tuple repackaged as the 3-tuple `((S1, S2), a)`. -/
+/-- The 7-tuple repackaged as the 3-tuple `(S1, (S2, a))`. -/
 private def t3Of {p : ExchangeAdmissible} (t : fiber7Tuple p) :
-    (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) × ℕ :=
-  (t.1.1.1.1.1, t.1.1.1.1.2)
+    Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ) :=
+  (t.1.1.1.1.1.1, (t.1.1.1.1.1.2, t.1.1.1.1.2))
 
 /-- The 7-tuple repackaged as the 4-tuple `((A1, A2), (B1, B2))`. -/
 private def t4Of {p : ExchangeAdmissible} (t : fiber7Tuple p) :
@@ -1313,28 +1313,43 @@ private def t4Of {p : ExchangeAdmissible} (t : fiber7Tuple p) :
 /-- A 7-tuple rebuilt from a 3-tuple `((S1, S2), a)` and a 4-tuple
 `((A1, A2), (B1, B2))`. -/
 private def mk7 {p : ExchangeAdmissible}
-    (t3 : (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) × ℕ)
+    (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ))
     (t4 : (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
       (Finset (Fin p.r) × Finset (Fin (p.N - p.r)))) : fiber7Tuple p :=
   by
-    have X5 := t3.1
-    have a := t3.2
+    have S1 := t3.1
+    have S2 := t3.2.1
+    have a := t3.2.2
     have A1 := t4.1.1
     have A2 := t4.1.2
     have B1 := t4.2.1
     have B2 := t4.2.2
-    exact (((((X5, a), A1), A2), B1), B2)
+    exact ((((((S1, S2), a), A1), A2), B1), B2)
 
-/-- The re-packaging is lossless. -/
+/-- The re-packaging is lossless in both directions. -/
 private theorem re7 {p : ExchangeAdmissible} (t : fiber7Tuple p) :
     mk7 (t3Of t) (t4Of t) = t := by
+  rfl
+
+private theorem re7' {p : ExchangeAdmissible}
+    (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ))
+    (t4 : (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
+      (Finset (Fin p.r) × Finset (Fin (p.N - p.r)))) :
+    t3Of (mk7 t3 t4) = t3 := by
+  rfl
+
+private theorem re7'' {p : ExchangeAdmissible}
+    (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ))
+    (t4 : (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
+      (Finset (Fin p.r) × Finset (Fin (p.N - p.r)))) :
+    t4Of (mk7 t3 t4) = t4 := by
   rfl
 
 /-- The 3-tuple part of the fiber: the two piles and the index, with the
 cardinality and guard restrictions. -/
 private def fiber3Set (p : ExchangeAdmissible) (x y : Nat) :
-    Finset ((Finset (Fin p.r) × Finset (Fin (p.N - p.r))) × ℕ) :=
-  ((starsUniv p).powersetCard x ×ˢ (plainUniv p).powersetCard (p.m - x)) ×ˢ
+    Finset (Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ)) :=
+  (starsUniv p).powersetCard x ×ˢ (plainUniv p).powersetCard (p.m - x) ×ˢ
     (Finset.range (p.k + 1)).filter (fun a => x - a ≤ y ∧ y - (x - a) ≤ p.k)
 
 /-- The ambient 4-tuple space. -/
@@ -1347,22 +1362,22 @@ private def fiber4Max (p : ExchangeAdmissible) :
 /-- The 4-tuple `(A1, A2, B1, B2)` is a valid fiber element over the
 3-tuple `t3 = ((S1, S2), a)`. -/
 private abbrev isFiber4 (p : ExchangeAdmissible) (x y : Nat)
-    (t3 : (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) × ℕ)
+    (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ))
     (t4 : (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
       (Finset (Fin p.r) × Finset (Fin (p.N - p.r)))) : Prop :=
-  t4.1.1 ∈ (t3.1.1).powersetCard (t3.2) ∧
-    t4.1.2 ∈ (t3.1.2).powersetCard (p.k - t3.2) ∧
-    t4.2.1 ∈ (starsUniv p \ t3.1.1).powersetCard (y - (x - t3.2)) ∧
-    t4.2.2 ∈ (plainUniv p \ t3.1.2).powersetCard (p.k - (y - (x - t3.2)))
+  t4.1.1 ∈ (t3.1).powersetCard (t3.2.2) ∧
+    t4.1.2 ∈ (t3.2.1).powersetCard (p.k - t3.2.2) ∧
+    t4.2.1 ∈ (starsUniv p \ t3.1).powersetCard (y - (x - t3.2.2)) ∧
+    t4.2.2 ∈ (plainUniv p \ t3.2.1).powersetCard (p.k - (y - (x - t3.2.2)))
 
 /-- The 4-tuple fiber over a fixed 3-tuple. -/
-private def fiber4Set (p : ExchangeAdmissible) (x y a : Nat)
-    (S1 : Finset (Fin p.r)) (S2 : Finset (Fin (p.N - p.r))) :
+private def fiber4Set (p : ExchangeAdmissible) (x y : Nat)
+    (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ)) :
     Finset ((Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
       (Finset (Fin p.r) × Finset (Fin (p.N - p.r)))) :=
-  ((S1.powersetCard a ×ˢ S2.powersetCard (p.k - a)) ×ˢ
-    ((starsUniv p \ S1).powersetCard (y - (x - a)) ×ˢ
-      (plainUniv p \ S2).powersetCard (p.k - (y - (x - a)))))
+  ((t3.1.powersetCard t3.2.2 ×ˢ t3.2.1.powersetCard (p.k - t3.2.2)) ×ˢ
+    ((starsUniv p \ t3.1).powersetCard (y - (x - t3.2.2)) ×ˢ
+      (plainUniv p \ t3.2.1).powersetCard (p.k - (y - (x - t3.2.2)))))
 
 end detailedBalance
 end BernoulliLaplaceGeneral
