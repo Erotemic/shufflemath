@@ -988,23 +988,52 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   extracting the `blLo` bound; `Nat.cast_sum` before `Finset.sum_nonneg`;
   `div_nonneg_iff` wants `0 ≤ den`, feed `Nat.cast_nonneg`. Full `lake build`
   green, zero warnings; tests 7/7.
+- [x] 2026-10-04 (session 13, cont.): **F part 2 — general stationary
+  distribution.** `blStationary N m r (x : BLState N m r)` is the
+  hypergeometric mass `choose r x.val * choose (N-r) (m-x.val) / choose N m`.
+  **`blStationaryTotal`**: the state-space sum equals 1 — three steps:
+  (1) extend the window sum to `Finset.range (m+1)` via `Finset.sum_sdiff`
+  plus `blStationaryTerm_zero` (off-window terms vanish: `b < blLo` splits
+  on `r ≤ N-m` — `blLo = 0`, impossible — vs `r > N-m`, where a pure-`Nat`
+  chain `(N-m)+b < r → N+b < m+r → N+b-r < m → N-r+b < m → N-r < m-b`
+  kills `choose (N-r) (m-b)`; `b > blHi` kills `choose r b`);
+  (2) the range sum is `choose (r + (N-r)) m = choose N m` via
+  `vandermondeRange`; (3) division by the positive denominator. The
+  off-window lemma is proved *entirely in `Nat`* — the earlier `ℤ`-bridge
+  attempts kept failing on cast-repacking (`↑(a-b)` vs `↑a - ↑b` are not
+  definitionally equal; `exact_mod_cast` only normalizes in one direction),
+  so the chain uses `Nat.sub_lt_sub_iff_right (h : c ≤ a)`,
+  `Nat.sub_add_comm {n m k} (h : k ≤ n) : n + m - k = n - k + m`
+  (k implicit in v4.34), and `Nat.lt_sub_iff_add_lt` (no side condition).
+  **`blStationaryDist : Dist (BLState N m r)`** via `Dist.ofFun` with the
+  same `Finset.sum_bij` univ-to-window bridge as `blExchangeKernel`; the
+  term-equality bullet needs one extra `rw [Nat.cast_mul]` because the
+  summand's `(a * b : Rat)` ascription elaborates to a *product of casts*
+  while the `blStationary` definition carries a *cast of the product*
+  (the pretty printer shows both the same way — a trap). `rw` does not
+  descend into the lambda body of `∑` notation, so packing the summand
+  casts uses `simp only [← Nat.cast_mul, ← Nat.cast_sum]` (both reverse —
+  `Nat.cast_sum`'s default direction is cast-of-sum → sum-of-casts).
+  Full `lake build` green, zero warnings; tests 7/7.
 - [ ] F. General BL (`BernoulliLaplaceGeneral.lean`: states, row stochasticity,
-  stationary, detailed balance, Commander link) — **part 1 done (session 13)**:
+  stationary, detailed balance, Commander link) — **parts 1–2 done
+  (session 13)**:
   `BLState N m r` / `blLo` / `blHi` / `stateFinset` / `ExchangeAdmissible`,
   generalized `transitionNumerator`/`transitionWeight`, `blRowStochastic`
   (double Vandermonde, general `r`), `transitionWeight_nonneg`,
-  `transitionDenominator_pos`, `blExchangeKernel`. Remaining: stationary
-  sum-one + `blStationaryDist`, detailed balance, Commander bridge module.
+  `transitionDenominator_pos`, `blExchangeKernel`, `blStationary` /
+  `blStationaryTotal` / `blStationaryDist`. Remaining: detailed balance
+  (combinatorial 4-tuple `(S, A, B)` involution) + Commander bridge
+  module.
 - [ ] G. First eigenfunction (general + Commander corollaries).
 - [ ] H. Stretch: GSR, higher modes, separation distance.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** F part 2 — stationary sum-one
-(`blStationary_total`, Vandermonde over the whole state space) and
-`blStationaryDist : Dist (BLState N m r)`, then the combinatorial
-4-tuple `(S, A, B)` involution detailed-balance proof (reuse
-`Markov.lean`'s `stationary_of_detailedBalance`); then the bridge module
+**Next action:** F part 3 — the combinatorial 4-tuple `(S, A, B)`
+involution detailed-balance proof (`π(x) P(x, y) = π(y) P(y, x)`, then
+reuse `Markov.lean`'s `stationary_of_detailedBalance` to get
+`blStationaryDist` fixed); then the bridge module
 `Shufflemath/BernoulliLaplaceCommanderBridge.lean` (imports both BL
 files; `transitionNumerator` coincidence — expect `rfl`;
 `blExchangeKernel` at `(99, 50, 50, 25)` equals the frozen

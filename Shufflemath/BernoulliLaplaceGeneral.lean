@@ -815,5 +815,170 @@ noncomputable def blExchangeKernel (p : ExchangeAdmissible) :
       rw [hbridge]
       simpa only [transitionWeight] using blRowStochastic p x)
 
+
+/-! ## Stationary distribution: sum-one and as a `Dist`
+
+The stationary law of the exchange is the hypergeometric distribution
+`x ↦ choose r x * choose (N-r) (m-x) / choose N m` on the window
+`[blLo, blHi]` — it is `blStationary` transported off the `BLState`
+coercion. -/
+
+/-- A stationary window term vanishes outside the window: for
+`b ∈ range (m+1) \ stateFinset`, either `b < blLo` (then
+`N - r < m - b`, so `choose (N-r) (m-b) = 0`) or `b > blHi` (then
+`choose r b = 0`, or the case is impossible). This is what lets the
+Vandermonde sum over the whole range `(0..m]` be restricted to the
+admissible window. -/
+private theorem blStationaryTerm_zero (p : ExchangeAdmissible) (b : ℕ)
+    (hb : b ∈ Finset.range (p.m + 1) \ stateFinset p.N p.m p.r) :
+    Nat.choose p.r b * Nat.choose (p.N - p.r) (p.m - b) = 0 := by
+  simp only [stateFinset, Finset.mem_Icc, Finset.mem_sdiff] at hb
+  have hbN : b ≤ p.m := by simpa using hb.1
+  by_cases hlo : b < blLo p.N p.m p.r
+  · -- `b < blLo`
+    by_cases h2m : p.r ≤ p.N - p.m
+    · -- `r ≤ N - m`: `blLo = 0`, so `b < 0`, impossible.
+      have hb0 : blLo p.N p.m p.r = 0 := by
+        simp only [blLo_def, Nat.sub_eq_zero_of_le h2m, max_zero]
+      have hlo0 : b < 0 := by
+        rw [← hb0]
+        exact hlo
+      exact False.elim (Nat.not_lt_zero b hlo0)
+    · -- `b < r - (N - m)` with `r > N - m`
+      have hbl : blLo p.N p.m p.r = p.r - (p.N - p.m) := by
+        simp only [blLo_def]
+        rw [max_zero]
+      have hlo' : b < p.r - (p.N - p.m) := by simpa [hbl] using hlo
+      have hN2m : p.N - p.m < p.r := Nat.not_le.mp h2m
+      have hA : (p.N - p.m) + b < p.r := by
+        calc
+          _ < (p.N - p.m) + (p.r - (p.N - p.m)) :=
+            Nat.add_lt_add_left hlo' (p.N - p.m)
+          _ = p.r := Nat.add_sub_of_le (Nat.le_of_lt hN2m)
+      -- Lift to `Z`: from `(N-m) + b < r` get `N + b < m + r`,
+      -- which in `Z` rearranges to `N - r < m - b`.
+      -- Work entirely in `Nat`: from `(N-m) + b < r` get `N + b < m + r`,
+      -- then peel off `r` to reach `N - r < m - b`.
+      have hB : p.N + b < p.m + p.r := by
+        have hNm : p.m + (p.N - p.m) = p.N :=
+          Nat.add_sub_of_le (Nat.le_of_lt p.hmn)
+        calc
+          p.N + b = p.m + (p.N - p.m) + b := by
+            conv in (p.N + b) => rw [← hNm]
+          _ = p.m + ((p.N - p.m) + b) := by rw [Nat.add_assoc]
+          _ < p.m + p.r := Nat.add_lt_add_left hA p.m
+      -- `N - r < m - b` kills the second factor.
+      have hNat : p.N - p.r < p.m - b := by
+        have h1 : p.N + b - p.r < p.m := by
+          have h2 : p.N + b - p.r < (p.m + p.r) - p.r :=
+            (Nat.sub_lt_sub_iff_right
+                (Nat.le_trans p.hrN (Nat.le_add_right p.N b))).mpr hB
+          simpa [Nat.add_sub_cancel_right] using h2
+        have h3 : p.N + b - p.r = p.N - p.r + b := by
+          rw [← Nat.sub_add_comm p.hrN]
+        exact (Nat.lt_sub_iff_add_lt.mpr (by simpa [h3] using h1))
+      rw [Nat.choose_eq_zero_of_lt hNat, mul_zero]
+  · -- `b > blHi`
+    have hbHi : blLo p.N p.m p.r ≤ b := Nat.not_lt.mp hlo
+    have hnot : ¬(b ≤ blHi p.N p.m p.r) := fun h => hb.2 ⟨hbHi, h⟩
+    have hbhi' : b > blHi p.N p.m p.r := Nat.not_le.mp hnot
+    by_cases hmr : p.m ≤ p.r
+    · -- `blHi = m`: `b > m` contradicts `b ≤ m`.
+      have hbhi'' : b > p.m := by
+        simpa only [blHi_def, min_eq_left hmr] using hbhi'
+      exact False.elim (Nat.lt_irrefl p.m (Nat.lt_of_lt_of_le hbhi'' hbN))
+    · -- `blHi = r`: `b > r` kills the first factor.
+      have hbhi'' : b > p.r := by
+        simpa only [blHi_def, min_eq_right (Nat.le_of_lt (Nat.not_le.mp hmr))]
+          using hbhi'
+      rw [Nat.choose_eq_zero_of_lt hbhi'', zero_mul]
+
+/-- The stationary masses sum to one: Vandermonde over the window
+`∑_{x ∈ [blLo, blHi]} choose r x * choose (N-r) (m-x) = choose N m`,
+with the range-form extension justified by
+`blStationaryTerm_zero`. -/
+theorem blStationary_total (p : ExchangeAdmissible) :
+    (∑ x ∈ stateFinset p.N p.m p.r,
+      (Nat.choose p.r x * Nat.choose (p.N - p.r) (p.m - x) : Rat) /
+        (Nat.choose p.N p.m : Rat)) = 1 := by
+  -- 1. The window sum equals the full `range (m+1)` sum.
+  have hext : (∑ x ∈ stateFinset p.N p.m p.r,
+      (Nat.choose p.r x * Nat.choose (p.N - p.r) (p.m - x) : Rat)) =
+      (∑ b ∈ Finset.range (p.m + 1),
+        (Nat.choose p.r b * Nat.choose (p.N - p.r) (p.m - b) : Rat)) := by
+    have hsub : stateFinset p.N p.m p.r ⊆ Finset.range (p.m + 1) := by
+      intro x hx
+      simp only [stateFinset, Finset.mem_Icc, Finset.mem_range] at hx ⊢
+      exact Nat.lt_succ_of_le (Nat.le_trans hx.2 (min_le_left p.m p.r))
+    have hzero : (∑ b ∈ Finset.range (p.m + 1) \ stateFinset p.N p.m p.r,
+        (Nat.choose p.r b * Nat.choose (p.N - p.r) (p.m - b) : Rat)) = 0 := by
+      apply Finset.sum_eq_zero
+      intro b hb
+      simpa using blStationaryTerm_zero p b hb
+    have hsum' := by
+      have hsum := Finset.sum_sdiff
+        (f := fun (b : ℕ) =>
+          (Nat.choose p.r b * Nat.choose (p.N - p.r) (p.m - b) : Rat)) hsub
+      simpa [hzero, add_zero] using hsum
+    exact hsum'
+  -- 2. The range sum is Vandermonde: `choose (r + (N-r)) m = choose N m`.
+  have hvan : (∑ b ∈ Finset.range (p.m + 1),
+      (Nat.choose p.r b * Nat.choose (p.N - p.r) (p.m - b) : Rat)) =
+      (Nat.choose p.N p.m : Rat) := by
+    simp only [← Nat.cast_mul, ← Nat.cast_sum]
+    rw [vandermondeRange p.r (p.N - p.r) p.m]
+    rw [Nat.add_sub_of_le p.hrN]
+  -- 3. Pull the constant denominator out and divide.
+  calc
+    (∑ x ∈ stateFinset p.N p.m p.r,
+        (Nat.choose p.r x * Nat.choose (p.N - p.r) (p.m - x) : Rat) /
+          (Nat.choose p.N p.m : Rat)) =
+      (∑ x ∈ stateFinset p.N p.m p.r,
+        (Nat.choose p.r x * Nat.choose (p.N - p.r) (p.m - x) : Rat)) /
+        (Nat.choose p.N p.m : Rat) := by
+      rw [Finset.sum_congr rfl (fun _ _ => by rw [div_eq_mul_inv]),
+          ← Finset.sum_mul, ← div_eq_mul_inv]
+    _ = (Nat.choose p.N p.m : Rat) / (Nat.choose p.N p.m : Rat) := by
+      rw [hext, hvan]
+    _ = 1 := by
+      rw [div_self]
+      exact ne_of_irrefl' (Rat.natCast_pos.mpr (Nat.choose_pos (Nat.le_of_lt p.hmn)))
+
+/-- The stationary distribution of the general exchange, as a genuine
+`Dist` on the state space: the hypergeometric masses, total `1` by
+`blStationary_total`, nonnegative termwise. -/
+noncomputable def blStationaryDist (p : ExchangeAdmissible) :
+    Dist (BLState p.N p.m p.r) :=
+  Dist.ofFun
+    (fun x => blStationary p.N p.m p.r x)
+    (fun x => blStationary_nonneg p x)
+    (by
+      -- Bridge `Finset.univ` (the pmap finset of the `Fintype.ofFinset`
+      -- instance) to the `stateFinset` sum via the `val` bijection,
+      -- then use the window total.
+      have hbridge : Finset.sum Finset.univ
+          (fun (x : BLState p.N p.m p.r) => blStationary p.N p.m p.r x) =
+          (∑ z ∈ stateFinset p.N p.m p.r,
+            (Nat.choose p.r z * Nat.choose (p.N - p.r) (p.m - z) : Rat) /
+              (Nat.choose p.N p.m : Rat)) := by
+        apply Finset.sum_bij
+          (fun (x : BLState p.N p.m p.r) (_ : x ∈ Finset.univ) => x.val)
+        · -- image in `stateFinset`
+          intro x _
+          simp only [stateFinset, Finset.mem_Icc]
+          exact ⟨x.2.1, x.2.2⟩
+        · -- injective
+          intro x1 _ x2 _ h12
+          exact Subtype.coe_injective h12
+        · -- surjective onto `stateFinset`
+          intro z hz
+          simp only [stateFinset, Finset.mem_Icc] at hz
+          exact ⟨⟨z, hz⟩, Fintype.complete _, rfl⟩
+        · -- `blStationary x` is the raw formula at `x.val`
+          intro x _
+          rw [blStationary, Nat.cast_mul]
+      rw [hbridge]
+      exact blStationary_total p)
+
 end BernoulliLaplaceGeneral
 end Shufflemath
