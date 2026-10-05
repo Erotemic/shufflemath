@@ -40,6 +40,7 @@ import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Data.Fintype.Defs
 import Mathlib.Data.Finset.Interval
@@ -1378,6 +1379,146 @@ private def fiber4Set (p : ExchangeAdmissible) (x y : Nat)
   ((t3.1.powersetCard t3.2.2 ×ˢ t3.2.1.powersetCard (p.k - t3.2.2)) ×ˢ
     ((starsUniv p \ t3.1).powersetCard (y - (x - t3.2.2)) ×ˢ
       (plainUniv p \ t3.2.1).powersetCard (p.k - (y - (x - t3.2.2)))))
+
+
+/-! The fiber sum equals the cardinality of the 7-tuple fiber: the bridge
+that lets the involution count the fiber. The 7-tuple repackages as a
+3-tuple (the two piles and the index) together with a 4-tuple (the
+exchanged cards); for a fixed 3-tuple the 4-tuple part is exactly the
+`fiberABchoose` fiber. -/
+private theorem fiberFlat (p : ExchangeAdmissible) (x y : Nat) :
+    fiberSum p x y = (fiber7Set p x y).card := by
+  dsimp only [fiberSum]
+  -- (1) The 7-tuple fiber is in bijection with the filtered product of the
+  -- 3-tuple set and the ambient 4-tuple space.
+  have hcard7 : (fiber7Set p x y).card =
+      ((fiber3Set p x y ×ˢ fiber4Max p).filter
+        (fun z => isFiber4 p x y z.1 z.2)).card := by
+    refine Finset.card_bij (fun t7 ht => (t3Of t7, t4Of t7)) ?_ ?_ ?_
+    · -- hi: the re-packaged pair is in the target set
+      intro t7 ht
+      have hU7 : t7 ∈ fiber7Univ p := (Finset.mem_filter.mp ht).1
+      have hP7 : fiber7Pred p x y t7 := (Finset.mem_filter.mp ht).2
+      simp only [fiber7Univ, fiber7U5, fiber7U4, fiber7U3, fiber7U2, fiber7U1,
+        fiber7Pred, tS1, tS2, tA, tA1, tA2, tB1, tB2, t3Of, t4Of, fiber3Set,
+        fiber4Max, isFiber4, Finset.mem_product, Finset.mem_powerset,
+        Finset.mem_powersetCard, Finset.mem_filter, Finset.mem_range] at hU7 hP7 ⊢
+      aesop (add simp [Finset.mem_product, Finset.mem_powerset, Finset.mem_powersetCard,
+        Finset.mem_filter, Finset.mem_range, and_assoc, and_left_comm])
+    · -- inj
+      intro a _ b _ h
+      have hm : mk7 (t3Of a) (t4Of a) = mk7 (t3Of b) (t4Of b) :=
+        congrArg (fun z => mk7 z.1 z.2) h
+      rw [← re7 a, ← re7 b]
+      exact hm
+    · -- surj: every target point is the re-packaging of its mk7
+      intro z hz
+      use mk7 z.1 z.2
+      have hmem : mk7 z.1 z.2 ∈ fiber7Set p x y := by
+        have h3 : z.1 ∈ fiber3Set p x y :=
+          (Finset.mem_product.mp (Finset.mem_filter.mp hz).1).1
+        have h4 : z.2 ∈ fiber4Max p :=
+          (Finset.mem_product.mp (Finset.mem_filter.mp hz).1).2
+        have hF4 : isFiber4 p x y z.1 z.2 := (Finset.mem_filter.mp hz).2
+        simp only [fiber7Set, fiber7Univ, fiber7U5, fiber7U4, fiber7U3, fiber7U2,
+          fiber7U1, fiber7Pred, tS1, tS2, tA, tA1, tA2, tB1, tB2, mk7,
+          fiber3Set, fiber4Max, isFiber4, Finset.mem_product,
+          Finset.mem_powerset, Finset.mem_powersetCard, Finset.mem_filter,
+          Finset.mem_range] at h3 h4 hF4 ⊢
+        aesop (add simp [Finset.mem_product, Finset.mem_powerset, Finset.mem_powersetCard,
+          Finset.mem_filter, Finset.mem_range, and_assoc, and_left_comm])
+      exact ⟨hmem, rfl⟩
+  -- (2) The card of the filtered product is the sum over the 3-tuples of
+  -- the card of the 4-tuple fiber.
+  have hsum : ((fiber3Set p x y ×ˢ fiber4Max p).filter
+      (fun z => isFiber4 p x y z.1 z.2)).card =
+      ∑ t3 ∈ fiber3Set p x y,
+        ((fiber4Max p).filter (fun t4 => isFiber4 p x y t3 t4)).card := by
+    rw [← sumOnes]
+    rw [Finset.sum_finset_product
+      ((fiber3Set p x y ×ˢ fiber4Max p).filter
+        (fun z => isFiber4 p x y z.1 z.2))
+      (fiber3Set p x y)
+      (fun c => (fiber4Max p).filter (fun t4 => isFiber4 p x y c t4))
+      (fun z => by simp only [Finset.mem_product, Finset.mem_filter]; tauto)]
+    rw [Finset.sum_congr rfl (fun c _ => sumOnes ((fiber4Max p).filter
+      (fun t4 => isFiber4 p x y c t4)))]
+  -- (3) For a 3-tuple in the fiber set, the 4-tuple fiber is `fiber4Set`.
+  have hfiber (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ))
+      (ht3 : t3 ∈ fiber3Set p x y) :
+      (fiber4Max p).filter (fun t4 => isFiber4 p x y t3 t4) =
+        fiber4Set p x y t3 := by
+    ext t4
+    constructor
+    · simp only [Finset.mem_filter, isFiber4, fiber4Set, Finset.mem_product]
+      rintro ⟨hU4, hF41, hF42, hF43, hF44⟩
+      exact ⟨⟨hF41, hF42⟩, ⟨hF43, hF44⟩⟩
+    · intro h
+      simp only [fiber4Set, Finset.mem_product] at h ⊢
+      rcases h with ⟨⟨hF41, hF42⟩, ⟨hF43, hF44⟩⟩
+      have hU4 : t4 ∈ fiber4Max p := by
+        simp only [fiber4Max, Finset.mem_product, Finset.mem_powerset]
+        have hS1 : t3.1 ⊆ starsUniv p := by
+          simp only [fiber3Set, Finset.mem_product] at ht3
+          exact (Finset.mem_powersetCard.mp ht3.1).1
+        have hS2 : t3.2.1 ⊆ plainUniv p := by
+          simp only [fiber3Set, Finset.mem_product] at ht3
+          exact (Finset.mem_powersetCard.mp ht3.2.1).1
+        exact ⟨⟨Finset.Subset.trans (Finset.mem_powersetCard.mp hF41).1 hS1,
+                Finset.Subset.trans (Finset.mem_powersetCard.mp hF42).1 hS2⟩,
+          ⟨Finset.Subset.trans (Finset.mem_powersetCard.mp hF43).1
+             (Finset.sdiff_subset : (starsUniv p \ t3.1) ⊆ starsUniv p),
+            Finset.Subset.trans (Finset.mem_powersetCard.mp hF44).1
+             (Finset.sdiff_subset : (plainUniv p \ t3.2.1) ⊆ plainUniv p)⟩⟩
+      simp only [Finset.mem_filter, isFiber4]
+      exact ⟨hU4, hF41, hF42, hF43, hF44⟩
+  -- (4) The card of the 4-tuple fiber is the four-level sum of ones.
+  have hf4 (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ)) :
+      (fiber4Set p x y t3).card =
+        (∑ _A1 ∈ t3.1.powersetCard t3.2.2,
+        ∑ _A2 ∈ t3.2.1.powersetCard (p.k - t3.2.2),
+        ∑ _B1 ∈ (starsUniv p \ t3.1).powersetCard (y - (x - t3.2.2)),
+        ∑ _B2 ∈ (plainUniv p \ t3.2.1).powersetCard (p.k - (y - (x - t3.2.2))), 1) := by
+    rw [← sumOnes]
+    dsimp only [fiber4Set]
+    rw [Finset.sum_finset_product _
+      (t3.1.powersetCard t3.2.2 ×ˢ t3.2.1.powersetCard (p.k - t3.2.2))
+      (fun _ => (starsUniv p \ t3.1).powersetCard (y - (x - t3.2.2)) ×ˢ
+        (plainUniv p \ t3.2.1).powersetCard (p.k - (y - (x - t3.2.2))))
+      (by simp [Finset.mem_product])]
+    rw [Finset.sum_congr rfl (fun _ _ => by
+      rw [Finset.sum_finset_product _
+        ((starsUniv p \ t3.1).powersetCard (y - (x - t3.2.2)))
+        (fun _ => (plainUniv p \ t3.2.1).powersetCard (p.k - (y - (x - t3.2.2))))
+        (by simp [Finset.mem_product])])]
+    rw [Finset.sum_finset_product _ (t3.1.powersetCard t3.2.2)
+      (fun _ => t3.2.1.powersetCard (p.k - t3.2.2)) (by simp [Finset.mem_product])]
+  -- (5) Assemble: the right-hand side is the definition of `fiberSum`.
+  have hRHS : (fiber7Set p x y).card =
+      (∑ S1 ∈ (starsUniv p).powersetCard x,
+      ∑ S2 ∈ (plainUniv p).powersetCard (p.m - x),
+      ∑ a ∈ (Finset.range (p.k + 1)).filter (fun a => x - a ≤ y ∧ y - (x - a) ≤ p.k),
+        (∑ _A1 ∈ S1.powersetCard a,
+        ∑ _A2 ∈ S2.powersetCard (p.k - a),
+        ∑ _B1 ∈ (starsUniv p \ S1).powersetCard (y - (x - a)),
+        ∑ _B2 ∈ (plainUniv p \ S2).powersetCard (p.k - (y - (x - a))), 1)) := by
+    rw [hcard7, hsum]
+    rw [Finset.sum_congr rfl (fun t3 ht3 => by rw [hfiber t3 ht3, hf4 t3])]
+    -- The 3-tuple set is the right-nested product `U1 ×ˢ (U2 ×ˢ rangeF)`;
+    -- peel it to the nested sums.
+    rw [Finset.sum_finset_product (fiber3Set p x y) ((starsUniv p).powersetCard x)
+      (fun _ => (plainUniv p).powersetCard (p.m - x) ×ˢ
+        (Finset.range (p.k + 1)).filter (fun a => x - a ≤ y ∧ y - (x - a) ≤ p.k))
+      (by simp [Finset.mem_product, fiber3Set])]
+    rw [Finset.sum_congr rfl (fun _ _ => by
+      rw [Finset.sum_finset_product
+        ((plainUniv p).powersetCard (p.m - x) ×ˢ
+          (Finset.range (p.k + 1)).filter (fun a => x - a ≤ y ∧ y - (x - a) ≤ p.k))
+        ((plainUniv p).powersetCard (p.m - x))
+        (fun _ => (Finset.range (p.k + 1)).filter
+          (fun a => x - a ≤ y ∧ y - (x - a) ≤ p.k)) (by simp [Finset.mem_product])]
+      )]
+  simpa using hRHS.symm
 
 end detailedBalance
 end BernoulliLaplaceGeneral
