@@ -23,30 +23,37 @@ apart in total variation by at most the kernels' `kernelDiscrepancy`
 `Dist.kernel_contraction` with one side fixed. `compList` composes a list
 of kernels in execution order.
 
-Protocol-scale bounds, sharpest to crudest:
+Protocol-scale bounds, strongest to crudest (composition convention
+throughout: `compList [K_0, …, K_n]` runs `K_0` first, then `K_1`, …, so
+`Ks.zip Ls` pairs step `i` with step `i`):
 
-- `weightedTelescope` (flagship, no contraction hypothesis): same-length
-  protocols from the same start are at most
+- `weightedTelescope` (flagship, product-weighted, no contraction
+  hypothesis): same-length protocols from the same start are at most
   `∑_i Δ(K_i, L_i) · ∏_{j>i} δ(L_j)` — each one-step discrepancy damped by
-  the product of the *actual* Dobrushin coefficients of the common L-side
-  tail after it (`weightedTelescopeBound`). No hypothesis beyond equal
-  lengths: the K side only ever enters through the one-step discrepancies,
-  and every kernel's coefficient is ≤ 1 automatically.
+  the product of the Dobrushin coefficients of the common L-side tail
+  strictly after it (`weightedTelescopeBound`). No hypothesis beyond equal
+  lengths: the K side only ever enters through the one-step
+  discrepancies, and every kernel's coefficient is ≤ 1 automatically.
+  The product weight is an upper bound on the exact contraction of the
+  composed tail `δ(L_{i+1} ⋯ L_{n-1})`, which can be strictly smaller —
+  this is a product-weighted bound, not an absolutely sharp one.
 - `hybridTelescope_uniform`: corollary damping the tail products by a
   common `d` to the tail length — the telescoping sum `telescopeBound d Δ`
-  — under the single hypothesis that every L kernel has Dobrushin
-  coefficient ≤ `d`.
+  — under the single hypothesis that every L kernel *after the first
+  step* (the suffix `Ls.drop 1`) has Dobrushin coefficient ≤ `d`; the
+  first kernel `L_0` never appears in a tail product and is
+  unconstrained.
 - `crudeTelescope` (crudest): the `d := 1` case — the plain sum of the
   per-step discrepancies, with no hypothesis at all.
-- `hybridTelescope`: the symmetric variant where both lists contract by a
-  common `d` (contraction-form hypotheses); kept for the d-form statement,
-  and follows from the uniform corollary.
+- `weightedTelescope_2step` / `weightedTelescope_3step`: pinned indexing
+  regression examples (`Δ_0·δ(L_1) + Δ_1` and
+  `Δ_0·δ(L_1)·δ(L_2) + Δ_1·δ(L_2) + Δ_2`).
 
-The sharp form is the D-side payoff: `Dobrushin.dobrushinCoeff` and
-`Dobrushin.dobrushinCoeff_submult` on the one side, and here
-`compList_submult` — the coefficient of a composed list is at most the
-product of the coefficients, so the product of per-step coefficients
-bounds the whole-tail contraction.
+Why the product weight is valid — the D-side payoff:
+`Dobrushin.dobrushinCoeff` and `Dobrushin.dobrushinCoeff_submult` on the
+one side, and here `compList_submult` — the coefficient of a composed
+list is at most the product of the coefficients, so the product of
+per-step coefficients bounds the whole-tail contraction.
 
 The telescoping sum `telescopeBound d Δ = Δ₀·dⁿ⁻¹ + … + Δₙ₋₁` damps each
 position by the number of steps remaining after it: the first step is
@@ -270,7 +277,7 @@ private theorem list_prod_le_pow_of_le (l : List Rat) (d : Rat) (hd0 : 0 ≤ d)
       _ ≤ d * d ^ xs.length := mul_le_mul_of_nonneg_right hx.2 (pow_nonneg hd0 xs.length)
       _ = d ^ (xs.length + 1) := by rw [pow_succ']
 
-/-- **Weighted perturbation bound: the sharp per-step form.**
+/-- **Product-weighted perturbation bound.**
 `weightedTelescopeBound Δ δ` is the sum of each one-step discrepancy
 `Δ_i` times the product of the Dobrushin coefficients of the L-side
 kernels strictly *after* step `i` — the common tail through which the
@@ -349,11 +356,15 @@ private theorem wtB_le_uniform (Δ δ : List Rat) (d : Rat) (hd0 : 0 ≤ d)
         · exact hIH
       _ = telescopeBound d (Δ0 :: Δs) := by rw [telescopeBound_cons]
 
-/-- **Weighted perturbation bound (flagship).** Two protocols of equal
-length from the same start: the TV distance of the final states is at
+/-- **Product-weighted Dobrushin telescope (flagship).** Two protocols of
+equal length in execution order (`compList [K_0, …]` applies `K_0`
+first), from the same start: the TV distance of the final states is at
 most the sum, over each step `i`, of the one-step discrepancy of the two
 kernels at that step times the product of the Dobrushin coefficients of
-the common L-side tail after it: `∑_i Δ(K_i, L_i) · ∏_{j>i} δ(L_j)`.
+the common L-side tail strictly after it:
+`∑_i Δ(K_i, L_i) · ∏_{j>i} δ(L_j)`. The product weight upper-bounds the
+exact contraction `δ(L_{i+1} ⋯ L_{n-1})` of the composed tail, so this is
+a product-weighted bound, not an absolutely sharp one.
 
 No contraction hypothesis at all: every kernel has coefficient in
 `[0, 1]`, and the only inputs are the two protocol lists. Proof:
@@ -438,17 +449,19 @@ theorem weightedTelescope [Fintype alpha] [DecidableEq alpha] [Nonempty alpha]
 
 /-- **Uniform perturbation bound.** Two protocols of equal length over the
 same state space, starting from the same distribution, with every L kernel
-having Dobrushin coefficient at most `d` (`0 ≤ d`). Then the TV distance of
-the final states is at most the telescoping sum: the one-step discrepancy
-of the two kernels at step `i`, times `d` raised to the number of L steps
+*after the first step* (the suffix `Ls.drop 1`) having Dobrushin
+coefficient at most `d` (`0 ≤ d`). Then the TV distance of the final
+states is at most the telescoping sum: the one-step discrepancy of the
+two kernels at step `i`, times `d` raised to the number of L steps
 remaining after it. Corollary of `weightedTelescope`: each L-tail product
 is at most `d` to the tail length. The K side needs no contraction
-hypothesis at all — it only ever enters through the one-step discrepancy.
-With `d := 1` this is `crudeTelescope`. -/
+hypothesis at all — it only ever enters through the one-step discrepancy,
+and the first L kernel `L_0` never appears in a tail product, so it too
+is unconstrained. With `d := 1` this is `crudeTelescope`. -/
 theorem hybridTelescope_uniform [Fintype alpha] [DecidableEq alpha] [Nonempty alpha]
     (Ks Ls : List (FiniteKernel alpha alpha)) (hlen : Ks.length = Ls.length)
     (mu : Dist alpha) (d : Rat) (hd0 : 0 ≤ d)
-    (hdL : ∀ (K : FiniteKernel alpha alpha), K ∈ Ls →
+    (hdL : ∀ (K : FiniteKernel alpha alpha), K ∈ Ls.drop 1 →
       dobrushinCoeff K ≤ d) :
     Dist.tv (FiniteKernel.apply mu (compList Ks)) (FiniteKernel.apply mu (compList Ls)) ≤
     telescopeBound d (List.map (fun (p : FiniteKernel alpha alpha × FiniteKernel alpha alpha) =>
@@ -469,7 +482,7 @@ theorem hybridTelescope_uniform [Fintype alpha] [DecidableEq alpha] [Nonempty al
     exact dobrushinCoeff_nonneg K
   · intro a ha
     rcases List.mem_map.mp ha with ⟨K, hK, rfl⟩
-    exact hdL K (mem_of_mem_drop hK)
+    exact hdL K hK
   · intro a ha
     rcases List.mem_map.mp ha with ⟨p, _, rfl⟩
     exact kernelDiscrepancy_nonneg p.1 p.2
@@ -505,43 +518,6 @@ theorem crudeTelescope [Fintype alpha] [DecidableEq alpha] [Nonempty alpha]
     rcases List.mem_map.mp ha with ⟨p, _, rfl⟩
     exact kernelDiscrepancy_nonneg p.1 p.2
 
-/-- **Symmetric uniform-d bound (kept for the d-form statement).** Both
-protocol lists contract by a common `d`; the bound is the uniform-`d`
-telescope. The contraction hypothesis is converted to a coefficient bound
-per kernel, then the uniform corollary applies (the `K`-side hypothesis
-`hdK` is not needed for the bound). -/
-theorem hybridTelescope [Fintype alpha] [DecidableEq alpha] [Nonempty alpha]
-    (Ks Ls : List (FiniteKernel alpha alpha)) (hlen : Ks.length = Ls.length)
-    (mu : Dist alpha) (d : Rat) (hd0 : 0 ≤ d)
-    (hdK : ∀ (K : FiniteKernel alpha alpha), K ∈ Ks →
-      ∀ (p q : Dist alpha),
-      Dist.tv (FiniteKernel.apply p K) (FiniteKernel.apply q K) ≤ d * Dist.tv p q)
-    (hdL : ∀ (K : FiniteKernel alpha alpha), K ∈ Ls →
-      ∀ (p q : Dist alpha),
-      Dist.tv (FiniteKernel.apply p K) (FiniteKernel.apply q K) ≤ d * Dist.tv p q) :
-    Dist.tv (FiniteKernel.apply mu (compList Ks)) (FiniteKernel.apply mu (compList Ls)) ≤
-    telescopeBound d (List.map (fun (p : FiniteKernel alpha alpha × FiniteKernel alpha alpha) =>
-      kernelDiscrepancy p.1 p.2) (Ks.zip Ls)) :=
-  let _ := hdK
-  hybridTelescope_uniform Ks Ls hlen mu d hd0 (fun K hL => by
-    unfold dobrushinCoeff
-    apply Finset.max'_le
-    intro r hr
-    dsimp only [pairDistances, rowTV] at hr
-    rcases Finset.mem_image.mp hr with ⟨ij, _, rfl⟩
-    have h4 : Dist.tv (Dist.pointMass ij.1) (Dist.pointMass ij.2) ≤ 1 :=
-      Dist.tv_le_one (Dist.pointMass ij.1) (Dist.pointMass ij.2)
-    calc
-      _ = Dist.tv (FiniteKernel.apply (Dist.pointMass ij.1) K)
-          (FiniteKernel.apply (Dist.pointMass ij.2) K) := by
-        rw [FiniteKernel.apply_pointMass, FiniteKernel.apply_pointMass]
-      _ ≤ d * Dist.tv (Dist.pointMass ij.1) (Dist.pointMass ij.2) :=
-        hdL K hL (Dist.pointMass ij.1) (Dist.pointMass ij.2)
-      _ ≤ 1 * d := by
-        rw [mul_comm]
-        exact mul_le_mul_of_nonneg_right h4 hd0
-      _ = d := by rw [one_mul])
-
 /-- The one-step instance of the telescope is exactly the discrepancy
 bound: `[K]` vs `[L]` costs `kernelDiscrepancy K L`, undamped. -/
 theorem hybridTelescope_n1 [Fintype alpha] [DecidableEq alpha] [Nonempty alpha]
@@ -550,5 +526,57 @@ theorem hybridTelescope_n1 [Fintype alpha] [DecidableEq alpha] [Nonempty alpha]
       kernelDiscrepancy K L := by
   simp [compList, FiniteKernel.comp_id_right]
   exact apply_discrepancy_bound K L mu
+
+/-!
+## Indexing regression examples
+
+Pinned two-step and three-step instances of `weightedTelescope` making
+the `zip`/`drop` bookkeeping visible: the discrepancy at position `i`
+is damped by the product of the L-side coefficients *strictly after* it,
+and the last discrepancy is undamped. These guard against an accidental
+off-by-one in the telescoping construction. Composition is in execution
+order: `compList [K_0, K_1]` applies `K_0` first, then `K_1`.
+-/
+
+/-- Two steps: `μ·K_0·K_1` vs `μ·L_0·L_1` costs at most
+`Δ(K_0,L_0)·δ(L_1) + Δ(K_1,L_1)` — the first discrepancy damped by the
+single tail coefficient, the last undamped. -/
+theorem weightedTelescope_2step [Fintype alpha] [DecidableEq alpha] [Nonempty alpha]
+    (K0 K1 L0 L1 : FiniteKernel alpha alpha) (mu : Dist alpha) :
+    Dist.tv (FiniteKernel.apply mu (compList [K0, K1]))
+        (FiniteKernel.apply mu (compList [L0, L1])) ≤
+    kernelDiscrepancy K0 L0 * dobrushinCoeff L1 + kernelDiscrepancy K1 L1 := by
+  have h := weightedTelescope [K0, K1] [L0, L1] (by simp) mu
+  have hbound : weightedTelescopeBound
+      (List.map (fun (p : FiniteKernel alpha alpha × FiniteKernel alpha alpha) =>
+        kernelDiscrepancy p.1 p.2) (List.zip [K0, K1] [L0, L1]))
+      (List.map dobrushinCoeff ([L0, L1].drop 1)) =
+      kernelDiscrepancy K0 L0 * dobrushinCoeff L1 + kernelDiscrepancy K1 L1 := by
+    simp only [List.zip, List.zipWith, List.map, List.drop,
+      weightedTelescopeBound, weightedTelescopeBound_cons,
+      List.prod_cons, List.prod_nil, mul_one, add_zero]
+  simpa only [hbound] using h
+
+/-- Three steps: `μ·K_0·K_1·K_2` vs `μ·L_0·L_1·L_2` costs at most
+`Δ_0·δ(L_1)·δ(L_2) + Δ_1·δ(L_2) + Δ_2` — each discrepancy damped by the
+product of the coefficients strictly after it. -/
+theorem weightedTelescope_3step [Fintype alpha] [DecidableEq alpha] [Nonempty alpha]
+    (K0 K1 K2 L0 L1 L2 : FiniteKernel alpha alpha) (mu : Dist alpha) :
+    Dist.tv (FiniteKernel.apply mu (compList [K0, K1, K2]))
+        (FiniteKernel.apply mu (compList [L0, L1, L2])) ≤
+    kernelDiscrepancy K0 L0 * (dobrushinCoeff L1 * dobrushinCoeff L2) +
+    kernelDiscrepancy K1 L1 * dobrushinCoeff L2 + kernelDiscrepancy K2 L2 := by
+  have h := weightedTelescope [K0, K1, K2] [L0, L1, L2] (by simp) mu
+  have hbound : weightedTelescopeBound
+      (List.map (fun (p : FiniteKernel alpha alpha × FiniteKernel alpha alpha) =>
+        kernelDiscrepancy p.1 p.2) (List.zip [K0, K1, K2] [L0, L1, L2]))
+      (List.map dobrushinCoeff ([L0, L1, L2].drop 1)) =
+      kernelDiscrepancy K0 L0 * (dobrushinCoeff L1 * dobrushinCoeff L2) +
+      kernelDiscrepancy K1 L1 * dobrushinCoeff L2 + kernelDiscrepancy K2 L2 := by
+    simp only [List.zip, List.zipWith, List.map, List.drop,
+      weightedTelescopeBound, weightedTelescopeBound_cons,
+      List.prod_cons, List.prod_nil, mul_one, add_zero]
+    ring
+  simpa only [hbound] using h
 
 end Shufflemath
