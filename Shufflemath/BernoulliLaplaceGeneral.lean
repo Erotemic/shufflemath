@@ -980,5 +980,282 @@ noncomputable def blStationaryDist (p : ExchangeAdmissible) :
       rw [hbridge]
       exact blStationary_total p)
 
+/-! ## Detailed balance, part 1: the exchange fiber and its count
+
+The exchange step "move `k` cards from the top pile `S` to the bottom and
+`k` cards back" is counted by 7-tuples `(S1, S2, a, A1, A2, B1, B2)`:
+`S1 ⊆ stars`, `|S1| = x`, `S2 ⊆ plain`, `|S2| = m - x` (the pile `S`),
+`a` specials moved out (`A1`, `|A1| = a`), `A2` ordinary cards moved out
+(`|A2| = k - a`), `B1` specials moved in (`|B1| = y - (x - a)`), and
+`B2` ordinary cards moved in (`|B2| = k - (y - (x - a))`).  The new pile
+has `x - a + (y - (x - a)) = y` specials, so the fiber count with the
+numerator guard is exactly
+`choose r x * choose (N - r) (m - x) * transitionNumerator x y`.
+
+The involution `(S, A, B) ↦ (S \ A ∪ B, B, A)` then swaps the fiber of
+`(x, y)` with that of `(y, x)`, giving detailed balance.
+-/
+
+section detailedBalance
+
+variable (p : ExchangeAdmissible)
+
+/-- The universe of special cards (there are `r` of them) and the universe
+of ordinary cards (there are `N - r` of them), as concrete `Fin` types.
+Choosing a pile `S` of size `m` with `x` specials is the same as choosing
+`S1 ⊆ starsUniv` with `|S1| = x` and `S2 ⊆ plainUniv` with
+`|S2| = m - x`. -/
+private def starsUniv (p : ExchangeAdmissible) : Finset (Fin p.r) :=
+  Finset.univ
+
+private def plainUniv (p : ExchangeAdmissible) : Finset (Fin (p.N - p.r)) :=
+  Finset.univ
+
+/-- The exchange fiber count for the macrostate pair `(x, y)`: see the
+section comment. -/
+private def fiberSum (p : ExchangeAdmissible) (x y : Nat) : Nat :=
+  ∑ S1 ∈ (starsUniv p).powersetCard x,
+  ∑ S2 ∈ (plainUniv p).powersetCard (p.m - x),
+  ∑ a ∈ Finset.range (p.k + 1),
+    if x - a ≤ y ∧ y - (x - a) ≤ p.k then
+      (∑ _A1 ∈ S1.powersetCard a,
+      ∑ _A2 ∈ S2.powersetCard (p.k - a),
+      ∑ _B1 ∈ (starsUniv p \ S1).powersetCard (y - (x - a)),
+      ∑ _B2 ∈ (plainUniv p \ S2).powersetCard (p.k - (y - (x - a))), 1)
+    else 0
+
+/-- A sum of constant `1`s over a finset is its cardinality. -/
+private theorem sumOnes {α : Type*} (s : Finset α) : (∑ _x ∈ s, 1 : Nat) = s.card := by
+  rw [Finset.sum_const_nat (fun _ _ => rfl)]
+  simp
+
+/-- The `(A, B)` part of the fiber, given the pile `(S1, S2)` and the
+special-exchange index `a`: the four nested sums of `1`s collapse to the
+product of the four `powersetCard` cardinalities. -/
+private theorem fiberABcount (p : ExchangeAdmissible) (x y a : Nat)
+    (S1 : Finset (Fin p.r)) (_hS1 : S1 ∈ (starsUniv p).powersetCard x)
+    (S2 : Finset (Fin (p.N - p.r))) (_hS2 : S2 ∈ (plainUniv p).powersetCard (p.m - x))
+    (_ha : a ∈ Finset.range (p.k + 1)) :
+    (∑ _A1 ∈ S1.powersetCard a,
+    ∑ _A2 ∈ S2.powersetCard (p.k - a),
+    ∑ _B1 ∈ (starsUniv p \ S1).powersetCard (y - (x - a)),
+    ∑ _B2 ∈ (plainUniv p \ S2).powersetCard (p.k - (y - (x - a))), 1) =
+    (S1.powersetCard a).card * (S2.powersetCard (p.k - a)).card *
+      ((starsUniv p \ S1).powersetCard (y - (x - a))).card *
+      ((plainUniv p \ S2).powersetCard (p.k - (y - (x - a)))).card := by
+  have h4 :
+      (∑ B2 ∈ (plainUniv p \ S2).powersetCard (p.k - (y - (x - a))), 1) =
+        ((plainUniv p \ S2).powersetCard (p.k - (y - (x - a)))).card := by
+    rw [sumOnes]
+  have h3 :
+      (∑ _B1 ∈ (starsUniv p \ S1).powersetCard (y - (x - a)),
+        (∑ _B2 ∈ (plainUniv p \ S2).powersetCard (p.k - (y - (x - a))), 1)) =
+        ((starsUniv p \ S1).powersetCard (y - (x - a))).card *
+          ((plainUniv p \ S2).powersetCard (p.k - (y - (x - a)))).card := by
+    rw [h4, Finset.sum_const_nat (fun _ _ => rfl)]
+  have h2 :
+      (∑ _A2 ∈ S2.powersetCard (p.k - a),
+        (∑ _B1 ∈ (starsUniv p \ S1).powersetCard (y - (x - a)),
+          (∑ _B2 ∈ (plainUniv p \ S2).powersetCard (p.k - (y - (x - a))), 1))) =
+        (S2.powersetCard (p.k - a)).card *
+          ((starsUniv p \ S1).powersetCard (y - (x - a))).card *
+          ((plainUniv p \ S2).powersetCard (p.k - (y - (x - a)))).card := by
+    rw [h3, Finset.sum_const_nat (fun _ _ => rfl)]
+    ring_nf
+  rw [h2, Finset.sum_const_nat (fun _ _ => rfl)]
+  ring_nf
+
+
+/-- Given the pile and the index `a`, the `(A, B)` part of the fiber is
+the product of the four `powersetCard` cardinalities, i.e. the
+`a`-summand factors with the plain-card count written as
+`(N - r) - (m - x)`. -/
+private theorem fiberABchoose (p : ExchangeAdmissible) (x y a : Nat)
+    (S1 : Finset (Fin p.r)) (hS1 : S1 ∈ (starsUniv p).powersetCard x)
+    (S2 : Finset (Fin (p.N - p.r))) (hS2 : S2 ∈ (plainUniv p).powersetCard (p.m - x))
+    (ha : a ∈ Finset.range (p.k + 1))
+    (_hg : x - a ≤ y ∧ y - (x - a) ≤ p.k) :
+    (∑ _A1 ∈ S1.powersetCard a,
+    ∑ _A2 ∈ S2.powersetCard (p.k - a),
+    ∑ _B1 ∈ (starsUniv p \ S1).powersetCard (y - (x - a)),
+    ∑ _B2 ∈ (plainUniv p \ S2).powersetCard (p.k - (y - (x - a))), 1) =
+    Nat.choose x a * Nat.choose (p.m - x) (p.k - a) *
+      Nat.choose (p.r - x) (y - (x - a)) *
+      Nat.choose ((p.N - p.r) - (p.m - x)) (p.k - (y - (x - a))) := by
+  have hS1c : S1.card = x := (Finset.mem_powersetCard.1 hS1).2
+  have hS2c : S2.card = p.m - x := (Finset.mem_powersetCard.1 hS2).2
+  have hS1s : S1 ⊆ starsUniv p := (Finset.mem_powersetCard.1 hS1).1
+  have hS2s : S2 ⊆ plainUniv p := (Finset.mem_powersetCard.1 hS2).1
+  rw [fiberABcount p x y a S1 hS1 S2 hS2 ha]
+  rw [Finset.card_powersetCard, Finset.card_powersetCard, hS1c, hS2c]
+  have h3c : ((starsUniv p \ S1).powersetCard (y - (x - a))).card =
+      (p.r - x).choose (y - (x - a)) := by
+    rw [Finset.card_powersetCard, Finset.card_sdiff]
+    have hi : S1 ∩ starsUniv p = S1 := Finset.inter_eq_left.mpr hS1s
+    rw [hi]
+    have hcard : (starsUniv p).card - S1.card = p.r - x := by
+      show (Finset.univ : Finset (Fin p.r)).card - S1.card = p.r - x
+      rw [Finset.card_fin p.r, hS1c]
+    rw [hcard]
+  rw [h3c]
+  have h4c : ((plainUniv p \ S2).powersetCard (p.k - (y - (x - a)))).card =
+      ((p.N - p.r) - (p.m - x)).choose (p.k - (y - (x - a))) := by
+    rw [Finset.card_powersetCard, Finset.card_sdiff]
+    have hi : S2 ∩ plainUniv p = S2 := Finset.inter_eq_left.mpr hS2s
+    rw [hi]
+    have hcard : (plainUniv p).card - S2.card = (p.N - p.r) - (p.m - x) := by
+      show (Finset.univ : Finset (Fin (p.N - p.r))).card - S2.card =
+        (p.N - p.r) - (p.m - x)
+      rw [Finset.card_fin (p.N - p.r), hS2c]
+    rw [hcard]
+  rw [h4c]
+
+/-! The main counting lemma: the exchange fiber of `(x, y)` factors into
+the stationary-weight factors and the transition numerator. -/
+private theorem fiberSum_eq (p : ExchangeAdmissible) (x y : Nat)
+    (hx : x ∈ stateFinset p.N p.m p.r) :
+    fiberSum p x y =
+      Nat.choose p.r x * Nat.choose (p.N - p.r) (p.m - x) *
+        transitionNumerator p.N p.m p.r p.k x y := by
+  have hlo : blLo p.N p.m p.r ≤ x := by
+    simp only [stateFinset, Finset.mem_Icc] at hx
+    exact hx.1
+  have hhi : x ≤ blHi p.N p.m p.r := by
+    simp only [stateFinset, Finset.mem_Icc] at hx
+    exact hx.2
+  have hxm : x ≤ p.m := hhi.trans (Nat.min_le_left p.m p.r)
+  have hxr : x ≤ p.r := hhi.trans (Nat.min_le_right p.m p.r)
+  -- The two plain-card counts `(N - r) - (m - x)` and `(N - m) - (r - x)`
+  -- agree for `x` in the window: both sides are exact exactly when
+  -- `m + r - x ≤ N`, and in that case both equal `N - r - m + x`;
+  -- otherwise both saturate to `0`.
+  have hfour : (p.N - p.r) - (p.m - x) = (p.N - p.m) - (p.r - x) := by
+    by_cases hsum : p.m + p.r ≤ p.N + x
+    · -- Both differences are exact.
+      have h1 : p.m - x ≤ p.N - p.r := by
+        have hA : p.m + p.r - x ≤ p.N := (Nat.sub_le_iff_le_add).mpr (by omega)
+        have hB : p.r + (p.m - x) = (p.m + p.r) - x := by
+          simpa [Nat.add_comm] using (Nat.add_sub_assoc hxm p.r).symm
+        have hC : (p.m - x) + p.r ≤ p.N := by
+          simpa [Nat.add_comm, hB] using hA
+        exact (Nat.le_sub_iff_add_le p.hrN).mpr hC
+      have h2 : p.r - x ≤ p.N - p.m := by
+        have hA : p.m + p.r - x ≤ p.N := (Nat.sub_le_iff_le_add).mpr (by omega)
+        have hB : p.m + (p.r - x) = (p.m + p.r) - x := by
+          simpa [Nat.add_comm] using (Nat.add_sub_assoc hxr p.m).symm
+        have hC : p.m + (p.r - x) ≤ p.N := by
+          simpa [hB] using hA
+        have hC' : p.r - x + p.m ≤ p.N := by
+          simpa [Nat.add_comm] using hC
+        exact (Nat.le_sub_iff_add_le p.hmn.le).mpr hC'
+        
+      have hL : (↑((p.N - p.r) - (p.m - x)) : ℤ) =
+          (p.N : ℤ) - (p.r : ℤ) - (p.m : ℤ) + (x : ℤ) := by
+        rw [Int.ofNat_sub h1, Int.ofNat_sub p.hrN, Int.ofNat_sub hxm]
+        ring
+      have hR : (↑((p.N - p.m) - (p.r - x)) : ℤ) =
+          (p.N : ℤ) - (p.m : ℤ) - (p.r : ℤ) + (x : ℤ) := by
+        rw [Int.ofNat_sub h2, Int.ofNat_sub p.hmn.le, Int.ofNat_sub hxr]
+        ring
+      have heq : (↑((p.N - p.r) - (p.m - x)) : ℤ) =
+          (↑((p.N - p.m) - (p.r - x)) : ℤ) := by
+        rw [hL, hR]
+        ring
+      exact Int.natCast_inj.mp heq
+    · -- `m + r > N + x`: both differences saturate to `0`.
+      have hL0 : (p.N - p.r) - (p.m - x) = 0 := by
+        have hK : p.N - p.r ≤ p.m - x := by
+          have h1 : (↑(p.N - p.r) : ℤ) ≤ (↑(p.m - x) : ℤ) := by
+            rw [Int.ofNat_sub p.hrN, Int.ofNat_sub hxm]
+            have hsum' : (p.N : ℤ) + (x : ℤ) < (p.m : ℤ) + (p.r : ℤ) := by
+              norm_cast
+              omega
+            linarith
+          exact Int.ofNat_le.mp h1
+        rw [Nat.sub_eq_zero_iff_le]
+        exact hK
+      have hR0 : (p.N - p.m) - (p.r - x) = 0 := by
+        have hK : p.N - p.m ≤ p.r - x := by
+          have h1 : (↑(p.N - p.m) : ℤ) ≤ (↑(p.r - x) : ℤ) := by
+            rw [Int.ofNat_sub p.hmn.le, Int.ofNat_sub hxr]
+            have hsum' : (p.N : ℤ) + (x : ℤ) < (p.m : ℤ) + (p.r : ℤ) := by
+              norm_cast
+              omega
+            linarith
+          exact Int.ofNat_le.mp h1
+        rw [Nat.sub_eq_zero_iff_le]
+        exact hK
+      rw [hL0, hR0]
+  dsimp only [fiberSum]
+  -- The `(A, B)` fiber of a fixed pile `(S1, S2)` and index `a` is the
+  -- `a`-summand of the transition numerator.
+  have hnum (S1 : Finset (Fin p.r))
+      (hS1 : S1 ∈ (starsUniv p).powersetCard x)
+      (S2 : Finset (Fin (p.N - p.r)))
+      (hS2 : S2 ∈ (plainUniv p).powersetCard (p.m - x)) :
+      (∑ a ∈ Finset.range (p.k + 1),
+        if x - a ≤ y ∧ y - (x - a) ≤ p.k then
+          (∑ _A1 ∈ S1.powersetCard a,
+          ∑ _A2 ∈ S2.powersetCard (p.k - a),
+          ∑ _B1 ∈ (starsUniv p \ S1).powersetCard (y - (x - a)),
+          ∑ _B2 ∈ (plainUniv p \ S2).powersetCard (p.k - (y - (x - a))), 1)
+        else 0) =
+      transitionNumerator p.N p.m p.r p.k x y := by
+    rw [transitionNumerator]
+    apply Finset.sum_congr rfl
+    intro a ha
+    dsimp only
+    by_cases c1 : x - a ≤ y
+    · by_cases c2 : y - (x - a) ≤ p.k
+      · -- Both ite branches select the positive side: `simp` has already
+        -- unfolded the four level sums into a product of `choose` factors
+        -- indexed by the pile cards.
+        simp [c1, c2]
+        have hS1if : S1 ∈ (starsUniv p).powersetCard x ↔
+            S1 ⊆ starsUniv p ∧ S1.card = x := Finset.mem_powersetCard
+        have hS1c : S1.card = x := (hS1if.mp hS1).2
+        have hS1s : S1 ⊆ starsUniv p := (hS1if.mp hS1).1
+        have hS2if : S2 ∈ (plainUniv p).powersetCard (p.m - x) ↔
+            S2 ⊆ plainUniv p ∧ S2.card = p.m - x := Finset.mem_powersetCard
+        have hS2c : S2.card = p.m - x := (hS2if.mp hS2).2
+        have hS2s : S2 ⊆ plainUniv p := (hS2if.mp hS2).1
+        have hU1 : (starsUniv p \ S1).card = p.r - x := by
+          rw [Finset.card_sdiff]
+          have hi : S1 ∩ starsUniv p = S1 := Finset.inter_eq_left.mpr hS1s
+          rw [hi]
+          have hcard : (starsUniv p).card - S1.card = p.r - x := by
+            show (Finset.univ : Finset (Fin p.r)).card - S1.card = p.r - x
+            rw [Finset.card_fin p.r, hS1c]
+          rw [hcard]
+        have hU2 : (plainUniv p \ S2).card = (p.N - p.r) - (p.m - x) := by
+          rw [Finset.card_sdiff]
+          have hi : S2 ∩ plainUniv p = S2 := Finset.inter_eq_left.mpr hS2s
+          rw [hi]
+          have hcard : (plainUniv p).card - S2.card =
+              (p.N - p.r) - (p.m - x) := by
+            show (Finset.univ : Finset (Fin (p.N - p.r))).card - S2.card =
+              (p.N - p.r) - (p.m - x)
+            rw [Finset.card_fin (p.N - p.r), hS2c]
+          rw [hcard]
+        rw [hS1c, hS2c, hU1, hU2, hfour]
+        ring
+      · simp [c1, c2]
+    · by_cases c2 : y - (x - a) ≤ p.k
+      · simp [c1, c2]
+      · simp [c1, c2]
+  -- Peel off the pile sums: the `a`-sum is the same for every pile.
+  rw [Finset.sum_congr rfl (fun S1 hS1 => Finset.sum_congr rfl (fun S2 hS2 => hnum S1 hS1 S2 hS2))]
+  rw [Finset.sum_const_nat (fun _ _ => rfl), Finset.sum_const_nat (fun _ _ => rfl)]
+  rw [Finset.card_powersetCard, Finset.card_powersetCard]
+  have hcard1 : (starsUniv p).card = p.r := by
+    show (Finset.univ : Finset (Fin p.r)).card = p.r
+    rw [Finset.card_fin p.r]
+  have hcard2 : (plainUniv p).card = p.N - p.r := by
+    show (Finset.univ : Finset (Fin (p.N - p.r))).card = p.N - p.r
+    rw [Finset.card_fin (p.N - p.r)]
+  rw [hcard1, hcard2]
+  ring_nf
+
+end detailedBalance
 end BernoulliLaplaceGeneral
 end Shufflemath
