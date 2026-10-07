@@ -1040,35 +1040,43 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   (double Vandermonde, general `r`), `transitionWeight_nonneg`,
   `transitionDenominator_pos`, `blExchangeKernel`, `blStationary` /
   `blStationaryTotal` / `blStationaryDist`, fiber machinery
-  (`fiberSum`/`fiberSum_eq`/`fiber7*`/`fiberFlat`). Remaining: the 7-tuple
-  involution + `fiberSum_swap` (stage 4, in the working tree), the
+  (`fiberSum`/`fiberSum_eq`/`fiber7*`/`fiberFlat`). Remaining: the
   detailed-balance theorem (follows from `fiberSum_swap` + `fiberSum_eq` +
   `blStationary`), `blStationaryDist` stationary via
   `Markov.stationary_of_detailedBalance`, and the Commander bridge module.
+- [x] 2026-10-07 (session 15): commit 1a0cb94 — **F part 3 stage 4
+  complete.** `fiber7Inv` (the 7-tuple exchange involution),
+  `fiber7Inv_mem`, `fiber7Inv_inv`, `fiberSum_swap`. **Math finding:**
+  `fiber7Pred`'s 12 conditions do not force the left-pile capacity
+  `x ≤ p.m` (they stay consistent with `x > p.m`, where `p.m - x = 0`;
+  concrete counterexample N=10, m=6, r=9, k=2, x=7, y=6, a=2), and for
+  such tuples the image leaves the `(y,x)` fiber — the `#S2' = p.m - y`
+  arithmetic breaks. The theorems therefore carry `x ≤ p.m` (and
+  `fiberSum_swap` also `y ≤ p.m`) as physical-admissibility hypotheses;
+  the detailed-balance theorem must restrict to such `(x, y)`. Mechanics
+  (all in `docs/lessons_learned.md`): `omega` takes no `[h]` list and
+  cannot do nested Nat-subtraction algebra (break into small rearrangement
+  equalities it can prove, then rw: `Nat.sub_sub`,
+  `Nat.le_sub_iff_add_le`, `Nat.sub_add_cancel`, `Nat.add_sub_assoc`);
+  Finset membership is not a Prop structure (use `mem_union`/`mem_sdiff`
+  `.mp`/`.mpr`, not `constructor`/`rcases`/simp-at); `ext` on nested
+  products recurses to the bottom; `refine F (g ?_)` breaks `⟨⟩`
+  elaboration (use `apply` chains); `simp` on a `×ˢ` chain stops one level
+  short and yields a left-nested `And` (rebuild with explicit
+  `Finset.mem_product.mpr` per level).
 - [ ] G. First eigenfunction (general + Commander corollaries).
 - [ ] H. Stretch: GSR, higher modes, separation distance.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** F part 3 stage 4 (in the working tree, uncommitted —
-fix first: `hU` must be `rcases`-decomposed into the 7 universe
-components after the `mem_powerset`/`mem_product` simp, and bullets 5/6 of
-`fiber7Inv_mem` use those subset facts directly): `fiber7Inv` (the 7-tuple
-involution), `fiber7Inv_mem`, `fiber7Inv_inv`, `fiberSum_swap`
-(`fiberSum (x, y) = fiberSum (y, x)` — the combinatorial core). Then the
-detailed-balance theorem: `blStationary x · W(x, y) = blStationary y ·
-W(y, x)` in `Rat`, assembled from `fiberSum_swap` + `fiberSum_eq` (both
-sides) + the `blStationary`/`transitionWeight` definitions (both sides =
-`fiberSum / (C(N, m)·C(m, k)·C(N−m, k))`); then `blStationaryDist` is
-stationary via `Markov.detailedBalance_implies_stationary`. Then the bridge
-module `Shufflemath/BernoulliLaplaceCommanderBridge.lean` (imports both BL
-files; `transitionNumerator` coincidence — expect `rfl`;
-`blExchangeKernel` at `(99, 50, 50, 25)` equals the frozen
-`commanderExchange25`/`commanderFirstMode` via a state-space equivalence
-`Fin 50 ↔ BLState 99 50 50`). `./dev/verify.sh` at each step. GPT review
-findings #1–#10 are all DONE (§4a) — the review work is complete;
-remaining priorities are F (detailed balance + bridge), G (first
-eigenfunction), H (stretch).
+**Next action:** F part 3 stage 5 — the detailed-balance theorem
+`blStationary x · W(x, y) = blStationary y · W(y, x)` in `Rat` (hypotheses
+`x ≤ p.m`, `y ≤ p.m`), assembled from `fiberSum_swap` + `fiberSum_eq`
+(both sides) + the `blStationary`/`transitionWeight` definitions (both
+sides reduce to `fiberSum / (C(N, m)·C(m, k)·C(N−m, k))`); then
+`blStationaryDist` stationary via `Markov.detailedBalance_implies_stationary`
+(verify the exact name/shape in `Mathlib/MeasureTheory/MarkovChain`).
+Then the Commander bridge module (see the F entry above).
 
 ## 8. Taste & style rules
 

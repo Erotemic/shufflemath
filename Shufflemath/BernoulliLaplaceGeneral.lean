@@ -1840,6 +1840,62 @@ private theorem fiberSum_swap (p : ExchangeAdmissible) (x y : Nat)
     · -- the witness lies in the (x, y) fiber
       exact fiber7Inv_mem p y x hylo z hz
 
+/-! ### Detailed balance
+
+Microscopic reversibility for the exchange kernel: the hypergeometric
+stationary distribution and the transition kernel satisfy
+`π(x) W(x, y) = π(y) W(y, x)`. Both sides reduce to the same fiber count
+over the same denominator, `C(N, m)·C(m, k)·C(N - m, k)`: the stationary
+mass carries the Vandermonde factor `C(r, z)·C(N-r, m-z)` and the
+transition numerator is the rest of the fiber count (`fiberSum_eq`), so
+the identity is exactly `fiberSum_swap`. -/
+
+private theorem detailedBalance (p : ExchangeAdmissible) (x y : BLState p.N p.m p.r) :
+    blStationary p.N p.m p.r x * transitionWeight p.N p.m p.r p.k x.val y.val =
+      blStationary p.N p.m p.r y * transitionWeight p.N p.m p.r p.k y.val x.val := by
+  -- The common denominator: the deck choice times the exchange-pair
+  -- choice, as a product of two casts.
+  let D := (Nat.choose p.N p.m : Rat) * (transitionDenominator p.N p.m p.k : Rat)
+  -- Each side is the corresponding fiber count over that denominator:
+  -- `π(z) = C(r, z)·C(N-r, m-z) / C(N, m)` and
+  -- `W(z, w) = num(z, w) / (C(m, k)·C(N-m, k))`, while
+  -- `fiberSum(z, w) = C(r, z)·C(N-r, m-z)·num(z, w)` (fiberSum_eq).
+  have hside (z : BLState p.N p.m p.r) (w : Nat) :
+      blStationary p.N p.m p.r z * transitionWeight p.N p.m p.r p.k z.val w =
+        (fiberSum p z.val w : Rat) / D := by
+    have hC : (Nat.choose p.N p.m : Rat) ≠ 0 := by
+      rw [Nat.cast_ne_zero]
+      exact Nat.pos_iff_ne_zero.mp (Nat.choose_pos (Nat.le_of_lt p.hmn))
+    have hD2 : (transitionDenominator p.N p.m p.k : Rat) ≠ 0 := by
+      rw [Nat.cast_ne_zero]
+      exact Nat.pos_iff_ne_zero.mp (transitionDenominator_pos p)
+    have hzmem : z.val ∈ stateFinset p.N p.m p.r := by
+      simp only [stateFinset, Finset.mem_Icc]
+      exact ⟨z.2.1, z.2.2⟩
+    simp only [blStationary, transitionWeight, transitionDenominator]
+    field_simp [hC, hD2]
+    -- Gather the numerator's two casts into one (whose inner product is
+    -- the fiber count), split the gathered denominator cast back into
+    -- the two-cast shape of `D`, and unfold the let.
+    rw [← Nat.cast_mul, ← fiberSum_eq p z.val w hzmem, Nat.cast_mul]
+    dsimp only [D, transitionDenominator]
+    -- The deck factor was moved to the right side's numerator by
+    -- field_simp; cancel it (hC says it is nonzero). The final rw splits
+    -- the right side's cast-of-product denominator (field_simp regathers
+    -- it, so the split must come last) to match the left side.
+    field_simp [hC]
+    rw [Nat.cast_mul]
+  -- Both macrostates are physical: they lie in the left pile's window.
+  have hxm : x.val ≤ p.m := x.2.2.trans (Nat.min_le_left p.m p.r)
+  have hym : y.val ≤ p.m := y.2.2.trans (Nat.min_le_left p.m p.r)
+  calc
+    blStationary p.N p.m p.r x * transitionWeight p.N p.m p.r p.k x.val y.val =
+      (fiberSum p x.val y.val : Rat) / D := hside x (y.val)
+    _ = (fiberSum p y.val x.val : Rat) / D := by
+      rw [fiberSum_swap p x.val y.val hxm hym]
+    _ = blStationary p.N p.m p.r y * transitionWeight p.N p.m p.r p.k y.val x.val :=
+      (hside y (x.val)).symm
+
 end detailedBalance
 end BernoulliLaplaceGeneral
 end Shufflemath
