@@ -1940,5 +1940,271 @@ theorem blStationaryRun (p : ExchangeAdmissible) (n : Nat) :
   exact stationary_run n _ _ (blStationaryDist_is_stationary p)
 
 end detailedBalance
+
+/-! ### First mode: hypergeometric means and the first eigenfunction
+
+The exchange kernel is affine on the macrostate: `E[y | x] = x - a
+mean + b mean` with the means given by the 1-D hypergeometric
+computations below. From that, the centered macrostate
+`f(x) = x - m*r/N` is an eigenfunction with eigenvalue
+`blFirstModeFactor = 1 - N*k/(m*(N-m))`. -/
+section firstMode
+variable {N m r k : Nat}
+
+/-- Per-term Pascal shift: `(x + 1) * C(n, x+1) = n * C(n-1, x)`.
+Holds for all `n x`: when `x >= n` both sides are `0`. -/
+theorem chooseSucc_weighted (n x : Nat) :
+    (x + 1) * (Nat.choose n (x + 1)) = n * (Nat.choose (n - 1) x) := by
+  by_cases h : x < n
+  · -- `x <= n - 1`: Pascal + the `(x+1)`-weighted Pascal recurrence.
+    have h1 : Nat.choose n (x + 1) = Nat.choose (n - 1) x + Nat.choose (n - 1) (x + 1) := by
+      have : n - 1 + 1 = n := by omega
+      rw [← this]
+      rw [Nat.choose_succ_succ (n - 1) x]
+      simp
+    have h2 : (x + 1) * (Nat.choose (n - 1) (x + 1)) =
+        (Nat.choose (n - 1) x) * (n - 1 - x) := by
+      rw [Nat.mul_comm]
+      rw [Nat.choose_succ_right_eq (n - 1) x]
+    calc
+      (x + 1) * (Nat.choose n (x + 1)) =
+          (x + 1) * (Nat.choose (n - 1) x + Nat.choose (n - 1) (x + 1)) := by rw [h1]
+      _ = (x + 1) * (Nat.choose (n - 1) x) + (x + 1) * (Nat.choose (n - 1) (x + 1)) := by ring
+      _ = (x + 1) * (Nat.choose (n - 1) x) + (Nat.choose (n - 1) x) * (n - 1 - x) := by rw [h2]
+      _ = (Nat.choose (n - 1) x) * ((x + 1) + (n - 1 - x)) := by
+        rw [Nat.mul_comm]
+        ring
+      _ = n * (Nat.choose (n - 1) x) := by
+        have hle : x <= n - 1 := by omega
+        have : (x + 1) + (n - 1 - x) = n := by
+          have h1 : (n - 1 - x) + x = n - 1 := Nat.sub_add_cancel hle
+          omega
+        rw [this]
+        exact Nat.mul_comm (Nat.choose (n - 1) x) n
+  · -- `x >= n`: both binomials vanish (`n = 0` handled separately).
+    by_cases hn0 : n = 0
+    · simp [hn0]
+    ·
+      have hxn : x >= n := Nat.not_lt.mp h
+      have h1 : n < x + 1 := by omega
+      have h2 : n - 1 < x := by
+        have hnn : n = (n - 1) + 1 := by
+          have : 0 < n := Nat.pos_of_ne_zero hn0
+          omega
+        rw [hnn] at hxn
+        omega
+      have hz1 : Nat.choose n (x + 1) = 0 := by
+        rw [Nat.choose_eq_zero_iff]
+        exact h1
+      have hz2 : Nat.choose (n - 1) x = 0 := by
+        rw [Nat.choose_eq_zero_iff]
+        exact h2
+      rw [hz1, hz2]
+      simp
+
+/-- 1-D hypergeometric mean, exact rational form: a pile of `n` cards
+holding `x` marked ones, drawing `k`: the expected number of marked
+cards drawn is `k*x/n`. Equivalently the weighted sum identity -/
+theorem chooseSum_weighted (n x k : Nat) (hx : x <= n) :
+    (∑ a ∈ Finset.range (k + 1),
+      (a : Rat) * (Nat.choose x a : Rat) * (Nat.choose (n - x) (k - a) : Rat)) =
+      (k : Rat) * (x : Rat) / (n : Rat) * (Nat.choose n k : Rat) := by
+  by_cases hk : k = 0
+  · -- The only summand has `a = 0` (hence is 0); the right side has `k = 0`.
+    simp [hk, Nat.cast_zero, Nat.mul_zero]
+  ·
+    by_cases hx0 : x = 0
+    · -- `C(0, a)` is 0 for `a >= 1` and the `a = 0` summand has a `0` factor;
+      -- the right side has an `x = 0` factor.
+    
+      have hL : (∑ a ∈ Finset.range (k + 1),
+          (a : Rat) * (Nat.choose x a : Rat) * (Nat.choose (n - x) (k - a) : Rat)) = 0 := by
+        apply Finset.sum_eq_zero
+        intro a _
+        by_cases ha : a = 0
+        · simp [ha]
+        · have ha1 : 0 < a := Nat.pos_of_ne_zero ha
+          have hz : Nat.choose x a = 0 := by
+            rw [Nat.choose_eq_zero_iff]
+            simpa [hx0] using ha1
+          simp [hz, Nat.cast_zero, Nat.mul_zero]
+      rw [hL]
+      simp [hx0, Nat.cast_zero, Nat.mul_zero, Nat.mul_zero]
+    ·
+      -- `0 < x <= n`, so `0 < n`: the division by `n` is an honest one.
+      have hx1 : 0 < x := Nat.pos_of_ne_zero hx0
+      have hn1 : 0 < n := Nat.lt_of_lt_of_le hx1 hx
+      have hnpos : (n : Rat) ≠ 0 := by
+        intro h
+        have h1 : (0 : Rat) < (n : Rat) := Nat.cast_pos.mpr hn1
+        rw [h] at h1
+        linarith
+      -- Step 1: drop the zero `a = 0` summand and reindex `a = i + 1` (`i < k`),
+      -- using `k - (i+1) = k - 1 - i`.
+      have h1 :
+          (∑ a ∈ Finset.range (k + 1),
+            (a : Rat) * (Nat.choose x a : Rat) * (Nat.choose (n - x) (k - a) : Rat)) =
+          (∑ i ∈ Finset.range k,
+            ((i + 1) : Rat) * (Nat.choose x (i + 1) : Rat) *
+              (Nat.choose (n - x) (k - 1 - i) : Rat)) := by
+        -- `range (k+1) \ {0}` is in bijection with `range k` via `i + 1`.
+        have hdrop : (∑ a ∈ Finset.range (k + 1),
+              (a : Rat) * (Nat.choose x a : Rat) * (Nat.choose (n - x) (k - a) : Rat)) =
+              (∑ a ∈ Finset.range (k + 1) \ {0},
+                (a : Rat) * (Nat.choose x a : Rat) * (Nat.choose (n - x) (k - a) : Rat)) := by
+          have hsub : ({0} : Finset Nat) ⊆ Finset.range (k + 1) := by
+            intro x hx
+            simp only [Finset.mem_singleton] at hx
+            rw [hx]
+            simp
+          rw [← Finset.sum_sdiff hsub]
+          simp
+        rw [hdrop]
+        apply Finset.sum_bij (fun a _ => a - 1)
+        · intro a ha
+          simp at ha
+          rcases ha with ⟨hle, hne⟩
+          have hpos : 0 < a := Nat.pos_of_ne_zero hne
+          simp
+          omega
+        · intro a₁ h₁ a₂ h₂ h
+          have h1 : 0 < a₁ := by
+            simp at h₁
+            rcases h₁ with ⟨_, hn⟩
+            exact Nat.pos_of_ne_zero hn
+          have h2 : 0 < a₂ := by
+            simp at h₂
+            rcases h₂ with ⟨_, hn⟩
+            exact Nat.pos_of_ne_zero hn
+          have h' : a₁ - 1 = a₂ - 1 := h
+          omega
+        · intro b hb
+          use b + 1
+          simp at hb
+          simp
+          omega
+        · intro a ha
+          have h0a : 0 < a := by
+            simp at ha
+            rcases ha with ⟨_, hne⟩
+            exact Nat.pos_of_ne_zero hne
+          have h1a : 1 ≤ a := Nat.succ_le_of_lt h0a
+          have h2 : a - 1 + 1 = a := by omega
+          have h3 : k - 1 - (a - 1) = k - a := by omega
+          have hcast : (a : Rat) = (Nat.cast (a - 1) : Rat) + 1 := by
+            have hsub : (Nat.cast (a - 1) : Rat) = (a : Rat) - 1 := by
+              rw [Nat.cast_sub h1a]
+              ring
+            rw [hsub]
+            ring
+          rw [h2, h3, hcast]
+      -- Step 2: per-term shift `(i+1) * C(x, i+1) = x * C(x-1, i)`; the sum
+      -- factors as `x * (sum over i < k of C(x-1, i) * C(n-x, k-1-i))`.
+      rw [h1]
+      have h2 :
+          (∑ i ∈ Finset.range k,
+            ((i + 1) : Rat) * (Nat.choose x (i + 1) : Rat) *
+              (Nat.choose (n - x) (k - 1 - i) : Rat)) =
+          (x : Rat) * (∑ i ∈ Finset.range k,
+            (Nat.choose (x - 1) i : Rat) * (Nat.choose (n - x) (k - 1 - i) : Rat)) := by
+        -- The per-term identity is `chooseSucc_weighted x i`, cast to `Rat`.
+        calc
+          _ = ∑ i ∈ Finset.range k,
+              ((x : Rat) * (Nat.choose (x - 1) i : Rat)) *
+                (Nat.choose (n - x) (k - 1 - i) : Rat) := by
+            apply Finset.sum_congr rfl
+            intro i _
+            have hN : (i + 1) * (Nat.choose x (i + 1)) = x * (Nat.choose (x - 1) i) :=
+              chooseSucc_weighted x i
+            have hR : ((i + 1) : Rat) * (Nat.choose x (i + 1) : Rat) =
+                (x : Rat) * (Nat.choose (x - 1) i : Rat) := by
+              have hA : (i : Rat) + 1 = (Nat.cast (i + 1) : Rat) := by
+                rw [Nat.cast_add, Nat.cast_one]
+              rw [hA, ← Nat.cast_mul, ← Nat.cast_mul]
+              exact congrArg Nat.cast hN
+            rw [hR]
+          _ = (x : Rat) * ∑ i ∈ Finset.range k,
+            (Nat.choose (x - 1) i : Rat) * (Nat.choose (n - x) (k - 1 - i) : Rat) := by
+            rw [Finset.mul_sum]
+            apply Finset.sum_congr rfl
+            intro i _
+            ring
+      rw [h2]
+      -- Step 3: Vandermonde: the range sum is the antidiagonal sum, which
+      -- is `C((x-1) + (n-x), k-1) = C(n-1, k-1)` (with `x >= 1` the Nat
+      -- subtraction is honest and `(x-1) + (n-x) = n-1`).
+      have h3 : (∑ i ∈ Finset.range k,
+          (Nat.choose (x - 1) i : Rat) * (Nat.choose (n - x) (k - 1 - i) : Rat)) =
+          (Nat.choose (n - 1) (k - 1) : Rat) := by
+        have hk1 : k - 1 + 1 = k := by
+          have : 0 < k := Nat.pos_of_ne_zero hk
+          omega
+        rw [show (Finset.range k : Finset Nat) = Finset.range (k - 1 + 1) from
+            congrArg Finset.range hk1.symm]
+        have hN : (∑ ij ∈ Finset.antidiagonal (k - 1),
+            (Nat.choose (x - 1) ij.1) * (Nat.choose (n - x) ij.2)) =
+            (Nat.choose ((x - 1) + (n - x)) (k - 1)) := by
+          rw [← Nat.add_choose_eq (x - 1) (n - x) (k - 1)]
+        have hmid : (∑ ij ∈ Finset.antidiagonal (k - 1),
+            (Nat.choose (x - 1) ij.1 : Rat) * (Nat.choose (n - x) ij.2 : Rat)) =
+            (Nat.choose ((x - 1) + (n - x)) (k - 1) : Rat) := by
+          have hA : (∑ ij ∈ Finset.antidiagonal (k - 1),
+              (Nat.choose (x - 1) ij.1 : Rat) * (Nat.choose (n - x) ij.2 : Rat)) =
+              (∑ ij ∈ Finset.antidiagonal (k - 1),
+                (Nat.cast (Nat.choose (x - 1) ij.1 * (Nat.choose (n - x) ij.2)) : Rat)) := by
+            apply Finset.sum_congr rfl
+            intro ij _
+            rw [← Nat.cast_mul]
+          rw [hA]
+          rw [← Nat.cast_sum]
+          exact congrArg Nat.cast hN
+        calc
+          _ = ∑ ij ∈ Finset.antidiagonal (k - 1),
+              (Nat.choose (x - 1) ij.1 : Rat) * (Nat.choose (n - x) ij.2 : Rat) := by
+            rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+                (fun i j => (Nat.choose (x - 1) i : Rat) * (Nat.choose (n - x) j : Rat))
+                (k - 1)]
+          _ = (Nat.choose ((x - 1) + (n - x)) (k - 1) : Rat) := by
+            exact hmid
+          _ = (Nat.choose (n - 1) (k - 1) : Rat) := by
+            have hsum : (x - 1) + (n - x) = n - 1 := by omega
+            rw [hsum]
+      rw [h3]
+      -- Step 4: close. The goal is
+      -- `(n : Rat) * ((x : Rat) * C(n-1, k-1)) = (k : Rat) * (x : Rat) / (n : Rat) * C(n, k)`.
+      -- Both sides are `x * ( ... )`; inside, the coefficient relation
+      -- `n * C(n-1, k-1) = k * C(n, k)` is exactly `chooseSucc_weighted n (k-1)`,
+      -- and the right side's `/ (n : Rat) * (n : Rat)` cancels (`n ≠ 0`).
+      have h4 : (n : Rat) * (Nat.choose (n - 1) (k - 1) : Rat) =
+          (k : Rat) * (Nat.choose n k : Rat) := by
+        have h0 : (k - 1 + 1) * (Nat.choose n (k - 1 + 1)) = n * (Nat.choose (n - 1) (k - 1)) :=
+          chooseSucc_weighted n (k - 1)
+        have hk1 : k - 1 + 1 = k := by
+          have : 0 < k := Nat.pos_of_ne_zero hk
+          omega
+        have hN : n * (Nat.choose (n - 1) (k - 1)) = k * (Nat.choose n k) := by
+          simpa [hk1] using h0.symm
+        rw [show (n : Rat) * (Nat.choose (n - 1) (k - 1) : Rat) =
+               (Nat.cast (n * (Nat.choose (n - 1) (k - 1))) : Rat) by
+              rw [← Nat.cast_mul],
+            show (k : Rat) * (Nat.choose n k : Rat) =
+               (Nat.cast (k * (Nat.choose n k)) : Rat) by
+              rw [← Nat.cast_mul]]
+        exact congrArg Nat.cast hN
+      -- Rewrite the right side into the `x * (...)` shape.
+      have hR : (k : Rat) * (x : Rat) / (n : Rat) * (Nat.choose n k : Rat) =
+          (x : Rat) * ((k : Rat) * (Nat.choose n k : Rat) / (n : Rat)) := by
+        field_simp [hnpos]
+        <;> ring
+      rw [hR]
+      -- Clear the fraction using `n * C(n-1,k-1) = k * C(n,k)` (chooseSucc_weighted n (k-1)).
+      have hdiv : (k : Rat) * (Nat.choose n k : Rat) / (n : Rat) =
+          (Nat.choose (n - 1) (k - 1) : Rat) := by
+        rw [show (k : Rat) * (Nat.choose n k : Rat) =
+               (n : Rat) * (Nat.choose (n - 1) (k - 1) : Rat) from h4.symm]
+        field_simp [hnpos]
+      rw [hdiv]
+
+end firstMode
 end BernoulliLaplaceGeneral
 end Shufflemath

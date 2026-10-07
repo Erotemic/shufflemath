@@ -65,6 +65,27 @@ Lean-mechanics items that are project-local (specific theorems) go in
 - **`rcases` cannot eliminate `s ∈ u.powerset`** (dependent elimination
   fails inside `Multiset.powersetAux`). First `simp only [Finset.mem_powerset]`
   to get `s ⊆ u`, then project.
+- **Type ascription binds tighter than arithmetic operators.**
+  `(a * b : T)` elaborates as `a * (↑b : T)`, not `↑(a * b)`; likewise
+  `((i + 1) : Rat)` is `↑i + 1`. For any compound expression, write the
+  cast explicitly: `(Nat.cast (a * b) : T)` / `Nat.cast (a + 1)`.
+  This single parse rule caused most of the stuck `rw`s in
+  `chooseSum_weighted` (the ascription only captured the last factor).
+- **`rw` rewrites every occurrence of the pattern's LHS, including
+  inside larger terms.** With `hk1 : k - 1 + 1 = k`, `rw [← hk1]` rewrites
+  bare `k` *inside* `k - 1` too, silently turning `k - 1` into
+  `(k - 1 + 1) - 1`. For a one-spot rewrite (e.g. a `show`), use
+  `congrArg` or a targeted `have` instead of `rw [← hk1]`.
+- **`simp at h` cannot reduce an opaque local constant** (e.g. the
+  lambda-bound function in a `Finset.sum_bij` bullet). Beta/zeta-reduce
+  with a type-ascribed `have h' : <reduced form> := h` and then `omega`.
+- **A trailing `rw` in a `by` block auto-closes a reflexive goal.**
+  If the rewrite already makes the goal `t = t`, an added `rfl` fails
+  with "No goals to be solved".
+- **`section` does not extend declaration names.** `#check` inside
+  `section firstMode` uses the enclosing *namespace* only
+  (`Shufflemath.BernoulliLaplaceGeneral.chooseSum_weighted`, not
+  `…firstMode.chooseSum_weighted`).
 
 ## Mathematics
 
