@@ -1,11 +1,11 @@
 # Autonomous Lean Formalization Build — Handoff & Resume Document
 
 **Status:** ACTIVE. **Owner:** any pi agent pointed at this file.
-**Deadline: Sat Oct 6 22:27:06 EDT 2026.**
+**Deadline: Mon Oct 12 22:27:06 EDT 2026.**
 
 ## 0. Standing rules for the agent reading this document (non-negotiable)
 
-1. **Do not stop, ask, or end the session before Sat Oct 6 22:27:06 EDT 2026.**
+1. **Do not stop, ask, or end the session before Mon Oct 12 22:27:06 EDT 2026.**
    This is a long autonomous build. You **will be compacted multiple times**;
    compaction is normal and is not a stopping signal.
 2. **After every compaction, do exactly this, in order:**
@@ -1015,33 +1015,60 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   casts uses `simp only [← Nat.cast_mul, ← Nat.cast_sum]` (both reverse —
   `Nat.cast_sum`'s default direction is cast-of-sum → sum-of-casts).
   Full `lake build` green, zero warnings; tests 7/7.
+- [x] 2026-10-05 (session 14, commits e91370f / 924e820 / adc4b82 /
+  6b807ad): **F part 3 (in progress) — fiber factorization.** The
+  detailed-balance proof is done by *counting the exchange fiber directly*
+  rather than the §4-F 4-tuple `(S, A, B)` index-bijection sketch: F3a
+  (`e91370f`) — `fiberSum` (7-level nested fiber count of the pair `(x, y)`),
+  `fiberABcount`/`fiberABchoose` (the `(A, B)` part of a fiber is the product
+  of four powerset-cardinalities = the `a`-summand of
+  `transitionNumerator`), `fiberSum_eq`
+  (`fiberSum (x, y) = C(r, x)·C(N−r, m−x)·num(x, y)`; the plain-card
+  saturation identity `N−r−(m−x) = N−m−(r−x)` handled by a two-case split on
+  `m+r ≤ N+x`). F3b (3 stages: `924e820`/`adc4b82`/`6b807ad`) — flat
+  7-tuple fiber `fiber7Tuple` with projections `tS1…tB2`, ambient universe
+  `fiber7Univ` (nested powerset products), `fiber7Pred` (12 conditions),
+  `fiber7Set`; 3-tuple/4-tuple repackaging `t3Of`/`t4Of`/`mk7` with
+  losslessness `re7`/`re7'`/`re7''`; `fiberFlat`
+  (`#fiber7Set (x, y) = fiberSum (x, y)`, 5-step cardinality-computation
+  proof avoiding sum-rewrite descension into the nested products).
 - [ ] F. General BL (`BernoulliLaplaceGeneral.lean`: states, row stochasticity,
-  stationary, detailed balance, Commander link) — **parts 1–2 done
-  (session 13)**:
+  stationary, detailed balance, Commander link) — **parts 1–3b done**
+  (sessions 13–14):
   `BLState N m r` / `blLo` / `blHi` / `stateFinset` / `ExchangeAdmissible`,
   generalized `transitionNumerator`/`transitionWeight`, `blRowStochastic`
   (double Vandermonde, general `r`), `transitionWeight_nonneg`,
   `transitionDenominator_pos`, `blExchangeKernel`, `blStationary` /
-  `blStationaryTotal` / `blStationaryDist`. Remaining: detailed balance
-  (combinatorial 4-tuple `(S, A, B)` involution) + Commander bridge
-  module.
+  `blStationaryTotal` / `blStationaryDist`, fiber machinery
+  (`fiberSum`/`fiberSum_eq`/`fiber7*`/`fiberFlat`). Remaining: the 7-tuple
+  involution + `fiberSum_swap` (stage 4, in the working tree), the
+  detailed-balance theorem (follows from `fiberSum_swap` + `fiberSum_eq` +
+  `blStationary`), `blStationaryDist` stationary via
+  `Markov.stationary_of_detailedBalance`, and the Commander bridge module.
 - [ ] G. First eigenfunction (general + Commander corollaries).
 - [ ] H. Stretch: GSR, higher modes, separation distance.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** F part 3 — the combinatorial 4-tuple `(S, A, B)`
-involution detailed-balance proof (`π(x) P(x, y) = π(y) P(y, x)`, then
-reuse `Markov.lean`'s `stationary_of_detailedBalance` to get
-`blStationaryDist` fixed); then the bridge module
-`Shufflemath/BernoulliLaplaceCommanderBridge.lean` (imports both BL
+**Next action:** F part 3 stage 4 (in the working tree, uncommitted —
+fix first: `hU` must be `rcases`-decomposed into the 7 universe
+components after the `mem_powerset`/`mem_product` simp, and bullets 5/6 of
+`fiber7Inv_mem` use those subset facts directly): `fiber7Inv` (the 7-tuple
+involution), `fiber7Inv_mem`, `fiber7Inv_inv`, `fiberSum_swap`
+(`fiberSum (x, y) = fiberSum (y, x)` — the combinatorial core). Then the
+detailed-balance theorem: `blStationary x · W(x, y) = blStationary y ·
+W(y, x)` in `Rat`, assembled from `fiberSum_swap` + `fiberSum_eq` (both
+sides) + the `blStationary`/`transitionWeight` definitions (both sides =
+`fiberSum / (C(N, m)·C(m, k)·C(N−m, k))`); then `blStationaryDist` is
+stationary via `Markov.detailedBalance_implies_stationary`. Then the bridge
+module `Shufflemath/BernoulliLaplaceCommanderBridge.lean` (imports both BL
 files; `transitionNumerator` coincidence — expect `rfl`;
 `blExchangeKernel` at `(99, 50, 50, 25)` equals the frozen
 `commanderExchange25`/`commanderFirstMode` via a state-space equivalence
 `Fin 50 ↔ BLState 99 50 50`). `./dev/verify.sh` at each step. GPT review
 findings #1–#10 are all DONE (§4a) — the review work is complete;
-remaining priorities are F (stationary + detailed balance + bridge),
-G (first eigenfunction), H (stretch).
+remaining priorities are F (detailed balance + bridge), G (first
+eigenfunction), H (stretch).
 
 ## 8. Taste & style rules
 
