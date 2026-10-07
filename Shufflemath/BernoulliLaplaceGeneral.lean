@@ -36,6 +36,7 @@ pile holds at most `m` cards, and the deck holds at most `r` special
 cards.
 -/
 import Shufflemath.Finite
+import Shufflemath.Markov
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Algebra.BigOperators.NatAntidiagonal
@@ -80,6 +81,13 @@ variable {N m r k : Nat}
 /-- The admissible macrostates form a finite set. -/
 instance fintypeBLState (N m r : Nat) : Fintype (BLState N m r) :=
   Fintype.ofFinset (Finset.Icc (blLo N m r) (blHi N m r)) fun _ => Finset.mem_Icc
+
+/-- Macrostates are decidable-equal: the subtype lives over `Nat`, and
+`Subtype.ext` reduces equality to equality of the counts. -/
+instance decidableEqBLState {N m r : Nat} : DecidableEq (BLState N m r) :=
+  fun x y =>
+    if h : x.val = y.val then isTrue (Subtype.ext h)
+    else isFalse (fun heq => h (congrArg (fun (t : BLState N m r) => t.val) heq))
 
 variable {N m r k : Nat}
 
@@ -1895,6 +1903,41 @@ private theorem detailedBalance (p : ExchangeAdmissible) (x y : BLState p.N p.m 
       rw [fiberSum_swap p x.val y.val hxm hym]
     _ = blStationary p.N p.m p.r y * transitionWeight p.N p.m p.r p.k y.val x.val :=
       (hside y (x.val)).symm
+
+/-! ### Stationarity of the exchange kernel
+
+`blStationaryDist` is stationary for `blExchangeKernel`: at the
+`Dist`/`FiniteKernel` level it satisfies `DetailedBalance` (the
+`detailedBalance` theorem unpacked through `mass_ofFun`), and detailed
+balance implies stationarity. -/
+
+theorem blDetailedBalance (p : ExchangeAdmissible) :
+    DetailedBalance (blStationaryDist p) (blExchangeKernel p) := by
+  intro x y
+  -- Both masses reduce to their defining functions by `mass_ofFun`.
+  simp only [blStationaryDist, blExchangeKernel, Dist.mass_ofFun]
+  exact detailedBalance p x y
+
+/-- The stationary distribution is fixed by the exchange kernel: one
+application of `blExchangeKernel` leaves `blStationaryDist` unchanged. -/
+theorem blStationaryDist_is_stationary (p : ExchangeAdmissible) :
+    Stationary (blStationaryDist p) (blExchangeKernel p) := by
+  have hdb : DetailedBalance (blStationaryDist p) (blExchangeKernel p) :=
+    blDetailedBalance p
+  -- `Stationary` is equality of `Dist`s; `tv_zero_iff_eq` reduces it to
+  -- the TV being 0, which is the sum of the pointwise mass differences,
+  -- each 0 by `detailedBalance_implies_stationary`.
+  rw [Stationary, ← Dist.tv_zero_iff_eq, Dist.tv, vectorTV]
+  have hzero (x : BLState p.N p.m p.r) :
+      |Dist.mass (FiniteKernel.apply (blStationaryDist p) (blExchangeKernel p)) x -
+        Dist.mass (blStationaryDist p) x| = 0 := by
+    rw [detailedBalance_implies_stationary _ _ hdb x, sub_self, abs_zero]
+  rw [Finset.sum_congr rfl (fun x _ => hzero x), Finset.sum_const_zero, mul_zero]
+
+/-- The stationary distribution is fixed by any number of exchange steps. -/
+theorem blStationaryRun (p : ExchangeAdmissible) (n : Nat) :
+    FiniteKernel.run (blExchangeKernel p) n (blStationaryDist p) = blStationaryDist p := by
+  exact stationary_run n _ _ (blStationaryDist_is_stationary p)
 
 end detailedBalance
 end BernoulliLaplaceGeneral
