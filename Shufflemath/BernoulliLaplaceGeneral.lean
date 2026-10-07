@@ -1520,6 +1520,326 @@ private theorem fiberFlat (p : ExchangeAdmissible) (x y : Nat) :
       )]
   simpa using hRHS.symm
 
+
+/-! ### The exchange involution and the fiber-sum swap
+
+The `(x, y)` fiber and the `(y, x)` fiber of the 7-tuple construction are
+in bijection under the involution
+`(S1, S2, a, A1, A2, B1, B2) ↔ (S1 \ A1 ∪ B1, S2 \ A2 ∪ B2, #B1,
+B1, B2, A1, A2)`. Since `fiberFlat` identifies each fiber sum with the
+cardinality of the corresponding fiber, the involution yields
+`fiberSum p x y = fiberSum p y x`: the combinatorial core of the detailed
+balance identity. -/
+
+set_option linter.unusedVariables false
+/-- The exchange involution on 7-tuples. Applied to a tuple in the
+`(x, y)` fiber it lands in the `(y, x)` fiber; applying it again recovers
+the original tuple. -/
+private def fiber7Inv (p : ExchangeAdmissible) (x y : Nat) (t : fiber7Tuple p) :
+    fiber7Tuple p := by
+  let S1' := tS1 t \ tA1 t ∪ tB1 t
+  let S2' := tS2 t \ tA2 t ∪ tB2 t
+  let a' := (tB1 t).card
+  exact ((((((S1', S2'), a'), tB1 t), tB2 t), tA1 t), tA2 t)
+set_option linter.unusedVariables true
+
+private theorem fiber7Inv_mem (p : ExchangeAdmissible) (x y : Nat) (hxle : x ≤ p.m)
+    (t : fiber7Tuple p) (ht : t ∈ fiber7Set p x y) :
+    fiber7Inv p x y t ∈ fiber7Set p y x := by
+  -- The left-pile capacity `x ≤ p.m` is *not* forced by the 12 fiber
+  -- conditions (they stay consistent with `x > p.m`, where `p.m - x = 0`),
+  -- and for such tuples the image of the involution leaves the `(y, x)`
+  -- fiber: the `#S2' = p.m - y` computation breaks down. Physically `x`
+  -- counts stars in a pile of `p.m` slots, so this hypothesis is exactly
+  -- state realizability, and the `#S2'` arithmetic below uses it.
+  have hU : t ∈ fiber7Univ p := (Finset.mem_filter.mp ht).1
+  have hp : fiber7Pred p x y t := (Finset.mem_filter.mp ht).2
+  -- Keep `hp` in def form (no dsimp): the bullets `change` their goals to
+  -- def-level shapes so the rw patterns (also def-named) match.
+  rcases hp with ⟨hc1, hc2, hc3, hc4, hc5, hc6, hc7, hc8, hc9, hc10, hc11, hc12⟩
+  -- Unpack the universe membership into its 7 components. The powerset
+  -- memberships must be simp'd to plain subset facts *first*: raw
+  -- `s ∈ u.powerset` is an inductive mess that `rcases` cannot eliminate
+  -- (dependent elimination fails inside `Multiset.powersetAux`).
+  -- The `And` chain splits off the LAST leaf at each level, so the
+  -- projections mirror the 7-tuple shape.
+  -- (hu1 S1 ⊆ stars, hu2 S2 ⊆ plain, hu3 a < k+1, hu4 A1 ⊆ stars,
+  --  hu5 A2 ⊆ plain, hu6 B1 ⊆ stars, hu7 B2 ⊆ plain.)
+  simp only [fiber7Univ, fiber7U5, fiber7U4, fiber7U3, fiber7U2, fiber7U1,
+    Finset.mem_product, Finset.mem_powerset, Finset.mem_range] at hU
+  -- Extract the 7 conjuncts by projection: `rcases` tries to case-split
+  -- the `⊆` (a `∀`) conjuncts and fails.
+  have hu1 : tS1 t ⊆ starsUniv p := hU.1.1.1.1.1.1
+  have hu2 : tS2 t ⊆ plainUniv p := hU.1.1.1.1.1.2
+  have hu3 : tA t < p.k + 1 := hU.1.1.1.1.2
+  have hu4 : tA1 t ⊆ starsUniv p := hU.1.1.1.2
+  have hu5 : tA2 t ⊆ plainUniv p := hU.1.1.2
+  have hu6 : tB1 t ⊆ starsUniv p := hU.1.2
+  have hu7 : tB2 t ⊆ plainUniv p := hU.2
+  -- `a ≤ x`: `A1 ⊆ S1` carries `#A1 = a` of the `#S1 = x` cards; the
+  -- omega arithmetic in bullets 9/10 needs it.
+  have ha_le_x : (tA t) ≤ x := by
+    have := Finset.card_le_card hc3
+    rw [hc7, hc1] at this
+    exact this
+  -- The right pile holds `m - x` cards and `A2 ⊆ S2` holds `k - a` of them,
+  -- so `k - a ≤ m - x`; needed in two size computations below.
+  have hA2le : p.k - (tA t) ≤ p.m - x := by
+    have := Finset.card_le_card hc4
+    rw [hc8, hc2] at this
+    exact this
+  simp only [fiber7Set, Finset.mem_filter]
+  refine ⟨?_, ?_⟩
+  · -- The image tuple lies in the ambient universe. The 7 leaves are
+    -- rebuilt with explicit `Finset.mem_product.mpr` calls: the simp-driven
+    -- peel of the `×ˢ` chain stops one level short on the let-expr tuple,
+    -- and the resulting `And` is left-nested (so `⟨7⟩` cannot match it).
+    dsimp only [fiber7Inv, tS1, tS2, tA, tA1, tA2, tB1, tB2,
+      fiber7Univ, fiber7U5, fiber7U4, fiber7U3, fiber7U2, fiber7U1]
+    refine Finset.mem_product.mpr
+      ⟨Finset.mem_product.mpr
+          ⟨Finset.mem_product.mpr
+              ⟨Finset.mem_product.mpr
+                  ⟨Finset.mem_product.mpr
+                      ⟨Finset.mem_product.mpr
+                          ⟨?_, ?_⟩
+                          , ?_⟩
+                      , ?_⟩
+                  , ?_⟩
+              , ?_⟩
+          , ?_⟩
+    · -- S1' = (S1 \ A1) ∪ B1 ⊆ stars
+      exact Finset.mem_powerset.mpr
+        (Finset.union_subset (Finset.Subset.trans Finset.sdiff_subset hu1) hu6)
+    · -- S2' = (S2 \ A2) ∪ B2 ⊆ plain
+      exact Finset.mem_powerset.mpr
+        (Finset.union_subset (Finset.Subset.trans Finset.sdiff_subset hu2) hu7)
+    · -- a' = #B1 = y - (x - a) ≤ k < k + 1
+      have haa : (tB1 t).card < p.k + 1 := by
+        rw [hc9]
+        omega
+      exact Finset.mem_range.mpr haa
+    · -- A1' = B1 ⊆ stars
+      exact Finset.mem_powerset.mpr hu6
+    · -- A2' = B2 ⊆ plain
+      exact Finset.mem_powerset.mpr hu7
+    · -- B1' = A1 ⊆ stars
+      exact Finset.mem_powerset.mpr hu4
+    · -- B2' = A2 ⊆ plain
+      exact Finset.mem_powerset.mpr hu5
+  · -- The 12 fiber conditions, now at (y, x). The image slots are
+    -- `S1' = S1 \ A1 ∪ B1`, `S2' = S2 \ A2 ∪ B2`, `a' = #B1`, `A1' = B1`,
+    -- `A2' = B2`, `B1' = A1`, `B2' = A2`; each bullet `change`s its goal
+    -- to that def-level shape so the rw patterns (def-named) match.
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · -- #(S1 \ A1 ∪ B1) = (x - a) + (y - (x - a)) = y
+      have hd1 : Disjoint (tS1 t \ tA1 t) (tB1 t) := by
+        rw [Finset.disjoint_left]
+        intro z hzS1A1 hB1
+        exact (Finset.mem_sdiff.mp (hc5 hB1)).2 (Finset.mem_sdiff.mp hzS1A1).1
+      have hcard1 : (tS1 t \ tA1 t).card = x - (tA1 t).card := by
+        rw [Finset.card_sdiff_of_subset hc3, hc1, hc7]
+      change (tS1 t \ tA1 t ∪ tB1 t).card = y
+      rw [Finset.card_union_of_disjoint hd1, hcard1, hc7, hc9]
+      omega
+    · -- #(S2 \ A2 ∪ B2) = (m - x - (k - a)) + (k - (y - (x - a))) = m - y.
+      -- The plain-side arithmetic is a nested Nat-subtraction computation
+      -- that `omega` cannot do directly; the `x ≤ p.m` hypothesis is what
+      -- discharges it (see the small lemmas in the scratch log).
+      have hd2 : Disjoint (tS2 t \ tA2 t) (tB2 t) := by
+        rw [Finset.disjoint_left]
+        intro z hzS2A2 hB2
+        exact (Finset.mem_sdiff.mp (hc6 hB2)).2 (Finset.mem_sdiff.mp hzS2A2).1
+      have hcard2 : (tS2 t \ tA2 t).card = p.m - x - (tA2 t).card := by
+        rw [Finset.card_sdiff_of_subset hc4, hc2, hc8]
+      change (tS2 t \ tA2 t ∪ tB2 t).card = p.m - y
+      rw [Finset.card_union_of_disjoint hd2, hcard2, hc8, hc10]
+      -- goal: p.m - x - (p.k - a) + (p.k - (y - (x - a))) = p.m - y
+      have ha_le_k : (tA t) ≤ p.k := by omega
+      have h2' : (p.k - (tA t)) + x ≤ p.m := by
+        rw [← Nat.le_sub_iff_add_le hxle]
+        exact hA2le
+      have hre : (p.k - (tA t)) + x = p.k + (x - (tA t)) := by omega
+      have hwkm : p.k + (x - (tA t)) ≤ p.m := by
+        rw [← hre]
+        exact h2'
+      have e2 : p.k - (y - (x - (tA t))) = p.k + (x - (tA t)) - y := by omega
+      have e3 : x + (p.k - (tA t)) = (x - (tA t)) + p.k := by omega
+      have hyB : y ≤ p.k + (x - (tA t)) := by
+        rw [← Nat.sub_add_cancel hc11]
+        exact Nat.add_le_add_right hc12 (x - (tA t))
+      rw [Nat.sub_sub, e3, e2]
+      rw [← Nat.add_sub_assoc hyB]
+      have hfin : (x - (tA t)) + p.k ≤ p.m := by
+        rw [add_comm]
+        exact hwkm
+      omega
+    · -- B1' = B1 ⊆ S1' = S1 \ A1 ∪ B1
+      change tB1 t ⊆ tS1 t \ tA1 t ∪ tB1 t
+      intro z hz
+      exact Finset.mem_union.mpr (Or.inr hz)
+    · -- B2' = B2 ⊆ S2'
+      change tB2 t ⊆ tS2 t \ tA2 t ∪ tB2 t
+      intro z hz
+      exact Finset.mem_union.mpr (Or.inr hz)
+    · -- A1 ⊆ stars \ S1'
+      change tA1 t ⊆ starsUniv p \ (tS1 t \ tA1 t ∪ tB1 t)
+      intro z hz
+      refine Finset.mem_sdiff.mpr ⟨?_, ?_⟩
+      · exact Finset.Subset.trans hc3 hu1 hz
+      · intro hzS1'
+        rcases (Finset.mem_union.mp hzS1') with h1 | h2
+        · rcases (Finset.mem_sdiff.mp h1) with ⟨_, hnotA1⟩
+          exact hnotA1 hz
+        · exact (Finset.mem_sdiff.mp (hc5 h2)).2 (hc3 hz)
+    · -- A2 ⊆ plain \ S2'
+      change tA2 t ⊆ plainUniv p \ (tS2 t \ tA2 t ∪ tB2 t)
+      intro z hz
+      refine Finset.mem_sdiff.mpr ⟨?_, ?_⟩
+      · exact Finset.Subset.trans hc4 hu2 hz
+      · intro hzS2'
+        rcases (Finset.mem_union.mp hzS2') with h1 | h2
+        · rcases (Finset.mem_sdiff.mp h1) with ⟨_, hnotA2⟩
+          exact hnotA2 hz
+        · exact (Finset.mem_sdiff.mp (hc6 h2)).2 (hc4 hz)
+    · -- #A1' = #B1 = a'
+      rfl
+    · -- #A2' = #B2 = k - (y - (x - a)) = k - a'
+      change (tB2 t).card = p.k - (tB1 t).card
+      rw [hc10, hc9]
+    · -- #B1' = #A1 = a = x - (y - a')
+      change (tA1 t).card = x - (y - (tB1 t).card)
+      rw [hc7, hc9]
+      omega
+    · -- #B2' = #A2 = k - a = k - (x - (y - a'))
+      change (tA2 t).card = p.k - (x - (y - (tB1 t).card))
+      rw [hc8, hc9]
+      omega
+    · -- y - a' ≤ x
+      change y - (tB1 t).card ≤ x
+      rw [hc9]
+      omega
+    · -- x - (y - a') ≤ k
+      change x - (y - (tB1 t).card) ≤ p.k
+      rw [hc9]
+      have halk : (tA t) ≤ p.k := by omega
+      omega
+
+private theorem fiber7Inv_inv (p : ExchangeAdmissible) (x y : Nat) (t : fiber7Tuple p)
+    (ht : t ∈ fiber7Set p x y) :
+    fiber7Inv p y x (fiber7Inv p x y t) = t := by
+  -- `hp` is kept in def form (no dsimp) so the `hc*` facts are def-named
+  -- and match the `change`d def-level goals below.
+  have hp : fiber7Pred p x y t := (Finset.mem_filter.mp ht).2
+  rcases hp with ⟨_, _, hc3, hc4, hc5, hc6, hc7, _, _, _, _, _⟩
+  let u := fiber7Inv p x y t
+  let v := fiber7Inv p y x u
+  -- The A/B slots rotate back definitionally: the image carries
+  -- `(B1, B2, A1, A2)` into the `(A1, A2, B1, B2)` positions, and the
+  -- double image lands on `(A1, A2, B1, B2)` again.
+  have hA1 : tA1 v = tA1 t := rfl
+  have hA2 : tA2 v = tA2 t := rfl
+  have hB1 : tB1 v = tB1 t := rfl
+  have hB2 : tB2 v = tB2 t := rfl
+  -- a'' = #B1 (intermediate) = #A1 = a
+  have ha : tA v = tA t := by
+    dsimp only [fiber7Inv, tA, tB1, tA1]
+    exact hc7
+  -- S1'' = (S1 \ A1 ∪ B1) \ B1 ∪ A1 = S1, since B1 ⊆ stars \ S1 kills A1.
+  have hS1 : tS1 v = tS1 t := by
+    change ((tS1 t \ tA1 t ∪ tB1 t) \ tB1 t ∪ tA1 t) = tS1 t
+    ext z
+    constructor
+    · intro hz
+      rcases (Finset.mem_union.mp hz) with h1 | h2
+      · rcases (Finset.mem_sdiff.mp h1) with ⟨hzS1u, hnotB1⟩
+        rcases (Finset.mem_union.mp hzS1u) with hS1A | hB1
+        · rcases (Finset.mem_sdiff.mp hS1A) with ⟨hS1, _⟩
+          exact hS1
+        · exfalso
+          exact hnotB1 hB1
+      · exact hc3 h2
+    · intro hzS1
+      by_cases hzA1 : z ∈ tA1 t
+      · exact Finset.mem_union.mpr (Or.inr hzA1)
+      · apply Finset.mem_union.mpr
+        apply Or.inl
+        apply Finset.mem_sdiff.mpr
+        refine ⟨?_, ?_⟩
+        · -- z ∈ S1 \ A1 ∪ B1, via the S1 \ A1 side
+          apply Finset.mem_union.mpr
+          apply Or.inl
+          apply Finset.mem_sdiff.mpr
+          exact ⟨hzS1, hzA1⟩
+        · -- z ∉ B1
+          by_contra hzB1
+          exact (Finset.mem_sdiff.mp (hc5 hzB1)).2 hzS1
+  -- S2'' = (S2 \ A2 ∪ B2) \ B2 ∪ A2 = S2.
+  have hS2 : tS2 v = tS2 t := by
+    change ((tS2 t \ tA2 t ∪ tB2 t) \ tB2 t ∪ tA2 t) = tS2 t
+    ext z
+    constructor
+    · intro hz
+      rcases (Finset.mem_union.mp hz) with h1 | h2
+      · rcases (Finset.mem_sdiff.mp h1) with ⟨hzS2u, hnotB2⟩
+        rcases (Finset.mem_union.mp hzS2u) with hS2A | hB2
+        · rcases (Finset.mem_sdiff.mp hS2A) with ⟨hS2, _⟩
+          exact hS2
+        · exfalso
+          exact hnotB2 hB2
+      · exact hc4 h2
+    · intro hzS2
+      by_cases hzA2 : z ∈ tA2 t
+      · exact Finset.mem_union.mpr (Or.inr hzA2)
+      · apply Finset.mem_union.mpr
+        apply Or.inl
+        apply Finset.mem_sdiff.mpr
+        refine ⟨?_, ?_⟩
+        · -- z ∈ S2 \ A2 ∪ B2, via the S2 \ A2 side
+          apply Finset.mem_union.mpr
+          apply Or.inl
+          apply Finset.mem_sdiff.mpr
+          exact ⟨hzS2, hzA2⟩
+        · -- z ∉ B2
+          by_contra hzB2
+          exact (Finset.mem_sdiff.mp (hc6 hzB2)).2 hzS2
+  -- Assemble the 7 component equalities into the tuple equality.
+  refine Prod.ext ?_ ?_
+  · refine Prod.ext ?_ ?_
+    · refine Prod.ext ?_ ?_
+      · refine Prod.ext ?_ ?_
+        · refine Prod.ext ?_ ?_
+          · refine Prod.ext ?_ ?_
+            · exact hS1
+            · exact hS2
+          · exact ha
+        · exact hA1
+      · exact hA2
+    · exact hB1
+  · exact hB2
+
+private theorem fiberSum_swap (p : ExchangeAdmissible) (x y : Nat)
+    (hxle : x ≤ p.m) (hylo : y ≤ p.m) :
+    fiberSum p x y = fiberSum p y x := by
+  rw [fiberFlat p x y, fiberFlat p y x]
+  refine Finset.card_bij (fun t ht => fiber7Inv p x y t) ?_ ?_ ?_
+  · -- the image lands in the (y, x) fiber
+    intro t ht
+    exact fiber7Inv_mem p x y hxle t ht
+  · -- injective: applying twice recovers the input
+    intro a ha b hb h
+    have h2 := congrArg (fiber7Inv p y x) h
+    rw [fiber7Inv_inv p x y a ha, fiber7Inv_inv p x y b hb] at h2
+    exact h2
+  · -- surjective: the image of its own image
+    intro z hz
+    use fiber7Inv p y x z
+    constructor
+    · -- f (x, y) (inv (y, x) z) = z, since inv is an involution
+      exact fiber7Inv_inv p y x z hz
+    · -- the witness lies in the (x, y) fiber
+      exact fiber7Inv_mem p y x hylo z hz
+
 end detailedBalance
 end BernoulliLaplaceGeneral
 end Shufflemath
