@@ -15,7 +15,7 @@ The project now uses mathlib's probability-simplex abstraction directly:
 
 The old `Weight + IsProbability` and `Kernel + IsMarkov` duplicate authorities have been removed.
 
-## L1: Commander Bernoulli--Laplace projection -- first executable layer implemented
+## L1: Bernoulli--Laplace -- Commander certificates and general theory implemented
 
 The 50-state statistic is
 
@@ -31,16 +31,25 @@ Implemented finite certificates:
 2. the hypergeometric stationary vector normalizes;
 3. that vector is a fixed point of the 25-card exchange matrix;
 4. `k=25` minimizes the absolute first-mode factor over exchanges 1..49;
-5. exact TV values after two and three 25-card exchanges from complete segregation.
+5. exact TV values after two and three 25-card exchanges from complete
+   segregation;
+6. the general `N`/`m`/`r` exchange theory (`BernoulliLaplaceGeneral.lean`
+   and `BernoulliLaplaceFiber.lean`): symbolic row normalization, the
+   stationary distribution, detailed balance by fiber counting, and the
+   `BLState 99 50 50` `↔` `Fin 50` bridge proving agreement with the
+   Commander instance (`BernoulliLaplaceCommanderBridge.lean`).
 
-Next symbolic targets:
+Remaining symbolic targets (1--3 done):
 
-1. prove row normalization for general admissible `N,m,k` using Vandermonde identities;
-2. prove the hypergeometric stationary distribution symbolically;
-3. prove reversibility;
-4. prove the first nonconstant eigenfunction and factor;
-5. connect the exact matrix TV certificates to the semantic `Dist`/`FiniteKernel` view;
-6. certify the finite `(25,25)` optimality search rather than only its first-mode surrogate.
+1. [done] row normalization for general admissible `N,m,k` using
+   Vandermonde identities;
+2. [done] the hypergeometric stationary distribution symbolically;
+3. [done] reversibility;
+4. the first nonconstant eigenfunction and factor (in progress);
+5. connect the exact matrix TV certificates to the semantic
+   `Dist`/`FiniteKernel` view;
+6. certify the finite `(25,25)` optimality search rather than only its
+   first-mode surrogate.
 
 ## L2: ideal GSR local riffle
 
@@ -53,7 +62,7 @@ Targets:
 - exact or certified TV distances for working-set sizes 49 and 50;
 - a local-shuffle kernel embedded in the 99-card state space.
 
-## L3: compositional error theorem
+## L3: compositional error theorem -- implemented (`Shufflemath/Perturbation.lean`)
 
 Prove exact finite total-variation contraction and a telescoping perturbation theorem.
 

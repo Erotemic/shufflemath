@@ -24,7 +24,7 @@ k=25: lambda_1 =  -1/98   ~= -0.01020408
 k=26: lambda_1 = -62/1225 ~= -0.05061224
 ```
 
-`Shufflemath/BernoulliLaplace.lean` contains a finite exact theorem stating that `k=25` minimizes the absolute value of this expression over exchange sizes 1 through 49. The remaining symbolic target is to prove that this expression is the first nonconstant eigenvalue of the exact transition matrix, rather than merely importing the known formula as the definition of `firstModeFactor`.
+`Shufflemath/BernoulliLaplace.lean` contains a finite exact theorem stating that `k=25` minimizes the absolute value of this expression over exchange sizes 1 through 49. The symbolic target — proving that this expression is the first nonconstant eigenvalue of the exact transition matrix, rather than merely importing the known formula as the definition of `firstModeFactor` — is in progress: the general Bernoulli–Laplace exchange theory (`BernoulliLaplaceGeneral.lean`, with the fiber-counting companion `BernoulliLaplaceFiber.lean`) is built, and the first-mode machinery in its `firstMode` section (the weighted Vandermonde and reindexing lemmas) is the current work item; see the "Next action" section of `docs/autonomous_lean_build.md`.
 
 ## Exact finite 50-state exchange model
 
@@ -50,7 +50,7 @@ For `k=25`, the Lean source defines the exact rational 50x50 transition matrix a
 2. the hypergeometric stationary vector normalizes;
 3. applying the transition matrix to that stationary vector returns the same vector.
 
-These certificates use `native_decide` over a finite exact-rational computation. Symbolic proofs using binomial identities are still desirable because they generalize beyond the Commander constants.
+These certificates use `native_decide` over a finite exact-rational computation. The symbolic proofs using binomial identities now exist in the general theory (`BernoulliLaplaceGeneral.lean`: `blRowStochastic` and the stationary distribution, with the detailed-balance fiber counting in `BernoulliLaplaceFiber.lean`), and `BernoulliLaplaceCommanderBridge.lean` proves the general and concrete theories agree at the Commander parameters.
 
 ## Exact TV distances from complete segregation
 

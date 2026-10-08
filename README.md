@@ -44,7 +44,17 @@ The Lean sources now contain:
 - a finite certificate that every matrix row is a probability distribution;
 - the exact hypergeometric stationary distribution and a finite stationarity certificate;
 - the exact first-mode factor and the finite theorem that exchange size 25 minimizes its absolute value over sizes 1..49;
-- exact rational TV-distance certificates after two and three 25-card exchanges.
+- exact rational TV-distance certificates after two and three 25-card exchanges;
+- the general `N`/`m`/`r` Bernoulli--Laplace exchange theory: symbolic row
+  normalization, the stationary distribution, and detailed balance by
+  fiber counting (`BernoulliLaplaceGeneral.lean` and its companion
+  `BernoulliLaplaceFiber.lean`);
+- the bridge identifying `BLState 99 50 50` with `Fin 50` and proving the
+  general and Commander theories agree pointwise
+  (`BernoulliLaplaceCommanderBridge.lean`).
+
+The first-eigenfunction work (the weighted Vandermonde and reindexing
+lemmas) is in progress; see `docs/autonomous_lean_build.md`.
 
 The Python reference implementation remains independent and is used to cross-check the exact numbers and generate conjectures.
 
@@ -61,8 +71,16 @@ The Python reference implementation remains independent and is used to cross-che
 - `Shufflemath/Finite.lean` -- `StdSimplex` distributions and semantic finite kernels.
 - `Shufflemath/Matrix.lean` -- stochastic-matrix bridge.
 - `Shufflemath/TotalVariation.lean` -- exact rational TV and Dobrushin quantities.
+- `Shufflemath/Perturbation.lean` -- perturbation bounds for composite kernels.
+- `Shufflemath/Dobrushin.lean` -- sharp Dobrushin contraction.
+- `Shufflemath/Markov.lean` -- stationarity, reversibility, self-adjointness.
 - `Shufflemath/Cost.lean` -- costed operations and protocol costs.
-- `Shufflemath/BernoulliLaplace.lean` -- exact Bernoulli--Laplace model and Commander certificates.
+- `Shufflemath/BernoulliLaplace.lean` -- exact Bernoulli--Laplace model and Commander certificates (frozen).
+- `Shufflemath/BernoulliLaplaceGeneral.lean` -- general `N`/`m`/`r` exchange theory.
+- `Shufflemath/BernoulliLaplaceFiber.lean` -- detailed balance by fiber counting.
+- `Shufflemath/BernoulliLaplaceCommanderBridge.lean` -- general/Commander agreement.
+- `docs/autonomous_lean_build.md` -- the Lean build's handoff/resume document.
+- `docs/lean_build_history.md` -- its session log and reference notes.
 
 ## Build
 
@@ -91,9 +109,9 @@ python -m unittest discover -s tests -v
 
 ## Near-term theorem ladder
 
-1. prove the general Bernoulli--Laplace row-normalization identity symbolically, replacing the Commander-only finite certificate;
-2. prove reversibility and the first eigenfunction/eigenvalue theorem;
-3. formalize ideal GSR inverse riffles and the `a`-shuffle composition law;
-4. prove TV contraction / perturbation bounds for heterogeneous finite kernels;
-5. introduce costed schedule search and certificates;
-6. add biased/clumpy local shuffle models.
+1. prove the first eigenfunction/eigenvalue theorem for the general exchange
+   kernel (row normalization and reversibility are already done);
+2. formalize ideal GSR inverse riffles and the `a`-shuffle composition law;
+3. prove TV contraction / perturbation bounds for heterogeneous finite kernels;
+4. introduce costed schedule search and certificates;
+5. add biased/clumpy local shuffle models.

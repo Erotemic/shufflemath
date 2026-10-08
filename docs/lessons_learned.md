@@ -3,7 +3,7 @@
 Concise, generalizable lessons from the autonomous Lean sessions in this
 repo. Only entries that took more than one step to discover belong here.
 Lean-mechanics items that are project-local (specific theorems) go in
-`docs/autonomous_lean_build.md` §5 instead.
+`docs/lean_build_history.md` §3 (the verified hooks list) instead.
 
 ## Workflow
 
