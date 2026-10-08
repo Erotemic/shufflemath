@@ -1032,18 +1032,25 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   losslessness `re7`/`re7'`/`re7''`; `fiberFlat`
   (`#fiber7Set (x, y) = fiberSum (x, y)`, 5-step cardinality-computation
   proof avoiding sum-rewrite descension into the nested products).
-- [ ] F. General BL (`BernoulliLaplaceGeneral.lean`: states, row stochasticity,
-  stationary, detailed balance, Commander link) — **parts 1–3b done**
-  (sessions 13–14):
-  `BLState N m r` / `blLo` / `blHi` / `stateFinset` / `ExchangeAdmissible`,
-  generalized `transitionNumerator`/`transitionWeight`, `blRowStochastic`
-  (double Vandermonde, general `r`), `transitionWeight_nonneg`,
-  `transitionDenominator_pos`, `blExchangeKernel`, `blStationary` /
-  `blStationaryTotal` / `blStationaryDist`, fiber machinery
-  (`fiberSum`/`fiberSum_eq`/`fiber7*`/`fiberFlat`). Remaining: the
-  detailed-balance theorem (follows from `fiberSum_swap` + `fiberSum_eq` +
-  `blStationary`), `blStationaryDist` stationary via
-  `Markov.stationary_of_detailedBalance`, and the Commander bridge module.
+- [x] F. General BL (`BernoulliLaplaceGeneral.lean`: states, row stochasticity,
+  stationary, detailed balance, Commander link) — **complete** (sessions 13–16
+  and the 2026-10-07 session): `BLState N m r` / `blLo` / `blHi` /
+  `stateFinset` / `ExchangeAdmissible`, generalized
+  `transitionNumerator`/`transitionDenominator`/`transitionWeight`,
+  `blRowStochastic` (double Vandermonde, general `r`),
+  `transitionWeight_nonneg`, `transitionDenominator_pos`, `blExchangeKernel`,
+  `blStationary` / `blStationaryTotal` / `blStationaryDist`, fiber machinery
+  (`fiberSum`/`fiberSum_eq`/`fiber7*`/`fiberFlat`/`fiber7Inv`/
+  `fiberSum_swap`), detailed balance (private `detailedBalance` Nat-level
+  identity via `fiberSum_swap` + `fiberSum_eq`; public `blDetailedBalance`),
+  `blStationaryDist_is_stationary` (via
+  `Markov.detailedBalance_implies_stationary`) and `blStationaryRun`.
+  The Commander link lives in the separate bridge module
+  `Shufflemath/BernoulliLaplaceCommanderBridge.lean` (imports both,
+  GPT review #3): state-space equivalences `commanderToBL` / `blToCommander`
+  (+round-trips), `transitionWeight_general_eq_commander`,
+  `commanderExchange25_matches_blExchange`,
+  `commanderStationary_matches_blStationary`.
 - [x] 2026-10-07 (session 15): commit 1a0cb94 — **F part 3 stage 4
   complete.** `fiber7Inv` (the 7-tuple exchange involution),
   `fiber7Inv_mem`, `fiber7Inv_inv`, `fiberSum_swap`. **Math finding:**
@@ -1064,19 +1071,95 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   elaboration (use `apply` chains); `simp` on a `×ˢ` chain stops one level
   short and yields a left-nested `And` (rebuild with explicit
   `Finset.mem_product.mpr` per level).
-- [ ] G. First eigenfunction (general + Commander corollaries).
+- [x] 2026-10-07 (session 16, commits f5a4716 / 8d40b9a / b49fcb3): **F
+  complete.** (1) Detailed balance: private `detailedBalance` —
+  `π(x)·W(x,y) = π(y)·W(y,x)` as a `Rat` identity; both sides reduce to
+  `fiberSum / D` with the common denominator
+  `D = (C(N,m) : Rat) · (transitionDenominator : Rat)` (`hside` helper:
+  `field_simp` + `← Nat.cast_mul` + `← fiberSum_eq` + `dsimp [D]` + one
+  more `field_simp [hC]` + `rw [Nat.cast_mul]` to match the two-cast
+  denominator shape), then `calc` over `fiberSum_swap` (needs the
+  `x.val ≤ p.m` / `y.val ≤ p.m` physical-admissibility hypotheses from the
+  session-15 math finding). Public `blDetailedBalance` unpacks it via
+  `mass_ofFun`. (2) Reversibility + stationarity: `blStationaryDist_is_
+  stationary` via `Markov.detailedBalance_implies_stationary` (the
+  `Stationary`-as-`Dist`-equality goal is closed through
+  `tv_zero_iff_eq` + `Dist.mass_ofFun`); `blStationaryRun` by
+  `Markov.stationary_run`. (3) Bridge module `BernoulliLaplaceCommander
+  Bridge.lean` (110 lines): `BLState 99 50 50 ↔ Fin 50` via
+  `blLo 99 50 50 = 1`, `blHi 99 50 50 = 50`; `transitionWeight_general_eq
+  _commander` (the two copies of the transition formula coincide — the
+  general one is `r`-free at `r = 50`); kernel- and stationary-mass
+  matching theorems. `Shufflemath.lean` gains the bridge import.
+- [x] 2026-10-07 (session 17, commit 184f7b1): **G batch 1 — first-mode
+  binomial lemmas** in the new `section firstMode` of
+  `BernoulliLaplaceGeneral.lean`: `chooseSucc_weighted`
+  (`(x+1)·C(n, x+1) = n·C(n-1, x)`, all `n x` — the `x ≥ n` branch kills
+  both binomials, `n = 0` handled by a nested case) and
+  `chooseSum_weighted (n x k) (hx : x ≤ n)`:
+  `∑_{a<k+1} (a : Rat)·C(x,a)·C(n-x,k-a) = (k·x/n)·C(n,k)` — the 1-D
+  hypergeometric mean identity. Proof: case-split on `k = 0` / `x = 0`
+  (both sides 0), then reindex `a = i+1, i < k` via `Finset.sum_bij`
+  (the `a = 0` summand is 0), per-term `a·C(x,a) = x·C(x-1,a-1)`-style
+  shift (Pascal), Vandermonde over the antidiagonal
+  (`Nat.add_choose_eq` + `Finset.Nat.sum_antidiagonal_eq_sum_range_succ`),
+  closed by `chooseSucc_weighted n (k-1)`. Mechanics recorded in
+  `docs/lessons_learned.md` (cast-ascription parsing, `rw` rewriting
+  inside `k-1`, `simp at` on opaque locals).
+- [ ] G. First eigenfunction (general + Commander corollaries) — **in
+  progress**: G1 `chooseSucc_weighted` + `chooseSum_weighted` (184f7b1);
+  G2 `innerYToB_b` (this session): the weighted version of `innerYToB` —
+  for fixed `a ≤ k`, the inner `y`-sum of the `a`-term of `guardedTerm`
+  weighted by `y - (x - a)` (the number `b` of special cards returning)
+  reindexes, via the same support window / bijection / zero-tail argument
+  as `innerYToB`, to the `b`-sum of `exchangeTerm` weighted by `b`
+  (needed for `E[b | x]`). Remaining: G3 the conditional-mean theorem
+  `E[y | x] = x − (k/m)·x + (k/(N−m))·(r−x)` (see "Next action"), G4 the
+  first-mode eigenfunction `∑_y W(x,y)·(y − m·r/N) = λ·(x − m·r/N)` with
+  `λ = 1 − N·k/(m·(N−m))` (one line of `Rat` field algebra over G3 —
+  verified by hand: the fixed point `μ = m·r/N` satisfies
+  `E[y|μ] = μ` for general `r`), G5 Commander corollaries tying
+  `commanderFirstMode k` / the k=24/25/26 factor values to the general
+  eigenvalue (home: the bridge module, which imports both sides).
 - [ ] H. Stretch: GSR, higher modes, separation distance.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
 
-**Next action:** F part 3 stage 5 — the detailed-balance theorem
-`blStationary x · W(x, y) = blStationary y · W(y, x)` in `Rat` (hypotheses
-`x ≤ p.m`, `y ≤ p.m`), assembled from `fiberSum_swap` + `fiberSum_eq`
-(both sides) + the `blStationary`/`transitionWeight` definitions (both
-sides reduce to `fiberSum / (C(N, m)·C(m, k)·C(N−m, k))`); then
-`blStationaryDist` stationary via `Markov.detailedBalance_implies_stationary`
-(verify the exact name/shape in `Mathlib/MeasureTheory/MarkovChain`).
-Then the Commander bridge module (see the F entry above).
+**Next action:** G3 — conditional mean, in `section firstMode` of
+`BernoulliLaplaceGeneral.lean`. Target theorem (Rat, admissible `p`,
+state `x`):
+
+```lean
+theorem blConditionalMean (p : ExchangeAdmissible) (x : BLState p.N p.m p.r) :
+    (∑ y ∈ stateFinset p.N p.m p.r,
+      (y : Rat) * (transitionWeight p.N p.m p.r p.k x.val y)) =
+      (x.val : Rat) - (p.k : Rat) * (x.val : Rat) / (p.m : Rat) +
+      (p.k : Rat) * ((p.r - x.val) : Rat) / ((p.N - p.m) : Rat) := by …
+```
+
+Strategy (mirror `blRowStochastic`'s structure; all pieces are already in
+the file): the `y`-sum over the window = the `y`-sum over `Finset.range
+(m+1)` — off-window terms vanish with their weight (new private support
+lemmas: `y-weighted num_zero_below_lo` / `num_zero_above_r`; the weighted
+`guardedTerm` is 0 whenever the unweighted one is, since the weight is a
+pure `Nat` factor). For each `a`: `y = (x - a) + (y - (x - a))`, so the
+weighted inner sum = `(x - a) · (innerYToB) + (innerYToB_b)`. Then:
+`∑_b exchangeTerm(x,a,b) = C(x,a)·C(m-x,k-a)·C(N-m,k)`
+(`vandermondeRange (r - x) (N - m - (r - x)) k` — note the cast-to-Rat
+bookkeeping: do the `Nat` computation first, cast once at the end) and
+`∑_b b·exchangeTerm(x,a,b) = C(x,a)·C(m-x,k-a)·(k·(r-x)/(N-m))·C(N-m,k)`
+(`chooseSum_weighted (p.N - p.m) (p.r - x.val) p.k` — its `hx : x ≤ n`
+hypothesis is `r - x ≤ N - m`, which is exactly `blLo ≤ x` when
+`r > N - m` and trivial when `r ≤ N - m`; the existing `num_zero_below_lo`
+splits on that same `r ≤ N - m` — reuse the pattern). Outer `a`-sum:
+`∑_a C(x,a)·C(m-x,k-a) = C(m,k)` (`vandermondeRange x (m-x) k`),
+`∑_a a·… = (k·x/m)·C(m,k)` (`chooseSum_weighted m x k`). All in `Rat`,
+`field_simp [hden]` with `hden : (transitionDenominator : Rat) ≠ 0`.
+Mechanics: keep `Nat` until the final cast (the `chooseSum_weighted`
+statement is Rat; `innerYToB*` / `vandermondeRange` are Nat — bridge
+with `Nat.cast_mul`/`Nat.cast_add`/`Nat.cast_sub` where the types meet).
+Then G4 (eigenfunction) and G5 (Commander corollaries in the bridge
+module).
 
 ## 8. Taste & style rules
 

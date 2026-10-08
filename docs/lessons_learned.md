@@ -86,6 +86,17 @@ Lean-mechanics items that are project-local (specific theorems) go in
   `section firstMode` uses the enclosing *namespace* only
   (`Shufflemath.BernoulliLaplaceGeneral.chooseSum_weighted`, not
   `…firstMode.chooseSum_weighted`).
+- **A `rw` lambda with a tactic body needs `by`, and its absence
+  misleads the error reporter.** `rw [sum_eq_zero fun x hx => simp …]` is
+  a *term* context after `=>`; `simp` is a tactic, so the parser dies on
+  it ("Unknown identifier `simp`" / "unexpected token `at`"), and the
+  cascading "unsolved goals" errors land at the theorem's *header* line
+  (the `:= by` line), not near the real fault — which looks like an
+  incomplete proof when the proof is actually complete. The working
+  form (used throughout `innerYToB`): `rw [sum_eq_zero fun x hx => by …]`
+  (the `by` directly after `=>`). When a proof with one such parse error
+  also shows unsolved goals at line N, fix the parse error first and
+  re-check N before assuming the proof is unfinished.
 
 ## Mathematics
 

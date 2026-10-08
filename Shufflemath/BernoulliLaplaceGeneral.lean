@@ -624,6 +624,253 @@ private theorem innerYToB (N m r k x a : Nat) (hm : x ≤ m) (_ha : a ≤ k) :
 
 variable {N m r k : Nat}
 
+/-- Weighted version of `innerYToB`: the inner `y`-sum of the `a`-term of
+`guardedTerm`, weighted by `y - (x - a)` (the number `b` of special cards
+returning from the right pile), reindexes to the `b`-sum of
+`exchangeTerm` weighted by `b`. -/
+private theorem innerYToB_b (N m r k x a : Nat) (hm : x ≤ m) (ha : a ≤ k) :
+    (∑ y ∈ Finset.range (m + 1), (y - (x - a)) * (guardedTerm N m r k x a y)) =
+    (∑ b ∈ Finset.range (k + 1), (b : Nat) * (exchangeTerm N m r k x a b)) := by
+  by_cases hax : a ≤ x
+  · -- `x - a` is a true subtraction.
+    set As := (Finset.range (m + 1)).filter
+      (fun y => x - a ≤ y ∧ y ≤ x - a + k ∧ y - (x - a) ≤ r - x) with hAs
+    set Bs := (Finset.range (k + 1)).filter (fun b => b ≤ r - x) with hBs
+    have hGzero : ∀ y, y ∉ As → guardedTerm N m r k x a y = 0 := by
+      simp only [guardedTerm]
+      intro y hy
+      by_cases h1 : x - a ≤ y
+      · by_cases h2 : y ≤ x - a + k
+        · by_cases h3 : y - (x - a) ≤ r - x
+          · -- All three window conjuncts hold.
+            by_cases hym : y ≤ m
+            · -- `y ∈ As`: contradiction.
+              have hmem : y ∈ As := by
+                simp only [hAs, Finset.mem_filter, Finset.mem_range]
+                exact ⟨Nat.lt_succ_of_le hym, h1, h2, h3⟩
+              contradiction
+            · -- `y > m`: the second binomial factor is zero.
+              by_cases h4 : y - (x - a) ≤ k
+              · rw [ite_eq_left h1, ite_eq_left h4]
+                have h4n : m - x < k - a := by
+                  by_contra hc
+                  have hle : k - a ≤ m - x := Nat.le_of_not_lt hc
+                  have hlm : y ≤ m := by
+                    have hka : a ≤ k := ha
+                    calc
+                      y = (x - a) + (y - (x - a)) := by
+                        rw [Nat.add_comm, Nat.sub_add_cancel h1]
+                      _ ≤ (x - a) + k := Nat.add_le_add_left h4 (x - a)
+                      _ = (x - a) + ((k - a) + a) := by
+                        conv in (x - a + k) =>
+                          rw [(Nat.sub_add_cancel hka).symm]
+                      _ ≤ (x - a) + ((m - x) + a) :=
+                        Nat.add_le_add_left (Nat.add_le_add_right hle a) (x - a)
+                      _ = ((x - a) + (m - x)) + a := by rw [← Nat.add_assoc]
+                      _ = (x - a) + ((m - x) + a) := by rw [Nat.add_assoc]
+                      _ = (x - a) + (a + (m - x)) := by
+                        rw [Nat.add_comm (m - x) a]
+                      _ = ((x - a) + a) + (m - x) := by rw [← Nat.add_assoc]
+                      _ = x + (m - x) := by rw [Nat.sub_add_cancel hax]
+                      _ = m := by
+                        rw [Nat.add_comm]
+                        exact Nat.sub_add_cancel hm
+                  exact False.elim (hym hlm)
+                have h2z : Nat.choose (m - x) (k - a) = 0 :=
+                  Nat.choose_eq_zero_of_lt h4n
+                change exchangeTerm N m r k x a (y - (x - a)) = 0
+                simp only [exchangeTerm]
+                rw [h2z, mul_zero, zero_mul, zero_mul]
+              · rw [ite_eq_left h1, ite_eq_right h4]
+          · -- `b ≤ k` but `b > r - x`: the third factor is zero.
+            by_cases h4 : y - (x - a) ≤ k
+            · rw [ite_eq_left h1, ite_eq_left h4]
+              change exchangeTerm N m r k x a (y - (x - a)) = 0
+              exact exchangeTerm_zero_above N m r k x a (y - (x - a)) (by
+                by_contra h5
+                exact h3 (Nat.le_of_not_lt h5))
+            · rw [ite_eq_left h1, ite_eq_right h4]
+        · -- `y > x - a + k`: then `b = y - (x - a) > k`.
+          by_cases h4 : y - (x - a) ≤ k
+          · exfalso
+            have hsum : (x - a) + (y - (x - a)) = y := by
+              rw [Nat.add_comm, Nat.sub_add_cancel h1]
+            have hsum2 : y ≤ x - a + k := by
+              rw [← hsum]
+              exact Nat.add_le_add_left h4 (x - a)
+            exact h2 hsum2
+          · rw [ite_eq_left h1, ite_eq_right h4]
+      · -- `y < x - a`: the first guard fails.
+        rw [ite_eq_right h1]
+    have hGzeroW : ∀ y, y ∉ As → (y - (x - a)) * (guardedTerm N m r k x a y) = 0 := by
+      intro y hy
+      rw [hGzero y hy, mul_zero]
+    have hAsupp : (∑ y ∈ Finset.range (m + 1),
+        (y - (x - a)) * (guardedTerm N m r k x a y)) =
+        (∑ y ∈ As, (y - (x - a)) * (guardedTerm N m r k x a y)) := by
+      rw [← Finset.sum_sdiff (s₁ := As) (s₂ := Finset.range (m + 1))
+          (h := fun (y : ℕ) (hy : y ∈ As) => (Finset.mem_filter.1 hy).1)]
+      rw [Finset.sum_eq_zero fun (y : ℕ) (hy : y ∈ Finset.range (m + 1) \ As) => by
+        simp only [Finset.mem_sdiff, hAs, Finset.mem_filter, Finset.mem_range] at hy
+        have hnot : y ∉ As := by
+          intro hin
+          simp only [hAs, Finset.mem_filter, Finset.mem_range] at hin
+          exact hy.2 hin
+        exact hGzeroW y hnot]
+      rw [zero_add]
+    set Bs1 := (Finset.range (k + 1)).filter
+      (fun b => b ≤ r - x ∧ b < m + 1 - (x - a)) with hBs1
+    have hBs1sub : Bs1 ⊆ Bs := by
+      intro b hb
+      simp only [hBs1, hBs, Finset.mem_filter, Finset.mem_range] at hb ⊢
+      exact ⟨hb.1, hb.2.1⟩
+    have hsplit : (∑ b ∈ Bs, (b : Nat) * (exchangeTerm N m r k x a b)) =
+        (∑ b ∈ Bs1, (b : Nat) * (exchangeTerm N m r k x a b)) +
+        (∑ b ∈ Bs \ Bs1, (b : Nat) * (exchangeTerm N m r k x a b)) := by
+      rw [← Finset.sum_sdiff (s₁ := Bs1) (s₂ := Bs) (h := hBs1sub)]
+      rw [add_comm]
+    have hzero2 : (∑ b ∈ Bs \ Bs1, (b : Nat) * (exchangeTerm N m r k x a b)) = 0 := by
+      apply Finset.sum_eq_zero
+      intro b hb
+      simp only [Finset.mem_sdiff, hBs, hBs1, Finset.mem_filter, Finset.mem_range] at hb
+      have hb1 : b < k + 1 := hb.1.1
+      have hb2 : b ≤ r - x := hb.1.2
+      have hbnot : ¬(b < m + 1 - (x - a)) := by
+        by_contra h6
+        exact hb.2 ⟨hb1, hb2, h6⟩
+      by_cases hax : a ≤ x
+      · -- `a ≤ x`: the second factor is zero, since `k ≤ (m - x) + a <
+        -- m + 1 - (x - a) ≤ b ≤ k` is impossible.
+        have hk2 : m + 1 - (x - a) ≤ b :=
+          Nat.le_of_not_lt (fun hlt => hbnot hlt)
+        have h4n : m - x < k - a := by
+          by_contra hc
+          have hle : k - a ≤ m - x := Nat.le_of_not_lt hc
+          have hle2 : k ≤ (m - x) + a := by
+            rw [show k = (k - a) + a from (Nat.sub_add_cancel ha).symm]
+            exact Nat.add_le_add_right hle a
+          have hlt : (m - x) + a < m + 1 - (x - a) := by omega
+          have hk4 : k < b := by
+            calc
+              k ≤ (m - x) + a := hle2
+              _ < m + 1 - (x - a) := hlt
+              _ ≤ b := hk2
+          have hbk : b ≤ k := by omega
+          exact False.elim (Nat.lt_irrefl k (by omega))
+        have h2z : Nat.choose (m - x) (k - a) = 0 :=
+          Nat.choose_eq_zero_of_lt h4n
+        simp only [exchangeTerm]
+        rw [h2z, mul_zero, zero_mul, zero_mul, mul_zero]
+      · -- `a > x`: the first factor is zero.
+        have h1z : Nat.choose x a = 0 :=
+          Nat.choose_eq_zero_of_lt (Nat.lt_of_not_ge hax)
+        simp only [exchangeTerm]
+        rw [h1z, zero_mul, zero_mul, zero_mul, mul_zero]
+    have hbij : (∑ y ∈ As, (y - (x - a)) * (guardedTerm N m r k x a y)) =
+        (∑ b ∈ Bs1, (b : Nat) * (exchangeTerm N m r k x a b)) := by
+      apply Finset.sum_bij (fun y _ => y - (x - a))
+      · -- image in Bs1
+        intro y hy
+        simp only [hAs, hBs1, Finset.mem_filter, Finset.mem_range] at hy ⊢
+        rcases hy with ⟨_, h1, h2, h3⟩
+        refine ⟨?_, ?_, ?_⟩
+        · -- y - (x - a) < k + 1
+          have hsubk : y - (x - a) ≤ k := by omega
+          exact Nat.lt_succ_of_le hsubk
+        · -- y - (x - a) ≤ r - x
+          exact h3
+        · -- y - (x - a) < m + 1 - (x - a)
+          omega
+      · -- injective
+        intro y1 hy1 y2 hy2 h12
+        have h1 : x - a ≤ y1 := by
+          simp only [hAs, Finset.mem_filter, Finset.mem_range] at hy1
+          exact hy1.2.1
+        have h2 : x - a ≤ y2 := by
+          simp only [hAs, Finset.mem_filter, Finset.mem_range] at hy2
+          exact hy2.2.1
+        omega
+      · -- surjective onto Bs1
+        intro b hb
+        simp only [hAs, hBs1, Finset.mem_filter, Finset.mem_range] at hb ⊢
+        rcases hb with ⟨hbr, hb2, hbm⟩
+        exact ⟨x - a + b, by
+          refine ⟨⟨?_, ⟨?_, ⟨?_, ?_⟩⟩⟩, ?_⟩
+          · -- x - a + b < m + 1
+            have hxa : x - a ≤ m + 1 := by omega
+            have hplus : x - a + (m + 1 - (x - a)) = m + 1 := by
+              rw [Nat.add_comm]
+              exact Nat.sub_add_cancel hxa
+            calc
+              x - a + b < x - a + (m + 1 - (x - a)) :=
+                Nat.add_lt_add_left hbm (x - a)
+              _ = m + 1 := hplus
+          · -- x - a ≤ x - a + b
+            omega
+          · -- x - a + b ≤ x - a + k
+            omega
+          · -- (x - a + b) - (x - a) ≤ r - x
+            have hsub : (x - a + b) - (x - a) = b := by omega
+            rw [hsub]
+            exact hb2
+          · -- (x - a + b) - (x - a) = b
+            omega
+        ⟩
+      · -- equality of terms
+        intro y hy
+        simp only [hAs, Finset.mem_filter, Finset.mem_range] at hy
+        have h4 : y - (x - a) ≤ k :=
+          (Nat.sub_le_iff_le_add (a := y) (b := x - a) (c := k)).mpr
+            (by simpa only [Nat.add_comm] using hy.2.2.1)
+        have hge : guardedTerm N m r k x a y =
+            exchangeTerm N m r k x a (y - (x - a)) := by
+          simp only [guardedTerm, exchangeTerm]
+          rw [ite_eq_left hy.2.1, ite_eq_left h4]
+        rw [hge]
+    have hφ : (∑ y ∈ As, (y - (x - a)) * (guardedTerm N m r k x a y)) =
+        (∑ b ∈ Bs, (b : Nat) * (exchangeTerm N m r k x a b)) := by
+      rw [hsplit, hzero2]
+      exact hbij
+    have hTsupp : (∑ b ∈ Bs, (b : Nat) * (exchangeTerm N m r k x a b)) =
+        (∑ b ∈ Finset.range (k + 1), (b : Nat) * (exchangeTerm N m r k x a b)) := by
+      rw [← Finset.sum_sdiff (s₁ := Bs) (s₂ := Finset.range (k + 1))
+          (h := fun (y : ℕ) (hy : y ∈ Bs) => (Finset.mem_filter.1 hy).1)]
+      rw [Finset.sum_eq_zero fun (b : ℕ) (hb : b ∈ Finset.range (k + 1) \ Bs) => by
+        simp only [Finset.mem_sdiff, hBs, Finset.mem_filter, Finset.mem_range] at hb
+        by_cases h5 : b ≤ r - x
+        · -- then `b ∈ Bs`, contradicting `hb.2`
+          exact False.elim (hb.2 ⟨hb.1, h5⟩)
+        · -- `b > r - x`: the third factor is zero
+          have h5' : r - x < b := by
+            by_contra h6
+            exact h5 (Nat.le_of_not_lt h6)
+          rw [exchangeTerm_zero_above N m r k x a b h5', mul_zero]]
+      rw [zero_add]
+    calc
+      _ = ∑ y ∈ As, (y - (x - a)) * (guardedTerm N m r k x a y) := hAsupp
+      _ = ∑ b ∈ Bs, (b : Nat) * (exchangeTerm N m r k x a b) := hφ
+      _ = ∑ b ∈ Finset.range (k + 1), (b : Nat) * (exchangeTerm N m r k x a b) := hTsupp
+  · -- `a > x`: every term carries `choose x a = 0`.
+    have hx : x < a := Nat.lt_of_not_ge hax
+    have h0 : Nat.choose x a = 0 := Nat.choose_eq_zero_of_lt hx
+    have hL : (∑ y ∈ Finset.range (m + 1),
+        (y - (x - a)) * (guardedTerm N m r k x a y)) = 0 := by
+      apply Finset.sum_eq_zero
+      intro y _
+      change (y - (x - a)) * (guardedTerm N m r k x a y) = 0
+      simp only [guardedTerm]
+      rw [ite_eq_left (by omega)]
+      split_ifs with _
+      · simp only [h0, zero_mul, mul_zero]
+      · simp
+    have hR : (∑ b ∈ Finset.range (k + 1), (b : Nat) * (exchangeTerm N m r k x a b)) = 0 := by
+      apply Finset.sum_eq_zero
+      intro b _
+      simp only [exchangeTerm, h0, zero_mul, mul_zero]
+    rw [hL, hR.symm]
+
+variable {N m r k : Nat}
+
 /-- Vandermonde's identity in `range` form:
 `∑ b < k + 1, choose M b * choose L (k - b) = choose (M + L) k`. -/
 private theorem vandermondeRange (M L k : Nat) : (∑ b ∈ Finset.range (k + 1),
@@ -2011,7 +2258,7 @@ theorem chooseSum_weighted (n x k : Nat) (hx : x <= n) :
       (k : Rat) * (x : Rat) / (n : Rat) * (Nat.choose n k : Rat) := by
   by_cases hk : k = 0
   · -- The only summand has `a = 0` (hence is 0); the right side has `k = 0`.
-    simp [hk, Nat.cast_zero, Nat.mul_zero]
+    simp [hk]
   ·
     by_cases hx0 : x = 0
     · -- `C(0, a)` is 0 for `a >= 1` and the `a = 0` summand has a `0` factor;
@@ -2027,9 +2274,9 @@ theorem chooseSum_weighted (n x k : Nat) (hx : x <= n) :
           have hz : Nat.choose x a = 0 := by
             rw [Nat.choose_eq_zero_iff]
             simpa [hx0] using ha1
-          simp [hz, Nat.cast_zero, Nat.mul_zero]
+          simp [hz]
       rw [hL]
-      simp [hx0, Nat.cast_zero, Nat.mul_zero, Nat.mul_zero]
+      simp [hx0]
     ·
       -- `0 < x <= n`, so `0 < n`: the division by `n` is an honest one.
       have hx1 : 0 < x := Nat.pos_of_ne_zero hx0
@@ -2195,7 +2442,6 @@ theorem chooseSum_weighted (n x k : Nat) (hx : x <= n) :
       have hR : (k : Rat) * (x : Rat) / (n : Rat) * (Nat.choose n k : Rat) =
           (x : Rat) * ((k : Rat) * (Nat.choose n k : Rat) / (n : Rat)) := by
         field_simp [hnpos]
-        <;> ring
       rw [hR]
       -- Clear the fraction using `n * C(n-1,k-1) = k * C(n,k)` (chooseSucc_weighted n (k-1)).
       have hdiv : (k : Rat) * (Nat.choose n k : Rat) / (n : Rat) =
