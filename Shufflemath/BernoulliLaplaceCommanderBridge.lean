@@ -26,46 +26,43 @@ open BernoulliLaplace
 /-- The Commander 99-card instance as general parameters: 99 cards,
 50-card left pile, all 50 original-left cards marked, 25-card exchange. -/
 abbrev commanderBLParams : BernoulliLaplaceGeneral.ExchangeAdmissible :=
-  ⟨99, 50, 50, 25, by norm_num, by norm_num, by norm_num, by norm_num⟩
+  ⟨99, 50, 50, 25, by norm_num, by norm_num, by norm_num, by norm_num,
+    by norm_num, by norm_num⟩
 
 /-- Commander states are `Fin 50`; the general macrostate of state `i`
 holds `i.val + 1` original-left cards (the `1 <= x <= 50` range of
-`BLState 99 50 50`). -/
+`BLState 99 50 50`: `blLo 99 50 50 = max (50 - 49) 0 = 1` and
+`blHi 99 50 50 = min 50 50 = 50`). -/
 def commanderToBL (i : CommanderState) :
     BernoulliLaplaceGeneral.BLState 99 50 50 :=
-  ⟨i.val + 1, Nat.succ_le_succ (Nat.zero_le _), Nat.succ_le_of_lt (Fin.val_lt i)⟩
+  ⟨i.val + 1, Nat.succ_le_succ (Nat.zero_le _), Nat.succ_le_of_lt i.2⟩
 
 /-- The inverse identification: a general macrostate `x` (with
 `1 <= x <= 50`) is Commander state `x - 1`. -/
 def blToCommander (x : BernoulliLaplaceGeneral.BLState 99 50 50) :
     CommanderState :=
   ⟨x.val - 1, by
+    -- The state property is `blLo 99 50 50 <= x.val <= blHi 99 50 50`,
+    -- which evaluates to `1 <= x.val <= 50`.
     have hlo : 1 <= x.val := by
-      dsimp only [BernoulliLaplaceGeneral.BLState] at x
-      simp only [BernoulliLaplaceGeneral.blLo] at x
-      norm_num at x
-      exact x.1
+      simpa [BernoulliLaplaceGeneral.blLo, BernoulliLaplaceGeneral.blLo_def]
+        using x.2.1
     have hhi : x.val <= 50 := by
-      dsimp only [BernoulliLaplaceGeneral.BLState] at x
-      simp only [BernoulliLaplaceGeneral.blHi] at x
-      norm_num at x
-      exact x.2
+      simpa [BernoulliLaplaceGeneral.blHi, BernoulliLaplaceGeneral.blHi_def]
+        using x.2.2
     omega⟩
 
 theorem blToCommander_commanderToBL (i : CommanderState) :
     blToCommander (commanderToBL i) = i := by
-  simp only [blToCommander, commanderToBL]
   apply Fin.ext
-  omega
+  simp only [blToCommander, commanderToBL, Nat.add_one_sub_one]
 
 theorem commanderToBL_blToCommander (x : BernoulliLaplaceGeneral.BLState 99 50 50) :
     commanderToBL (blToCommander x) = x := by
-  apply Subtype.ext
   have hlo : 1 <= x.val := by
-    dsimp only [BernoulliLaplaceGeneral.BLState] at x
-    simp only [BernoulliLaplaceGeneral.blLo] at x
-    norm_num at x
-    exact x.1
+    simpa [BernoulliLaplaceGeneral.blLo, BernoulliLaplaceGeneral.blLo_def]
+      using x.2.1
+  apply Subtype.ext
   simp only [commanderToBL, blToCommander]
   exact Nat.sub_add_cancel hlo
 
@@ -92,9 +89,7 @@ theorem commanderExchange25_matches_blExchange (i j : CommanderState) :
       Dist.mass (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams
         (commanderToBL i)) (commanderToBL j) := by
   simp only [commanderExchange25, FiniteKernel.ofRowStochastic, Dist.mass_ofFun,
-    BernoulliLaplaceGeneral.blExchangeKernel, commanderExchangeMatrix,
-    commanderLeftCount, commanderToBL]
-  rw [transitionWeight_general_eq_commander 99 50 25 (i.val + 1) (j.val + 1)]
+    BernoulliLaplaceGeneral.blExchangeKernel, commanderToBL]
   rfl
 
 /-- The Commander hypergeometric stationary distribution and the general
@@ -104,7 +99,16 @@ theorem commanderStationary_matches_blStationary (i : CommanderState) :
     Dist.mass commanderStationary i =
       Dist.mass (BernoulliLaplaceGeneral.blStationaryDist commanderBLParams)
         (commanderToBL i) := by
-  simp only [commanderStationary, BernoulliLaplaceGeneral.blStationaryDist,
-    Dist.mass_ofFun, commanderStationaryVector,
-    BernoulliLaplaceGeneral.blStationary, commanderLeftCount, commanderToBL]
-  norm_num
+  -- `dsimp` (not `simp`) for the two `Dist.ofFun` definitions: the proofs
+  -- they carry are heavy (`native_decide` over the 50-entry table; the
+  -- symbolic Vandermonde bridge), and any `simp` pass that whnfs the
+  -- `ofFun` structures stalls past even a 400k-heartbeat budget.
+  -- `dsimp` only delta-unfolds, so the `rw` below (whose lemma is `rfl`)
+  -- matches and the goal drops to the mass-function level.
+  dsimp only [commanderStationary, BernoulliLaplaceGeneral.blStationaryDist]
+  rw [Dist.mass_ofFun (f := commanderStationaryVector)
+      commanderStationaryVector_nonneg commanderStationaryVector_total i,
+    Dist.mass_ofFun (f := fun x => BernoulliLaplaceGeneral.blStationary
+      99 50 50 x) _ _ (commanderToBL i)]
+  simp only [commanderStationaryVector, BernoulliLaplaceGeneral.blStationary,
+    commanderLeftCount, commanderToBL]

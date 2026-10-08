@@ -7,3 +7,5 @@ import Shufflemath.Markov
 import Shufflemath.Cost
 import Shufflemath.BernoulliLaplace
 import Shufflemath.BernoulliLaplaceGeneral
+import Shufflemath.BernoulliLaplaceFiber
+import Shufflemath.BernoulliLaplaceCommanderBridge
