@@ -591,6 +591,12 @@ theorem proved; no changes to `BernoulliLaplace.lean`.
   (`37/1225`, `−1/98`, `−62/1225`) to the theorem as corollaries
   (the numeric simp lemmas already exist; add the semantic statement).
 
+  *Erratum (2026-10-08):* the `m−x` and `m·m/N` notation in this note is
+  the Commander convention `r = m`. In the general theory (`r` free) the
+  centered observable is `x − m·r/N` and the conditional mean is
+  `x − k·x/m + k·(r−x)/(N−m)`. See the corrected G4/G5 spec in the
+  handoff `docs/autonomous_lean_build.md`.
+
 **Done:** build green; eigenfunction statement for general `(N,m,k)` proved
 symbolically; Commander corollaries committed.
 

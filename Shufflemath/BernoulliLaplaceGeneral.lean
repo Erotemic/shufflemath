@@ -1234,6 +1234,27 @@ noncomputable def blStationaryDist (p : ExchangeAdmissible) :
       rw [hbridge]
       exact blStationary_total p)
 
+/-- The mass of the stationary distribution at `x` is the hypergeometric
+stationary mass. This simp lemma is the authoritative pointwise access to
+`blStationaryDist`; it exposes the defining scalar and keeps the
+construction's nonnegativity/normalization proofs out of `simp`. -/
+@[simp]
+theorem mass_blStationaryDist (p : ExchangeAdmissible) (x : BLState p.N p.m p.r) :
+    Dist.mass (blStationaryDist p) x = blStationary p.N p.m p.r x := by
+  dsimp only [blStationaryDist]
+  rw [Dist.mass_ofFun]
+
+/-- The mass of the exchange-kernel row at `y` is the exact transition
+probability. This simp lemma is the authoritative pointwise access to
+`blExchangeKernel`. -/
+@[simp]
+theorem mass_blExchangeKernel (p : ExchangeAdmissible)
+    (x y : BLState p.N p.m p.r) :
+    Dist.mass (blExchangeKernel p x) y =
+      transitionWeight p.N p.m p.r p.k x.val y.val := by
+  dsimp only [blExchangeKernel]
+  rw [Dist.mass_ofFun]
+
 
 /-! ### First mode: hypergeometric means and the first eigenfunction
 

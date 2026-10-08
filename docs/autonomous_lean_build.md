@@ -156,11 +156,21 @@ The hard-won Lean-mechanics notes and the verified mathlib hook list
 - **G2 (done):** `innerYToB_b` (the weighted `y → b` reindexing).
 - **G3 (next — full spec in "Next action" at the end of this file):** the
   conditional mean `blConditionalMean`.
-- **G4:** the first eigenfunction identity: `f(x) = 1 - x/m + (x - r)·k/(N-m)`
-  satisfies `∑ p(x,y)·f(y) = λ·f(x)`.
-- **G5:** the Commander corollaries in the bridge module: the `λ = -25/49`
-  eigenvalue on `Fin 50` (via the weight match) and the `f(i)`-value
-  theorem.
+- **G4:** the first *centered* eigenfunction theorem: the centered
+  observable `f(x) = x - m·r/N` (stationary mean `μ = m·r/N`) satisfies
+  `applyFn (blExchangeKernel p) f = blFirstModeFactor p.N p.m p.k • f`,
+  where the general first-mode factor is
+  `blFirstModeFactor (N m k) := 1 - (N : Rat) * k / ((m : Rat) * (N - m))`. This
+  is the first centered linear mode; it is **not** a claim about the
+  largest nontrivial eigenvalue in absolute value, nor a TV-optimality
+  statement.
+- **G5:** the Commander corollaries in the bridge module: package the
+  conversions as `commanderBLEquiv : Fin 50 ≃ BLState 99 50 50`, prove the
+  general factor agrees with the concrete `firstModeFactor`, and derive
+  the specializations `λ₁(24) = 37/1225`, `λ₁(25) = -1/98`,
+  `λ₁(26) = -62/1225` from the single general formula.
+  (The older draft of this plan had `f(x) = 1 - x/m + (x-r)·k/(N-m)` and
+  `λ = -25/49` for Commander — both wrong, corrected 2026-10-08.)
 
 **H. Stretch** (after G, in the order of `docs/lean_plan.md` §4): the GSR
 theorem, higher modes, the separation distance, the perturbation→TV

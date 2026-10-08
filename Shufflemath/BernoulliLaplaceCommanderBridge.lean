@@ -99,16 +99,15 @@ theorem commanderStationary_matches_blStationary (i : CommanderState) :
     Dist.mass commanderStationary i =
       Dist.mass (BernoulliLaplaceGeneral.blStationaryDist commanderBLParams)
         (commanderToBL i) := by
-  -- `dsimp` (not `simp`) for the two `Dist.ofFun` definitions: the proofs
-  -- they carry are heavy (`native_decide` over the 50-entry table; the
-  -- symbolic Vandermonde bridge), and any `simp` pass that whnfs the
-  -- `ofFun` structures stalls past even a 400k-heartbeat budget.
-  -- `dsimp` only delta-unfolds, so the `rw` below (whose lemma is `rfl`)
-  -- matches and the goal drops to the mass-function level.
-  dsimp only [commanderStationary, BernoulliLaplaceGeneral.blStationaryDist]
+  -- `dsimp` (not `simp`) for the concrete `commanderStationary`: its
+  -- normalization proof is a heavy `native_decide` over the 50-entry
+  -- table, and any `simp` pass that whnfs the `ofFun` structure stalls
+  -- past even a 400k-heartbeat budget. `dsimp` only delta-unfolds, so
+  -- the `rw` below (whose lemma is `rfl`) matches. The general side
+  -- goes through the packaged `mass_blStationaryDist` simp lemma.
+  dsimp only [commanderStationary]
   rw [Dist.mass_ofFun (f := commanderStationaryVector)
       commanderStationaryVector_nonneg commanderStationaryVector_total i,
-    Dist.mass_ofFun (f := fun x => BernoulliLaplaceGeneral.blStationary
-      99 50 50 x) _ _ (commanderToBL i)]
+    BernoulliLaplaceGeneral.mass_blStationaryDist commanderBLParams (commanderToBL i)]
   simp only [commanderStationaryVector, BernoulliLaplaceGeneral.blStationary,
     commanderLeftCount, commanderToBL]
