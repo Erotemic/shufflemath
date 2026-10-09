@@ -1266,6 +1266,154 @@ computations below. From that, the centered macrostate
 section firstMode
 variable {N m r k : Nat}
 
+/-- The first-mode factor of the general exchange kernel: the eigenvalue
+of the first centered linear mode. The coefficient is independent of
+`r` (the centering, not the contraction, depends on `r`). For the
+Commander split (`N = 99`, `m = 50`) this specializes to the concrete
+`firstModeFactor` of `Shufflemath.BernoulliLaplace` (agreement is proved
+in the bridge module). -/
+def blFirstModeFactor (N m k : Nat) : Rat :=
+  1 - ((N : Rat) * k) / ((m : Rat) * (N - m))
+
+/-- Pointwise `y`-product and its `(x-a)` / `(y-(x-a))` split parts, as
+`Nat` terms. Wrapper `def`s keep the `Nat.cast` of a product opaque
+(a `: Rat` ascription on a product would normalize to a product of
+casts, which the `Nat.cast_*` lemmas cannot match). -/
+private def gProd (N m r k x a y : Nat) : Nat := y * (guardedTerm N m r k x a y)
+private def gProdA (N m r k x a y : Nat) : Nat := (x - a) * (guardedTerm N m r k x a y)
+private def gProdB (N m r k x a y : Nat) : Nat := (y - (x - a)) * (guardedTerm N m r k x a y)
+private def gSplit (N m r k x a y : Nat) : Nat :=
+  (x - a) * (guardedTerm N m r k x a y) + (y - (x - a)) * (guardedTerm N m r k x a y)
+
+/-- Weighted inner reindexing: for fixed `a <= k`, the `y`-sum of
+`(y : Rat) * (guarded term)` over `y < m + 1` equals
+`(x - a) * (b-sum) + (b-weighted b-sum)`, all as `Rat` sums.
+The `y = (x-a) + (y-(x-a))` split is done in `Nat` (inside `Nat.cast`);
+each half is then bridged to its `b`-sum by `innerYToB` / `innerYToB_b`. -/
+private theorem innerYToB_w (N m r k x a : Nat) (hm : x <= m) (ha : a <= k) :
+    (∑ y ∈ Finset.range (m + 1), (gProd N m r k x a y : Rat)) =
+      ((x : Rat) - (a : Rat)) * (∑ b ∈ Finset.range (k + 1), (exchangeTerm N m r k x a b : Rat))
+      + (∑ b ∈ Finset.range (k + 1), (b : Rat) * (exchangeTerm N m r k x a b : Rat)) := by
+  by_cases hax : a <= x
+  · -- `a <= x`: genuine `x - a`.
+    -- The unweighted `y`-sum (as a `Rat` sum of casts) is the unweighted `b`-sum.
+    have hB : (∑ y ∈ Finset.range (m + 1), (guardedTerm N m r k x a y : Rat)) =
+        (∑ b ∈ Finset.range (k + 1), (exchangeTerm N m r k x a b : Rat)) := by
+      rw [← Nat.cast_sum, ← Nat.cast_sum]
+      rw [show (∑ y ∈ Finset.range (m + 1), guardedTerm N m r k x a y) =
+            (∑ b ∈ Finset.range (k + 1), exchangeTerm N m r k x a b)
+        from innerYToB N m r k x a hm ha]
+    -- The `b`-weighted `b`-sum is the `(y - (x-a))`-weighted `y`-sum
+    -- (cast of `innerYToB_b`).
+    have hBw : (∑ y ∈ Finset.range (m + 1), (gProdB N m r k x a y : Rat)) =
+        (∑ b ∈ Finset.range (k + 1), (b : Rat) * (exchangeTerm N m r k x a b : Rat)) := by
+      have hN := innerYToB_b N m r k x a hm ha
+      have hR : (∑ b ∈ Finset.range (k + 1), (b : Rat) * (exchangeTerm N m r k x a b : Rat)) =
+          (∑ b ∈ Finset.range (k + 1), (Nat.cast ((b : Nat) * (exchangeTerm N m r k x a b)) : Rat)) := by
+        apply Finset.sum_congr rfl
+        intro b _
+        rw [← Nat.cast_mul]
+      rw [hR]
+      change (∑ y ∈ Finset.range (m + 1), Nat.cast ((y - (x - a)) * (guardedTerm N m r k x a y))) = _
+      rw [← Nat.cast_sum, hN, Nat.cast_sum]
+    -- Per term, inside the cast: `y * g = (x-a) * g + (y-x+a) * g`
+    -- (a genuine subtraction distributes; otherwise `g = 0`).
+    have hS1 : (∑ y ∈ Finset.range (m + 1), (gProd N m r k x a y : Rat)) =
+        (∑ y ∈ Finset.range (m + 1), (gSplit N m r k x a y : Rat)) := by
+      apply Finset.sum_congr rfl
+      intro y _
+      -- Work in `Nat` (inside the cast): `y * g = (x-a) * g + (y-x+a) * g`.
+      refine congrArg (Nat.cast ·) ?_
+      change y * (guardedTerm N m r k x a y) =
+          (x - a) * (guardedTerm N m r k x a y) + (y - (x - a)) * (guardedTerm N m r k x a y)
+      by_cases hgy : x - a <= y
+      · -- Genuine: `y = (y-x+a) + (x-a)`, so the `Nat` product distributes.
+        have hsum : y = (y - (x - a)) + (x - a) := by
+          rw [Nat.sub_add_cancel hgy]
+        rw [hsum]
+        rw [Nat.add_mul]
+        rw [show ((y - (x - a)) + (x - a)) - (x - a) = y - (x - a) from by
+          rw [Nat.add_sub_cancel_right]]
+        ring
+      · -- `y < x - a`: the guarded term vanishes.
+        have hgz : (guardedTerm N m r k x a y) = 0 := by
+          simp only [guardedTerm]
+          rw [ite_eq_right hgy]
+        rw [hgz]
+        simp
+    -- The sum of the two cast halves is the cast of the split `Nat` sum.
+    have hS2 : (∑ y ∈ Finset.range (m + 1), (gProdA N m r k x a y : Rat)) +
+          (∑ y ∈ Finset.range (m + 1), (gProdB N m r k x a y : Rat)) =
+        (∑ y ∈ Finset.range (m + 1), (gSplit N m r k x a y : Rat)) := by
+      rw [← Finset.sum_add_distrib]
+      apply Finset.sum_congr rfl
+      intro y _
+      change Nat.cast ((x - a) * (guardedTerm N m r k x a y)) +
+            Nat.cast ((y - (x - a)) * (guardedTerm N m r k x a y)) =
+          Nat.cast ((x - a) * (guardedTerm N m r k x a y) + (y - (x - a)) * (guardedTerm N m r k x a y))
+      rw [← Nat.cast_add]
+    -- The constant half factors out of the sum.
+    have hS3 : (∑ y ∈ Finset.range (m + 1), (gProdA N m r k x a y : Rat)) =
+        (Nat.cast (x - a)) * (∑ y ∈ Finset.range (m + 1), (guardedTerm N m r k x a y : Rat)) := by
+      have h0 : (∑ y ∈ Finset.range (m + 1), (gProdA N m r k x a y : Rat)) =
+          (∑ y ∈ Finset.range (m + 1), (Nat.cast (x - a)) * (Nat.cast (guardedTerm N m r k x a y))) := by
+        apply Finset.sum_congr rfl
+        intro y _
+        change Nat.cast ((x - a) * (guardedTerm N m r k x a y)) =
+            (Nat.cast (x - a)) * (Nat.cast (guardedTerm N m r k x a y))
+        rw [Nat.cast_mul]
+      rw [h0, ← Finset.mul_sum]
+    -- Assemble: fold each half to its `b`-sum and match the `Rat` difference.
+    rw [hS1, ← hS2]
+    rw [hS3, ← hBw]
+    rw [hB, Nat.cast_sub hax]
+  · -- `a > x`: `C(x, a) = 0` kills both `g` and `E`, so both sides are `0`.
+    have hxlt : x < a := by omega
+    have hgz (y : Nat) : (guardedTerm N m r k x a y) = 0 := by
+      simp only [guardedTerm]
+      by_cases h1 : x - a <= y
+      · by_cases h2 : y - (x - a) <= k
+        · -- Both guards pass: the product; `C(x, a) = 0` kills it.
+          rw [ite_eq_left h1, ite_eq_left h2, Nat.choose_eq_zero_of_lt hxlt]
+          simp
+        · -- Inner guard fails: the inner `else 0`.
+          rw [ite_eq_left h1, ite_eq_right h2]
+      · -- Outer guard fails: the outer `else 0`.
+        rw [ite_eq_right h1]
+    have hez (b : Nat) : (exchangeTerm N m r k x a b) = 0 := by
+      simp only [exchangeTerm]
+      rw [Nat.choose_eq_zero_of_lt hxlt]
+      simp
+    have hL : (∑ y ∈ Finset.range (m + 1), (gProd N m r k x a y : Rat)) = 0 := by
+      have h1 : (∑ y ∈ Finset.range (m + 1), (gProd N m r k x a y : Rat)) =
+          (∑ y ∈ Finset.range (m + 1), (0 : Rat)) := by
+        apply Finset.sum_congr rfl
+        intro y _
+        simp only [gProd]
+        rw [hgz y]
+        simp
+      rw [h1]
+      simp
+    have hB : (∑ b ∈ Finset.range (k + 1), (exchangeTerm N m r k x a b : Rat)) = 0 := by
+      have h1 : (∑ b ∈ Finset.range (k + 1), (exchangeTerm N m r k x a b : Rat)) =
+          (∑ b ∈ Finset.range (k + 1), (0 : Rat)) := by
+        apply Finset.sum_congr rfl
+        intro b _
+        rw [hez b]
+        simp
+      rw [h1]
+      simp
+    have hBw : (∑ b ∈ Finset.range (k + 1), (b : Rat) * (exchangeTerm N m r k x a b : Rat)) = 0 := by
+      have h1 : (∑ b ∈ Finset.range (k + 1), (b : Rat) * (exchangeTerm N m r k x a b : Rat)) =
+          (∑ b ∈ Finset.range (k + 1), (0 : Rat)) := by
+        apply Finset.sum_congr rfl
+        intro b _
+        rw [hez b]
+        simp
+      rw [h1]
+      simp
+    rw [hL, hB, hBw]
+    simp
 /-- Per-term Pascal shift: `(x + 1) * C(n, x+1) = n * C(n-1, x)`.
 Holds for all `n x`: when `x >= n` both sides are `0`. -/
 theorem chooseSucc_weighted (n x : Nat) :
