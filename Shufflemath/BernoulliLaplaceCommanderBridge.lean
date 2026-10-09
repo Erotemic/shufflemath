@@ -111,3 +111,54 @@ theorem commanderStationary_matches_blStationary (i : CommanderState) :
     BernoulliLaplaceGeneral.mass_blStationaryDist commanderBLParams (commanderToBL i)]
   simp only [commanderStationaryVector, BernoulliLaplaceGeneral.blStationary,
     commanderLeftCount, commanderToBL]
+
+/-- The Commander-state ↔ general-macrostate identification as an explicit
+`Equiv` (`i ↦ i.val + 1`, with inverse `x ↦ x.val - 1`). -/
+def commanderBLEquiv :
+    Equiv CommanderState (BernoulliLaplaceGeneral.BLState 99 50 50) :=
+  ⟨commanderToBL, blToCommander,
+    blToCommander_commanderToBL, commanderToBL_blToCommander⟩
+
+/-- The general first-mode factor and the concrete Commander first-mode
+factor are the *same* definition (`1 - N·k/(m·(N-m))`); the two coincide for
+all parameters. -/
+theorem blFirstModeFactor_eq_firstModeFactor (N m k : Nat) :
+    BernoulliLaplaceGeneral.blFirstModeFactor N m k = firstModeFactor N m k :=
+  by rfl
+
+/-- The three Commander specializations derived directly from the single
+general formula `blFirstModeFactor 99 50 k = 1 - (99·k)/(50·49)`: the
+half-deck exchange `k = 25` gives `-1/98`, and the neighboring `k = 24, 26`
+give `37/1225` and `-62/1225`. These match the concrete `commanderFirstMode`
+values, now as an instance of the general eigenfunction theorem. -/
+
+theorem commanderFirstMode_general_25 :
+    BernoulliLaplaceGeneral.blFirstModeFactor 99 50 25 = -(1 / 98 : Rat) := by
+  norm_num [BernoulliLaplaceGeneral.blFirstModeFactor]
+
+theorem commanderFirstMode_general_24 :
+    BernoulliLaplaceGeneral.blFirstModeFactor 99 50 24 = 37 / 1225 := by
+  norm_num [BernoulliLaplaceGeneral.blFirstModeFactor]
+
+theorem commanderFirstMode_general_26 :
+    BernoulliLaplaceGeneral.blFirstModeFactor 99 50 26 = -(62 / 1225 : Rat) := by
+  norm_num [BernoulliLaplaceGeneral.blFirstModeFactor]
+
+/-- The general first centered eigenfunction theorem, specialized to the
+Commander parameters, reads with the concrete first-mode factor: the
+`blFirstModeFunc` contraction is exactly `firstModeFactor 99 50 25`. -/
+theorem commanderFirstModeFunc (x : BernoulliLaplaceGeneral.BLState 99 50 50) :
+    applyFn (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams)
+      (fun y => (y.val : Rat) - (50 : Rat) * (50 : Rat) / (99 : Rat)) x =
+      firstModeFactor 99 50 25 *
+        ((x.val : Rat) - (50 : Rat) * (50 : Rat) / (99 : Rat)) := by
+  -- `blFirstModeFunc` at the Commander parameters gives the same statement
+  -- with the factor `blFirstModeFactor 99 50 25`; rename it to the concrete
+  -- `firstModeFactor 99 50 25` (they are definitionally the same term).
+  have h := BernoulliLaplaceGeneral.blFirstModeFunc commanderBLParams x
+  convert h using 1
+  -- The hole is `firstModeFactor 99 50 25 * c = blFirstModeFactor 99 50 25 * c`
+  -- (the two centered terms `c` are definitionally the same). The factors are
+  -- the same rational, so renaming one side to the other closes it.
+  rw [(blFirstModeFactor_eq_firstModeFactor 99 50 25).symm]
+  rfl
