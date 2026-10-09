@@ -1667,6 +1667,39 @@ theorem chooseSum_weighted (n x k : Nat) (hx : x <= n) :
         field_simp [hnpos]
       rw [hdiv]
 
+/-! G3, part 1: the `b`-sum of the exchange term, for a fixed `a`.
+For fixed `a` (special cards leaving the left pile) the `b`-sum
+(`b` = special cards returning from the right) splits into the
+`a`-dependent constant `C(x,a)·C(m-x,k-a)` and the Vandermonde
+convolution of the two right-pile binomials, which collapses to
+`C(N-m, k)`. The `Rat` lift `bSumE` is the form used by the
+conditional-mean computation. -/
+
+/-- The `b`-sum of the exchange term for fixed `a` is the `a`-factor
+times the right-pile Vandermonde: `C(x,a)·C(m-x,k-a)·C(N-m,k)`. -/
+private theorem bSumE_nat (N m r k x a : Nat) (hrx : r - x ≤ N - m) :
+    (∑ b ∈ Finset.range (k + 1), exchangeTerm N m r k x a b) =
+      (Nat.choose x a * Nat.choose (m - x) (k - a)) * Nat.choose (N - m) k := by
+  have h1 : (∑ b ∈ Finset.range (k + 1), exchangeTerm N m r k x a b) =
+      (∑ b ∈ Finset.range (k + 1),
+        (Nat.choose x a * Nat.choose (m - x) (k - a)) *
+          (Nat.choose (r - x) b * Nat.choose (N - m - (r - x)) (k - b))) := by
+    apply Finset.sum_congr rfl
+    intro b _
+    simp only [exchangeTerm]
+    ring
+  rw [h1, ← Finset.mul_sum, vandermondeRange (r - x) (N - m - (r - x)) k]
+  rw [show (r - x) + (N - m - (r - x)) = N - m from by
+    rw [Nat.add_comm]
+    exact Nat.sub_add_cancel hrx]
+
+/-- The `b`-sum lifted to `Rat`: the unweighted exchange-term sum is
+the `a`-factor times `C(N-m, k)`, with a single cast at the end. -/
+theorem bSumE (N m r k x a : Nat) (hrx : r - x ≤ N - m) :
+    (∑ b ∈ Finset.range (k + 1), (exchangeTerm N m r k x a b : Rat)) =
+      (Nat.choose x a * Nat.choose (m - x) (k - a) * Nat.choose (N - m) k : Rat) := by
+  rw [← Nat.cast_sum, bSumE_nat N m r k x a hrx, Nat.cast_mul, Nat.cast_mul]
+
 end firstMode
 end BernoulliLaplaceGeneral
 end Shufflemath
