@@ -2150,6 +2150,105 @@ theorem blConditionalMean (p : ExchangeAdmissible) (x : BLState p.N p.m p.r) :
   -- `∑ a, F a`, `C3`, `x`, `k`, `m`, `M`: `ring` closes it.
   ring
 
+/-! G4: the first *centered* eigenfunction. The centered observable
+`f(x) = x - μ` (stationary mean `μ = m·r/N`) satisfies
+`applyFn (blExchangeKernel p) f = blFirstModeFactor • f`: the conditional
+mean (`blConditionalMean`) is affine in `x`, the kernel is stochastic
+(`blRowStochastic`), and the stationary mean `μ` is a fixed point of the
+conditional mean, so the centered mean is a scalar multiple of the
+centered state. This is the first centered linear mode; it is not a claim
+about the largest nontrivial eigenvalue in absolute value. -/
+
+theorem blFirstModeFunc (p : ExchangeAdmissible) (x : BLState p.N p.m p.r) :
+    applyFn (blExchangeKernel p) (fun y =>
+      (y.val : Rat) - (p.m : Rat) * (p.r : Rat) / (p.N : Rat)) x =
+      blFirstModeFactor p.N p.m p.k *
+        ((x.val : Rat) - (p.m : Rat) * (p.r : Rat) / (p.N : Rat)) := by
+  set μ := (p.m : Rat) * (p.r : Rat) / (p.N : Rat)
+  -- `applyFn` is the `stateFinset` mass-weighted sum of the centered
+  -- observable; bridge `Finset.univ` to `stateFinset` via the `val`
+  -- bijection (the kernel's `ofFun` mass is the raw `transitionWeight`).
+  have happly :
+      applyFn (blExchangeKernel p) (fun (y : BLState p.N p.m p.r) => (y.val : Rat) - μ) x =
+      (∑ y ∈ stateFinset p.N p.m p.r,
+        (transitionWeight p.N p.m p.r p.k x.val y : Rat) * ((y : Rat) - μ)) := by
+    dsimp only [applyFn, blExchangeKernel]
+    simp only [Dist.mass_ofFun]
+    apply Finset.sum_bij
+      (fun (y : BLState p.N p.m p.r) (_ : y ∈ Finset.univ) => y.val)
+    · -- image in `stateFinset`
+      intro y _
+      simp only [stateFinset, Finset.mem_Icc]
+      exact ⟨y.2.1, y.2.2⟩
+    · -- injective
+      intro y1 _ y2 _ h12
+      exact Subtype.coe_injective h12
+    · -- surjective onto `stateFinset`
+      intro z hz
+      simp only [stateFinset, Finset.mem_Icc] at hz
+      exact ⟨⟨z, hz⟩, Fintype.complete _, rfl⟩
+    · -- the summand is the raw formula at `y.val`
+      intro y _
+      rfl
+  rw [happly]
+  -- Linearity: `∑ W·(y - μ) = ∑ y·W - μ·∑ W`. Work backwards from the
+  -- target so the `∑, (· - ·)` form only ever appears as a goal state, not
+  -- in source (the `+`/`-`-inside-`∑` parser bug).
+  have hsplit :
+      (∑ y ∈ stateFinset p.N p.m p.r,
+        (transitionWeight p.N p.m p.r p.k x.val y : Rat) * ((y : Rat) - μ)) =
+      (∑ y ∈ stateFinset p.N p.m p.r,
+        (y : Rat) * (transitionWeight p.N p.m p.r p.k x.val y : Rat)) -
+      μ * (∑ y ∈ stateFinset p.N p.m p.r,
+        (transitionWeight p.N p.m p.r p.k x.val y : Rat)) := by
+    apply Eq.symm
+    -- `μ·(∑ W) = ∑ μ·W`; then `(∑ y·W) - (∑ μ·W) = ∑ (y·W - μ·W)`;
+    -- per `y`, `y·W - μ·W = W·(y - μ)`.
+    rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
+    apply Finset.sum_congr rfl
+    intro y _
+    ring
+  rw [hsplit]
+  -- `∑ W·y` is the conditional mean; `∑ W` is `1` (row stochasticity).
+  have hmass : (∑ y ∈ stateFinset p.N p.m p.r,
+      (transitionWeight p.N p.m p.r p.k x.val y : Rat)) = 1 := by
+    have h1 : (∑ y ∈ stateFinset p.N p.m p.r,
+        (transitionWeight p.N p.m p.r p.k x.val y : Rat)) =
+        (∑ y ∈ stateFinset p.N p.m p.r,
+          (transitionNumerator p.N p.m p.r p.k x.val y : Rat) /
+            (transitionDenominator p.N p.m p.k : Rat)) := by
+      apply Finset.sum_congr rfl
+      intro y _
+      dsimp only [transitionWeight]
+    rw [h1, blRowStochastic p x]
+  rw [blConditionalMean p x, hmass]
+  -- Now: `x - (k/m)·x + (k/(N-m))·(r-x) - μ = blFirstModeFactor·(x - μ)`.
+  -- Clear the divisions and close the polynomial identity.
+  have hm0 : (p.m : Rat) ≠ 0 := by
+    intro h
+    have hpos : 0 < (p.m : Rat) := Nat.cast_pos.mpr p.h0m
+    rw [h] at hpos
+    exact lt_irrefl 0 hpos
+  have hnm0 : (p.N - p.m : Rat) ≠ 0 := by
+    intro h
+    have hpos : 0 < (p.N - p.m : Rat) := by
+      rw [show (p.N - p.m : Rat) = (p.N : Rat) - (p.m : Rat) from rfl,
+          ← Nat.cast_sub (Nat.le_of_lt p.hmn)]
+      exact Nat.cast_pos.mpr (Nat.sub_pos_of_lt p.hmn)
+    rw [h] at hpos
+    exact lt_irrefl 0 hpos
+  have hN0 : (p.N : Rat) ≠ 0 := by
+    intro h
+    have hpos : 0 < (p.N : Rat) := Nat.cast_pos.mpr (Nat.lt_trans p.h0m p.hmn)
+    rw [h] at hpos
+    exact lt_irrefl 0 hpos
+  -- Unfold the first-mode factor and the local mean `μ` (both have internal
+  -- divisions) before clearing, so the result is a pure polynomial in
+  -- `x`, `k`, `m`, `N`, `r` that `ring` closes.
+  dsimp only [blFirstModeFactor, μ]
+  field_simp [hm0, hnm0, hN0, Nat.cast_ne_zero]
+  ring
+
 end firstMode
 end BernoulliLaplaceGeneral
 end Shufflemath
