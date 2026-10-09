@@ -1700,6 +1700,41 @@ theorem bSumE (N m r k x a : Nat) (hrx : r - x ≤ N - m) :
       (Nat.choose x a * Nat.choose (m - x) (k - a) * Nat.choose (N - m) k : Rat) := by
   rw [← Nat.cast_sum, bSumE_nat N m r k x a hrx, Nat.cast_mul, Nat.cast_mul]
 
+/-! G3, part 2: the `b`-**weighted** `b`-sum, for a fixed `a`.
+The `b`-weighted exchange-term sum factors into the `a`-factor
+`C(x,a)·C(m-x,k-a)` and the hypergeometric mean of the right pile:
+`∑_b b·C(r-x,b)·C(N-m-(r-x),k-b) = k·(r-x)/(N-m)·C(N-m,k)`
+(`chooseSum_weighted`). -/
+
+/-- The `b`-weighted `b`-sum lifted to `Rat`: the `a`-factor times
+`k·(r-x)/(N-m)`, times `C(N-m, k)`. -/
+theorem bSumE_w (N m r k x a : Nat) (hmn : m < N) (hxr : x ≤ r) (hrx : r - x ≤ N - m) :
+    (∑ b ∈ Finset.range (k + 1), (b : Rat) * (exchangeTerm N m r k x a b : Rat)) =
+      ((Nat.choose x a * Nat.choose (m - x) (k - a) : Rat)) *
+        ((k : Rat) * (r - x : Rat) / (N - m : Rat) * (Nat.choose (N - m) k : Rat)) := by
+  set C1 := Nat.choose x a
+  set C2 := Nat.choose (m - x) (k - a)
+  set C3 := fun b => Nat.choose (r - x) b
+  set C4 := fun b => Nat.choose (N - m - (r - x)) (k - b)
+  have h1 : (∑ b ∈ Finset.range (k + 1), (b : Rat) * (exchangeTerm N m r k x a b : Rat)) =
+      (∑ b ∈ Finset.range (k + 1),
+        ((C1 * C2 : Rat)) * ((b : Rat) * (C3 b : Rat) * (C4 b : Rat))) := by
+    apply Finset.sum_congr rfl
+    intro b _
+    rw [show exchangeTerm N m r k x a b = C1 * C2 * (C3 b * C4 b) from by
+      simp only [exchangeTerm, C1, C2, C3, C4]
+      ring]
+    rw [Nat.cast_mul, Nat.cast_mul, Nat.cast_mul]
+    ring
+  rw [h1]
+  rw [← Finset.mul_sum]
+  rw [chooseSum_weighted (N - m) (r - x) k hrx]
+  -- The instantiated `chooseSum_weighted` carries opaque `Nat.cast` of the
+  -- subtractions; our ascriptions are distributed. `Nat.cast_sub` bridges
+  -- both (its stored form is `↑(m - n) = ↑m - ↑n`).
+  rw [Nat.cast_sub (Nat.le_of_lt hmn)]
+  rw [Nat.cast_sub hxr]
+
 end firstMode
 end BernoulliLaplaceGeneral
 end Shufflemath
