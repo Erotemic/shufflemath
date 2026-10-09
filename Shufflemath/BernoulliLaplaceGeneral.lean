@@ -1735,6 +1735,33 @@ theorem bSumE_w (N m r k x a : Nat) (hmn : m < N) (hxr : x ≤ r) (hrx : r - x �
   rw [Nat.cast_sub (Nat.le_of_lt hmn)]
   rw [Nat.cast_sub hxr]
 
+/-! G3, part 3: the `a`-level Vandermonde, lifted to `Rat`.
+The `a`-sum of `C(x,a)·C(m-x,k-a)` (special cards leaving the left
+pile, over all admissible `a`) is the left-pile Vandermonde
+`C(m, k)`; this is the `a`-analogue of `bSumE`. -/
+
+/-- The `a`-sum of the left-pile factor pair, lifted to `Rat`: it is
+`C(m, k)`. The ascription on the `Nat` product elaborates to the product
+of the two ascriptions (one kernel term), so `Nat.cast_sum` (via
+`convert`, which unifies up to that `rfl` and the per-term `Nat.cast_mul`
+bridge) identifies the `Rat` sum with the cast of the `Nat` sum; the
+`Nat` Vandermonde is then applied inside the cast. -/
+theorem aSumE (m x k : Nat) (hx : x ≤ m) :
+    (∑ a ∈ Finset.range (k + 1),
+      (Nat.choose x a : Rat) * (Nat.choose (m - x) (k - a) : Rat)) =
+      (Nat.choose m k : Rat) := by
+  convert (Nat.cast_sum (Finset.range (k + 1))
+      (fun a => Nat.choose x a * Nat.choose (m - x) (k - a))).symm using 2
+  · -- Per term: the product of the two casts is the cast of the product.
+    rw [← Nat.cast_mul]
+  · -- The `Nat` Vandermonde, applied inside the cast.
+    rw [show (∑ a ∈ Finset.range (k + 1),
+        Nat.choose x a * Nat.choose (m - x) (k - a)) = Nat.choose m k from by
+      rw [vandermondeRange x (m - x) k]
+      rw [show x + (m - x) = m from by
+        rw [Nat.add_comm]
+        exact Nat.sub_add_cancel hx]]
+
 end firstMode
 end BernoulliLaplaceGeneral
 end Shufflemath

@@ -154,8 +154,13 @@ The hard-won Lean-mechanics notes and the verified mathlib hook list
 - **G1 (done):** `chooseSucc_weighted` + `chooseSum_weighted` (weighted
   Vandermonde + weighted-sum identities).
 - **G2 (done):** `innerYToB_b` (the weighted `y → b` reindexing).
-- **G3 (next — full spec in "Next action" at the end of this file):** the
-  conditional mean `blConditionalMean`.
+- **G3 (in progress — building blocks all done; the theorem itself is next):**
+  `innerYToB_w` (16b667b, the `Rat`-level weighted `y`-reindexing),
+  `bSumE`/`bSumE_nat` (64e4024, the unweighted `b`-sum = `a`-factor ×
+  `C(N-m,k)`), `bSumE_w` (bf86684, the `b`-weighted `b`-sum = `a`-factor ×
+  `k(r-x)/(N-m)` × `C(N-m,k)`), `aSumE` (the `a`-Vandermonde in `Rat`,
+  this commit). **Next: the `blConditionalMean` theorem itself** (spec
+  below, adjusted to what exists).
 - **G4:** the first *centered* eigenfunction theorem: the centered
   observable `f(x) = x - m·r/N` (stationary mean `μ = m·r/N`) satisfies
   `applyFn (blExchangeKernel p) f = blFirstModeFactor p.N p.m p.k • f`,
@@ -264,11 +269,9 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   explain the proof idea in 1–3 lines; always the co-author trailer (§2 rule
   4: `Qwen3.8-27B-W4A16-AutoRound <noreply@qwen.ai>`).
 
-**Next action:** G3 — conditional mean, in `section firstMode` of
-`BernoulliLaplaceGeneral.lean` (at the end of the file, after the
-`blExchangeKernel` block; `innerYToB`, `innerYToB_b` and
-`vandermondeRange` are file-level private lemmas just above it). Target theorem (Rat, admissible `p`,
-state `x`):
+**Next action:** G3 — the `blConditionalMean` theorem itself, in
+`section firstMode` of `BernoulliLaplaceGeneral.lean` (at the end of the
+file, after `aSumE`). Target theorem (Rat, admissible `p`, state `x`):
 
 ```lean
 theorem blConditionalMean (p : ExchangeAdmissible) (x : BLState p.N p.m p.r) :
@@ -278,26 +281,36 @@ theorem blConditionalMean (p : ExchangeAdmissible) (x : BLState p.N p.m p.r) :
       (p.k : Rat) * ((p.r - x.val) : Rat) / ((p.N - p.m) : Rat) := by …
 ```
 
-Strategy (mirror `blRowStochastic`'s structure; all pieces are already in
-the file): the `y`-sum over the window = the `y`-sum over `Finset.range
-(m+1)` — off-window terms vanish with their weight (new private support
-lemmas: `y-weighted num_zero_below_lo` / `num_zero_above_r`; the weighted
-`guardedTerm` is 0 whenever the unweighted one is, since the weight is a
-pure `Nat` factor). For each `a`: `y = (x - a) + (y - (x - a))`, so the
-weighted inner sum = `(x - a) · (innerYToB) + (innerYToB_b)`. Then:
-`∑_b exchangeTerm(x,a,b) = C(x,a)·C(m-x,k-a)·C(N-m,k)`
-(`vandermondeRange (r - x) (N - m - (r - x)) k` — note the cast-to-Rat
-bookkeeping: do the `Nat` computation first, cast once at the end) and
-`∑_b b·exchangeTerm(x,a,b) = C(x,a)·C(m-x,k-a)·(k·(r-x)/(N-m))·C(N-m,k)`
-(`chooseSum_weighted (p.N - p.m) (p.r - x.val) p.k` — its `hx : x ≤ n`
-hypothesis is `r - x ≤ N - m`, which is exactly `blLo ≤ x` when
-`r > N - m` and trivial when `r ≤ N - m`; the existing `num_zero_below_lo`
-splits on that same `r ≤ N - m` — reuse the pattern). Outer `a`-sum:
-`∑_a C(x,a)·C(m-x,k-a) = C(m,k)` (`vandermondeRange x (m-x) k`),
-`∑_a a·… = (k·x/m)·C(m,k)` (`chooseSum_weighted m x k`). All in `Rat`,
-`field_simp [hden]` with `hden : (transitionDenominator : Rat) ≠ 0`.
-Mechanics: keep `Nat` until the final cast (the `chooseSum_weighted`
-statement is Rat; `innerYToB*` / `vandermondeRange` are Nat — bridge
-with `Nat.cast_mul`/`Nat.cast_add`/`Nat.cast_sub` where the types meet).
+Strategy (mirror `blRowStochastic`; **all** building blocks exist now):
+1. Per term `(y:Rat)·((num:Rat)/(den:Rat))` → `((y*num):Rat)/(den:Rat)`
+   (`rw [Nat.cast_mul, ← mul_assoc]` — `Nat.cast_mul` on the RHS
+   ascription-of-product, `mul_assoc` for the division), then
+   `Finset.sum_div` to hoist the division out of the sum.
+2. Extend the sum `stateFinset` → `Finset.range (m+1)` exactly as in
+   `blRowStochastic` (`Finset.sum_sdiff` + `Finset.sum_eq_zero`);
+   off-window vanishing reuses `num_zero_below_lo` / `num_zero_above_r`
+   (the `y`-weight `y * 0 = 0` is `simp`).
+3. `change` the `y`-sum to `(∑ y, (∑ a, (y * (guardedTerm … a y) : Rat)))`
+   (the `transitionNumerator` body is definitionally the `a`-sum of
+   `guardedTerm`; per term `rw [Nat.cast_sum, Finset.mul_sum]` — the
+   ascription-of-product elaborates to the product of ascriptions, so the
+   summands match), then `Finset.sum_comm`.
+4. Per `a`: `innerYToB_w N m r k x.val a (x ≤ m) (a ≤ k)` turns the inner
+   `y`-sum into `((x-a)·(∑_b (E:Rat)) + (∑_b (b:Rat)·(E:Rat)))`; then
+   `bSumE` and `bSumE_w` (hyps: `m < N`, `x ≤ r`, `r - x ≤ N - m` — the
+   last is the `hsubwin` argument from `blRowStochastic`) give the two
+   `b`-sums in closed `a`-factor form.
+5. Hoist `C(N-m,k)` out of the `a`-sum, use `aSumE` and
+   `chooseSum_weighted (p.m) (x.val) p.k` for the two `a`-sums, then
+   `field_simp`/`ring` to cancel the transition denominator
+   (`C(m,k)·C(N-m,k)`) and match the target.
+   **Mechanics (this session, details in `lean_build_history.md` §1):**
+   `rw` cannot see inside `∑` summands — per-term work goes through
+   `Finset.sum_congr rfl` + `intro` or `show … from`; ascriptions on
+   compound `Nat` terms elaborate to *distributed* products of casts
+   (one kernel term), which `rw`'s `Nat.cast_*` patterns don't match —
+   use per-term `rfl` or `convert L using n` (unification up to `rfl`)
+   to bridge distributed ↔ opaque forms; a `+` inside a parsed `∑`
+   summand breaks the binder (parser bug) — keep `+` out of summands.
 Then G4 (eigenfunction) and G5 (Commander corollaries in the bridge
 module).

@@ -134,6 +134,38 @@ new modules are added here when created).
 - **`∑ i, f i` (Fintype univ notation) is definitionally `Finset.sum
   Finset.univ f`** (`rfl` bridges them); `Finset.sum` over `univ` and the
   notation are interchangeable in `change`/`exact`.
+- **Ascription vs `Nat.cast` for `Rat` (verified v4.34.0, G3 session —
+  the single most confusing mechanic in this file):**
+  - `(t : Rat)` with `t` a *simple application* (e.g. `f x`) stores as one
+    opaque `Nat.cast` node, `rfl`-equal to the explicit `Nat.cast t`.
+  - `(t : Rat)` with `t` a *compound* (`*`, `+`, `-`) is **distributed by
+    the elaborator**: `(a * b : Rat)` stores literally as `↑a * ↑b` (verified
+    by `#print`ing a `def` whose body is the ascription — it and the product
+    of two ascriptions print as the *same term*). Hence `(a * b : Rat)` is
+    **not** `rfl` with `Nat.cast (a * b)` (the opaque single node), and
+    `rw [Nat.cast_mul]` & co. (whose stored LHS is the opaque node) matches
+    neither the distributed ascription form nor a `∑`-closed summand; only
+    per-term `rfl` (which *does* identify the distributed forms) and the
+    genuine `Nat.cast_*` theorems bridge opaque ↔ distributed.
+  - Consequence for `aSumE`: the `Rat` sum of ascribed products is identified
+    with the cast of the `Nat` sum by `convert (Nat.cast_sum _ _).symm
+    using n` (unification up to the per-term `rfl`, closed by
+    `rw [← Nat.cast_mul]` per hole), then the `Nat` Vandermonde inside the
+    cast via `rw [show … = … from …]`.
+- **`rw` cannot see inside `∑` summands** (v4.34.0): a pattern like
+  `↑?m * ↑?n` is "not found" in a goal `∑ i, ↑f i * ↑g i` — the summand
+  lives in the `f` lambda argument of `Finset.sum`, closed under whnf.
+  Sum-level `rw` only works with patterns that include the whole `∑`
+  (`Finset.sum_congr/sum_comm`, `Nat.cast_sum`, `Finset.mul_sum/sum_mul`,
+  or a lemma whose LHS *is* a sum); per-term work goes through
+  `Finset.sum_congr rfl` + `intro` (or `show … from by {…}`).
+  Parser note (v4.34.0): a literal `+` inside a parsed `∑` summand (most
+  visibly on continuation lines) silently drops the binder scope ("Unknown
+  identifier") — keep `+` out of summands; `*`, `-`, and casts are safe.
+- **`rw` auto-closes a goal that becomes `x = x`** after a rewrite
+  (closeIfRfl): a `rw` list tolerates later rules that find nothing, but a
+  trailing standalone `rfl`/`simp` on an already-closed goal is a
+  "No goals to be solved" error. When in doubt, let the last `rw` close.
 
 **`Shufflemath/TotalVariation.lean`** — imports `Shufflemath.Matrix`,
 `Mathlib.Data.Finset.Max`, `Mathlib.Algebra.Order.BigOperators.Group.Finset`,
@@ -1004,14 +1036,28 @@ symbolically; Commander corollaries committed.
   weighted by `y - (x - a)` (the number `b` of special cards returning)
   reindexes, via the same support window / bijection / zero-tail argument
   as `innerYToB`, to the `b`-sum of `exchangeTerm` weighted by `b`
-  (needed for `E[b | x]`). Remaining: G3 the conditional-mean theorem
-  `E[y | x] = x − (k/m)·x + (k/(N−m))·(r−x)` (see "Next action"), G4 the
-  first-mode eigenfunction `∑_y W(x,y)·(y − m·r/N) = λ·(x − m·r/N)` with
+  (needed for `E[b | x]`). G3 building blocks (this session):
+  B1 `innerYToB_w` (16b667b, the `Rat`-level weighted `y`-reindexing);
+  B2 `bSumE`/`bSumE_nat` (64e4024, unweighted `b`-sum = `a`-factor ×
+  `C(N-m,k)`); B3 `bSumE_w` (bf86684, `b`-weighted `b`-sum = `a`-factor ×
+  `k(r-x)/(N-m)` × `C(N-m,k)`); B4 `aSumE` (this commit, the `a`-
+  Vandermonde in `Rat` — `convert (Nat.cast_sum _ _).symm` + per-term
+  `rw [← Nat.cast_mul]` + Vandermonde inside the cast). Remaining: G3
+  the conditional-mean theorem `E[y | x] = x − (k/m)·x + (k/(N−m))·(r−x)
+  (spec in the handoff "Next action"), G4 the first-mode eigenfunction
+  `∑_y W(x,y)·(y − m·r/N) = λ·(x − m·r/N)` with
   `λ = 1 − N·k/(m·(N−m))` (one line of `Rat` field algebra over G3 —
   verified by hand: the fixed point `μ = m·r/N` satisfies
   `E[y|μ] = μ` for general `r`), G5 Commander corollaries tying
   `commanderFirstMode k` / the k=24/25/26 factor values to the general
   eigenvalue (home: the bridge module, which imports both sides).
+  Mechanics discovered this session (details in §1): ascriptions on
+  compound `Nat` terms elaborate to *distributed* products of `Nat.cast`
+  nodes (one kernel term), which is `rfl` with the product of ascriptions
+  but **not** `rfl` with the opaque `Nat.cast` of the compound; `rw`
+  cannot see inside `∑` summands (only whole-`∑` patterns match); a
+  literal `+` inside a parsed `∑` summand drops the binder (v4.34.0
+  parser bug) — all `∑` summands here are written without `+`.
 - [ ] H. Stretch: GSR, higher modes, separation distance.
 - [ ] Final: full `./dev/verify.sh` green, docstrings audited, §6 values
   re-confirmed, this file updated, everything committed.
