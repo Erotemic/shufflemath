@@ -148,8 +148,7 @@ The hard-won Lean-mechanics notes and the verified mathlib hook list
 
 ## 4. Remaining plan (A–F done; G in progress; then H)
 
-**G. First eigenfunction** (in progress) — `BernoulliLaplaceGeneral.lean`,
-`section firstMode`, plus the bridge module:
+**G. First eigenfunction** (done — G1–G5 landed 2026-10-08; then H):
 
 - **G1 (done):** `chooseSucc_weighted` + `chooseSum_weighted` (weighted
   Vandermonde + weighted-sum identities).
@@ -157,19 +156,23 @@ The hard-won Lean-mechanics notes and the verified mathlib hook list
 - **G3 (done):** `innerYToB_w` (16b667b), `bSumE`/`bSumE_nat` (64e4024),
   `bSumE_w` (bf86684), `aSumE`, and the `blConditionalMean` theorem
   (00cd98c) — the conditional mean `x - (k/m)·x + (k/(N-m))·(r-x)`.
-- **G4:** the first *centered* eigenfunction theorem: the centered
-  observable `f(x) = x - m·r/N` (stationary mean `μ = m·r/N`) satisfies
+- **G4 (done, df1da34):** the first *centered* eigenfunction theorem
+  `blFirstModeFunc`: the centered observable `f(x) = x - m·r/N` (stationary
+  mean `μ = m·r/N`) satisfies
   `applyFn (blExchangeKernel p) f = blFirstModeFactor p.N p.m p.k • f`,
-  where the general first-mode factor is
-  `blFirstModeFactor (N m k) := 1 - (N : Rat) * k / ((m : Rat) * (N - m))`. This
-  is the first centered linear mode; it is **not** a claim about the
-  largest nontrivial eigenvalue in absolute value, nor a TV-optimality
-  statement.
-- **G5:** the Commander corollaries in the bridge module: package the
-  conversions as `commanderBLEquiv : Fin 50 ≃ BLState 99 50 50`, prove the
-  general factor agrees with the concrete `firstModeFactor`, and derive
-  the specializations `λ₁(24) = 37/1225`, `λ₁(25) = -1/98`,
-  `λ₁(26) = -62/1225` from the single general formula.
+  where `blFirstModeFactor (N m k) := 1 - (N : Rat) * k / ((m : Rat) * (N - m))`.
+  Proved by bridging `applyFn` to the `stateFinset` mass-weighted sum, splitting
+  it into `blConditionalMean − μ` (linearity + `blRowStochastic`), and closing
+  with `Rat` field algebra. This is the first centered linear mode; it is
+  **not** a claim about the largest nontrivial eigenvalue in absolute value,
+  nor a TV-optimality statement.
+- **G5 (done, cc1e886):** the Commander corollaries in the bridge module:
+  `commanderBLEquiv : Equiv (Fin 50) (BLState 99 50 50)`, the
+  `blFirstModeFactor_eq_firstModeFactor` agreement (the two factors are the
+  same definition), the specializations `λ₁(24) = 37/1225`, `λ₁(25) = -1/98`,
+  `λ₁(26) = -62/1225` derived from the single general formula, and the
+  `commanderFirstModeFunc` corollary specializing `blFirstModeFunc` to the
+  Commander parameters.
   (The older draft of this plan had `f(x) = 1 - x/m + (x-r)·k/(N-m)` and
   `λ = -25/49` for Commander — both wrong, corrected 2026-10-08.)
 
@@ -231,6 +234,13 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   agreement).
 - **G1/G2** (2026-10-07/08): the first-mode building blocks in
   `section firstMode`.
+- **G3** (2026-10-08, 00cd98c): the conditional-mean theorem
+  `blConditionalMean` (plus `innerYToB_w`, `bSumE`/`bSumE_w`, `aSumE`).
+- **G4** (2026-10-08, df1da34): the first centered eigenfunction
+  `blFirstModeFunc`.
+- **G5** (2026-10-08, cc1e886): the Commander corollaries —
+  `commanderBLEquiv`, `blFirstModeFactor_eq_firstModeFactor`, the three
+  `λ₁(24/25/26)` specializations, and `commanderFirstModeFunc`.
 - **Cleanup** (2026-10-08, e19afb5): the fiber section moved to
   `BernoulliLaplaceFiber.lean`; the bridge module repaired and brought
   into the build graph; this document split into a slim handoff (this
@@ -265,29 +275,13 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   explain the proof idea in 1–3 lines; always the co-author trailer (§2 rule
   4: `Qwen3.8-27B-W4A16-AutoRound <noreply@qwen.ai>`).
 
-**Next action:** G4 — the first *centered* eigenfunction theorem, in
-`section firstMode` of `BernoulliLaplaceGeneral.lean` (after
-`blConditionalMean`). The centered observable
-`f(x) = (x : Rat) - (p.m : Rat)·(p.r : Rat)/(p.N : Rat)` (stationary mean
-`μ = m·r/N`) satisfies, for the exchange kernel `K = blExchangeKernel p`:
+**Next action:** G (the first centered eigenfunction) is **complete** —
+G1–G5 all landed (G3 `blConditionalMean` 00cd98c, G4 `blFirstModeFunc`
+df1da34, G5 Commander corollaries cc1e886). The full pipeline —
+conditional mean → centered eigenfunction → Commander specializations —
+now builds green and `./dev/verify.sh` passes.
 
-```lean
-theorem blFirstModeFunc (p : ExchangeAdmissible) (x : BLState p.N p.m p.r) :
-    applyFn (blExchangeKernel p) (fun z => (z : Rat) - (p.m : Rat) * (p.r : Rat) / (p.N : Rat)) x =
-      blFirstModeFactor p.N p.m p.k • ((x.val : Rat) - (p.m : Rat) * (p.r : Rat) / (p.N : Rat)) := by …
-```
-
-Strategy (G3 + `blRowStochastic` + one line of `Rat` field algebra):
-1. `applyFn` unfolds to `∑_y W(x,y)·f(y)`; split
-   `∑_y W·(y - μ) = ∑_y W·y - μ·∑_y W`.
-2. `∑_y W·y` is `blConditionalMean`; `∑_y W` is `1` (`blRowStochastic`;
-   the kernel is stochastic, so its `applyFn`-mass is the same
-   `stateFinset` sum).
-3. Close with `field_simp`/`ring`: both sides are linear in `x` with
-   slope `blFirstModeFactor = 1 - N·k/((m)(N-m))` and matching intercept
-   (the stationary mean `μ` is a fixed point of the conditional mean,
-   which is exactly why the constant terms cancel).
-
-Then G5 (Commander corollaries in the bridge module): `commanderBLEquiv`,
-the general-factor agreement, and the specializations `λ₁(25) = -1/98`,
-`λ₁(24) = 37/1225`, `λ₁(26) = -62/1225`.
+The remaining plan is **H (stretch)** per `docs/lean_plan.md` §4: the GSR
+theorem, higher modes, the separation distance, the perturbation→TV chain,
+and the mixing time. These are out of scope for the first-eigenfunction
+task; pick one up only if the task explicitly resumes with H.
