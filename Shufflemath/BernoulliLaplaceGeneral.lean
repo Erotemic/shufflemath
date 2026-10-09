@@ -1762,6 +1762,394 @@ theorem aSumE (m x k : Nat) (hx : x ≤ m) :
         rw [Nat.add_comm]
         exact Nat.sub_add_cancel hx]]
 
+/-! G3: the conditional mean `E[y | x]`. The `y`-weighted numerator is
+reindexed (per `a`) by `innerYToB_w` to the two `b`-sums, which are the
+`bSumE` / `bSumE_w` closed forms; the `a`-sums are the `aSumE`
+Vandermonde and the `chooseSum_weighted` hypergeometric mean; the
+transition denominator then cancels. -/
+
+/-- The conditional mean of the exchange kernel: for admissible `p` and
+state `x`, the mean of the next state is the linear function
+`x - (k/m)·x + (k/(N-m))·(r-x)`. This is the eigenfunction equation of
+the first (centered linear) mode at the kernel level: the centering
+`m·r/N` is a fixed point of this mean, and the slope is
+`blFirstModeFactor`. -/
+theorem blConditionalMean (p : ExchangeAdmissible) (x : BLState p.N p.m p.r) :
+    (∑ y ∈ stateFinset p.N p.m p.r,
+      (y : Rat) * (transitionWeight p.N p.m p.r p.k x.val y)) =
+      (x.val : Rat) - (p.k : Rat) * (x.val : Rat) / (p.m : Rat) +
+      (p.k : Rat) * ((p.r - x.val) : Rat) / ((p.N - p.m) : Rat) := by
+  -- State bounds (from the `BLState` membership).
+  have hx : x.val ≤ p.m := x.2.2.trans (min_le_left p.m p.r)
+  have hlo : blLo p.N p.m p.r ≤ x.val := x.2.1
+  have hxr : x.val ≤ p.r := x.2.2.trans (min_le_right p.m p.r)
+  have hmn := p.hmn
+  -- The transition denominator is positive, hence its `Rat` cast is
+  -- nonzero (needed to cancel it at the end).
+  have hdenPos : 0 < transitionDenominator p.N p.m p.k := by
+    rw [transitionDenominator]
+    exact Nat.mul_pos (Nat.choose_pos p.hkm) (Nat.choose_pos p.hknm)
+  have hden : (transitionDenominator p.N p.m p.k : Rat) ≠ 0 := by
+    rw [Nat.cast_ne_zero]
+    intro h
+    rw [h] at hdenPos
+    exact lt_irrefl 0 hdenPos
+
+  -- Step 1: pull the division by the (constant) denominator out of the
+  -- `y`-sum: `∑ y, (y·(num/den)) = (∑ y, (y·num)) / den`.
+  -- Per term, `(y:Rat)·((num:Rat)/(den:Rat))` is the same kernel term as
+  -- `((y·num):Rat)/(den:Rat)` (the ascription on the product distributes
+  -- to the product of the two casts; `mul_div_assoc` bridges the
+  -- association).
+  have hsumdiv :
+      (∑ y ∈ stateFinset p.N p.m p.r,
+        (y : Rat) * (transitionWeight p.N p.m p.r p.k x.val y)) =
+      (∑ y ∈ stateFinset p.N p.m p.r,
+        (y * transitionNumerator p.N p.m p.r p.k x.val y : Rat)) /
+        (transitionDenominator p.N p.m p.k : Rat) := by
+    dsimp only [transitionWeight]
+    -- Per term: `(y:Rat)·((num:Rat)/(den:Rat))` = `((y·num:Rat)/(den:Rat))`.
+    have hper :
+        (∑ y ∈ stateFinset p.N p.m p.r,
+          (y : Rat) * ((transitionNumerator p.N p.m p.r p.k x.val y : Rat) /
+            (transitionDenominator p.N p.m p.k : Rat))) =
+        (∑ y ∈ stateFinset p.N p.m p.r,
+          (y * transitionNumerator p.N p.m p.r p.k x.val y : Rat) /
+            (transitionDenominator p.N p.m p.k : Rat)) := by
+      apply Finset.sum_congr rfl
+      intro y _
+      rw [← mul_div_assoc]
+    rw [hper, ← Finset.sum_div]
+
+  -- Step 2: extend the `y`-sum over `stateFinset` to `range (m+1)`,
+  -- mirroring `blRowStochastic`. The count vanishes below the window and
+  -- above `r` (when the window top `blHi = r < m`), and the `y`-weight
+  -- keeps the term zero (it is a pure `Nat` factor).
+  have hsub : stateFinset p.N p.m p.r ⊆ Finset.range (p.m + 1) := by
+    intro y hy
+    simp only [stateFinset, blLo_def, blHi_def, Finset.mem_Icc, Finset.mem_range] at hy ⊢
+    omega
+  have hzero : (∑ y ∈ Finset.range (p.m + 1) \ stateFinset p.N p.m p.r,
+      (y * transitionNumerator p.N p.m p.r p.k x.val y : Rat)) = 0 := by
+    apply Finset.sum_eq_zero
+    intro y hy
+    simp only [Finset.mem_sdiff, stateFinset, Finset.mem_Icc, Finset.mem_range] at hy
+    by_cases hyl : y < blLo p.N p.m p.r
+    · -- Below the window: the count is zero, so is `y·(0:Rat)`.
+      have hym : y ≤ p.m := by omega
+      have hnum0 : transitionNumerator p.N p.m p.r p.k x.val y = 0 :=
+        num_zero_below_lo p x.val y hx hlo hyl hym
+      rw [hnum0, Nat.cast_zero, mul_zero]
+    · -- `y ≥ blLo` and `y ≤ m` but `y ∉ Icc (blLo) (blHi)`: so
+      -- `y > blHi` while `y ≤ m`.
+      have hle : blLo p.N p.m p.r ≤ y := Nat.le_of_not_lt hyl
+      have hym : y ≤ p.m := by omega
+      have hnot : ¬(y ≤ blHi p.N p.m p.r) := by
+        intro hyy
+        exact hy.2 ⟨hle, hyy⟩
+      by_cases hmr : p.m ≤ p.r
+      · -- `blHi = p.m`: `¬(y ≤ p.m)` contradicts `y ≤ p.m`.
+        have hnot' : ¬(y ≤ p.m) := by
+          simpa only [blHi_def, min_eq_left hmr] using hnot
+        exact False.elim (hnot' hym)
+      · -- `blHi = p.r`: `y > p.r`; the count is zero there.
+        have hrle : p.r ≤ p.m := Nat.le_of_lt (Nat.not_le.mp hmr)
+        have hnot' : ¬(y ≤ p.r) := by
+          simpa only [blHi_def, min_eq_right hrle] using hnot
+        have hyr : y > p.r := Nat.not_le.mp hnot'
+        have hnum0 : transitionNumerator p.N p.m p.r p.k x.val y = 0 :=
+          num_zero_above_r p x.val y hx hxr hyr
+        rw [hnum0, Nat.cast_zero, mul_zero]
+  have hext : (∑ y ∈ stateFinset p.N p.m p.r,
+      (y * transitionNumerator p.N p.m p.r p.k x.val y : Rat)) =
+      (∑ y ∈ Finset.range (p.m + 1),
+        (y * transitionNumerator p.N p.m p.r p.k x.val y : Rat)) := by
+    rw [← Finset.sum_sdiff hsub]
+    rw [hzero, zero_add]
+  rw [hsumdiv, hext]
+
+  -- Step 3: the `y`-weighted numerator over `range (m+1)` is the
+  -- `a`-sum of the per-`a` `y`-sums. Per `y`, `num y` is the `a`-sum of
+  -- the `guardedTerm`s, so `y·(num y)` is (by `Finset.mul_sum`) the
+  -- `a`-sum of `y·(g a y)`, and the casts line up by `Nat.cast_sum`.
+  set g := fun (a : Nat) (y : Nat) => guardedTerm p.N p.m p.r p.k x.val a y
+  have hperY :
+      (∑ y ∈ Finset.range (p.m + 1),
+        (y * transitionNumerator p.N p.m p.r p.k x.val y : Rat)) =
+      (∑ y ∈ Finset.range (p.m + 1),
+        (∑ a ∈ Finset.range (p.k + 1), (y * g a y : Rat))) := by
+    apply Finset.sum_congr rfl
+    intro y _
+    -- `num y` is definitionally the `a`-sum of the `guardedTerm`s.
+    have hnn : transitionNumerator p.N p.m p.r p.k x.val y =
+        (∑ a ∈ Finset.range (p.k + 1), g a y) := by
+      rw [transitionNumerator, show (∑ a ∈ Finset.range (p.k + 1),
+          (if x.val - a ≤ y then
+             if y - (x.val - a) ≤ p.k then
+               Nat.choose x.val a * Nat.choose (p.m - x.val) (p.k - a) *
+                 Nat.choose (p.r - x.val) (y - (x.val - a)) *
+                 Nat.choose (p.N - p.m - (p.r - x.val)) (p.k - (y - (x.val - a)))
+             else 0
+           else 0)) = (∑ a ∈ Finset.range (p.k + 1), g a y) from rfl]
+    -- The weighted RHS summand pulls `y` out of the `a`-sum, and the
+    -- numerator is exactly that `a`-sum (`hnn`). Everything is a bare
+    -- `Rat` ring term once the casts distribute over the products, so
+    -- `mul_sum` / `Nat.cast_sum` apply at the `Rat` level.
+    have hR : (∑ a ∈ Finset.range (p.k + 1), (y * g a y : Rat)) =
+        (y * (∑ a ∈ Finset.range (p.k + 1), g a y) : Rat) := by
+      -- After both rewrites the goal is `↑y·↑(∑ a, g a y) = (y·(∑ a, g a y):Rat)`
+      -- and the ascription distributes, so `rw` auto-closes.
+      rw [← Finset.mul_sum, ← Nat.cast_sum]
+    -- `hR` rewrites the RHS sum to `y·(∑ a, g a y)`; `hnn` rewrites the LHS
+    -- numerator (inside its `Rat` cast) to the same `a`-sum. The two sides
+    -- then coincide, and `rw` auto-closes.
+    rw [hR, hnn]
+  have hinner : (∑ y ∈ Finset.range (p.m + 1),
+      (∑ a ∈ Finset.range (p.k + 1), (y * g a y : Rat))) =
+      (∑ a ∈ Finset.range (p.k + 1),
+        (∑ y ∈ Finset.range (p.m + 1), (y * g a y : Rat))) := by
+    rw [Finset.sum_comm]
+  rw [hperY, hinner]
+
+  -- Step 4: per `a`, reindex the `y`-sum by `innerYToB_w`. The
+  -- `y`-weighted `guardedTerm` sum splits into the `(x-a)`-weighted and
+  -- the `b`-weighted `exchangeTerm` sums.
+  set E := fun (a b : Nat) => exchangeTerm p.N p.m p.r p.k x.val a b
+  have hinner2 : (∑ a ∈ Finset.range (p.k + 1),
+      (∑ y ∈ Finset.range (p.m + 1), (y * g a y : Rat))) =
+      (∑ a ∈ Finset.range (p.k + 1),
+        ((x.val : Rat) - (a : Rat)) * (∑ b ∈ Finset.range (p.k + 1), (E a b : Rat))) +
+      (∑ a ∈ Finset.range (p.k + 1),
+        (∑ b ∈ Finset.range (p.k + 1), (b : Rat) * (E a b : Rat))) := by
+    -- The `y`-summand is the `gProd` wrapper (`y * (g a y)`).
+    have h1 : (∑ a ∈ Finset.range (p.k + 1),
+        (∑ y ∈ Finset.range (p.m + 1), (y * g a y : Rat))) =
+        (∑ a ∈ Finset.range (p.k + 1),
+          (∑ y ∈ Finset.range (p.m + 1), (gProd p.N p.m p.r p.k x.val a y : Rat))) := by
+      apply Finset.sum_congr rfl
+      intro a _
+      apply Finset.sum_congr rfl
+      intro y _
+      rw [gProd, Nat.cast_mul]
+    rw [h1]
+    -- Per `a`, `innerYToB_w` splits the `y`-sum into the two `b`-sums;
+    -- then the `a`-sum splits over that `+` (`Finset.sum_add_distrib`).
+    rw [Finset.sum_congr rfl (fun a (ha : a ∈ Finset.range (p.k + 1)) => by
+      simp only [Finset.mem_range] at ha
+      exact innerYToB_w p.N p.m p.r p.k x.val a hx (by
+        -- `a < k + 1`, so `a ≤ k`.
+        omega))]
+    rw [Finset.sum_add_distrib]
+  rw [hinner2]
+
+  -- Step 5: evaluate the two `b`-sums (`bSumE`, `bSumE_w`). The window
+  -- bound `r - x ≤ N - m` holds because `blLo ≤ x`.
+  have hsubwin : p.r - x.val ≤ p.N - p.m := by
+    have hlo2 : p.r - (p.N - p.m) ≤ x.val :=
+      (Nat.le_max_left (p.r - (p.N - p.m)) 0).trans hlo
+    by_cases h2m : p.r ≤ p.N - p.m
+    · -- `r ≤ N - m`: `r - x ≤ r ≤ N - m`.
+      calc
+        p.r - x.val ≤ p.r := Nat.sub_le p.r x.val
+        _ ≤ p.N - p.m := h2m
+    · -- `r > N - m`: `r - (N - m) ≤ x` is a genuine subtraction.
+      have hle : p.r ≤ x.val + (p.N - p.m) :=
+        (Nat.sub_le_iff_le_add).mp hlo2
+      have hle2 : p.r ≤ (p.N - p.m) + x.val := by
+        rw [Nat.add_comm] at hle
+        exact hle
+      exact (Nat.sub_le_iff_le_add).mpr hle2
+  -- Combine the two `b`-sum pieces into a sum of their closed forms.
+  -- Split the `a`-sum over the `+` (keeping the `+` outside the summand,
+  -- per the parser-bug workaround), then close each `b`-sum per `a`
+  -- (`bSumE` / `bSumE_w`).
+  have hcomb :
+      (∑ a ∈ Finset.range (p.k + 1),
+        ((x.val : Rat) - (a : Rat)) * (∑ b ∈ Finset.range (p.k + 1), (E a b : Rat))) +
+      (∑ a ∈ Finset.range (p.k + 1),
+        (∑ b ∈ Finset.range (p.k + 1), (b : Rat) * (E a b : Rat))) =
+      (∑ a ∈ Finset.range (p.k + 1),
+        ((x.val : Rat) - (a : Rat)) *
+          (Nat.choose x.val a * Nat.choose (p.m - x.val) (p.k - a) *
+            Nat.choose (p.N - p.m) p.k : Rat)) +
+      (∑ a ∈ Finset.range (p.k + 1),
+        (Nat.choose x.val a * Nat.choose (p.m - x.val) (p.k - a) : Rat) *
+        ((p.k : Rat) * (p.r - x.val : Rat) / (p.N - p.m : Rat) *
+          (Nat.choose (p.N - p.m) p.k : Rat))) := by
+    -- The `+` is at the top level (the `hinner2` split); rewrite each of the
+    -- two `a`-sums per `a` (`bSumE` / `bSumE_w`).
+    rw [show (∑ a ∈ Finset.range (p.k + 1),
+        ((x.val : Rat) - (a : Rat)) * (∑ b ∈ Finset.range (p.k + 1), (E a b : Rat))) =
+        (∑ a ∈ Finset.range (p.k + 1),
+          ((x.val : Rat) - (a : Rat)) *
+            (Nat.choose x.val a * Nat.choose (p.m - x.val) (p.k - a) *
+              Nat.choose (p.N - p.m) p.k : Rat)) from by
+      apply Finset.sum_congr rfl
+      intro a _
+      rw [bSumE p.N p.m p.r p.k x.val a hsubwin],
+        show (∑ a ∈ Finset.range (p.k + 1),
+          (∑ b ∈ Finset.range (p.k + 1), (b : Rat) * (E a b : Rat))) =
+          (∑ a ∈ Finset.range (p.k + 1),
+            (Nat.choose x.val a * Nat.choose (p.m - x.val) (p.k - a) : Rat) *
+            ((p.k : Rat) * (p.r - x.val : Rat) / (p.N - p.m : Rat) *
+              (Nat.choose (p.N - p.m) p.k : Rat))) from by
+      apply Finset.sum_congr rfl
+      intro a _
+      rw [bSumE_w p.N p.m p.r p.k x.val a hmn hxr hsubwin]]
+  rw [hcomb]
+
+  -- Step 6: the two `a`-sums. The common `a`-factor is
+  -- `F a = (C(x,a)·C(m-x,k-a) : Rat)`; the right-pile binomial
+  -- `C(N-m,k)` and the hypergeometric mean factor `M = k·(r-x)/(N-m)`
+  -- do not depend on `a` and come out of the sums.
+  -- The common per-`a` binomial factor, the right-pile binomial, and the
+  -- hypergeometric mean factor. None of these depends on `a` in the places
+  -- that matter, so they come out of the sums.
+  set F := fun (a : Nat) =>
+    (Nat.choose x.val a : Rat) * (Nat.choose (p.m - x.val) (p.k - a) : Rat)
+  set C3 := (Nat.choose (p.N - p.m) p.k : Rat)
+  set M := (p.k : Rat) * (p.r - x.val : Rat) / (p.N - p.m : Rat)
+
+  -- The first `a`-sum: `∑ a, (x-a)·(C1·C2·C3) = C3·∑ a, (x-a)·F a`.
+  have hA : (∑ a ∈ Finset.range (p.k + 1),
+      ((x.val : Rat) - (a : Rat)) *
+        (Nat.choose x.val a * Nat.choose (p.m - x.val) (p.k - a) *
+          Nat.choose (p.N - p.m) p.k : Rat)) =
+      C3 * (∑ a ∈ Finset.range (p.k + 1),
+        ((x.val : Rat) - (a : Rat)) * F a) := by
+    -- The ascription on the 3-factor product is `((C1·C2)·C3)`, so the
+    -- summand is `(x-a)·(F a)·C3`; `ring` normalizes the association.
+    have h1 : (∑ a ∈ Finset.range (p.k + 1),
+        ((x.val : Rat) - (a : Rat)) *
+          (Nat.choose x.val a * Nat.choose (p.m - x.val) (p.k - a) *
+            Nat.choose (p.N - p.m) p.k : Rat)) =
+        (∑ a ∈ Finset.range (p.k + 1),
+          ((x.val : Rat) - (a : Rat)) * F a * C3) := by
+      apply Finset.sum_congr rfl
+      intro a _
+      ring
+    -- Pull the constant `C3` out of the sum, then commute to the left.
+    rw [h1, ← Finset.sum_mul, mul_comm]
+  -- The second `a`-sum: `∑ a, F a·M·C3 = (M·C3)·∑ a, F a`.
+  -- The second `a`-sum: `∑ a, (C1·C2)·(M·C3) = (M·C3)·∑ a, F a`.
+  have hB : (∑ a ∈ Finset.range (p.k + 1),
+      (Nat.choose x.val a * Nat.choose (p.m - x.val) (p.k - a) : Rat) *
+      ((p.k : Rat) * (p.r - x.val : Rat) / (p.N - p.m : Rat) *
+        (Nat.choose (p.N - p.m) p.k : Rat))) =
+      M * C3 * (∑ a ∈ Finset.range (p.k + 1), F a) := by
+    -- The summand is `F a·M·C3`; pull the constant `M·C3` out.
+    have h1 : (∑ a ∈ Finset.range (p.k + 1),
+        (Nat.choose x.val a * Nat.choose (p.m - x.val) (p.k - a) : Rat) *
+        ((p.k : Rat) * (p.r - x.val : Rat) / (p.N - p.m : Rat) *
+          (Nat.choose (p.N - p.m) p.k : Rat))) =
+        (∑ a ∈ Finset.range (p.k + 1), F a * (M * C3)) := by
+      apply Finset.sum_congr rfl
+      intro a _
+      ring
+    -- Pull the constant `M·C3` out, then commute to the left.
+    rw [h1, ← Finset.sum_mul, mul_comm]
+
+  -- Pull `C3` out of both `a`-sums.
+  rw [hA, hB]
+
+  -- Step 7: the `a`-sums. Let `S = ∑ a, F a = C(m,k)` (`aSumE`) and
+  -- `∑ a, (a:Rat)·F a = (k·x/m)·C(m,k)` (`chooseSum_weighted`). Then
+  -- `∑ a, (x-a)·F a = x·S - (k·x/m)·S` and the hypergeometric-mean
+  -- factor is constant.
+  -- `∑ a, F a = C(m,k)` (`aSumE`); `F a` unfolds to the explicit product.
+  have hS : (∑ a ∈ Finset.range (p.k + 1), F a) = (Nat.choose p.m p.k : Rat) := by
+    have h1 : (∑ a ∈ Finset.range (p.k + 1), F a) =
+        (∑ a ∈ Finset.range (p.k + 1),
+          (Nat.choose x.val a : Rat) * (Nat.choose (p.m - x.val) (p.k - a) : Rat)) := by
+      apply Finset.sum_congr rfl
+      intro a _
+      rfl
+    rw [h1, aSumE p.m x.val p.k hx]
+  -- `∑ a, a·F a = (k·x/m)·C(m,k)` (`chooseSum_weighted`).
+  have hwa : (∑ a ∈ Finset.range (p.k + 1), (a : Rat) * F a) =
+      (p.k : Rat) * (x.val : Rat) / (p.m : Rat) * (Nat.choose p.m p.k : Rat) := by
+    have h1 : (∑ a ∈ Finset.range (p.k + 1), (a : Rat) * F a) =
+        (∑ a ∈ Finset.range (p.k + 1),
+          (a : Rat) * (Nat.choose x.val a : Rat) *
+            (Nat.choose (p.m - x.val) (p.k - a) : Rat)) := by
+      apply Finset.sum_congr rfl
+      intro a _
+      -- `a·(C1·C2)` vs `(a·C1)·C2`: same product up to association.
+      ring
+    rw [h1, chooseSum_weighted p.m x.val p.k hx]
+  -- `∑ a, (x-a)·F a = (∑ a, x·F a) - (∑ a, a·F a)`.
+  have hxs : (∑ a ∈ Finset.range (p.k + 1),
+      ((x.val : Rat) - (a : Rat)) * F a) =
+      (∑ a ∈ Finset.range (p.k + 1), (x.val : Rat) * F a) -
+      (∑ a ∈ Finset.range (p.k + 1), (a : Rat) * F a) := by
+    -- Split the difference of sums; per `a`, `(x-a)·F a = x·F a - a·F a`.
+    rw [← Finset.sum_sub_distrib]
+    apply Finset.sum_congr rfl
+    intro a _
+    ring
+  -- `∑ a, x·F a = x·(∑ a, F a)` (the constant `x` out of the sum).
+  have hxs2 : (∑ a ∈ Finset.range (p.k + 1), (x.val : Rat) * F a) =
+      (x.val : Rat) * (∑ a ∈ Finset.range (p.k + 1), F a) := by
+    rw [← Finset.mul_sum]
+  -- `∑ a, (x-a)·F a = (∑ a, F a)·(x - k·x/m)`.
+  have hxS : (∑ a ∈ Finset.range (p.k + 1),
+      ((x.val : Rat) - (a : Rat)) * F a) =
+      (∑ a ∈ Finset.range (p.k + 1), F a) *
+        ((x.val : Rat) - (p.k : Rat) * (x.val : Rat) / (p.m : Rat)) := by
+    rw [hxs, hxs2, hwa]
+    -- Replace `C(m,k)` by `∑ a, F a` (`hS`), then factor.
+    rw [← hS]
+    ring
+  -- The numerator factors as `(∑ a, F a)·C3·(x - k·x/m + M)`; `hxS` is
+  -- applied inside `hnumfact`, so the outer goal keeps the pre-`hxS` form.
+  have hnumfact : C3 * (∑ a ∈ Finset.range (p.k + 1),
+      ((x.val : Rat) - (a : Rat)) * F a) +
+      M * C3 * (∑ a ∈ Finset.range (p.k + 1), F a) =
+      (∑ a ∈ Finset.range (p.k + 1), F a) * C3 *
+        ((x.val : Rat) - (p.k : Rat) * (x.val : Rat) / (p.m : Rat) + M) := by
+    rw [hxS]
+    ring
+  have hden2 : (transitionDenominator p.N p.m p.k : Rat) =
+      (Nat.choose p.m p.k : Rat) * (Nat.choose (p.N - p.m) p.k : Rat) := by
+    rw [transitionDenominator, Nat.cast_mul]
+  have hden3 : (transitionDenominator p.N p.m p.k : Rat) =
+      (∑ a ∈ Finset.range (p.k + 1), F a) * C3 := by
+    rw [hden2, ← hS]
+  rw [hnumfact]
+  -- Clear the division: the numerator is `(∑ a, F a)·C3·(x - k·x/m + M)`
+  -- and the denominator is `(∑ a, F a)·C3`.
+  have hsc3 : (∑ a ∈ Finset.range (p.k + 1), F a) * C3 ≠ 0 := by
+    have hSpos : 0 < (∑ a ∈ Finset.range (p.k + 1), F a) := by
+      -- `∑ a, F a = C(m,k)` and `0 < C(m,k)`.
+      rw [hS]
+      exact Nat.cast_pos.mpr (Nat.choose_pos p.hkm)
+    have hC3pos : 0 < C3 := Nat.cast_pos.mpr (Nat.choose_pos p.hknm)
+    have hpos : 0 < (∑ a ∈ Finset.range (p.k + 1), F a) * C3 := mul_pos hSpos hC3pos
+    intro h
+    rw [h] at hpos
+    exact lt_irrefl 0 hpos
+  have hm0 : (p.m : Rat) ≠ 0 := by
+    intro h
+    have hpos : 0 < (p.m : Rat) := Nat.cast_pos.mpr p.h0m
+    rw [h] at hpos
+    exact lt_irrefl 0 hpos
+  have hnm0 : (p.N - p.m : Rat) ≠ 0 := by
+    intro h
+    have hpos : 0 < (p.N - p.m : Rat) := by
+      -- `(N-m : Rat)` = `(N:Rat) - (m:Rat)` = `↑(N-m)`.
+      rw [show (p.N - p.m : Rat) = (p.N : Rat) - (p.m : Rat) from rfl,
+          ← Nat.cast_sub (Nat.le_of_lt hmn)]
+      exact Nat.cast_pos.mpr (Nat.sub_pos_of_lt hmn)
+    rw [h] at hpos
+    exact lt_irrefl 0 hpos
+  field_simp [hden3, hsc3, hden, hm0, hnm0, Nat.cast_ne_zero]
+  -- `field_simp` cleared the divisions; both sides now share the factor
+  -- `(x·m - x·k + m·M)`, and the remaining difference is exactly `hden3`.
+  rw [hden3]
+  -- The remaining goal is a polynomial identity over `Rat` in the atoms
+  -- `∑ a, F a`, `C3`, `x`, `k`, `m`, `M`: `ring` closes it.
+  ring
+
 end firstMode
 end BernoulliLaplaceGeneral
 end Shufflemath
