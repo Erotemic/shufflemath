@@ -162,3 +162,50 @@ theorem commanderFirstModeFunc (x : BernoulliLaplaceGeneral.BLState 99 50 50) :
   -- the same rational, so renaming one side to the other closes it.
   rw [(blFirstModeFactor_eq_firstModeFactor 99 50 25).symm]
   rfl
+
+/-- The first centered eigenfunction equation, read directly on the concrete
+Commander kernel `commanderExchange25` over `Fin 50` (no reference to the
+general kernel): the `leftCount`-centered observable with mean `2500/99` is
+contracted by the factor `-1/98`. This is a pure *transport* of the general
+`blFirstModeFunc` along the state identification — the two kernels agree
+pointwise (`commanderExchange25_matches_blExchange`) and the pulled-back
+centered observable is the general one (`leftCount (blToCommander z) = z.val`) —
+not a second combinatorial derivation. -/
+theorem commanderFirstModeFunc_concrete (i : CommanderState) :
+    applyFn commanderExchange25 (fun j =>
+      (commanderLeftCount j : Rat) - (50 : Rat) * (50 : Rat) / (99 : Rat)) i =
+      (-(1 / 98 : Rat)) *
+        ((commanderLeftCount i : Rat) - (50 : Rat) * (50 : Rat) / (99 : Rat)) := by
+  -- Transport the `applyFn` sum from the Commander `Fin 50` states to the
+  -- general `BLState 99 50 50` along the `val` bijection.
+  have htransport :
+      applyFn commanderExchange25 (fun (j : CommanderState) =>
+        (commanderLeftCount j : Rat) - (50 : Rat) * (50 : Rat) / (99 : Rat)) i =
+      applyFn (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams)
+        (fun (z : BernoulliLaplaceGeneral.BLState 99 50 50) =>
+          (z.val : Rat) - (50 : Rat) * (50 : Rat) / (99 : Rat)) (commanderToBL i) := by
+    dsimp only [applyFn]
+    apply Finset.sum_bij
+      (fun (j : CommanderState) (_ : j ∈ Finset.univ) => commanderToBL j)
+    · -- the image lies in the general `Finset.univ`
+      intro _ _
+      simp only [Finset.mem_univ]
+    · -- `toBL` is injective (it is the forward map of the equiv)
+      intro j1 _ j2 _ h12
+      exact commanderBLEquiv.injective h12
+    · -- surjective onto the general `Finset.univ`
+      intro z _
+      simp only [Finset.mem_univ]
+      exact ⟨blToCommander z, by simp,
+        by simp [commanderToBL_blToCommander]⟩
+    · -- the summand: the masses agree and `leftCount (toBL j) = (toBL j).val`
+      intro j _
+      rw [commanderExchange25_matches_blExchange i j]
+      simp only [commanderLeftCount, commanderToBL]
+  rw [htransport]
+  -- The general eigenfunction at the Commander parameters (G5).
+  rw [commanderFirstModeFunc (commanderToBL i)]
+  -- `firstModeFactor 99 50 25 = blFirstModeFactor 99 50 25 = -1/98`.
+  rw [← blFirstModeFactor_eq_firstModeFactor, commanderFirstMode_general_25]
+  -- `leftCount (toBL i) = (toBL i).val`, so the two centered terms agree.
+  simp [commanderLeftCount, commanderToBL]
