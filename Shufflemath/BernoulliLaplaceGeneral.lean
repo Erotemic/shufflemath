@@ -2249,6 +2249,87 @@ theorem blFirstModeFunc (p : ExchangeAdmissible) (x : BLState p.N p.m p.r) :
   field_simp [hm0, hnm0, hN0, Nat.cast_ne_zero]
   ring
 
+  /-- `a - b < c` from `a < b + c` and `b ≤ a` (the subtraction is proper, so
+  `a - b + b = a < b + c`; commute and cancel `b`). Used to show the
+  admissible interval's lower end stays below the smaller pile size. -/
+  private lemma subLtM {a b c : Nat} (h : a < b + c) (hb : b ≤ a) : a - b < c := by
+    have hsum : a - b + b = a := Nat.sub_add_cancel hb
+    have hlt : a - b + b < b + c := by
+      rw [hsum]
+      exact h
+    have hlt2 : b + (a - b) < b + c := by
+      rw [show a - b + b = b + (a - b) from Nat.add_comm (a - b) b] at hlt
+      exact hlt
+    linarith
+
+  /-- Nonzero-eigenfunction companion to `blFirstModeFunc`. The bare identity
+  `K f = λ₁ f` remains true in the degenerate cases `r = 0` and `r = N`, but
+  there the macrostate space collapses to a *single* state and
+  `f(x) = x - m·r/N` vanishes at that state, so the equation is the vacuous
+  `0 = λ₁·0` and `λ₁` is not yet a genuine eigenvalue. Under
+  `0 < r < N` (with the admissible `0 < m < N`) the interval
+  `blLo .. blHi` has at least two distinct states and the centered observable
+  (affine, slope 1) is not identically zero, so `blFirstModeFactor` is an
+  actual eigenvalue with a nonzero eigenfunction. This isolates the
+  eigenfunction *identity* (`blFirstModeFunc`) from the *existence* of a
+  nonzero eigenfunction. -/
+  theorem blFirstModeFunc_nonzero (p : ExchangeAdmissible)
+      (h0 : 0 < p.r) (hN : p.r < p.N) :
+      ∃ x : BLState p.N p.m p.r,
+        (x.val : Rat) - (p.m : Rat) * (p.r : Rat) / (p.N : Rat) ≠ 0 := by
+    -- The lower end of the admissible interval sits strictly below both pile
+    -- sizes, hence below `blHi = min m r`, so the interval holds ≥2 states:
+    --   * `r - (N - m) < r`  (from `0 < r`, `0 < N - m`);
+    --   * `r - (N - m) < m`  (from `r < N = (N - m) + m`, `0 < m`).
+    have hlo : blLo p.N p.m p.r = p.r - (p.N - p.m) := by
+      simp only [blLo_def]
+      simp
+    have hblLo_r : p.r - (p.N - p.m) < p.r := by
+      have hLpos : 0 < p.N - p.m := Nat.sub_pos_of_lt p.hmn
+      omega
+    have hblLo_m : p.r - (p.N - p.m) < p.m := by
+      by_cases hle : p.N - p.m ≤ p.r
+      · -- proper subtraction: `r < N = (N - m) + m`, so `r - (N - m) < m`.
+        have h : p.r < (p.N - p.m) + p.m := by
+          rw [Nat.sub_add_cancel (Nat.le_of_lt p.hmn)]
+          exact hN
+        exact subLtM h hle
+      · -- `r < N - m`, so `r - (N - m) = 0 < m`.
+        have hlt : p.r < p.N - p.m := Nat.not_le.mp hle
+        rw [Nat.sub_eq_zero_of_le (Nat.le_of_lt hlt)]
+        exact p.h0m
+    have hlo_lt_hi : blLo p.N p.m p.r < blHi p.N p.m p.r := by
+      rw [hlo, blHi_def]
+      simp only [lt_min_iff]
+      exact ⟨hblLo_m, hblLo_r⟩
+    -- Two concrete distinct states: `blLo` and `blLo + 1`.
+    have hxlo : blLo p.N p.m p.r ≤ blHi p.N p.m p.r := Nat.le_of_lt hlo_lt_hi
+    have hxlo1 : blLo p.N p.m p.r + 1 ≤ blHi p.N p.m p.r := by
+      omega
+    -- If the centered observable vanished at every state it would vanish at
+    -- both `blLo` and `blLo + 1`; their centered values differ by exactly
+    -- `1`, so that is impossible.
+    by_contra h
+    have hforall : ∀ (x : BLState p.N p.m p.r),
+        (x.val : Rat) - (p.m : Rat) * (p.r : Rat) / (p.N : Rat) = 0 := by
+      intro x
+      by_contra hne
+      exact h ⟨x, hne⟩
+    -- At `val = blLo`: the centered value is `↑blLo - c = 0`.
+    have hA : (blLo p.N p.m p.r : Rat) - (p.m : Rat) * (p.r : Rat) / (p.N : Rat) = 0 :=
+      hforall ⟨blLo p.N p.m p.r, ⟨Nat.le_refl _, hxlo⟩⟩
+    -- At `val = blLo + 1`: the centered value is `↑(blLo + 1) - c = 0`, i.e.
+    -- `↑blLo + 1 - c = 0` since `↑(blLo + 1) = ↑blLo + 1`.
+    have hB : (blLo p.N p.m p.r : Rat) + 1 - (p.m : Rat) * (p.r : Rat) / (p.N : Rat) = 0 := by
+      have h := hforall ⟨blLo p.N p.m p.r + 1, ⟨by omega, hxlo1⟩⟩
+      have hcast : (Nat.cast (blLo p.N p.m p.r + 1) : Rat) =
+          (blLo p.N p.m p.r : Rat) + 1 := by
+        simp only [Nat.cast_succ]
+      rw [hcast] at h
+      exact h
+    -- `↑blLo - c = 0` and `↑blLo + 1 - c = 0` together force `1 = 0`.
+    linarith
+
 end firstMode
 end BernoulliLaplaceGeneral
 end Shufflemath
