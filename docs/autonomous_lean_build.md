@@ -146,7 +146,7 @@ The hard-won Lean-mechanics notes and the verified mathlib hook list
 (keep reading these before heavy proof work) live in
 `docs/lean_build_history.md` §1 (mechanics) and §3 (hooks).
 
-## 4. Remaining plan (A–F done; G in progress; then H)
+## 4. Remaining plan (A–G done; then H)
 
 **G. First eigenfunction** (done — G1–G5 landed 2026-10-08; then H):
 
@@ -166,13 +166,27 @@ The hard-won Lean-mechanics notes and the verified mathlib hook list
   with `Rat` field algebra. This is the first centered linear mode; it is
   **not** a claim about the largest nontrivial eigenvalue in absolute value,
   nor a TV-optimality statement.
-- **G5 (done, cc1e886):** the Commander corollaries in the bridge module:
+- **G4b (done, a2a885b):** `blFirstModeFunc_nonzero` — the eigenvalue is
+  non-vacuous under `0 < r < N`. In the degenerate cases `r = 0` / `r = N` the
+  macrostate space is a singleton and the centered observable vanishes there
+  (the bare `K f = λ₁ f` is then the vacuous `0 = λ₁·0`); under `0 < r < N`
+  the interval `blLo .. blHi` holds at least two states, so the centered
+  observable is not identically zero and `blFirstModeFactor` is a genuine
+  eigenvalue. Isolated from `blFirstModeFunc`, which stays valid without the
+  non-degeneracy assumption.
+- **G5 (done, d131ec2):** the Commander corollaries in the bridge module:
   `commanderBLEquiv : Equiv (Fin 50) (BLState 99 50 50)`, the
   `blFirstModeFactor_eq_firstModeFactor` agreement (the two factors are the
   same definition), the specializations `λ₁(24) = 37/1225`, `λ₁(25) = -1/98`,
   `λ₁(26) = -62/1225` derived from the single general formula, and the
   `commanderFirstModeFunc` corollary specializing `blFirstModeFunc` to the
   Commander parameters.
+- **G5b (done, b45f3c5):** `commanderFirstModeFunc_concrete` — the centered
+  eigenfunction equation read *directly* on the concrete `commanderExchange25`
+  kernel over `Fin 50` (`∑_j P(i,j)(leftCount(j) − 2500/99) =
+  −(1/98)(leftCount(i) − 2500/99)`), as a pure transport of `blFirstModeFunc`
+  along the state equiv (pointwise kernel agreement + the pulled-back
+  centered observable), not a second combinatorial derivation.
   (The older draft of this plan had `f(x) = 1 - x/m + (x-r)·k/(N-m)` and
   `λ = -25/49` for Commander — both wrong, corrected 2026-10-08.)
 
@@ -193,7 +207,7 @@ in the same commit as any fix.
 |---|-----------------|----------|--------|--------|
 | 1 | Dobrushin: drop `dobrushin2`, prove sharp `δ(K)` contraction | High | **DONE** | `b69d00a` (session 8) |
 | 2 | `BLState` must not depend on `k` (phantom param) | High | **DONE** | this commit |
-| 3 | General module must not import the Commander module (bridge module instead) | High-ish | **PARTIAL** (import removed; bridge module lands with the F commit) | this commit |
+| 3 | General module must not import the Commander module (bridge module instead) | High-ish | **DONE** (import removed; bridge module `BernoulliLaplaceCommanderBridge.lean` landed with F and is in the build graph) | this commit |
 | 4 | Perturbation API: unconditional crude telescope + sharp per-step weighted bound; uniform-`d` as corollary | Medium | **DONE** (`weightedTelescope` flagship, no contraction hypotheses; uniform/crude/symmetric all corollaries) | this commit |
 | 5 | `tv_eq_zero` false comment; add real `tv p q = 0 ↔ p = q` | Medium | **DONE** (`tv_zero_iff_eq`) | `734141f` |
 | 6 | LLM duplication: private `double_sum_pullout` (a), Dobrushin nonneg/sum-one reproofs (b), matrix vs kernel row-TV/canon (c) | Medium-low | **DONE** | `b69d00a`, `06c2f4b`, `734141f` |
@@ -203,11 +217,12 @@ in the same commit as any fix.
 | 10 | Commit trailer not followed (wrong name/email) | Workflow | **DONE** (new trailer `Co-authored-by: Qwen3.8-27B-W4A16-AutoRound <noreply@qwen.ai>` on all new commits; history NOT rewritten, per review's own advice and user instruction) | `a09e2b0` onward |
 
 **Order per the review's recommendation:** #1 ✅ → #4 (perturbation API:
-crude + uniform-`d` ✅, sharp weighted form **next**) → #2/#3/#8 ✅ (this
-commit) → then continue F (row stochasticity / stationarity / detailed
-balance, via the general file's own transition formulas + the bridge
-module). #5/#6/#7/#9 done in the quick-win commit `734141f`. **Remaining:
-#4 (completion) + #3 (bridge module, lands with F).**
+crude + uniform-`d` ✅, sharp weighted form = the `weightedTelescope`
+flagship ✅) → #2/#3/#8 ✅ (this commit) → then continue F (row
+stochasticity / stationarity / detailed balance, via the general file's own
+transition formulas + the bridge module). #5/#6/#7/#9 done in the
+quick-win commit `734141f`. **All review items are now DONE** (#3's bridge
+module landed with F and is in the build graph).
 
 **Decision on #3 vs. the frozen `BernoulliLaplace.lean`:** the §4-F spec
 said "reuse `BernoulliLaplace.transitionNumerator` verbatim, do not
@@ -238,9 +253,15 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
   `blConditionalMean` (plus `innerYToB_w`, `bSumE`/`bSumE_w`, `aSumE`).
 - **G4** (2026-10-08, df1da34): the first centered eigenfunction
   `blFirstModeFunc`.
-- **G5** (2026-10-08, cc1e886): the Commander corollaries —
+- **G4b** (2026-10-09, a2a885b): `blFirstModeFunc_nonzero` — the eigenvalue
+  is non-vacuous when `0 < r < N` (the degenerate `r = 0`/`r = N` cases are
+  singletons where the centered observable vanishes).
+- **G5** (2026-10-08, d131ec2): the Commander corollaries —
   `commanderBLEquiv`, `blFirstModeFactor_eq_firstModeFactor`, the three
   `λ₁(24/25/26)` specializations, and `commanderFirstModeFunc`.
+- **G5b** (2026-10-09, b45f3c5): `commanderFirstModeFunc_concrete` — the
+  `−1/98` eigenfunction read directly on the concrete `commanderExchange25`
+  kernel, as a pure transport of `blFirstModeFunc` (no second derivation).
 - **Cleanup** (2026-10-08, e19afb5): the fiber section moved to
   `BernoulliLaplaceFiber.lean`; the bridge module repaired and brought
   into the build graph; this document split into a slim handoff (this
@@ -277,11 +298,17 @@ is where `blExchangeKernel N m k` = `commanderExchange25` lives).
 
 **Next action:** G (the first centered eigenfunction) is **complete** —
 G1–G5 all landed (G3 `blConditionalMean` 00cd98c, G4 `blFirstModeFunc`
-df1da34, G5 Commander corollaries cc1e886). The full pipeline —
+df1da34, G4b `blFirstModeFunc_nonzero` a2a885b, G5 Commander corollaries
+d131ec2, G5b `commanderFirstModeFunc_concrete` b45f3c5). The full pipeline —
 conditional mean → centered eigenfunction → Commander specializations —
 now builds green and `./dev/verify.sh` passes.
 
-The remaining plan is **H (stretch)** per `docs/lean_plan.md` §4: the GSR
-theorem, higher modes, the separation distance, the perturbation→TV chain,
-and the mixing time. These are out of scope for the first-eigenfunction
-task; pick one up only if the task explicitly resumes with H.
+The remaining plan is **H (stretch)** per `docs/lean_plan.md` §4. The first
+H item — and the immediate next target — is the **classical GSR inverse
+riffle model** (ideal GSR via independent binary labels, repeated riffles
+via larger labels `a = 2^r`, and the `a`-shuffle composition law) on top of
+the now-generic `Dist`/`FiniteKernel`/total-variation foundations; after it
+come the higher BL modes, the separation distance, the perturbation→TV
+chain, and the mixing time. These are out of scope for the
+first-eigenfunction task; pick one up only when the task explicitly resumes
+with H.

@@ -35,17 +35,20 @@ Implemented finite certificates:
    segregation;
 6. the general `N`/`m`/`r` exchange theory (`BernoulliLaplaceGeneral.lean`
    and `BernoulliLaplaceFiber.lean`): symbolic row normalization, the
-   stationary distribution, detailed balance by fiber counting, and the
-   `BLState 99 50 50` `↔` `Fin 50` bridge proving agreement with the
-   Commander instance (`BernoulliLaplaceCommanderBridge.lean`).
+   stationary distribution, detailed balance by fiber counting, the
+   first-eigenfunction theorem (`blFirstModeFunc` and its non-vacuousity
+   when `0 < r < N`), and the `BLState 99 50 50` `↔` `Fin 50` bridge
+   proving agreement with the Commander instance, incl. the `−1/98`
+   half-deck specialization read on the concrete kernel
+   (`BernoulliLaplaceCommanderBridge.lean`).
 
-Remaining symbolic targets (1--3 done):
+Remaining symbolic targets (1--4 done):
 
 1. [done] row normalization for general admissible `N,m,k` using
    Vandermonde identities;
 2. [done] the hypergeometric stationary distribution symbolically;
 3. [done] reversibility;
-4. the first nonconstant eigenfunction and factor (in progress);
+4. [done] the first nonconstant (centered) eigenfunction and factor;
 5. connect the exact matrix TV certificates to the semantic
    `Dist`/`FiniteKernel` view;
 6. certify the finite `(25,25)` optimality search rather than only its

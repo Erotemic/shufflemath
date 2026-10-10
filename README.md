@@ -51,10 +51,14 @@ The Lean sources now contain:
   `BernoulliLaplaceFiber.lean`);
 - the bridge identifying `BLState 99 50 50` with `Fin 50` and proving the
   general and Commander theories agree pointwise
-  (`BernoulliLaplaceCommanderBridge.lean`).
-
-The first-eigenfunction work (the weighted Vandermonde and reindexing
-lemmas) is in progress; see `docs/autonomous_lean_build.md`.
+  (`BernoulliLaplaceCommanderBridge.lean`);
+- the general first-eigenfunction theory: the exchange kernel's
+  conditional mean, the centered-mode eigenfunction equation
+  `K(x ↦ x − m·r/N) = (1 − N·k/(m·(N−m)))·(x − m·r/N)`, the
+  non-vacuousity of the eigenvalue when `0 < r < N`, and the Commander
+  specialization `−1/98` at the half-deck exchange, read directly on the
+  concrete `commanderExchange25` kernel (`section firstMode` in
+  `BernoulliLaplaceGeneral.lean` and the bridge).
 
 The Python reference implementation remains independent and is used to cross-check the exact numbers and generate conjectures.
 
@@ -109,8 +113,8 @@ python -m unittest discover -s tests -v
 
 ## Near-term theorem ladder
 
-1. prove the first eigenfunction/eigenvalue theorem for the general exchange
-   kernel (row normalization and reversibility are already done);
+1. (done) prove the first eigenfunction/eigenvalue theorem for the general exchange
+   kernel, incl. non-vacuousity (`blFirstModeFunc`, `blFirstModeFunc_nonzero`);
 2. formalize ideal GSR inverse riffles and the `a`-shuffle composition law;
 3. prove TV contraction / perturbation bounds for heterogeneous finite kernels;
 4. introduce costed schedule search and certificates;
