@@ -56,14 +56,14 @@ class MD02MathLeanDictionary(DeckSlide):
 
     def body(self):
         grid = glossary_grid([
-            ("finite distribution", r"`Convexity.StdSimplex Rat α` in the current exact finite layer"),
-            ("Markov kernel", r"`α → Dist β`; composition is the finite bind / mixture operation"),
+            ("finite distribution", r"`Convexity.StdSimplex Rat $\alpha$` in the current exact finite layer"),
+            ("Markov kernel", r"`$\alpha \to \mathrm{Dist}\,\beta$`; composition is the finite bind / mixture operation"),
             ("stochastic matrix", r"derived computational/spectral view; rows lie in `Matrix.rowStochastic`"),
             ("TV distance", r"exact rational finite sum; theorem-facing metric for finite certificates"),
             ("Dobrushin coefficient", r"finite supremum/max of row-to-row TV distances"),
-            ("stationary law", r"distribution equality `π K = π` or the matrix equivalent"),
+            ("stationary law", r"distribution equality `$\pi K = \pi$` or the matrix equivalent"),
             ("reversibility", r"pointwise detailed-balance equality under a candidate stationary law"),
-            ("eigenfunction", r"finite function satisfying the Markov-operator equation `K f = λ • f`"),
+            ("eigenfunction", r"finite function satisfying the Markov-operator equation `$K f = \lambda \bullet f$`"),
             ("protocol", r"finite list/typed sequence of kernels plus a cost interpretation"),
             ("certificate", r"exact statement that a concrete protocol satisfies cost/error and optional bounded-optimality claims"),
         ], body_size=16).shift(DOWN * 0.05)
@@ -164,8 +164,8 @@ class MD08ProofVsComputation(DeckSlide):
     section = "Part 5 · formalization roadmap"
 
     def body(self):
-        symbolic = boxed(para(r"\textbf{Symbolic theorem}\nNormalization, stationary law, reversibility, eigenfunction identity, GSR counting formula, TV contraction/telescope, and semantics of protocol composition. These should hold for general finite parameters.", 5.25, 21), UNIFORM).shift(LEFT * 3.0 + DOWN * 0.05)
-        compute = boxed(para(r"\textbf{Executable certificate}\nExact 99-card TV constants, ranking bounded schedules, checking a concrete Pareto frontier, and evaluating rational bounds for a chosen measured parameter set. These may legitimately remain computations whose results are certified.", 5.25, 21), COST).shift(RIGHT * 3.0 + DOWN * 0.05)
+        symbolic = boxed(para(r"\textbf{Symbolic theorem}\par\smallskip Normalization, stationary law, reversibility, eigenfunction identity, GSR counting formula, TV contraction/telescope, and semantics of protocol composition. These should hold for general finite parameters.", 5.25, 21), UNIFORM).shift(LEFT * 3.0 + DOWN * 0.05)
+        compute = boxed(para(r"\textbf{Executable certificate}\par\smallskip Exact 99-card TV constants, ranking bounded schedules, checking a concrete Pareto frontier, and evaluating rational bounds for a chosen measured parameter set. These may legitimately remain computations whose results are certified.", 5.25, 21), COST).shift(RIGHT * 3.0 + DOWN * 0.05)
         self.say("The elegance criterion is not 'replace all computation by proof.' It is 'prove the reusable structure once, compute the instance-specific facts exactly, and make the trusted boundary explicit.'")
         self.play(FadeIn(symbolic), FadeIn(compute))
 

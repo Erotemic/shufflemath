@@ -294,7 +294,45 @@ def _render_scene(deck_name: str, module: str, scene: str, quality: str, fps: fl
     return time.monotonic() - start
 
 
-def render(deck_names: list[str], quality: str, fps: float | None = None, only: list[str] | None = None, jobs: int | None = None) -> None:
+_QUALITY_HEIGHT = {"l": 480, "m": 720, "h": 1080, "p": 1440, "k": 2160}
+_QUALITY_FPS = {"l": 15, "m": 30, "h": 60, "p": 60, "k": 60}
+
+
+def _cached_scene_ready(deck_name: str, module: str, scene: str,
+                        quality: str, fps: float | None) -> bool:
+    """Reuse only completed renders with current source, resolution and frame rate."""
+    metadata = ROOT / f"slides-{output_name(deck_name)}" / f"{scene}.json"
+    source = ROOT / f"{module.replace('.', '/')}.py"
+    if not metadata.is_file() or not source.is_file():
+        return False
+    if metadata.stat().st_mtime < source.stat().st_mtime:
+        return False
+    try:
+        slides = json.loads(metadata.read_text()).get("slides", [])
+    except (OSError, json.JSONDecodeError, AttributeError):
+        return False
+    drawn = [slide for slide in slides if isinstance(slide, dict) and not slide.get("src")]
+    if not drawn:
+        return False
+    requested_fps = fps if fps is not None else _QUALITY_FPS[quality]
+    expected_dir = f"{_QUALITY_HEIGHT[quality]}p{requested_fps:g}"
+    for slide in drawn:
+        filename = slide.get("file")
+        if not isinstance(filename, str) or not filename:
+            return False
+        video = Path(filename)
+        if expected_dir not in video.parts:
+            return False
+        if not video.is_absolute():
+            video = ROOT / video
+        if not video.is_file() or video.stat().st_size == 0:
+            return False
+    return True
+
+
+def render(deck_names: list[str], quality: str, fps: float | None = None,
+           only: list[str] | None = None, jobs: int | None = None,
+           resume: bool = False) -> None:
     tasks = [
         (name, module, scene)
         for name in deck_names
@@ -302,6 +340,10 @@ def render(deck_names: list[str], quality: str, fps: float | None = None, only: 
         for scene in scenes
         if not only or scene in only
     ]
+    if resume:
+        missing = [task for task in tasks if not _cached_scene_ready(task[0], task[1], task[2], quality, fps)]
+        print(f"resume: reusing {len(tasks) - len(missing)} completed scenes", flush=True)
+        tasks = missing
     jobs = jobs or os.cpu_count() or 1
     print(f"rendering {len(tasks)} scenes, {jobs} at a time", flush=True)
     with ThreadPoolExecutor(jobs) as pool:
@@ -371,6 +413,7 @@ def main() -> None:
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--no-render", action="store_true")
     parser.add_argument("--render-only", action="store_true", help="render selected scenes and stop before conversion")
+    parser.add_argument("--resume", action="store_true", help="skip completed, matching, up-to-date scene renders")
     parser.add_argument("--html", type=Path)
     parser.add_argument("--one-file", action="store_true")
     parser.add_argument("--pdf", action="store_true")
@@ -384,7 +427,12 @@ def main() -> None:
         return
 
     if not args.no_render:
-        render(COMPOSITES.get(args.deck, [args.deck]), args.quality, fps=args.fps, only=args.scenes, jobs=args.jobs)
+        from shuffleviz.tex_preflight import preflight_tex
+
+        checked = preflight_tex(scenes=set(args.scenes or names))
+        print(f"LaTeX preflight: {checked} static fragments compiled", flush=True)
+        render(COMPOSITES.get(args.deck, [args.deck]), args.quality, fps=args.fps,
+               only=args.scenes, jobs=args.jobs, resume=args.resume)
     if args.render_only:
         return
     if args.deck in COMPOSITES:

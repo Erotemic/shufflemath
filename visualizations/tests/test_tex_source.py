@@ -72,3 +72,25 @@ def test_slide_strings_have_no_python_escape_control_characters():
                         f"{path.name}:{node.lineno}: {match.group()!r} in {node.value[:90]!r}"
                     )
     assert not offenders, "Possible TeX escapes decoded by Python:\n" + "\n".join(offenders)
+
+
+def test_no_literal_backslash_n_newlines_in_latex():
+    r"""Raw LaTeX strings need ``\par`` or ``\\``, not Python-style ``\n``.
+
+    A raw ``r"...\\nEnumerate..."`` forms the nonexistent LaTeX command
+    ``\nEnumerate`` and breaks the Manim render only when that scene runs.
+    """
+    source_dir = Path(__file__).parents[1] / "shuffleviz"
+    offenders = []
+    pseudo_newline = re.compile(r"\\n[A-Z]")
+    for path in sorted(source_dir.glob("slides_*.py")):
+        for node in ast.walk(ast.parse(path.read_text())):
+            if not isinstance(node, ast.Constant) or not isinstance(node.value, str):
+                continue
+            if pseudo_newline.search(node.value):
+                offenders.append(f"{path.name}:{node.lineno}: {node.value[:120]}")
+    assert not offenders, (
+        "Found a raw LaTeX \\n followed by capitalized text. "
+        "Use r'\\par\\smallskip ' for a new paragraph instead:\n"
+        + "\n".join(offenders)
+    )

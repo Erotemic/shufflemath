@@ -311,8 +311,8 @@ class OD15SearchVsCertificate(DeckSlide):
     section = "Part 4 · the costed working-set control problem"
 
     def body(self):
-        search = boxed(para(r"\textbf{Search layer}\nEnumerate bounded schedules, dynamic-program, use branch-and-bound, or maintain a Pareto frontier.  Floating-point heuristics may prioritize candidates as long as exact evidence is produced for finalists.", 5.25, 22), COST).shift(LEFT * 3.0 + DOWN * 0.1)
-        proof = boxed(para(r"\textbf{Certificate layer}\nVerify operation semantics, exact cost, exact/rational error bounds, and -- when claimed -- optimality within the declared finite action space.", 5.25, 22), UNIFORM).shift(RIGHT * 3.0 + DOWN * 0.1)
+        search = boxed(para(r"\textbf{Search layer}\par\smallskip Enumerate bounded schedules, dynamic-program, use branch-and-bound, or maintain a Pareto frontier.  Floating-point heuristics may prioritize candidates as long as exact evidence is produced for finalists.", 5.25, 22), COST).shift(LEFT * 3.0 + DOWN * 0.1)
+        proof = boxed(para(r"\textbf{Certificate layer}\par\smallskip Verify operation semantics, exact cost, exact/rational error bounds, and -- when claimed -- optimality within the declared finite action space.", 5.25, 22), UNIFORM).shift(RIGHT * 3.0 + DOWN * 0.1)
         arrow = Arrow(search.get_right(), proof.get_left(), buff=0.15, color=MUTED, stroke_width=3)
         self.say("We do not need to formalize a sophisticated optimizer in Lean. The trusted boundary is the compact certificate. Search can evolve independently as long as Lean checks the mathematical claim it emits.")
         self.play(FadeIn(search), FadeIn(proof), Create(arrow))

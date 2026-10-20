@@ -11,6 +11,7 @@
 #   make full            # render parts in parallel, assemble the full deck
 #   make short QUALITY=l # fast draft
 #   make full SCENES="L05K25 L06CommanderTV"  # re-render selected scenes
+#   make study FPS=30 RESUME=1  # reuse completed matching scene renders
 #   make full THEME=light # printable light deck
 #   make standalone      # single-file HTML for every deck
 #   make handout         # one-static-page-per-scene PDFs
@@ -22,6 +23,7 @@ RUN     := $(UV) run --extra slides --extra test
 QUALITY ?= h
 FPS     ?= $(if $(filter l m,$(QUALITY)),,30)
 JOBS    ?=
+RESUME  ?= 0
 PDF     ?= 1
 SCENES  ?=
 THEME   ?= dark
@@ -29,6 +31,7 @@ export SHUFFLEVIZ_THEME := $(THEME)
 SUFFIX  := $(if $(filter dark,$(THEME)),,-$(THEME))
 
 BUILD_FLAGS := --quality $(QUALITY) $(if $(FPS),--fps $(FPS)) $(if $(JOBS),--jobs $(JOBS)) \
+               $(if $(filter 1,$(RESUME)),--resume) \
                $(if $(filter 1,$(PDF)),--pdf --handout) $(if $(SCENES),--scenes $(SCENES))
 
 DECK_hero  := riffle-hero
@@ -69,7 +72,7 @@ help:
 	@echo '  present-<deck>     present a built deck live'
 	@echo '  test               exact-model tests'
 	@echo '  lint               syntax-check all Python sources'
-	@echo 'Variables: QUALITY=l|m|h|p|k  FPS=30|60  JOBS=n  PDF=0|1  SCENES="..."  THEME=dark|light'
+	@echo 'Variables: QUALITY=l|m|h|p|k  FPS=30|60  JOBS=n  RESUME=0|1  PDF=0|1  SCENES="..."  THEME=dark|light'
 
 setup:
 	$(UV) sync --extra slides --extra test
