@@ -86,7 +86,7 @@ class RD03GeneralPShuffle(DeckSlide):
 
 class RD04CompositionTensor(DeckSlide):
     title = "Repeated biased shuffles compose by concatenating independent labels"
-    kicker = r"\mathbf p\otimes\mathbf q=(p_iq_j)_{(i,j)}"
+    kicker = r"$\mathbf p\otimes\mathbf q=(p_iq_j)_{(i,j)}$"
     section = "Part 3 · more realistic local shuffles"
 
     def body(self):
@@ -103,7 +103,7 @@ class RD04CompositionTensor(DeckSlide):
 
 class RD05CollisionProbability(DeckSlide):
     title = "A useful scalar appears: probability that two independent labels collide"
-    kicker = r"c(\mathbf p)=\sum_i p_i^2"
+    kicker = r"$c(\mathbf p)=\sum_i p_i^2$"
     section = "Part 3 · more realistic local shuffles"
 
     def body(self):

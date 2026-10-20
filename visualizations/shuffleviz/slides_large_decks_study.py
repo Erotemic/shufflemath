@@ -345,7 +345,7 @@ class LD19MixingTheorems(DeckSlide):
     def body(self):
         grid = glossary_grid([
             ("small $k/n$", r"coupling gives an upper bound on the order of $(n/k)\log(n/\varepsilon)$ for the equal two-pile model"),
-            ("$k/n\to b$", r"coupling gives logarithmic-in-$n$ upper bounds with constants depending on $b$"),
+            (r"$k/n\to b$", r"coupling gives logarithmic-in-$n$ upper bounds with constants depending on $b$"),
             (r"$k\approx n/2$", r"explicit spectral analysis with dual Hahn polynomials handles the near-half-exchange regime"),
             ("lower bounds", r"second-moment arguments show the chain cannot mix substantially earlier in appropriate regimes"),
         ], body_size=18).shift(UP * 0.15)
@@ -527,7 +527,7 @@ class LD19D3GelfandPairPrimer(DeckSlide):
 
 class LD19D4SelfAdjointProof(DeckSlide):
     title = "Derive self-adjointness from detailed balance"
-    kicker = r"\langle f,Pg\rangle_\pi=\langle Pf,g\rangle_\pi"
+    kicker = r"$\langle f,Pg\rangle_\pi=\langle Pf,g\rangle_\pi$"
     section = "Part 2 · large decks and Bernoulli--Laplace"
     depth = "*"
 

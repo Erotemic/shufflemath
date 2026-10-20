@@ -199,7 +199,7 @@ class OD09DobrushinContraction(DeckSlide):
 
 class OD10WeightedTelescope(DeckSlide):
     title = "Exact weighted telescope: future actual kernels discount earlier errors"
-    kicker = r"d_{TV}(\mu K_1\cdots K_T,\mu L_1\cdots L_T)\le\sum_{i=1}^T\Delta_i\prod_{j=i+1}^T\delta(K_j)"
+    kicker = r"$d_{TV}(\mu K_1\cdots K_T,\mu L_1\cdots L_T)\le\sum_{i=1}^T\Delta_i\prod_{j=i+1}^T\delta(K_j)$"
     section = "Part 4 · the costed working-set control problem"
 
     def body(self):
@@ -290,7 +290,7 @@ class OD13OptimizationProblem(DeckSlide):
 
 
 class OD14ParetoDominance(DeckSlide):
-    title = "Before choosing $\varepsilon$, compute the cost/error Pareto frontier"
+    title = r"Before choosing $\varepsilon$, compute the cost/error Pareto frontier"
     section = "Part 4 · the costed working-set control problem"
 
     def body(self):
@@ -320,7 +320,7 @@ class OD15SearchVsCertificate(DeckSlide):
 
 class OD16RobustOptimization(DeckSlide):
     title = "Measured human parameters are uncertain, so optimize robustly"
-    kicker = r"E_{\mathrm{robust}}(\sigma)=\sup_{\theta\in\Theta}d_{TV}(\mu_0K_\sigma(\theta),U)"
+    kicker = r"$E_{\mathrm{robust}}(\sigma)=\sup_{\theta\in\Theta}d_{TV}(\mu_0K_\sigma(\theta),U)$"
     section = "Part 4 · the costed working-set control problem"
 
     def body(self):
