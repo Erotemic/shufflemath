@@ -1,3 +1,8 @@
+> **October 21 follow-on:** The concrete 99-card fiber witness and the
+> general uniform disintegration theorem are in
+> `docs/commander_fiber_disintegration.md`. This file records the preceding
+> source tranche; read the follow-on for the current remaining obligations.
+
 # Shufflemath: next formalization tranche
 
 Source baseline: `55277f4`, October 20, 2026. This document distinguishes

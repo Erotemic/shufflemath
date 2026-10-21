@@ -86,6 +86,19 @@ The Python reference implementation remains independent and is used to cross-che
 - `docs/autonomous_lean_build.md` -- the Lean build's handoff/resume document.
 - `docs/lean_build_history.md` -- its session log and reference notes.
 
+## Concrete full-deck bridge (October 2026)
+
+The optional, targeted full-deck formalization now contains an explicit
+99-card permutation witness for every Commander macrostate
+(`CommanderFiberWitness.lean`), a generic exact uniform-fiber disintegration
+theorem (`FiberDisintegration.lean`), and a three-level refinement for real
+pile-membership-preserving local shuffles (`PhysicalExchangeReduction.lean`).
+The Commander specialization is in `CommanderFullDeckDisintegration.lean`.
+The uniform full-deck TV theorems remain **conditional on one explicit
+99-card fiber-cardinality identity**; the physical theorem additionally
+requires the named-card membership exchange law. See
+`docs/commander_fiber_disintegration.md` for the precise proof boundary.
+
 ## Build
 
 The project is pinned to Lean 4 / mathlib `v4.34.0`.

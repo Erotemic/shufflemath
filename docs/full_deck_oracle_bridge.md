@@ -1,3 +1,8 @@
+> **October 21 update:** The concrete surjectivity witness, generic uniform
+> disintegration, and three-level membership refinement are implemented in
+> `docs/commander_fiber_disintegration.md`. The older proof checklist below
+> describes the previous baseline.
+
 # From 50 Bernoulli–Laplace states to 99-card permutations
 
 The next formalization step represents the complete deck as a permutation of
@@ -116,24 +121,23 @@ is nevertheless compiled by the targeted verification script. Local
 compilation is the validation criterion for the new Lean sources. Do not infer failure of older modules
 from inability to execute Lean in the packaging environment.
 
-## The next mathematically hard part
+## Remaining mathematical proof obligations (October 21)
 
-A full physical-error certificate needs all of the following independently:
+The new `CommanderFiberWitness.project_surjective` closes fiber existence
+on the actual 99-card permutation state. The generic rational
+`FiberDisintegration.marginal_comp_fiber_eq_uniform` also proves the full
+uniform disintegration theorem for **any** finite surjective observation.
+To instantiate this with the existing Commander stationary law, prove the
+remaining exact `HasCommanderFiberCounts` cardinality identity.
 
-1. Prove fiber-surjectivity (all 50 Commander counts are realized by 99-card
-   permutations).
-2. The recovery proof is included, conditional on surjectivity. Prove the
-   hypergeometric mixture is uniform on full permutations.
-3. Prove that the position-exchange plus *perfect local pile shuffles*
-   intertwines with the macro kernel for fiber-uniform input laws. A
-   bijection of exchange configurations, or the independent action of the
-   marked/unmarked relabelling groups, is a promising non-enumerative proof.
-4. Prove a finite-GSR local-shuffle discrepancy against the
-   physical-perfect kernel, and use the new
-   `PhysicalRefinement.finite_local_uniform_bound` with the existing
-   weighted telescope. This supports quantitative 99-card TV/cost
-   tradeoffs without pretending the physical and canonical oracle kernels
-   coincide pointwise.
+The physical-perfect comparison must *not* replace perfect-local pile
+shuffling with global macro-fiber resetting. The new
+`PhysicalExchangeReduction` factors the uniform macro fiber distribution
+into an intermediate **named-card membership** distribution followed by
+independent uniform orderings of the two fixed membership piles. Its
+remaining Lean premises are precisely the membership-level exchange law
+and the factorization of the uniform fiber conditional.
 
-The executable 4–6-card check is a regression test for item (3), not its
-proof for arbitrary decks.
+Finally, the physical finite-GSR kernel needs a one-step row-TV bound
+against the physical perfect-local kernel, followed by the existing
+weighted telescope and physical-time cost model.

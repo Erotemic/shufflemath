@@ -12,7 +12,11 @@ lake build \
   Shufflemath.ProtocolCertificate \
   Shufflemath.OracleRefinement \
   Shufflemath.PhysicalRefinement \
-  Shufflemath.CommanderPermutation
+  Shufflemath.CommanderPermutation \
+  Shufflemath.CommanderFiberWitness \
+  Shufflemath.FiberDisintegration \
+  Shufflemath.PhysicalExchangeReduction \
+  Shufflemath.CommanderFullDeckDisintegration
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace

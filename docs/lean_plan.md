@@ -149,3 +149,14 @@ and stationary-law disintegration, and implement the physical exchange plus
 local-oracle action with a proved intertwining identity. After that, prove
 finite-GSR-versus-oracle row discrepancies and deliver a single 99-card
 TV-and-cost theorem.
+
+
+## October 21 tranche: concrete 99-card fibers and full uniformity
+
+The next-phase modules are described in `docs/commander_fiber_disintegration.md`.
+The uniform conditional distribution and its macrostate recovery now have
+constructive proof interfaces, and the missing Commander full-deck
+disintegration statement is isolated as `HasCommanderFiberCounts`. The
+physical-perfect refinement factors through *membership*, not merely the
+count. The outstanding tasks are a general 99-card fiber cardinality
+identity, the concrete membership law, and GSR/local-perfect discrepancy.
