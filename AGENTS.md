@@ -9,7 +9,7 @@ statement, and the Lean theorem ladder. Three tracks run in parallel:
 literature, exact finite computation (`experiments/`), and Lean
 formalization (library `Shufflemath`).
 
-## Active roadmap and mandatory first check
+## Active roadmap and next task
 
 - **Active status and work queue:** `docs/lean_plan.md`.
 - **Current single next action and proof acceptance criteria:**
@@ -18,9 +18,9 @@ formalization (library `Shufflemath`).
   its expired deadline, old agent instructions, and model-specific commit
   attribution do not apply. `docs/formalization_next_phase.md` and the
   dependency audit are historical design notes, not the next-work queue.
-- Treat prior successful user-reported Lean builds as established. The
-  latest October 21 disintegration v3 replacement has not yet been reported
-  as passing a full local build; verify it before starting F1.
+- The user has confirmed the completed October 21 disintegration tranche
+  compiles by moving on to the documentation handoff. Do not reopen its
+  compilation status without concrete contrary evidence. **Begin at F1.**
 
 ## Build and verify
 
@@ -54,10 +54,12 @@ certificate is opt-in: `./dev/verify_next_phase.sh --pair`.
   `HasCommanderFiberCounts` or `hMembershipExchange`) by an invented axiom,
   `sorry`, `admit`, or a weakened theorem statement. Avoid enumerating 99!
   permutations with `native_decide`; prefer structural cardinality proofs.
-- Routine compiler verification does **not** need `#print axioms` or
-  repetitive axiom-dump checks. Reserve a comparator-based audit for the
-  end of a formalization effort if explicitly requested; it should not
-  flood normal build output. Avoid disabling heartbeat limits globally.
+- Routine proof checks are quiet, targeted `lake build` commands. Do not
+  add bulk `#check`/`#print`, axiom inventories, or repeated placeholder
+  scans to default builds, CI, or normal reports. Only on explicit request
+  at the **end of a formalization** should an axiom audit compare against
+  a reviewed baseline, report differences, and capture raw output. Keep
+  audit modules opt-in. Avoid globally disabling heartbeat limits.
 - Do not hold up substantive Lean progress over non-blocking style-only
   linter suggestions. Use independent Python computations only as tests,
   not evidence that an uncompiled Lean theorem was proved.

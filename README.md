@@ -34,11 +34,12 @@ The earlier Lean development establishes:
 
 The October 21 follow-on adds explicit witnesses for every 99-card count
 fiber, a generic exact uniform-fiber disintegration theorem, and the
-membership-level physical refinement reduction. The *source* also contains
-conditional exact oracle/full-uniform TV theorems. A last compilation fix
-for `FiberDisintegration.lean` was supplied, but the complete targeted build
-has not yet been confirmed after that fix. Prior verified development is
-not downgraded by this outstanding local check.
+membership-level physical refinement reduction. The source also contains
+conditional exact oracle/full-uniform TV theorems. **The complete
+fiber/disintegration tranche compiles, as confirmed by the user's workflow
+when moving to the documentation handoff.** The remaining work is to
+prove the stated counting and membership hypotheses, not to revalidate
+already-completed source.
 
 **Still open:** proving the exact 99-card fiber-cardinality identity
 (`HasCommanderFiberCounts`), constructing named-card membership and
@@ -109,7 +110,7 @@ unconditional full-deck or human-shuffle guarantees.
 ## Documentation map
 
 - **[docs/agent_handoff.md](docs/agent_handoff.md):** exact restart task,
-  current compilation gate, and acceptance rules for a new/less experienced
+  first pending proof task, and acceptance rules for a new/less experienced
   agent.
 - **[docs/lean_plan.md](docs/lean_plan.md):** sole active theorem roadmap,
   dependencies F1-F5, optional tasks, and exit criteria.

@@ -30,9 +30,9 @@ The original `BernoulliLaplace.lean` gives exact TV after two and three
 expresses the complete `(k1,k2)` search over 49 squared choices as an
 opt-in `native_decide` proof about a single second-step row. The Python
 reference independently found the unique macrostate minimizer `(25,25)`.
-No successful local `--pair` build was reported in the conversation; do
-not silently count that optional Lean theorem as discharged. Its
-variable-`k` semantic correspondence is a distinct follow-up.
+The optional `--pair` target is outside the normal incremental build and
+is not a prerequisite for F1-F5. Its variable-`k` semantic
+correspondence is a distinct follow-up.
 
 For `GSR.idealShuffle`, independently chosen label assignments in successive
 rounds compose into a lexicographically ordered product alphabet (later
@@ -64,6 +64,6 @@ python3 -m unittest discover -s tests -v
 ```
 
 The regular targeted script checks new Lean modules; the optional exact
-pair certificate is checked separately with `--pair`. Previous local
-builds verified the earlier tranche. The latest October 21 disintegration
-v3 build was not yet confirmed when this note was updated.
+pair certificate is checked separately with `--pair`. The October 21
+fiber/disintegration tranche, including the v3 correction, compiled as
+confirmed by the user's subsequent completion handoff.

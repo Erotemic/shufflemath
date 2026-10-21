@@ -119,10 +119,11 @@ exchange law. F2 and F3 in the active plan specify those obligations.
 
 ## Verification boundaries
 
-The user confirmed earlier bridge modules through `CommanderPermutation`
-compile. The October 21 disintegration/fiber extension was authored and
-its 35 Python tests passed; a one-line v3 Lean parser fix was provided
-but its complete local build has not yet been reported as successful.
+The user confirmed the earlier bridge modules through `CommanderPermutation`
+compile. The October 21 fiber/disintegration extension, including its final
+v3 correction, is also compiled under the user's established completion
+workflow. Its 35 Python tests passed. The counting and physical-exchange
+hypotheses remain mathematically open.
 
 ```bash
 cd ~/code/shufflemath

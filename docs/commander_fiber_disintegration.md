@@ -96,16 +96,13 @@ intertwining on 4-, 5-, and 6-card cases. It is not a proof for 99 cards.
 
 ## 5. Recommended decomposition for the next agent
 
-1. **V0:** verify the latest `FiberDisintegration` v3 one-line parser fix
-   with the targeted build below; a successful build has not yet been
-   reported after that correction.
-2. **F1:** prove the exact Commander count, using a fixed-membership
+1. **F1 (next):** prove the exact Commander count, using a fixed-membership
    `50! * 49!` bijection and independent combinatorial membership count.
-3. **F2:** give a concrete `Membership`, `membershipLift`, and `localLift`
+2. **F2:** give a concrete `Membership`, `membershipLift`, and `localLift`
    with factorization and recovery proofs.
-4. **F3:** define the uniform 25-position raw exchange and prove the
+3. **F3:** define the uniform 25-position raw exchange and prove the
    membership transition to discharge `hMembershipExchange`.
-5. **F4:** compare finite-GSR local shuffles with the physical
+4. **F4:** compare finite-GSR local shuffles with the physical
    perfect-local reference; combine using weighted TV telescope.
 
 Full acceptance criteria and dependency notes are maintained **only** in
@@ -127,6 +124,6 @@ lake build \
 
 At overlay creation, 35 Python tests passed, including 50 deck-witness
 checks, exact small-deck uniform mixtures, and membership exchange
-checks. Prior to the final v3 source correction, the latest Lean build
-failed on a parser error in `FiberDisintegration.lean`. Do not infer the
-v3 compilation result from that earlier log.
+checks. The subsequent final v3 correction compiled according to the user's
+completion confirmation. The remaining premises are mathematical, not an
+outstanding build repair.

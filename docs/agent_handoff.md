@@ -8,29 +8,25 @@ scope and priority; `AGENTS.md` governs repository behavior.
 
 ## Exactly where to resume
 
-**First action: verify the latest `FiberDisintegration.lean` v3 fix.** The
-user's last displayed build failed because an `omit ... in` directive
-intervened between a doc comment and the `fiber_card_pos` theorem. A v3
-replacement removed that directive; the conversation does not yet include
-its successful local build result. Do not repeat this as a current failure
-without running the build, and do not question earlier user-confirmed
-successful Lean builds.
+**Begin F1a in `docs/lean_plan.md`: count complete 99-card permutations
+with a fixed left-pile membership subset.** The latest
+`FiberDisintegration.lean` correction compiled as part of the completed
+October 21 tranche, confirmed by the user's established workflow when they
+moved on. The previous parser error is resolved; it is not an active task.
+
+Implement F1a in `Shufflemath/CommanderFiberCount.lean` as specified by
+the roadmap. Once that file exists, verify that target directly:
 
 ```bash
 cd ~/code/shufflemath
 lake exe cache get
-lake build \
-  Shufflemath.FiberDisintegration \
-  Shufflemath.PhysicalExchangeReduction \
-  Shufflemath.CommanderFullDeckDisintegration
-./dev/verify_next_phase.sh
+lake build Shufflemath.CommanderFiberCount
 ```
 
-If the build passes, **start F1a in `docs/lean_plan.md`**: count complete
-permutations with a fixed left-pile membership subset. Work in one small
-lemma-sized batch. If it fails, read the *first* actual error and fix the
-affected module; rerun only that target before the full gate. The legacy
-`./dev/verify.sh` uses `lake update` and is not a good default for this task.
+At the end of the new tranche, run `./dev/verify_next_phase.sh`. Do not
+rerun established modules solely to resolve an invented verification doubt.
+The legacy `./dev/verify.sh` uses `lake update` and is not the incremental
+default.
 
 ## What is already there
 
@@ -40,10 +36,10 @@ affected module; rerun only that target before the full gate. The legacy
 | Exact macro 2-/3-exchange TV certificates and semantic transport | `BernoulliLaplace.lean`, `BernoulliLaplaceSemantic.lean` | Earlier tranche compiled |
 | GSR product-label shuffle; TV/protocol refinement | `GSR.lean`, `FiberLifting.lean`, `OracleRefinement.lean`, `PhysicalRefinement.lean`, `ProtocolCertificate.lean` | Earlier tranche compiled; numeric alphabet bridge not done |
 | Actual 99-card permutation count projection | `CommanderPermutation.lean` | User expressly confirmed successful compilation after its fix |
-| Constructive witness of all 50 macro fibers | `CommanderFiberWitness.lean` | Authored; included in most recent targeted verification script |
-| Uniform fiber disintegration and membership reduction | `FiberDisintegration.lean`, `PhysicalExchangeReduction.lean` | Authored; latest full local build not yet confirmed after v3 fix |
-| Conditional full-uniform oracle and physical-perfect results | `CommanderFullDeckDisintegration.lean` | Authored; downstream of disintegration build; **counting and membership hypotheses still open** |
-| Optional 2,401-pair exact TV minimum | `dev/BernoulliLaplacePairOptimality.lean` | Source provided; no confirmed `--pair` verification result |
+| Constructive witness of all 50 macro fibers | `CommanderFiberWitness.lean` | Implemented and compiled |
+| Uniform fiber disintegration and membership reduction | `FiberDisintegration.lean`, `PhysicalExchangeReduction.lean` | Implemented and compiled, including the v3 correction |
+| Conditional full-uniform oracle and physical-perfect results | `CommanderFullDeckDisintegration.lean` | Compiles; **counting and membership hypotheses still open** |
+| Optional 2,401-pair exact TV minimum | `dev/BernoulliLaplacePairOptimality.lean` | Separate opt-in target; not a prerequisite for F1-F5 |
 
 Last observed local warnings from `CommanderPermutation.lean` (`simpa`
 versus `simp`, and `haveI` versus `have`) are not build blockers.
@@ -78,7 +74,7 @@ sublemma, note the exact next obligation, and keep the build green.
   is different.
 - Do not replace counting or exchange hypotheses with assumptions called
   "obvious", or weaken theorem statements to make them compile.
-- Do not run axiom-printing checks for routine verification.
+- Use targeted compilation as the routine proof check (see `AGENTS.md`).
 - Do not change the Manim presentation, documentation history, or other
   independent projects as part of the counting proof.
 
@@ -109,13 +105,11 @@ exact output theorem, and the compiler command used to verify it.
 3. Keep changes small and directly buildable. Report actual compiler errors
    with filename/line number. Use the current mathlib API rather than
    guessing lemma names; inspect existing source signatures.
-4. Avoid `sorry`, `admit`, axioms, broad heartbeat disablement, and redundant
-   proof-authority APIs. Avoid `#print axioms` spam; a final comparator-style
-   audit is a separate task, not a standard build check.
-5. Once tested, update `docs/lean_plan.md` status and the **first action** of
-   this handoff, with the successful command and date. Do not mark a theorem
-   unverified just because the packaging environment cannot run Lean when
-   the user has already verified it locally.
+4. Preserve the actual theorem obligations and keep builds focused;
+   follow `AGENTS.md` for proof-checking and audit policy.
+5. Once the new work is tested, update `docs/lean_plan.md` and the
+   **first action** of this handoff. Treat user-confirmed compilation as
+   established; don't invent pending-verification status.
 6. Stage only changed files and commit with a single trailer using the
    current model, e.g.
    `Co-authored-by: GPT-6 <noreply@openai.com>`.

@@ -43,42 +43,26 @@ membership. See [full_deck_oracle_bridge.md](full_deck_oracle_bridge.md) and
 | Physical exchange reduction | `PhysicalExchangeReduction` | Conditional membership-level exchange implies macro-to-full intertwining |
 | Commander full-deck consequences | `CommanderFullDeckDisintegration` | Exact 2-/3-step oracle-to-*uniform* theorems **assuming `HasCommanderFiberCounts`**; physical theorem has further explicit membership premises |
 
-**Verification status, not mathematical scope:** The user confirmed the
-previous tranche (through `CommanderPermutation`) compiles. The October 21
-fiber/disintegration tranche hit a `FiberDisintegration.lean` parser error;
-a one-line v3 replacement was supplied afterward, but no successful local
-build of that replacement has yet been reported. Do **not** label those latest
-modules broken or fully verified from the previous log alone. Run the gate
-below and record the result. Python regression checks (35 passing when the
-tranche was packaged) do not replace Lean verification.
+**Verification status, not mathematical scope:** The October 21
+fiber/disintegration tranche, including the final `FiberDisintegration.lean`
+v3 correction, is **compiled and verified by the user's established local
+workflow**. Moving to the documentation handoff confirms completion: the
+user reports build errors explicitly, rather than pasting every successful
+build. Do not reopen this compilation question without concrete contrary
+evidence. The 35 passing Python regression tests supplement the Lean work;
+they do not establish the separate, still-open F1-F5 theorems.
 
 `Shufflemath.lean` does **not** import every optional target, so a plain
 `lake build` alone is insufficient to check the full-deck modules. The costly
 `dev/BernoulliLaplacePairOptimality.lean` proof is also intentionally opt-in.
 
-## Immediate verification gate: V0
+## Current entry point
 
-Before further theorem work, use the latest v3 source and check:
-
-```bash
-cd ~/code/shufflemath
-lake exe cache get
-lake build \
-  Shufflemath.CommanderFiberWitness \
-  Shufflemath.FiberDisintegration \
-  Shufflemath.PhysicalExchangeReduction \
-  Shufflemath.CommanderFullDeckDisintegration
-./dev/verify_next_phase.sh
-```
-
-- **Pass:** mark V0 verified in the handoff with the exact date and commit;
-  proceed to F1 below.
-- **Fail:** fix the *first actual compiler error* in the affected source,
-  rebuild just that target, then rerun the gate. The last reported failure
-  was `unexpected token 'omit'` at `FiberDisintegration.lean:35`; the v3
-  replacement removes that directive. Do not assume another failure exists.
-- Existing non-blocking `CommanderPermutation` linter suggestions are not a
-  reason to interrupt proof work. Do not disable linters globally.
+**Start with F1a below.** The preceding fiber/disintegration tranche is
+complete and compiles. For new Lean work, run `lake exe cache get` followed
+by the affected module's `lake build`; run `./dev/verify_next_phase.sh` when
+finishing a tranche. This is a regression workflow, not an extra gate on
+the existing results.
 
 ## Work queue in dependency order
 
@@ -125,8 +109,9 @@ No need to change the already verified BL certificates.
 
 ### F2. Define the concrete membership and perfect-local kernels
 
-**Dependency:** V0 and the existing `CommanderPermutation`; may be developed
-independently of F1's counting arithmetic, but needs F1 for uniform targets.
+**Dependency:** The compiled `CommanderPermutation` and fiber/disintegration
+foundations. F2 can develop independently of F1's arithmetic, but needs F1
+for uniform targets.
 
 1. Define `Membership` as the subtype of 50-element subsets of card identities
    in `Fin 99` (or an equivalent bijective type).
@@ -209,8 +194,8 @@ quantifiers and their proof source.
 
 - **P1: two-exchange exact optimum.** `dev/BernoulliLaplacePairOptimality.lean`
   is opt-in (`./dev/verify_next_phase.sh --pair`). Its source expresses the
-  2,401-row objective; the last conversation has no confirmed local success
-  for that costly target. Prove variable-exchange-size semantics before
+  2,401-row objective. This optional certificate is independent of F1-F5.
+  Prove variable-exchange-size semantics before
   presenting it as an operational schedule theorem. Do not make it a default
   library-build dependency.
 - **GSR exact finite TV tables / Bayer--Diaconis permutation formula.** Useful
@@ -233,9 +218,8 @@ quantifiers and their proof source.
   silently promote a conditional theorem to an unconditional result, or
   replace proof obligations with `sorry`, `admit`, or opaque axioms.
 - Exact Python tests are useful independent checks, **not** Lean proofs.
-- Avoid routine `#print axioms` / axiom-closure dumps. Only perform a
-  comparison-style audit if explicitly requested near final formalization
-  completion; compiler errors and theorem scopes are the normal checks.
+- Follow the quiet, targeted compilation policy in `AGENTS.md`; do not add
+  unrelated proof-audit checks to normal build or CI workflows.
 - Do not block a mathematically verified result on cosmetic linter warnings.
   Fix related warnings when editing a proof, not as an independent campaign.
 - Update this file's status and `agent_handoff.md` after each completed

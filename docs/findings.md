@@ -124,6 +124,6 @@ are available conditional on `HasCommanderFiberCounts`. The 99-card fiber
 count is the next open exact theorem. A physical-perfect-local theorem also
 requires the membership factorization and raw-exchange membership law; a
 finite-GSR theorem additionally requires its row-wise discrepancy bound.
-A v3 correction to the disintegration source has not yet had a confirmed
-complete local build. These obligations and the build gate are listed in
+The final v3 disintegration correction compiled as confirmed by the user
+moving on. The outstanding mathematical obligations are listed in
 [lean_plan.md](lean_plan.md).
