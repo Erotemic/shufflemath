@@ -43,6 +43,23 @@ The legacy `dev/verify.sh` calls `lake update`: do not use that as the
 normal incremental verification path. The expensive exhaustive pair
 certificate is opt-in: `./dev/verify_next_phase.sh --pair`.
 
+### Lean proof development and diagnostic output
+
+- **Compilation, not an axiom-print inventory, is the routine proof-development
+  check.** Keep `lake build <module>` and focused Lean commands quiet on
+  success so genuine elaboration/type errors are easy to find. Do not add
+  `#print axioms`, bulk `#check`/`#print`, or per-theorem axiom reporting to
+  proof modules, default Lake targets, automatic `prove` commands, or CI.
+- Do not repeatedly scan for `sorry` or `admit`, or advertise their absence as
+  a meaningful result. Handle actual compiler warnings and errors when they
+  occur. Do not manufacture a new proof-obligation gate merely to check that
+  contributors wrote ordinary Lean proofs.
+- Transitive axiom dependency review is a **separate, explicitly requested,
+  end-of-formalization audit**. Compare named theorem dependencies against a
+  previously reviewed baseline/allowed set, report **differences only**, and
+  keep raw `#print axioms` output captured rather than flooding stdout. An
+  audit is not a prerequisite for every edit.
+
 ### Proof-development discipline
 
 - Work on one clearly named task from `docs/lean_plan.md` per patch, with
