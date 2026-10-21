@@ -9,7 +9,10 @@ lake build \
   Shufflemath.FiberLifting \
   Shufflemath.BernoulliLaplaceSemantic \
   Shufflemath.GSR \
-  Shufflemath.ProtocolCertificate
+  Shufflemath.ProtocolCertificate \
+  Shufflemath.OracleRefinement \
+  Shufflemath.PhysicalRefinement \
+  Shufflemath.CommanderPermutation
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace

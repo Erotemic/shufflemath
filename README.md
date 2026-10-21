@@ -139,3 +139,22 @@ python3 experiments/oracle_gsr_budget.py --target 1/100
 3. prove TV contraction / perturbation bounds for heterogeneous finite kernels;
 4. introduce costed schedule search and certificates;
 5. add biased/clumpy local shuffle models.
+
+
+### Full-deck oracle bridge (October 2026)
+
+`Shufflemath/OracleRefinement.lean` gives an exact, recoverable
+project/transition/resample oracle model and transports Commander mixing
+certificates to refined microstate spaces and heterogeneous schedules.
+`Shufflemath/PhysicalRefinement.lean` supplies the physically relevant
+weighted-telescope theorem: compare finite local GSR to the corresponding
+perfect-local exchange, which need only intertwine with the macro kernel.
+`Shufflemath/CommanderPermutation.lean` represents a deck as an actual
+permutation of 99 distinct cards and defines its left-pile macrostate and
+full-permutation fibers. Proof of the fiber-cardinality disintegration and
+physical exchange intertwining are separate, explicitly listed obligations.
+
+An exact small-deck physical-exchange reference and 99-card combinatorial
+identity checks live in `experiments/full_deck_oracle.py`, with regressions
+in `tests/test_full_deck_oracle.py`. See
+`docs/full_deck_oracle_bridge.md` for the model and verification boundaries.

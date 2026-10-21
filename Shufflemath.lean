@@ -13,3 +13,5 @@ import Shufflemath.FiberLifting
 import Shufflemath.BernoulliLaplaceSemantic
 import Shufflemath.GSR
 import Shufflemath.ProtocolCertificate
+import Shufflemath.OracleRefinement
+import Shufflemath.PhysicalRefinement

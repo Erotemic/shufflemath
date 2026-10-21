@@ -171,3 +171,70 @@ can be more expensive than the ordinary development.
 Future exploration: biased/nonexchangeable label sources, robust protocols,
 and higher Bernoulli--Laplace spectrum. None blocks the first full-deck
 certificate above.
+
+## October 21: full-deck oracle and physical-exchange reference
+
+The subsequent overlay adds `OracleRefinement.lean`,
+`PhysicalRefinement.lean`, and `CommanderPermutation.lean`. It is a deliberate decomposition into distinct
+mathematical models:
+
+1. **Exact canonical oracle model in Lean.** Project, take a BL macro step,
+   and resample a microstate from the resulting conditional fiber. Given a
+   recoverable lift, its intertwining identity is now proved *by construction*,
+   for individual steps and arbitrarily heterogeneous finite schedules.
+   It inherits the original exact two- and three-exchange rational TV values.
+2. **Concrete 99-card microstate space in Lean.** `CommanderPermutation.Deck`
+   is `Equiv.Perm (Fin 99)`. The first 50 positions form the left pile;
+   the macro count tracks cards originally in the left pile. The file proves
+   the projection lands in the exact existing `Fin 50` Commander state space:
+   one marked card must remain on the left because only 49 unmarked cards
+   exist. `Fiber x` consists of full permutations with that count. The
+   conditional `uniformFiber` uses the original exact `StdSimplex` authority.
+3. **Physical exchange model in exact Python.** Choose `k` positions in each
+   pile, swap their paired cards, and then *independently uniformly permute*
+   both piles. This is a stronger and more precise model than an unspecified
+   physical exchange. Exhaustive full-permutation tests through `N=6` verify
+   `lift ; physicalExchangeThenLocalOracle = macroExchange ; lift`. The
+   identity is tested at every admissible macrostate, not on one initial
+   deck alone.
+4. **99-card integer fiber counts.** Without enumerating permutations, exact
+   integer arithmetic checks
+   `#fiber(x)=C(50,x) C(49,50-x) 50! 49!` and
+   `sum_x #fiber(x)=99!`. Hence the macrostate of a uniformly random full
+   permutation is the Commander hypergeometric law.
+5. **End-to-end error interface.** `PhysicalRefinement.finite_local_uniform_bound`
+   attaches the existing *weighted* kernel-telescope error budget to a
+   physically implemented perfect-local reference that intertwines with
+   the macrostate process. This is the correct comparison for finite GSR:
+   an actual exchange-plus-finite-GSR row need not be close to a canonical
+   project/macro/resample oracle row. `OracleRefinement` separately supports
+   the exact abstract oracle model; neither asserts zero discrepancy.
+6. **Exact finite-GSR check.** `experiments/full_deck_oracle.py` now includes
+   concrete independent-label GSR laws after exchange, and verifies
+   their row-wise TV discrepancy against *physical perfect-pile* shuffles
+   obeys the sum of the two local GSR-vs-uniform errors on small decks.
+   These are exact rational tests, not the general Lean discrepancy proof.
+
+**Remaining Lean obligations, in order:**
+
+- Prove surjectivity of `CommanderPermutation.project`; each of its 50
+  integer-count fibers is inhabited.
+- `uniformFiber_recovers` supplies the `lift ; deterministic project =
+  identity` proof once fiber-surjectivity is established; verify it in Lean.
+- Prove that applying `uniformFiber` to the hypergeometric macro stationary
+  law gives `GSR.uniformDist Deck`, via the exact binomial fiber count.
+- Define `physicalExchangeThenLocalOracle` as a `FiniteKernel Deck Deck`,
+  prove exchange/lift intertwining by counting or symmetry, and compare it
+  to the canonical oracle at *all* microstates. The toy exhaustive check
+  tests intertwining only after a fiber-uniform start, not equality of
+  the two kernels at an arbitrary ordered deck.
+- For actual finite GSR operations, prove one-step discrepancies against
+  the *physical* perfect-local kernel. `PhysicalRefinement` now provides the
+  generic weighted-telescope composition theorem, conditional only on
+  physical-perfect/macro intertwining and uniform-stationary identification.
+  Combining with finite-GSR local error lemmas gives certified costs.
+
+These are real hypotheses, not implementation details; the new Lean
+conditional theorems do **not** yet assert an unconditional 99-card
+physical-mixing theorem. Exact Python checks are not a substitute for Lean
+proofs. The pinned local Lean build determines acceptance of new sources.

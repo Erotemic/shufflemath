@@ -127,3 +127,25 @@ Aim for statements with an operational interpretation, e.g.:
 > Under model M with cost ratio rho in interval I and TV target epsilon, protocol P has certified cost C and every protocol in action class A with lower cost fails the target.
 
 These are suitable both for formal verification and popular communication.
+
+## Full-deck bridge tranche (October 21, 2026)
+
+- `Shufflemath/OracleRefinement.lean`: canonical oracle construction,
+  stepwise and schedule intertwining, inherited two-/three-step Commander
+  certificates, plus a weighted physical-vs-oracle protocol TV bound.
+- `Shufflemath/PhysicalRefinement.lean`: heterogeneous physical perfect-local
+  steps need only fiber intertwining (not pointwise oracle equality), and
+  finite-GSR-vs-perfect rows enter the existing weighted telescope budget.
+- `Shufflemath/CommanderPermutation.lean`: *actual 99-card permutations*
+  with the proved 50-state macro projection and conditional uniform fiber
+  construction; the final disintegration theorem is exposed as an explicit
+  premise rather than claimed unconditionally.
+- `experiments/full_deck_oracle.py`: exact full-permutation oracle tests for
+  small decks and non-enumerative 99! hypergeometric cardinal checks.
+
+Immediate further Lean targets: prove all fibers are inhabited (the recovery
+lemma is now implemented conditional on this), prove the permutation-fiber sizes
+and stationary-law disintegration, and implement the physical exchange plus
+local-oracle action with a proved intertwining identity. After that, prove
+finite-GSR-versus-oracle row discrepancies and deliver a single 99-card
+TV-and-cost theorem.
