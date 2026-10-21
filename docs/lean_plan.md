@@ -1,162 +1,256 @@
-# Lean formalization plan
+# Lean formalization roadmap (current)
 
-The guiding rule is to formalize finite exact statements first. Asymptotic probability theory can come later.
+Status date: **2026-10-21**. This is the **single active mathematical task list**.
+For a new agent, begin with [agent_handoff.md](agent_handoff.md). Historical
+phase notes are linked at the end; they do not override this plan. Read
+`AGENTS.md` before modifying code.
 
-## L0: finite exact infrastructure -- implemented
+## Objective and model boundary
 
-The project now uses mathlib's probability-simplex abstraction directly:
+Produce a theorem for a *specified finite physical protocol* on 99 individually
+identified cards: an explicit upper bound on total variation from uniform,
+with an explicit physical-action cost. Eventually certify a minimum-cost
+protocol in a declared finite action class. Do not confuse these statements:
 
-- `Dist alpha := Convexity.StdSimplex Rat alpha`;
-- `FiniteKernel alpha beta := alpha -> Dist beta`;
-- deterministic kernels, composition, application, and repeated execution;
-- rational stochastic-matrix bridge;
-- exact rational total variation and finite Dobrushin coefficient;
-- additive costed kernels.
+1. **50-state Bernoulli--Laplace (BL) count chain:** remembers only how many
+   of the original 50 left cards are in the 50-card left pile.
+2. **Canonical oracle:** projects a full permutation to the count, takes a BL
+   step, then resamples an arbitrary deck uniformly from the new count fiber.
+3. **Physical perfect-local operation:** exchanges *selected positions* across
+   piles and subsequently randomizes order *within each existing pile*.
+4. **Finite-GSR physical operation:** the previous operation with finite
+   independent-label riffles instead of uniform within-pile permutations.
 
-The old `Weight + IsProbability` and `Kernel + IsMarkov` duplicate authorities have been removed.
+The canonical oracle is not pointwise equal to the physical perfect-local
+kernel on arbitrary ordered decks. The relevant physical theorem is an
+**intertwining after a fiber-uniform input**, mediated by named-card pile
+membership. See [full_deck_oracle_bridge.md](full_deck_oracle_bridge.md) and
+[commander_fiber_disintegration.md](commander_fiber_disintegration.md).
 
-## L1: Bernoulli--Laplace -- Commander certificates and general theory implemented
+## Implemented foundations (do not reimplement)
 
-The 50-state statistic is
+| Area | File(s) | Actual result and scope |
+|---|---|---|
+| Finite exact probability | `Finite`, `Matrix`, `TotalVariation` | `StdSimplex Rat`, kernels, stochastic-matrix bridge, exact TV |
+| Kernel error/composition | `Perturbation`, `Dobrushin`, `ProtocolCertificate`, `Cost` | Weighted TV telescope, contraction and generic cost/error interfaces |
+| BL macro chain | `BernoulliLaplace`, `BernoulliLaplaceGeneral`, `BernoulliLaplaceFiber`, `BernoulliLaplaceCommanderBridge` | General normalization, stationarity, reversibility, first centered eigenfunction and Commander specialization; exact 2-/3-step TV values |
+| Array/semantic bridge | `BernoulliLaplaceSemantic` | Exact array runs and semantic `FiniteKernel` runs agree |
+| Inverse GSR | `GSR` | Stable label buckets and product-*label* composition; not yet numeric `Fin (a*b)` uniform-law identification |
+| Generic macro/micro TV | `FiberLifting`, `OracleRefinement` | Recoverable-lift TV isometry and canonical oracle intertwining, including schedule results |
+| Physical refinement interface | `PhysicalRefinement` | Conditional full-deck physical TV bound using a perfect-local reference and weighted row error |
+| Actual 99-card deck | `CommanderPermutation`, `CommanderFiberWitness` | `Equiv.Perm (Fin 99)`, count projection, explicit witness for each of the 50 fibers |
+| Uniform fiber algebra | `FiberDisintegration` | Fiber law, marginal law, recovery, and generic unequal-fiber disintegration |
+| Physical exchange reduction | `PhysicalExchangeReduction` | Conditional membership-level exchange implies macro-to-full intertwining |
+| Commander full-deck consequences | `CommanderFullDeckDisintegration` | Exact 2-/3-step oracle-to-*uniform* theorems **assuming `HasCommanderFiberCounts`**; physical theorem has further explicit membership premises |
 
-```
-X = number of originally-left cards currently in the 50-card left pile.
-```
+**Verification status, not mathematical scope:** The user confirmed the
+previous tranche (through `CommanderPermutation`) compiles. The October 21
+fiber/disintegration tranche hit a `FiberDisintegration.lean` parser error;
+a one-line v3 replacement was supplied afterward, but no successful local
+build of that replacement has yet been reported. Do **not** label those latest
+modules broken or fully verified from the previous log alone. Run the gate
+below and record the result. Python regression checks (35 passing when the
+tranche was packaged) do not replace Lean verification.
 
-The current source defines the exact hypergeometric transition formula and specializes it to `N=99`, `m=50`, `k=25`.
+`Shufflemath.lean` does **not** import every optional target, so a plain
+`lake build` alone is insufficient to check the full-deck modules. The costly
+`dev/BernoulliLaplacePairOptimality.lean` proof is also intentionally opt-in.
 
-Implemented finite certificates:
+## Immediate verification gate: V0
 
-1. the 25-card exchange matrix is row stochastic;
-2. the hypergeometric stationary vector normalizes;
-3. that vector is a fixed point of the 25-card exchange matrix;
-4. `k=25` minimizes the absolute first-mode factor over exchanges 1..49;
-5. exact TV values after two and three 25-card exchanges from complete
-   segregation;
-6. the general `N`/`m`/`r` exchange theory (`BernoulliLaplaceGeneral.lean`
-   and `BernoulliLaplaceFiber.lean`): symbolic row normalization, the
-   stationary distribution, detailed balance by fiber counting, the
-   first-eigenfunction theorem (`blFirstModeFunc` and its non-vacuousity
-   when `0 < r < N`), and the `BLState 99 50 50` `↔` `Fin 50` bridge
-   proving agreement with the Commander instance, incl. the `−1/98`
-   half-deck specialization read on the concrete kernel
-   (`BernoulliLaplaceCommanderBridge.lean`).
+Before further theorem work, use the latest v3 source and check:
 
-Remaining symbolic targets (1--4 done):
-
-1. [done] row normalization for general admissible `N,m,k` using
-   Vandermonde identities;
-2. [done] the hypergeometric stationary distribution symbolically;
-3. [done] reversibility;
-4. [done] the first nonconstant (centered) eigenfunction and factor;
-5. connect the exact matrix TV certificates to the semantic
-   `Dist`/`FiniteKernel` view;
-6. certify the finite `(25,25)` optimality search rather than only its
-   first-mode surrogate.
-
-## October 2026 implementation tranche
-
-See [formalization_next_phase.md](formalization_next_phase.md) for the new
-source and verification status. The files `BernoulliLaplaceSemantic.lean`,
-`GSR.lean`, `FiberLifting.lean`, and `ProtocolCertificate.lean` are added to
-the library imports. They contain source proofs for the exact-array/semantic
-bridge, product-label GSR composition, recoverable-fiber TV preservation and
-intertwining, and terminal target TV error. Their Lean build must be run before
-marking these declarations verified. The expensive pair-optimality
-`native_decide` module is available as a separate optional build target.
-
-## L2: ideal GSR local riffle
-
-Formalize one inverse GSR shuffle via independent binary labels. Repeated riffles can then be represented via larger labels (`a = 2^r`).
-
-Targets:
-
-- equivalence between repeated 2-shuffles and an `a`-shuffle;
-- exact finite probability of a permutation in terms of rising sequences / descents;
-- exact or certified TV distances for working-set sizes 49 and 50;
-- a local-shuffle kernel embedded in the 99-card state space.
-
-## L3: compositional error theorem -- implemented (`Shufflemath/Perturbation.lean`)
-
-Prove exact finite total-variation contraction and a telescoping perturbation theorem.
-
-Desired statement shape:
-
-```
-TV(K0*K1*...*Kn, L0*L1*...*Ln)
-  <= sum_i sup_x TV(Ki x, Li x).
+```bash
+cd ~/code/shufflemath
+lake exe cache get
+lake build \
+  Shufflemath.CommanderFiberWitness \
+  Shufflemath.FiberDisintegration \
+  Shufflemath.PhysicalExchangeReduction \
+  Shufflemath.CommanderFullDeckDisintegration
+./dev/verify_next_phase.sh
 ```
 
-The local finite Dobrushin definition is already in place. The proof strategy should reuse the structure of the existing `or4nge19/MCMC` formalization while using mathlib's stochastic-matrix authority and rational coefficients where possible.
+- **Pass:** mark V0 verified in the handoff with the exact date and commit;
+  proceed to F1 below.
+- **Fail:** fix the *first actual compiler error* in the affected source,
+  rebuild just that target, then rerun the gate. The last reported failure
+  was `unexpected token 'omit'` at `FiberDisintegration.lean:35`; the v3
+  replacement removes that directive. Do not assume another failure exists.
+- Existing non-blocking `CommanderPermutation` linter suggestions are not a
+  reason to interrupt proof work. Do not disable linters globally.
 
-## L4: costed protocol certificates
+## Work queue in dependency order
 
-Represent an action alphabet such as:
+### F1. Prove the exact Commander fiber count -- FIRST mathematical task
 
+**Goal:** discharge
+`CommanderFullDeckDisintegration.HasCommanderFiberCounts`, already defined
+in `Shufflemath/CommanderFullDeckDisintegration.lean`:
+
+```lean
+forall x : BernoulliLaplace.CommanderState,
+  Dist.mass BernoulliLaplace.commanderStationary x =
+    ((FiberDisintegration.fiberSet CommanderPermutation.project x).card : Rat) /
+      (Fintype.card CommanderPermutation.Deck : Rat)
 ```
-local-left
-local-right
-exchange k
-```
 
-or symmetric paired local operations if that is the protocol class under study.
+This is **not proved** by `CommanderPermutation.project_surjective`: an
+inhabited fiber need not have the right *cardinality*. Build a structural
+counting proof, without evaluating a type containing `99!` permutations.
 
-A search program can produce a candidate protocol and a compact certificate. Lean verifies:
+Split into small compilable subresults, preferably in a new dedicated
+`Shufflemath/CommanderFiberCount.lean` importing only what is needed:
 
-- its cost;
-- its terminal error bound;
-- and, for a bounded finite action space, that no cheaper candidate satisfies the same target.
+1. **F1a: fixed membership:** for any valid 50-card subset of `Fin 99`,
+   count complete ordered decks with exactly that left-membership set as
+   `50! * 49!`. A bijection with independent left/right orderings is the
+   preferred proof; avoid brute-force `native_decide` on `Deck`.
+2. **F1b: count memberships:** for `x.val + 1` originally-left cards in the
+   left pile, count allowed membership sets as
+   `Nat.choose 50 (x.val + 1) * Nat.choose 49 (49 - x.val)`.
+3. **F1c: combine and normalize:** prove
+   `|fiber x| = choose(50,x+1)*choose(49,49-x)*50!*49!`, divide by `99!`,
+   and rewrite into the existing exact hypergeometric `commanderStationary`.
+4. **F1d: consume the theorem:** export a theorem of type
+   `HasCommanderFiberCounts` with no extra premises, then use it in
+   `commander_uniform_disintegration` and the existing conditional oracle
+   2-/3-step results to give unconditional **ideal-oracle** results.
 
-The search itself need not initially be formalized.
+**Acceptance:** compile the dedicated counting module and
+`CommanderFullDeckDisintegration`; check that the exported theorem has no
+unproven counting assumptions. Existing `tests/test_commander_fiber_witness.py`
+provides exact numeric regression evidence, not a substitute for Lean.
+No need to change the already verified BL certificates.
 
-## L5: biased/clumpy local models
+### F2. Define the concrete membership and perfect-local kernels
 
-After the GSR baseline is stable:
+**Dependency:** V0 and the existing `CommanderPermutation`; may be developed
+independently of F1's counting arithmetic, but needs F1 for uniform targets.
 
-- biased-cut inverse riffle;
-- Jonasson--Morris Markovian binary-label process;
-- untouched-tail variants;
-- optional robust parameter intervals.
+1. Define `Membership` as the subtype of 50-element subsets of card identities
+   in `Fin 99` (or an equivalent bijective type).
+2. Define `membership : Deck -> Membership`, and prove that its marked-card
+   count agrees with `CommanderPermutation.project`.
+3. Define `localLift : FiniteKernel Membership Deck` as uniform orderings of
+   the *given membership set*, and prove
+   `localLift.comp (FiniteKernel.deterministic membership) = identity`.
+4. Define `membershipLift : FiniteKernel CommanderState Membership` as the
+   uniform law among memberships with a specified marked count. Prove
+   `membershipLift.comp localLift = FiberDisintegration.fiberLaw project
+   project_surjective` (or first prove a generic version and specialize).
 
-Do not jump directly to a fitted empirical model before the finite GSR infrastructure is validated.
+**Acceptance:** compile new modules and a small-deck exact reference test.
+Neither `localLift` nor a physical local shuffle may change pile membership.
+Do not confuse `localLift` with the canonical oracle's count-fiber reset.
 
-## L6: public theorem statements
+### F3. Prove the 25-position physical-exchange membership law
 
-Aim for statements with an operational interpretation, e.g.:
+**Dependency:** F2.
 
-> Under model M with cost ratio rho in interval I and TV target epsilon, protocol P has certified cost C and every protocol in action class A with lower cost fails the target.
+1. Specify the raw operation exactly: choose 25 distinct positions from each
+   pile uniformly; swap the selected positions in a fixed bijective pairing.
+   Randomness is in the chosen subsets, not an unspecified human procedure.
+2. Implement `rawExchange : FiniteKernel Deck Deck` and verify the
+   corresponding transition on named-card membership after a fiber-uniform
+   input. Use counting/symmetry rather than enumerating permutations.
+3. Discharge the `hMembershipExchange` premise of
+   `CommanderFullDeckDisintegration.two_physical_perfect_exchanges_uniform_of_counts`
+   through `PhysicalExchangeReduction.intertwining_of_membership_exchange`.
+4. Combine with F1 to state the **unconditional physical-perfect-local**
+   2-exchange TV theorem. The 3-exchange variant can follow the generic
+   run/intertwining theorem; do not duplicate a giant kernel calculation.
 
-These are suitable both for formal verification and popular communication.
+**Acceptance:** no new abstract exchange hypothesis at the final exported
+Commander theorem; exact small-deck checks in
+`experiments/full_deck_oracle.py` and
+`experiments/commander_fiber_witness.py` continue passing.
+Do **not** try to prove pointwise equality of raw physical and canonical
+oracle kernels: it is false in the documented 5-card example.
 
-## Full-deck bridge tranche (October 21, 2026)
+### F4. Quantify finite-GSR versus physical-perfect-local error
 
-- `Shufflemath/OracleRefinement.lean`: canonical oracle construction,
-  stepwise and schedule intertwining, inherited two-/three-step Commander
-  certificates, plus a weighted physical-vs-oracle protocol TV bound.
-- `Shufflemath/PhysicalRefinement.lean`: heterogeneous physical perfect-local
-  steps need only fiber intertwining (not pointwise oracle equality), and
-  finite-GSR-vs-perfect rows enter the existing weighted telescope budget.
-- `Shufflemath/CommanderPermutation.lean`: *actual 99-card permutations*
-  with the proved 50-state macro projection and conditional uniform fiber
-  construction; the final disintegration theorem is exposed as an explicit
-  premise rather than claimed unconditionally.
-- `experiments/full_deck_oracle.py`: exact full-permutation oracle tests for
-  small decks and non-enumerative 99! hypergeometric cardinal checks.
+**Dependency:** F2 and F3 for the full 99-card statement; the standalone GSR
+algebra can advance in parallel.
 
-Immediate further Lean targets: prove all fibers are inhabited (the recovery
-lemma is now implemented conditional on this), prove the permutation-fiber sizes
-and stationary-law disintegration, and implement the physical exchange plus
-local-oracle action with a proved intertwining identity. After that, prove
-finite-GSR-versus-oracle row discrepancies and deliver a single 99-card
-TV-and-cost theorem.
+1. Extend `GSR.idealShuffle_comp`'s product-label theorem to the numeric
+   uniform `Fin (a*b)` label alphabet via an explicit encoding and proof
+   of pushed-forward uniformity. The present theorem is not this result.
+2. Define a permutation-preserving local-GSR kernel for the ordered cards in
+   each *fixed* pile. Prove it cannot change the membership state.
+3. Establish the row-wise bound against *physical perfect-local* shuffling:
+   for each deck, the TV discrepancy is no greater than the sum of the two
+   local GSR-versus-uniform errors (49-card and 50-card working sets).
+4. Use the existing `PhysicalRefinement.finite_local_uniform_bound` and
+   `ProtocolCertificate` weighted telescope to compose these errors over a
+   schedule. Use a named initial law and an explicit 99-card uniform target.
 
+**Acceptance:** a Lean-checked numeric or symbolic full-deck terminal TV
+upper bound for one explicit physical finite-GSR protocol, with every model
+assumption stated. Python's `experiments/oracle_gsr_budget.py` may propose a
+candidate, but its output is not a Lean certificate.
 
-## October 21 tranche: concrete 99-card fibers and full uniformity
+### F5. Attach measured/parametric costs; certify a bounded optimizer
 
-The next-phase modules are described in `docs/commander_fiber_disintegration.md`.
-The uniform conditional distribution and its macrostate recovery now have
-constructive proof interfaces, and the missing Commander full-deck
-disintegration statement is isolated as `HasCommanderFiberCounts`. The
-physical-perfect refinement factors through *membership*, not merely the
-count. The outstanding tasks are a general 99-card fiber cardinality
-identity, the concrete membership law, and GSR/local-perfect discrepancy.
+**Dependency:** F4 for a realistic finite-GSR protocol.
+
+Re-use `Cost.lean`; specify the action alphabet, cost units (local riffle,
+exchange, split/recombine), admissible schedules, and target TV threshold.
+First prove the candidate's cost and **sufficient** TV upper bound; only then
+address finite-class minimum-cost claims. A search over conservative upper
+bounds is not proof that the candidate minimizes actual TV unless competing
+candidates have suitable lower bounds or exact TV values.
+
+**Acceptance:** theorem with model, action class, initial state, target,
+terminal bound, and cost all explicit; separately state any optimization
+quantifiers and their proof source.
+
+### Optional / deferred tracks
+
+- **P1: two-exchange exact optimum.** `dev/BernoulliLaplacePairOptimality.lean`
+  is opt-in (`./dev/verify_next_phase.sh --pair`). Its source expresses the
+  2,401-row objective; the last conversation has no confirmed local success
+  for that costly target. Prove variable-exchange-size semantics before
+  presenting it as an operational schedule theorem. Do not make it a default
+  library-build dependency.
+- **GSR exact finite TV tables / Bayer--Diaconis permutation formula.** Useful
+  for tighter F4 bounds; not a prerequisite for proving F1-F3.
+- **Human bias, clumping, correlated labels, spectral higher modes.** Defer
+  until a physical-perfect result and one finite-GSR bound are certified.
+- **Presentation work.** The 155-scene Manim study deck is independent of
+  Lean correctness. It has had LaTeX/build issues; do not count an authored
+  deck or successful preflight as a completed full render without local
+  evidence. See `visualizations/README.md` for build commands.
+
+## Verification and completion rules
+
+- Build only touched Lean targets first. **Always** run `lake exe cache get`
+  before `lake build`, and run `./dev/verify_next_phase.sh` before handing
+  off a tranche. That script intentionally builds modules missing from
+  `Shufflemath.lean` imports. The legacy `dev/verify.sh` runs `lake update`
+  and is not the preferred incremental verification path.
+- Maintain current hypotheses in theorem statements until proved. Never
+  silently promote a conditional theorem to an unconditional result, or
+  replace proof obligations with `sorry`, `admit`, or opaque axioms.
+- Exact Python tests are useful independent checks, **not** Lean proofs.
+- Avoid routine `#print axioms` / axiom-closure dumps. Only perform a
+  comparison-style audit if explicitly requested near final formalization
+  completion; compiler errors and theorem scopes are the normal checks.
+- Do not block a mathematically verified result on cosmetic linter warnings.
+  Fix related warnings when editing a proof, not as an independent campaign.
+- Update this file's status and `agent_handoff.md` after each completed
+  tranche, recording tested targets and the next single task.
+
+## Reference / history (not active task lists)
+
+- [commander_fiber_disintegration.md](commander_fiber_disintegration.md):
+  the concrete 99-card fiber and membership architecture.
+- [full_deck_oracle_bridge.md](full_deck_oracle_bridge.md): three kernel
+  models, numerical counterexample, and exact-count formula.
+- [formalization_next_phase.md](formalization_next_phase.md): October 20
+  source tranche and GSR/protocol rationale.
+- [autonomous_lean_build.md](autonomous_lean_build.md) and
+  [lean_build_history.md](lean_build_history.md): historical October 4-12
+  autonomous-session record, **not current instructions**.
+- [formalization_dependency_audit.md](formalization_dependency_audit.md):
+  architectural background from before the `StdSimplex` migration.

@@ -1,5 +1,15 @@
 # Visualization / study-course roadmap
 
+**Scope:** course content and pedagogy, not the active Lean theorem queue.
+For formalization tasks use [lean_plan.md](lean_plan.md) and
+[agent_handoff.md](agent_handoff.md). The repository defines a 155-scene
+study course, but an authored scene and a successful static LaTeX check do
+not establish that the full 155-scene final/standalone presentation has
+rendered. Check actual local `make study` / `make standalone-study` output
+before recording a build as complete. The presentation is independent of
+the next Commander cardinality proof.
+
+
 The Manim material under `visualizations/` is not a literature-overview talk.
 It is a **mathematical study course** whose purpose is to make the relevant
 shuffle theory, Markov-chain theory, and finite-control mathematics intuitive

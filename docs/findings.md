@@ -1,4 +1,9 @@
-# Current findings
+# Exact findings and proof scope
+
+Updated October 21, 2026. This records stable exact values and their
+interpretation, **not** the active proof queue. For new tasks use
+[lean_plan.md](lean_plan.md) and [agent_handoff.md](agent_handoff.md).
+
 
 This file distinguishes exact finite results already reproduced by the repository from theorem targets that remain symbolic/formalization work.
 
@@ -24,7 +29,13 @@ k=25: lambda_1 =  -1/98   ~= -0.01020408
 k=26: lambda_1 = -62/1225 ~= -0.05061224
 ```
 
-`Shufflemath/BernoulliLaplace.lean` contains a finite exact theorem stating that `k=25` minimizes the absolute value of this expression over exchange sizes 1 through 49. The symbolic target — proving that this expression is the first nonconstant eigenvalue of the exact transition matrix, rather than merely importing the known formula as the definition of `firstModeFactor` — is in progress: the general Bernoulli–Laplace exchange theory (`BernoulliLaplaceGeneral.lean`, with the fiber-counting companion `BernoulliLaplaceFiber.lean`) is built, and the first-mode machinery in its `firstMode` section (the weighted Vandermonde and reindexing lemmas) is the current work item; see the "Next action" section of `docs/autonomous_lean_build.md`.
+`Shufflemath/BernoulliLaplace.lean` proves that `k=25` minimizes the
+absolute value of this first-mode factor over exchanges 1 through 49.
+**The once-open symbolic first-eigenfunction target is complete:**
+`BernoulliLaplaceGeneral.lean` proves the centered eigenfunction relation,
+including non-vacuousness, and `BernoulliLaplaceCommanderBridge.lean`
+identifies its Commander specialization on the actual exchange kernel.
+That work should not be resumed from the October 4-12 autonomous handoff.
 
 ## Exact finite 50-state exchange model
 
@@ -89,10 +100,30 @@ The exact-rational Python model searches all `49^2` two-exchange schedules using
 
 with TV distance `0.00248417758708` for the projected chain.
 
-**Status:** the search result is not yet a Lean optimality theorem. The current Lean theorem proves only that 25 minimizes the absolute first-mode factor. A near-term finite certificate should prove directly that no other `(k1,k2)` pair has lower terminal TV for this projected chain.
+**Status:** the independent exact Python enumeration checks all 49 squared
+pairs and identifies `(25,25)` as the unique macrostate optimum. An opt-in
+Lean theorem with that exact row-wise objective has been written in
+`dev/BernoulliLaplacePairOptimality.lean`, but the conversation contains no
+confirmed successful run of `./dev/verify_next_phase.sh --pair`. It is not
+part of the normal library build. The first-mode minimization theorem is
+a separate, already established result; neither supplies a finite-GSR
+physical protocol optimum.
 
 ## What these numbers do not yet mean
 
 They do **not** say that two physical cuts randomize a Commander deck. The 50-state projection describes only pile-membership memory. Nestoridi--White's idealized reduction assumes the local piles are perfectly randomized internally.
 
 The main research problem remains to replace that oracle local randomization with repeated finite-cost local riffle/mash kernels, combine their error with cross-pile exchange, and optimize the physical-time cost of the whole schedule.
+
+## Full-deck proof boundary as of October 21
+
+The named-card permutation projection and one explicit witness for each
+macrostate are now authored in Lean. The generic uniform disintegration
+algebra exists, and exact two-/three-step **oracle** uniform-TV theorems
+are available conditional on `HasCommanderFiberCounts`. The 99-card fiber
+count is the next open exact theorem. A physical-perfect-local theorem also
+requires the membership factorization and raw-exchange membership law; a
+finite-GSR theorem additionally requires its row-wise discrepancy bound.
+A v3 correction to the disintegration source has not yet had a confirmed
+complete local build. These obligations and the build gate are listed in
+[lean_plan.md](lean_plan.md).

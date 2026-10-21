@@ -1,314 +1,43 @@
-# Autonomous Lean formalization build — handoff & resume document
+# Archived autonomous Lean session (October 4-12, 2026)
 
-**Status:** ACTIVE. **Deadline: Mon Oct 12 22:27:06 EDT 2026.** This file
-is the compaction-resume document: after any compaction, read it top to
-bottom, then `git log --oneline -10` and `lake build`, then resume at the
-"Next action" section at the end of this file. The session-by-session
-history and reference material live in `docs/lean_build_history.md`.
+**ARCHIVED; not an active handoff or current task list.** The fixed October
+12 deadline and autonomous-session instructions in the original version of
+this file have expired. In particular, there is no active instruction to
+work until that deadline, run `lake update` before every build, use a
+historical model-specific commit trailer, or restart from the old GSR
+"next action". New agents must use:
 
-## 0. Standing rules for the agent reading this document (non-negotiable)
+1. [AGENTS.md](../AGENTS.md) for repository conventions;
+2. [docs/agent_handoff.md](agent_handoff.md) for the exact current first
+   action and verification state;
+3. [docs/lean_plan.md](lean_plan.md) for the active theorem dependencies.
 
-1. **Do not stop, ask, or end the session before Mon Oct 12 22:27:06 EDT 2026.**
-   This is a long autonomous build. You **will be compacted multiple times**;
-   compaction is normal and is not a stopping signal.
-2. **After every compaction, do exactly this, in order:**
-   a. Read this document top to bottom.
-   b. Run `git log --oneline -10` and `git status --short` in `/home/joncrall/code/shufflemath`.
-   c. Run `lake build` to confirm the tree is green (if red, fix before anything else).
-   d. Resume work at the "Next action" section at the end of this file.
-      The compact §5 log records what is done; the full session log is
-      in `docs/lean_build_history.md`.
-3. **Small batches only.** One batch = 1–3 related lemmas/theorems in one file.
-   Each batch must end with: `lake build` green → `git add` + `git commit`.
-   Never let the working tree carry more than one batch of uncommitted work.
-4. **Commit trailer (exact, from 2026-10-04 onward):**
-   `Co-authored-by: Qwen3.8-27B-W4A16-AutoRound <noreply@qwen.ai>` — the model
-   is the W4A16-AutoRound quantization of Qwen3.8-27B
-   (`hf://dbirks/Qwen3.8-27B-W4A16-AutoRound`) served through a vLLM
-   `hyperqwen` deployment (image `ghcr.io/syv-ai/hyperqwen:sha-684e927`, MTP
-   spec, long context, prefix caching); the LiteLLM model name is
-   `qwen3.8-27b-dbirks-hyperqwen-long`. Older commits in this session's
-   history carry the earlier `Qwen3.8:27b <noreply@openai.com>` form —
-   **do not rewrite history**; use the new form only for new commits.
-   Subject line: short imperative, e.g. `Add kernel composition associativity`.
-5. **Every commit must build.** `lake build` (full repo, not just one file) must
-   pass before you commit. `./dev/verify.sh` (lake update + build + python tests)
-   must pass at the end of each priority (A, B, C, …).
-6. **Keep this document updated.** After each commit, tick the item in §5 and
-   adjust "Next action". This file is the only thing a compacted/fresh agent
-   can trust; the conversation is not.
-7. **Do not stop early even if A–G are all done.** Fall through to §4-H
-   stretch goals, then to verification pass (re-run `./dev/verify.sh`, audit
-   docstrings, re-check §6 regression values), until the deadline.
-8. **Stuck protocol.** If a single proof resists ~2 build iterations, write a
-   `-- TODO(proof): <sketch>` comment at the exact location, commit what
-   builds, move to the next item, and return later. Never leave a broken
-   build, never leave a `sorry`.
-9. **Taste rules:** see §7. Exact rationals only; no `set_option maxHeartbeats 0`;
-   no floating point in proofs; docstring on every nontrivial theorem;
-   no sweeping refactors of existing names.
+The historical autonomous work is recorded in
+[lean_build_history.md](lean_build_history.md); its general-purpose Lean
+mechanics are summarized in [lessons_learned.md](lessons_learned.md).
+The older design audit remains available in
+[formalization_dependency_audit.md](formalization_dependency_audit.md).
 
-## 1. Background (one minute)
+## What that session accomplished
 
-`shufflemath` studies constrained physical card shuffling: which finite
-sequences of cuts, mashes, and exchanges drive a deck to uniform fastest.
-Three tracks: literature (`docs/`), exact finite computation
-(`experiments/bernoulli_laplace.py`), and this Lean library (`Shufflemath/`).
+It established the exact finite `StdSimplex Rat` probability model and
+kernel/matrix authority; TV contraction, weighted perturbation, Dobrushin
+bounds, stationarity and reversibility; general Bernoulli--Laplace row
+normalization, hypergeometric stationary law, detailed balance, and the
+first centered eigenfunction; a Commander specialization and exact
+rational 2-/3-exchange certificates. Subsequent work built the GSR,
+permutation, fiber-lifting, and disintegration layers. See the active
+roadmap for their current status.
 
-Two models, never conflate them:
+## Stable numerical regression references
 
-- **Bernoulli–Laplace (BL):** macrostate = count of original-left cards in the
-  left pile after exchanging `k` cards between two piles. A projection of the
-  full process; macrostate mixing is *not* full-deck mixing.
-- **GSR (Gilbert–Shannon–Reeds):** riffle shuffle theory (stretch goal §4-H).
+- Commander split: 50 left positions, 49 right positions, 50 marked cards.
+- Canonical exchange size: 25 cards from each side.
+- Exact TV after two ideal exchanges:
+  `12255318415559330995522631403472464258192877 / 4933350368865509640837610315994582805439728012`.
+- Exact TV after three ideal exchanges:
+  `172379525755689183991816396516567920780192827919620440221147749 / 6691837923759692633601708022649918108038775216019298375918637677488`.
 
-Three distances, never conflate them: total variation (the one formalized),
-separation distance, and event probability.
-
-**Architecture rules (binding):**
-
-- `Dist α := Convexity.StdSimplex Rat α` — the *only* probability type.
-  Nonnegativity and unit mass live in the type; never build a parallel
-  probability structure.
-- `FiniteKernel α β := α → Dist β` — the semantic kernel.
-- Matrices (`Matrix α β Rat`) are a *derived* computational representation;
-  the bridges live in `Shufflemath/Matrix.lean`.
-- All arithmetic in `Rat` (ℚ). Executable exact certificates use
-  materialized `Array` tables + `native_decide` (existing pattern in
-  `Shufflemath/BernoulliLaplace.lean`); symbolic theorems must be proved
-  symbolically (Vandermonde etc.), not decided.
-
-## 2. Environment
-
-- Repo: `/home/joncrall/code/shufflemath`, branch `main`.
-- Toolchain: `leanprover/lean4:v4.34.0` (pinned in `lean-toolchain`);
-  mathlib v4.34.0 pinned in `lakefile.lean`. Do not bump either.
-- Build: `lake build`. Full verify: `./dev/verify.sh`.
-- `.lake` on this VM is a **bind mount** from `/var/cache/lake` (ext4, fast).
-  Check with `mount | grep lake` / `df -hT .lake`. If you are on a fresh
-  VM where `.lake` is virtiofs: first `sudo cp -a .lake /var/cache/lake/<repo>/.lake`
-  (seed, only if a build already exists), then run
-  `submodules/aiq-lean-formalization-tools/scripts/setup-lake-cache.sh`
-  (`--all` after reboots, `--status` to inspect; bind mount, never a symlink).
-- mathlib sources are browsable for exact lemma names:
-  `.lake/packages/mathlib/Mathlib/…` — grep before writing proofs.
-  Verified hooks you can rely on are listed in `docs/lean_build_history.md` §3.
-- Lean tooling from the submodule (`aiq-lean`, `leanq`) is available for
-  audits; not required for the main build. If you rename or move a tracked
-  declaration, update any census ledger in the same commit.
-
-## 3. Current state — file map (as of 2026-10-08, after the cleanup batch e19afb5)
-
-The library root `Shufflemath.lean` imports, in this order: `Finite`,
-`Matrix`, `TotalVariation`, `Perturbation`, `Dobrushin`, `Markov`, `Cost`,
-`BernoulliLaplace`, `BernoulliLaplaceGeneral`, `BernoulliLaplaceFiber`,
-`BernoulliLaplaceCommanderBridge`. All eleven modules build; the Python
-side of the repo is unchanged by the Lean work.
-
-- **`Finite.lean`** — `Dist`/`Kernel` algebra (identity, `comp`, `run`,
-  `compPow`, `run_compPow`, `apply_mass`, `double_sum_pullout`).
-- **`Matrix.lean`** — the `toMatrix` bridge (identity/comp/compPow/run
-  agree).
-- **`TotalVariation.lean`** — `vectorTV`/`Dist.tv` laws, the `PositiveSet`
-  section, `kernel_contraction`, `tv_zero_iff_eq`.
-- **`Perturbation.lean`** — `kernelDiscrepancy`, `compList`, the
-  `weightedTelescope` flagship and its corollaries. File-level
-  `maxHeartbeats 400000` (see the file header comment).
-- **`Dobrushin.lean`** — the sharp `δ(K)` contraction, `submult`,
-  `run_contraction`, `zero_iff`, the matrix link.
-- **`Markov.lean`** — `Stationary`, `DetailedBalance`, `applyFn`/
-  `weightedInner`, self-adjointness.
-- **`Cost.lean`** — `CostedKernel`, `protocolCost`.
-- **`BernoulliLaplace.lean`** — the frozen Commander 99-card 50/49 k=25
-  certificates (row stochasticity, stationarity, the 1-/2-/3-step fixed
-  points, the exact TV values, the first-mode finite theorem).
-  **Do not restructure this file**; the general module deliberately keeps
-  its own copy of the transition formula and the bridge proves the two
-  agree.
-- **`BernoulliLaplaceGeneral.lean`** (~1500 lines) — the general N m r
-  theory: `BLState`/`blLo`/`blHi`/`stateFinset`, `ExchangeAdmissible`, the
-  transition formula, the symbolic `blRowStochastic`,
-  `blStationary`/`blTotal`/`blStationaryDist`, `blExchangeKernel`, and
-  `section firstMode` (G1 `chooseSucc_weighted`/`chooseSum_weighted`, G2
-  `innerYToB_b` — note `innerYToB_b` is a file-level private lemma above
-  the section).
-- **`BernoulliLaplaceFiber.lean`** — the detailed balance by fiber
-  counting (the fiberSum/fiber7* machinery, `fiberFlat`, the involutive
-  swap, `fiberSum_swap`, `detailedBalance`, `blDetailedBalance`,
-  `blStationaryDist_is_stationary`, `blStationaryRun`). Imports only the
-  general file.
-- **`BernoulliLaplaceCommanderBridge.lean`** — the `BLState 99 50 50`
-  `↔` `Fin 50` identification, the transition-weight / stationary /
-  kernel match theorems. In the build graph since the 2026-10-08 cleanup
-  (e19afb5), which also repaired it against the redesigned API.
-
-The hard-won Lean-mechanics notes and the verified mathlib hook list
-(keep reading these before heavy proof work) live in
-`docs/lean_build_history.md` §1 (mechanics) and §3 (hooks).
-
-## 4. Remaining plan (A–G done; then H)
-
-**G. First eigenfunction** (done — G1–G5 landed 2026-10-08; then H):
-
-- **G1 (done):** `chooseSucc_weighted` + `chooseSum_weighted` (weighted
-  Vandermonde + weighted-sum identities).
-- **G2 (done):** `innerYToB_b` (the weighted `y → b` reindexing).
-- **G3 (done):** `innerYToB_w` (16b667b), `bSumE`/`bSumE_nat` (64e4024),
-  `bSumE_w` (bf86684), `aSumE`, and the `blConditionalMean` theorem
-  (00cd98c) — the conditional mean `x - (k/m)·x + (k/(N-m))·(r-x)`.
-- **G4 (done, df1da34):** the first *centered* eigenfunction theorem
-  `blFirstModeFunc`: the centered observable `f(x) = x - m·r/N` (stationary
-  mean `μ = m·r/N`) satisfies
-  `applyFn (blExchangeKernel p) f = blFirstModeFactor p.N p.m p.k • f`,
-  where `blFirstModeFactor (N m k) := 1 - (N : Rat) * k / ((m : Rat) * (N - m))`.
-  Proved by bridging `applyFn` to the `stateFinset` mass-weighted sum, splitting
-  it into `blConditionalMean − μ` (linearity + `blRowStochastic`), and closing
-  with `Rat` field algebra. This is the first centered linear mode; it is
-  **not** a claim about the largest nontrivial eigenvalue in absolute value,
-  nor a TV-optimality statement.
-- **G4b (done, a2a885b):** `blFirstModeFunc_nonzero` — the eigenvalue is
-  non-vacuous under `0 < r < N`. In the degenerate cases `r = 0` / `r = N` the
-  macrostate space is a singleton and the centered observable vanishes there
-  (the bare `K f = λ₁ f` is then the vacuous `0 = λ₁·0`); under `0 < r < N`
-  the interval `blLo .. blHi` holds at least two states, so the centered
-  observable is not identically zero and `blFirstModeFactor` is a genuine
-  eigenvalue. Isolated from `blFirstModeFunc`, which stays valid without the
-  non-degeneracy assumption.
-- **G5 (done, d131ec2):** the Commander corollaries in the bridge module:
-  `commanderBLEquiv : Equiv (Fin 50) (BLState 99 50 50)`, the
-  `blFirstModeFactor_eq_firstModeFactor` agreement (the two factors are the
-  same definition), the specializations `λ₁(24) = 37/1225`, `λ₁(25) = -1/98`,
-  `λ₁(26) = -62/1225` derived from the single general formula, and the
-  `commanderFirstModeFunc` corollary specializing `blFirstModeFunc` to the
-  Commander parameters.
-- **G5b (done, b45f3c5):** `commanderFirstModeFunc_concrete` — the centered
-  eigenfunction equation read *directly* on the concrete `commanderExchange25`
-  kernel over `Fin 50` (`∑_j P(i,j)(leftCount(j) − 2500/99) =
-  −(1/98)(leftCount(i) − 2500/99)`), as a pure transport of `blFirstModeFunc`
-  along the state equiv (pointwise kernel agreement + the pulled-back
-  centered observable), not a second combinatorial derivation.
-  (The older draft of this plan had `f(x) = 1 - x/m + (x-r)·k/(N-m)` and
-  `λ = -25/49` for Commander — both wrong, corrected 2026-10-08.)
-
-**H. Stretch** (after G, in the order of `docs/lean_plan.md` §4): the GSR
-theorem, higher modes, the separation distance, the perturbation→TV
-chain, the mixing time.
-
-## 4a. GPT review (2026-10-04) — findings and status
-
-Verbatim record: `docs/gpt_review_2026-10-04.md` (recovered from the pi
-session transcript `01a104d1-84ab-75e8-9ce6-86eeb46b1e80`). The review
-judged the overnight work a net positive ("correct it rather than
-replace it") but ordered the fixes below before further BL theory. **This
-section is the authoritative per-finding ledger** — update the status line
-in the same commit as any fix.
-
-| # | Finding (short) | Severity | Status | Commit |
-|---|-----------------|----------|--------|--------|
-| 1 | Dobrushin: drop `dobrushin2`, prove sharp `δ(K)` contraction | High | **DONE** | `b69d00a` (session 8) |
-| 2 | `BLState` must not depend on `k` (phantom param) | High | **DONE** | this commit |
-| 3 | General module must not import the Commander module (bridge module instead) | High-ish | **DONE** (import removed; bridge module `BernoulliLaplaceCommanderBridge.lean` landed with F and is in the build graph) | this commit |
-| 4 | Perturbation API: unconditional crude telescope + sharp per-step weighted bound; uniform-`d` as corollary | Medium | **DONE** (`weightedTelescope` flagship, no contraction hypotheses; uniform/crude/symmetric all corollaries) | this commit |
-| 5 | `tv_eq_zero` false comment; add real `tv p q = 0 ↔ p = q` | Medium | **DONE** (`tv_zero_iff_eq`) | `734141f` |
-| 6 | LLM duplication: private `double_sum_pullout` (a), Dobrushin nonneg/sum-one reproofs (b), matrix vs kernel row-TV/canon (c) | Medium-low | **DONE** | `b69d00a`, `06c2f4b`, `734141f` |
-| 7 | `Markov.lean` self-adjointness docstring overclaims orthogonal eigenbasis | Medium-low | **DONE** | `734141f` |
-| 8 | New BL module not imported by `Shufflemath.lean` (not in build graph) | Process | **DONE** | this commit |
-| 9 | `Finite.lean` "Krein–von Neumann pushforward" hallucinated term | Minor | **DONE** | `734141f` |
-| 10 | Commit trailer not followed (wrong name/email) | Workflow | **DONE** (new trailer `Co-authored-by: Qwen3.8-27B-W4A16-AutoRound <noreply@qwen.ai>` on all new commits; history NOT rewritten, per review's own advice and user instruction) | `a09e2b0` onward |
-
-**Order per the review's recommendation:** #1 ✅ → #4 (perturbation API:
-crude + uniform-`d` ✅, sharp weighted form = the `weightedTelescope`
-flagship ✅) → #2/#3/#8 ✅ (this commit) → then continue F (row
-stochasticity / stationarity / detailed balance, via the general file's own
-transition formulas + the bridge module). #5/#6/#7/#9 done in the
-quick-win commit `734141f`. **All review items are now DONE** (#3's bridge
-module landed with F and is in the build graph).
-
-**Decision on #3 vs. the frozen `BernoulliLaplace.lean`:** the §4-F spec
-said "reuse `BernoulliLaplace.transitionNumerator` verbatim, do not
-redefine" and "no changes to `BernoulliLaplace.lean`"; both cannot hold
-simultaneously with #3. Resolution (review-endorsed architecture): the
-general file gets its **own** copy of the exchange-transition formulas
-(the frozen Commander file keeps its copy for the concrete certificates),
-and a new small module `Shufflemath/BernoulliLaplaceCommanderBridge.lean`
-imports **both** and proves the definitions/theorems coincide (the bridge
-is where `blExchangeKernel N m k` = `commanderExchange25` lives).
-`BernoulliLaplace.lean` stays byte-identical.
-
-## 5. Progress (compact; full session log in `docs/lean_build_history.md`)
-
-- **A** (2026-10-05): kernel algebra — commutative case, compPow/run
-  laws, `double_sum_pullout` (`Finite.lean`, `Matrix.lean`).
-- **B**: TV laws + contraction + `tv_zero_iff_eq` (`TotalVariation.lean`).
-- **C**: `Perturbation.lean` — `weightedTelescope` flagship + corollaries.
-- **D**: `Dobrushin.lean` — sharp contraction + run bound.
-- **E**: `Markov.lean` — stationarity, reversibility, self-adjointness.
-- **F** (2026-10-07): general Bernoulli–Laplace — the frozen
-  `BernoulliLaplace.lean` and `BernoulliLaplaceGeneral.lean`
-  (`blRowStochastic` symbolic; stationarity; detailed balance; kernel
-  agreement).
-- **G1/G2** (2026-10-07/08): the first-mode building blocks in
-  `section firstMode`.
-- **G3** (2026-10-08, 00cd98c): the conditional-mean theorem
-  `blConditionalMean` (plus `innerYToB_w`, `bSumE`/`bSumE_w`, `aSumE`).
-- **G4** (2026-10-08, df1da34): the first centered eigenfunction
-  `blFirstModeFunc`.
-- **G4b** (2026-10-09, a2a885b): `blFirstModeFunc_nonzero` — the eigenvalue
-  is non-vacuous when `0 < r < N` (the degenerate `r = 0`/`r = N` cases are
-  singletons where the centered observable vanishes).
-- **G5** (2026-10-08, d131ec2): the Commander corollaries —
-  `commanderBLEquiv`, `blFirstModeFactor_eq_firstModeFactor`, the three
-  `λ₁(24/25/26)` specializations, and `commanderFirstModeFunc`.
-- **G5b** (2026-10-09, b45f3c5): `commanderFirstModeFunc_concrete` — the
-  `−1/98` eigenfunction read directly on the concrete `commanderExchange25`
-  kernel, as a pure transport of `blFirstModeFunc` (no second derivation).
-- **Cleanup** (2026-10-08, e19afb5): the fiber section moved to
-  `BernoulliLaplaceFiber.lean`; the bridge module repaired and brought
-  into the build graph; this document split into a slim handoff (this
-  file) + `docs/lean_build_history.md`.
-
-## 6. Numeric regression targets (must stay reproducible — do not change them)
-
-- GSR TV after n riffles for 52-card and 99-card decks (Python: `experiments/`).
-- Commander BL TV after 0–4 exchanges of 25 cards (Python `protocol_distance`;
-  Lean 2-step and 3-step exact fractions are pinned in
-  `BernoulliLaplace.lean` — values listed in §3; the Lean 0- and 1-step values
-  are 1 and `25/49`-family — re-derive, don't trust this note).
-- First-mode factors k=24/25/26: `37/1225`, `−1/98`, `−62/1225`.
-- When any symbolic theorem touches these numbers, add a small
-  `norm_num`/`native_decide` agreement check in the same commit.
-
-## 7. Taste & style rules
-
-- Proofs should read like the mathematics: small lemmas, `calc` blocks, named
-  intermediate claims (`have` with a name, or a private lemma). Prefer explicit
-  `calc` over `aesop` for anything nontrivial; `aesop`/`tauto`/`linarith`/`ring`/`norm_num`/
-  `positivity` are fine for the mechanical tail of a proof.
-- `native_decide` only for genuinely finite certificates (existing pattern);
-  never as a substitute for symbolic structure. Never `set_option maxHeartbeats 0`.
-- Docstring on every nontrivial theorem: what it says, why it matters downstream.
-- Extend existing files/namespaces; new files only where the plan says so
-  (C, D, E, F). Keep `Shufflemath.lean` as the import list of record.
-- When stuck on `Nat` arithmetic (subtraction, bounds), convert to `ℤ`/`Rat`
-  with a `have` cast lemma rather than fighting `Nat` lemmas; exactness is
-  preserved because everything lives in `ℚ` at the end.
-- Commit messages: `Add <thing>`, `Prove <theorem>`, `Fix <bug>`; body may
-  explain the proof idea in 1–3 lines; always the co-author trailer (§2 rule
-  4: `Qwen3.8-27B-W4A16-AutoRound <noreply@qwen.ai>`).
-
-**Next action:** G (the first centered eigenfunction) is **complete** —
-G1–G5 all landed (G3 `blConditionalMean` 00cd98c, G4 `blFirstModeFunc`
-df1da34, G4b `blFirstModeFunc_nonzero` a2a885b, G5 Commander corollaries
-d131ec2, G5b `commanderFirstModeFunc_concrete` b45f3c5). The full pipeline —
-conditional mean → centered eigenfunction → Commander specializations —
-now builds green and `./dev/verify.sh` passes.
-
-The remaining plan is **H (stretch)** per `docs/lean_plan.md` §4. The first
-H item — and the immediate next target — is the **classical GSR inverse
-riffle model** (ideal GSR via independent binary labels, repeated riffles
-via larger labels `a = 2^r`, and the `a`-shuffle composition law) on top of
-the now-generic `Dist`/`FiniteKernel`/total-variation foundations; after it
-come the higher BL modes, the separation distance, the perturbation→TV
-chain, and the mixing time. These are out of scope for the
-first-eigenfunction task; pick one up only when the task explicitly resumes
-with H.
+Those exact macrostate certificates are already represented in Lean. They
+must not be interpreted as unconditional TV guarantees for two human
+shuffles of a 99-card deck.

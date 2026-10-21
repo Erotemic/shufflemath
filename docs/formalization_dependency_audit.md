@@ -1,4 +1,14 @@
-# Formalization dependency audit
+# Formalization dependency audit (historical, pre-StdSimplex refactor)
+
+**ARCHIVED architecture snapshot.** This document records the initial
+comparison of mathlib, MCMC, TauCeti, and the original project APIs. Its
+references to *current* duplicate `Weight`/`Kernel` authorities and a
+proposed refactor are **historical**: the refactor and first-mode
+formalization were completed in the source. Do not use its original
+"immediate implementation sequence" as a task list. Current work is
+[lean_plan.md](lean_plan.md), with the exact agent restart instructions in
+[agent_handoff.md](agent_handoff.md).
+
 
 Status: first pass, 2026-10-03.
 
@@ -27,7 +37,7 @@ For the near-term finite shuffling theory:
    contain riffle/GSR shuffles, Eulerian-number/rising-sequence shuffle theory,
    Bernoulli--Laplace transition kernels, or cost-optimal protocol scheduling.
 
-## Current duplicate authorities
+## Historical duplicate authorities (resolved in later source)
 
 ### `Weight` / `Weight.IsProbability`
 
@@ -274,7 +284,7 @@ m * (N - m) / N
 as minimizing the absolute first-mode factor (within the legal exchange range).
 The concrete 99-card theorem should then be a corollary.
 
-## Proposed module layout after the refactor
+## Originally proposed module layout (design sketch, not current paths)
 
 ```text
 Shufflemath/
@@ -300,7 +310,7 @@ Do not split into all of these files immediately; this is a target boundary,
 not a request for indirection.  Start with `Finite.lean` until its definitions
 stabilize, then split when files become independently meaningful.
 
-## Immediate implementation sequence
+## Historical implementation sequence (completed/superseded)
 
 1. Upgrade Lean/Mathlib from 4.19.0 to 4.34.0 and get the current three Lean
    files green without semantic changes.

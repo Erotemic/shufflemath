@@ -1,173 +1,147 @@
 # shufflemath
 
-`shufflemath` studies how to randomize cards when the physical shuffle operation is constrained.
+`shufflemath` studies how to randomize cards when the available physical
+shuffle operations are constrained. The motivating case is a 99-card Magic:
+The Gathering Commander deck: two piles of 50 and 49 cards are practical to
+riffle individually, but recombining and repartitioning them has a cost.
+Human cuts and riffles may also be biased or clumpy.
 
-The motivating case is a 99-card Magic: The Gathering Commander deck that is too large for a player to comfortably mash/riffle as one packet. A player may be able to shuffle 49--50 cards quickly, while recombining and repartitioning the deck is slower. Real human shuffles are also imperfect: cuts may be biased, cards may fall in clumps, and an end packet may fail to participate.
+The research objective is to find a finite protocol with a **certified
+full-deck total-variation bound** and an **explicit physical cost**, and
+ultimately to optimize cost within a stated protocol class. We combine
+literature, exact rational computation, and Lean 4 formalization.
 
-The central optimization problem is:
+## Where work stands (October 21, 2026)
 
-> Given a model of the available physical operations, their costs, and a target distance from the uniform distribution, what finite sequence of operations minimizes expected physical time?
+**Start new formalization work at [docs/agent_handoff.md](docs/agent_handoff.md),
+then use [docs/lean_plan.md](docs/lean_plan.md) as the active roadmap.**
+Those are the only current planning authorities. Older tranche and
+October 4-12 autonomous-session notes are historical references.
 
-The repository has three parallel tracks:
+The earlier Lean development establishes:
 
-1. **Literature and problem formulation** -- establish precisely which parts are known and which combined problem appears open.
-2. **Exact finite computation** -- use rational arithmetic to generate candidate protocols and exact targets for formalization.
-3. **Lean formalization** -- prove finite probability, Markov-chain, and shuffle-protocol statements.
+- `StdSimplex Rat` finite distributions and `FiniteKernel`, stochastic-matrix
+  views, exact rational TV, Dobrushin contraction, and weighted perturbation;
+- general hypergeometric Bernoulli--Laplace normalization, stationarity,
+  detailed balance, and a proved centered first eigenfunction;
+- the exact 99-card 50/49, 25-position-exchange specialization, with
+  2- and 3-exchange macrostate TV certificates;
+- the semantic array-to-kernel bridge, stable inverse-GSR product-label
+  composition, generic recoverable-fiber TV lifting, canonical oracle
+  intertwining, and physical-refinement/cost interfaces;
+- an actual `Equiv.Perm (Fin 99)` deck type and a correct macrostate count
+  projection, whose compilation the user confirmed.
 
-## Formal architecture
+The October 21 follow-on adds explicit witnesses for every 99-card count
+fiber, a generic exact uniform-fiber disintegration theorem, and the
+membership-level physical refinement reduction. The *source* also contains
+conditional exact oracle/full-uniform TV theorems. A last compilation fix
+for `FiberDisintegration.lean` was supplied, but the complete targeted build
+has not yet been confirmed after that fix. Prior verified development is
+not downgraded by this outstanding local check.
 
-The finite Lean layer now uses modern mathlib abstractions rather than maintaining a parallel probability API:
+**Still open:** proving the exact 99-card fiber-cardinality identity
+(`HasCommanderFiberCounts`), constructing named-card membership and
+physical-perfect-local exchange kernels with the required intertwining,
+and bounding finite-GSR versus perfect-local error. A theorem about the
+50-state chain, or even the canonical oracle, is **not** a theorem about
+an arbitrary physical human shuffle.
 
-- `Dist alpha := Convexity.StdSimplex Rat alpha` is the semantic exact finite distribution type.
-- `FiniteKernel alpha beta := alpha -> Dist beta` is the semantic finite Markov-kernel type.
-- rational matrices are the computational view used for exact finite certificates;
-- `FiniteKernel.toMatrix` and `FiniteKernel.ofRowStochastic` form the bridge;
-- total variation and Dobrushin coefficients are exact rational quantities;
-- the Commander Bernoulli--Laplace kernel is defined once as an exact matrix and lifted to a semantic kernel after row-stochasticity is proved.
+### Mathematical models (keep separate)
 
-This keeps probability normalization in the type while retaining computable rational certificates.
+| Model | What one step preserves | Status |
+|---|---|---|
+| 50-state Bernoulli--Laplace chain | Only the original-left count | Exact macrostate results |
+| Canonical full-deck oracle | Count transition; globally resamples its permutation fiber | Generic transfer theorems; uniform-target identification awaits fiber counts |
+| Physical perfect-local shuffle | Named-card membership after selecting exchange positions, then perfect order randomization *within* each pile | Conditional membership-level theorem; concrete exchange proof open |
+| Physical finite-GSR shuffle | Membership after raw exchange; imperfect pile order randomization | Exact small-deck Python model; general Lean discrepancy bound open |
 
-## Current formal results
+## Build and verification
 
-The first Commander model tracks
-
-```
-X = number of originally-left cards currently in the 50-card left pile.
-```
-
-For a 99-card deck split 50/49, `CommanderState = Fin 50` represents the feasible values 1 through 50.
-
-The Lean sources now contain:
-
-- the exact hypergeometric Bernoulli--Laplace transition formula;
-- the exact 25-card exchange transition matrix;
-- a finite certificate that every matrix row is a probability distribution;
-- the exact hypergeometric stationary distribution and a finite stationarity certificate;
-- the exact first-mode factor and the finite theorem that exchange size 25 minimizes its absolute value over sizes 1..49;
-- exact rational TV-distance certificates after two and three 25-card exchanges;
-- the general `N`/`m`/`r` Bernoulli--Laplace exchange theory: symbolic row
-  normalization, the stationary distribution, and detailed balance by
-  fiber counting (`BernoulliLaplaceGeneral.lean` and its companion
-  `BernoulliLaplaceFiber.lean`);
-- the bridge identifying `BLState 99 50 50` with `Fin 50` and proving the
-  general and Commander theories agree pointwise
-  (`BernoulliLaplaceCommanderBridge.lean`);
-- the general first-eigenfunction theory: the exchange kernel's
-  conditional mean, the centered-mode eigenfunction equation
-  `K(x ↦ x − m·r/N) = (1 − N·k/(m·(N−m)))·(x − m·r/N)`, the
-  non-vacuousity of the eigenvalue when `0 < r < N`, and the Commander
-  specialization `−1/98` at the half-deck exchange, read directly on the
-  concrete `commanderExchange25` kernel (`section firstMode` in
-  `BernoulliLaplaceGeneral.lean` and the bridge).
-
-The Python reference implementation remains independent and is used to cross-check the exact numbers and generate conjectures.
-
-## Repository map
-
-- `docs/literature.md` -- literature review and novelty boundary.
-- `docs/problem.md` -- mathematical optimization problem.
-- `docs/lean_plan.md` -- theorem ladder for Lean.
-- `docs/formalization_dependency_audit.md` -- mathlib / MCMC / TauCeti abstraction audit.
-- `docs/popular_communication.md` -- plan for a Magic-player-facing explanation/tool.
-- `docs/measurement.md` -- measuring a real person's shuffle.
-- `references.bib` -- seed bibliography.
-- `experiments/bernoulli_laplace.py` -- exact-rational reference computation.
-- `Shufflemath/Finite.lean` -- `StdSimplex` distributions and semantic finite kernels.
-- `Shufflemath/Matrix.lean` -- stochastic-matrix bridge.
-- `Shufflemath/TotalVariation.lean` -- exact rational TV and Dobrushin quantities.
-- `Shufflemath/Perturbation.lean` -- perturbation bounds for composite kernels.
-- `Shufflemath/Dobrushin.lean` -- sharp Dobrushin contraction.
-- `Shufflemath/Markov.lean` -- stationarity, reversibility, self-adjointness.
-- `Shufflemath/Cost.lean` -- costed operations and protocol costs.
-- `Shufflemath/BernoulliLaplace.lean` -- exact Bernoulli--Laplace model and Commander certificates (frozen).
-- `Shufflemath/BernoulliLaplaceGeneral.lean` -- general `N`/`m`/`r` exchange theory.
-- `Shufflemath/BernoulliLaplaceFiber.lean` -- detailed balance by fiber counting.
-- `Shufflemath/BernoulliLaplaceCommanderBridge.lean` -- general/Commander agreement.
-- `docs/autonomous_lean_build.md` -- the Lean build's handoff/resume document.
-- `docs/lean_build_history.md` -- its session log and reference notes.
-
-## Concrete full-deck bridge (October 2026)
-
-The optional, targeted full-deck formalization now contains an explicit
-99-card permutation witness for every Commander macrostate
-(`CommanderFiberWitness.lean`), a generic exact uniform-fiber disintegration
-theorem (`FiberDisintegration.lean`), and a three-level refinement for real
-pile-membership-preserving local shuffles (`PhysicalExchangeReduction.lean`).
-The Commander specialization is in `CommanderFullDeckDisintegration.lean`.
-The uniform full-deck TV theorems remain **conditional on one explicit
-99-card fiber-cardinality identity**; the physical theorem additionally
-requires the named-card membership exchange law. See
-`docs/commander_fiber_disintegration.md` for the precise proof boundary.
-
-## Build
-
-The project is pinned to Lean 4 / mathlib `v4.34.0`.
+This repository pins Lean 4.34.0 and mathlib in `lean-toolchain` and
+`lake-manifest.json`. For the current development, use the cache before
+building the explicit optional/full-deck targets:
 
 ```bash
-lake update
-lake build
+cd ~/code/shufflemath
+lake exe cache get
+lake build \
+  Shufflemath.CommanderFiberWitness \
+  Shufflemath.FiberDisintegration \
+  Shufflemath.PhysicalExchangeReduction \
+  Shufflemath.CommanderFullDeckDisintegration
+./dev/verify_next_phase.sh
 ```
 
-The exact-rational Python experiment has no third-party dependencies:
+`./dev/verify_next_phase.sh` builds the complete targeted next-phase list
+and runs the Python regression suite. For the expensive, separately
+scoped 2,401-candidate pair certificate, use:
 
 ```bash
-python experiments/bernoulli_laplace.py
-python -m unittest discover -s tests -v
+./dev/verify_next_phase.sh --pair
 ```
 
-## Research principles
-
-- Separate **proved facts**, **finite exact computations**, **simulation evidence**, and **heuristics**.
-- Do not use a single scalar such as "70% shuffle efficiency" unless it is explicitly introduced as an approximation.
-- Treat cut bias, clumping, untouched tails, working-set size, and operation time as distinct parameters.
-- Optimize **physical cost subject to a randomness criterion**, rather than optimizing a raw shuffle count.
-- Keep the human-facing recommendation conditional on the model and measured ergonomics.
-- Keep one authority for each mathematical object: semantic distributions/kernels are `StdSimplex` based; matrices are a proved computational view, not a second probability definition.
-
-## Next-phase formalization sources (October 2026)
-
-The current development tranche adds a semantic bridge for the 50-state
-exact array certificates, an inverse-GSR label-sort model with
-product-alphabet composition, a generic recoverable-fiber TV isometry
-with a full/macro intertwining theorem, and a target-relative weighted
-protocol certificate. An optional module carries the expensive finite
-2,401-candidate exact pair search. See
-[`docs/formalization_next_phase.md`](docs/formalization_next_phase.md)
-for proof interfaces, remaining full-deck obligations, verification status,
-and targeted build commands.
-
-For independent exact reference calculations:
+A plain `lake build` uses `Shufflemath.lean` and does not compile all
+optional modules. Do not habitually run `lake update` in a pinned checkout:
+the legacy `dev/verify.sh` invokes it, so use the targeted script instead.
+Independent exact references and tests:
 
 ```bash
+python3 -m unittest discover -s tests -v
 python3 experiments/commander_pair_search.py
 python3 experiments/gsr_inverse.py
 python3 experiments/oracle_gsr_budget.py --target 1/100
 ```
 
-## Near-term theorem ladder
+Python experiments support theorem development; they are not substitutes
+for Lean proofs.
 
-1. (done) prove the first eigenfunction/eigenvalue theorem for the general exchange
-   kernel, incl. non-vacuousity (`blFirstModeFunc`, `blFirstModeFunc_nonzero`);
-2. formalize ideal GSR inverse riffles and the `a`-shuffle composition law;
-3. prove TV contraction / perturbation bounds for heterogeneous finite kernels;
-4. introduce costed schedule search and certificates;
-5. add biased/clumpy local shuffle models.
+## Reusable numerical benchmark
 
+The 50-state chain records `X`, the number of originally-left cards
+currently in the 50-card left pile. `CommanderState = Fin 50` encodes
+`X=1,...,50` as `x.val+1`. From complete segregation, two ideal
+25-position exchanges have macrostate TV approximately `0.00248417758708`;
+three have approximately `0.0000257596683780`. The exact rational values
+are in [docs/findings.md](docs/findings.md). These numbers are not
+unconditional full-deck or human-shuffle guarantees.
 
-### Full-deck oracle bridge (October 2026)
+## Documentation map
 
-`Shufflemath/OracleRefinement.lean` gives an exact, recoverable
-project/transition/resample oracle model and transports Commander mixing
-certificates to refined microstate spaces and heterogeneous schedules.
-`Shufflemath/PhysicalRefinement.lean` supplies the physically relevant
-weighted-telescope theorem: compare finite local GSR to the corresponding
-perfect-local exchange, which need only intertwine with the macro kernel.
-`Shufflemath/CommanderPermutation.lean` represents a deck as an actual
-permutation of 99 distinct cards and defines its left-pile macrostate and
-full-permutation fibers. Proof of the fiber-cardinality disintegration and
-physical exchange intertwining are separate, explicitly listed obligations.
+- **[docs/agent_handoff.md](docs/agent_handoff.md):** exact restart task,
+  current compilation gate, and acceptance rules for a new/less experienced
+  agent.
+- **[docs/lean_plan.md](docs/lean_plan.md):** sole active theorem roadmap,
+  dependencies F1-F5, optional tasks, and exit criteria.
+- [docs/commander_fiber_disintegration.md](docs/commander_fiber_disintegration.md):
+  technical reference for the fiber/disintegration/membership layer.
+- [docs/full_deck_oracle_bridge.md](docs/full_deck_oracle_bridge.md):
+  definitions and differences among canonical and physical kernels.
+- [docs/formalization_next_phase.md](docs/formalization_next_phase.md):
+  historical October 20 GSR/semantic-bridge design record.
+- [docs/formalization_dependency_audit.md](docs/formalization_dependency_audit.md),
+  [docs/autonomous_lean_build.md](docs/autonomous_lean_build.md), and
+  [docs/lean_build_history.md](docs/lean_build_history.md): historical
+  research and build-session context, **not active plans**.
+- [docs/problem.md](docs/problem.md), [docs/literature.md](docs/literature.md),
+  [docs/measurement.md](docs/measurement.md): problem statement, external
+  literature, and empirical model-fitting policy.
+- `Shufflemath/`: Lean library; `dev/`: verification scripts and optional
+  expensive pair theorem; `experiments/` and `tests/`: independent exact
+  rational reference implementations and regression tests.
+- `visualizations/`: separately built Manim mathematics course, not a
+  prerequisite for formalization. See its own README and Makefile.
 
-An exact small-deck physical-exchange reference and 99-card combinatorial
-identity checks live in `experiments/full_deck_oracle.py`, with regressions
-in `tests/test_full_deck_oracle.py`. See
-`docs/full_deck_oracle_bridge.md` for the model and verification boundaries.
+## Research principles
+
+- Keep a single authority for each mathematical object: `StdSimplex` is
+  the semantic distribution; matrices are a proved computational view.
+- Separate **Lean theorems**, **conditional Lean theorems**, **exact Python
+  checks**, and **hypotheses**. Never silently collapse those categories.
+- Preserve named-card membership when modeling a local pile shuffle; never
+  substitute a count-fiber reset for a physical operation.
+- Model cut bias, clumping, untouched tails, working-set sizes and operation
+  costs as distinct parameters. Do not summarize them with a single vague
+  "shuffle efficiency" parameter.
+- Optimize **cost subject to a randomness criterion**, not raw shuffle
+  count. Keep any player-facing recommendation conditional on its model.

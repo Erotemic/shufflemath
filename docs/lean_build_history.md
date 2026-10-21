@@ -1,5 +1,12 @@
 # Lean build history and reference notes
 
+**Historical session record.** This is an audit trail and Lean API reference,
+not the current next-action list. For work as of October 21, 2026 use
+[agent_handoff.md](agent_handoff.md) and [lean_plan.md](lean_plan.md).
+References below to old priorities, source baselines, and deadlines describe
+that historical period and must not be treated as active instructions.
+
+
 Archival companion to `docs/autonomous_lean_build.md` (the ACTIVE
 handoff/resume document). The handoff points here for the hard-won
 mechanics notes (§1), the verified mathlib hook list (§2), the

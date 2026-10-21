@@ -1,100 +1,118 @@
-# The next 99-card proof tranche: explicit fibers, disintegration, and physical membership
+# Commander fibers, disintegration, and membership reduction
 
-Baseline: source snapshot `9257fa35bb1b`, October 21, 2026. The source
-contains verified previous Lean modules, including the compiled
-`CommanderPermutation`, `OracleRefinement`, and `PhysicalRefinement` code.
-This tranche introduces additional Lean modules; the pinned local build is
-required to check their elaboration.
+**Technical design reference, October 21, 2026.** This describes the
+implemented Lean interfaces and the hypotheses still required. For the
+**active order of work** use [lean_plan.md](lean_plan.md), starting at
+[agent_handoff.md](agent_handoff.md).
 
-## 1. Every macro fiber is inhabited (new: constructive proof)
+## 1. Every macro fiber has a concrete deck witness
 
-`Shufflemath/CommanderFiberWitness.lean` constructs a *permutation of all
-99 card identities* for each `x : Fin 50`. Start with deck identities in
-ascending order and rotate by `49 - x`. The first 50 positions then contain
-exactly `x+1` identities from `0..49`. The source proves the rotation is
-an equivalence and checks the 50 projection equalities with `native_decide`.
-The check does not enumerate the `99!` permutations or prove existence by
-an abstract classical choice.
+`Shufflemath/CommanderFiberWitness.lean` constructs a real permutation of
+all 99 card identities for each `x : Fin 50`: rotate the identity deck by
+`49 - x.val`. The first 50 positions then contain exactly `x.val + 1`
+original-left identities. `deckForCount_projects_all` checks 50 concrete
+instances with `native_decide`, **not** all 99! permutations.
 
-The theorem `project_surjective` closes the missing premise in the previous
-`CommanderPermutation.uniformFiber` definition. Consequently exact
-rational 2-step and 3-step oracle TV certificates now have no externally
-supplied fiber-existence premise. Their target is the stationary *lifted*
-full-deck law, which still needs identification with the uniform law.
+`CommanderPermutation.project_surjective` removes the prior requirement
+that callers supply an inhabitation proof. It enables recovery of the
+macrostate from a normalized full-deck fiber law. It does **not** prove
+that the 50 fibers have the hypergeometric relative sizes.
 
-## 2. Finite uniform disintegration (new: general theorem)
+## 2. Generic finite uniform disintegration
 
-`Shufflemath/FiberDisintegration.lean` is independent of shuffle-specific
-arithmetic. For a surjective observation `observe : beta -> alpha`, it
-constructs:
+`Shufflemath/FiberDisintegration.lean` provides, for any surjective
+observation `observe : beta -> alpha` between suitable finite types:
 
-- `fiberSet observe x`: the complete microstate fiber;
-- `marginalLaw observe`: probability `|fiber x| / |beta|`;
-- `fiberLaw observe hsurj`: mass `1/|fiber x|` at microstates in the
-  fiber, zero elsewhere.
+- `fiberSet observe x`: the microscopic states with observation `x`;
+- `marginalLaw observe`: exact mass `|fiber x| / |beta|`;
+- `fiberLaw observe hsurj`: exact mass `1/|fiber x|` within that fiber,
+  zero outside;
+- `fiberLaw_recovers`: the conditional law followed by deterministic
+  observation is the identity macro kernel;
+- `marginal_comp_fiber_eq_uniform`: the cardinality-weighted mixture of
+  these conditional laws is exactly uniform on all microscopic states;
+- `stationary_disintegrates_of_mass`: an arbitrary macro law with these
+  masses also lifts to uniform.
 
-The theorem `marginal_comp_fiber_eq_uniform` proves symbolically that
-mixing these uniform conditional fibers by their relative cardinalities
-gives a **uniform distribution on all beta microstates**. This is a
-non-enumerating sum rearrangement and works for unequal fiber sizes.
-`fiberLaw_recovers` also proves that deterministic observation recovers the
-macrostate, so the earlier isometric lifting theorems apply.
+Unequal fiber sizes are allowed. The proofs use finite sum algebra rather
+than complete-permutation enumeration.
 
-## 3. Exactly one 99-card counting obligation remains
+## 3. Unproved Commander counting premise
 
-`Shufflemath/CommanderFullDeckDisintegration.lean` packages this as:
+`Shufflemath/CommanderFullDeckDisintegration.lean` defines
+`HasCommanderFiberCounts` with the precise required condition:
 
 ```
-HasCommanderFiberCounts := for every x : Fin 50,
+for every x : CommanderState,
   mass commanderStationary x =
-    |{ full 99-card permutations with project deck = x }| / 99!
+    |{ decks with project deck = x }| / 99!
 ```
 
-The generic disintegration theorem proves that this identity suffices for
-`commanderStationary ; fiberLaw = uniform(Deck)`. It then derives the exact
-2-step and 3-step full-deck uniform TV identities, conditional explicitly
-on that one counting theorem. No `sorry`, axiom, or fabricated full-deck
-uniform claim is used.
-
-The intended next proof supplies the precise combinatorial count
+To discharge it, count the eligible named-card memberships and the
+within-pile orderings separately:
 
 ```
-|fiber x| = choose(50, x+1) * choose(49, 49-x) * 50! * 49!
+|fiber x| = choose(50,x.val+1) * choose(49,49-x.val) * 50! * 49!
 ```
 
-and simplifies the fraction by `99!` to the already defined hypergeometric
-stationary probability. The exact Python reference checks the formula for
-all 50 states but does **not** replace the Lean counting proof.
+Then divide by `99!` and identify the resulting rational expression with
+`commanderStationary`. The independent Python reference checks this exact
+formula for all 50 states, but that does **not** prove it in Lean.
 
-## 4. Physical exchanges need a three-level refinement
+After the count is proved, the existing conditional
+`commander_uniform_disintegration`,
+`two_oracle_exchanges_uniform_of_counts` and
+`three_oracle_exchanges_uniform_of_counts` can be specialized without
+`hcounts`. That closes the **ideal oracle** uniform-TV target only; it does
+not close the physical-exchange theorem.
 
-The earlier `PhysicalRefinement` API correctly required *intertwining*;
-its premise was still formulated as an abstract full-deck identity.
-`Shufflemath/PhysicalExchangeReduction.lean` now decomposes the states as:
+## 4. Physical exchange requires an intermediate named-membership state
+
+`Shufflemath/PhysicalExchangeReduction.lean` uses three levels:
 
 ```
 macro count --membershipLift--> named-card pile membership
             --localLift--> complete ordered deck
 ```
 
-A perfect local shuffle changes the order *within* each pile, but not the
-membership set. It is **not** the oracle that resamples an arbitrary full
-deck conditional only on the macro count. (The existing five-card counter-
-example distinguishes those two kernels pointwise.)
+The second lift produces random within-pile orderings while holding
+membership fixed. A real local pile shuffle cannot replace that map by
+an arbitrary fresh deck with the same *count*: doing so changes which
+specific card identities are in which pile.
 
-A raw position exchange followed by true perfect-local resampling
-intertwines the macro chain whenever the raw exchange, applied to an input
-that is uniform in its macro fiber, produces the correct law on **named-
-card membership**. The new theorem proves this implication using exact
-finite-kernel associativity. The specialization additionally requires that
-`membershipLift ; localLift` equals the normalized full-deck fiber law.
+The generic reduction proves that a raw position exchange plus perfect
+local resampling intertwines with the BL macro chain **if**:
 
-This isolates the next physical combinatorial obligation without assuming
-it: prove uniformity of post-exchange membership conditional on the new
-count. `experiments/commander_fiber_witness.py` checks that property
-exhaustively on decks up to six cards, including every input macrostate.
+1. `localLift` recovers its membership (`hLocalRecovers`);
+2. `membershipLift ; localLift` equals the macro count-fiber lift
+   (`hfactor`);
+3. the raw exchange started from a uniform count fiber produces the
+   prescribed membership-level transition (`hMembershipExchange`).
 
-## Verification and subsequent work
+These are *premises*, not silently discharged lemmas. The Commander
+physical-perfect 2-step theorem also requires `HasCommanderFiberCounts`.
+The exact small-deck reference exhaustively checks membership
+intertwining on 4-, 5-, and 6-card cases. It is not a proof for 99 cards.
+
+## 5. Recommended decomposition for the next agent
+
+1. **V0:** verify the latest `FiberDisintegration` v3 one-line parser fix
+   with the targeted build below; a successful build has not yet been
+   reported after that correction.
+2. **F1:** prove the exact Commander count, using a fixed-membership
+   `50! * 49!` bijection and independent combinatorial membership count.
+3. **F2:** give a concrete `Membership`, `membershipLift`, and `localLift`
+   with factorization and recovery proofs.
+4. **F3:** define the uniform 25-position raw exchange and prove the
+   membership transition to discharge `hMembershipExchange`.
+5. **F4:** compare finite-GSR local shuffles with the physical
+   perfect-local reference; combine using weighted TV telescope.
+
+Full acceptance criteria and dependency notes are maintained **only** in
+[lean_plan.md](lean_plan.md). Do not start new proofs from this reference's
+short list alone.
+
+## Verification
 
 ```bash
 cd ~/code/shufflemath
@@ -107,13 +125,8 @@ lake build \
 ./dev/verify_next_phase.sh
 ```
 
-The Python tests validate the 50 canonical witnesses, exact uniform-mixture
-identity on 4--6-card decks, and membership-exchange intertwining on all
-small-deck macro-count fibers. They cannot establish a 99-card Lean theorem.
-
-Next most valuable Lean work: discharge `HasCommanderFiberCounts` with a
-structural fiber cardinality equivalence; then implement membership and
-local uniform laws for `Deck`, prove their factorization, and connect a
-specified uniformly selected 25-position exchange to the membership law.
-After those are compiled, prove one-step finite-GSR-vs-perfect-local TV
-bounds and attach physical-time costs.
+At overlay creation, 35 Python tests passed, including 50 deck-witness
+checks, exact small-deck uniform mixtures, and membership exchange
+checks. Prior to the final v3 source correction, the latest Lean build
+failed on a parser error in `FiberDisintegration.lean`. Do not infer the
+v3 compilation result from that earlier log.

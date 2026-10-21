@@ -9,14 +9,62 @@ statement, and the Lean theorem ladder. Three tracks run in parallel:
 literature, exact finite computation (`experiments/`), and Lean
 formalization (library `Shufflemath`).
 
+## Active roadmap and mandatory first check
+
+- **Active status and work queue:** `docs/lean_plan.md`.
+- **Current single next action and proof acceptance criteria:**
+  `docs/agent_handoff.md`.
+- `docs/autonomous_lean_build.md` is an **archived October 4-12 session**;
+  its expired deadline, old agent instructions, and model-specific commit
+  attribution do not apply. `docs/formalization_next_phase.md` and the
+  dependency audit are historical design notes, not the next-work queue.
+- Treat prior successful user-reported Lean builds as established. The
+  latest October 21 disintegration v3 replacement has not yet been reported
+  as passing a full local build; verify it before starting F1.
+
 ## Build and verify
 
 ```bash
-./dev/verify.sh   # lake update && lake build && python unit tests
+cd ~/code/shufflemath
+lake exe cache get
+lake build \
+  Shufflemath.CommanderFiberWitness \
+  Shufflemath.FiberDisintegration \
+  Shufflemath.PhysicalExchangeReduction \
+  Shufflemath.CommanderFullDeckDisintegration
+./dev/verify_next_phase.sh
 ```
 
-The toolchain is pinned by `lean-toolchain` (elan); mathlib is pinned in
-`lakefile.lean`.
+The toolchain and Mathlib versions are pinned (`lean-toolchain`,
+`lake-manifest.json`). Prefer `lake exe cache get` before every targeted
+`lake build`. `Shufflemath.lean` intentionally omits some optional modules,
+so plain `lake build` does not prove the whole new tranche builds.
+The legacy `dev/verify.sh` calls `lake update`: do not use that as the
+normal incremental verification path. The expensive exhaustive pair
+certificate is opt-in: `./dev/verify_next_phase.sh --pair`.
+
+### Proof-development discipline
+
+- Work on one clearly named task from `docs/lean_plan.md` per patch, with
+  the prerequisites, proposed theorem, and target build command stated.
+- Distinguish canonical project/count/resample oracles, physical perfect-
+  local shuffles, and finite-GSR shuffles; they are not pointwise equal.
+  Preserve named-card pile membership when shuffling *within* a pile.
+- Do not replace an explicit theorem hypothesis (especially
+  `HasCommanderFiberCounts` or `hMembershipExchange`) by an invented axiom,
+  `sorry`, `admit`, or a weakened theorem statement. Avoid enumerating 99!
+  permutations with `native_decide`; prefer structural cardinality proofs.
+- Routine compiler verification does **not** need `#print axioms` or
+  repetitive axiom-dump checks. Reserve a comparator-based audit for the
+  end of a formalization effort if explicitly requested; it should not
+  flood normal build output. Avoid disabling heartbeat limits globally.
+- Do not hold up substantive Lean progress over non-blocking style-only
+  linter suggestions. Use independent Python computations only as tests,
+  not evidence that an uncompiled Lean theorem was proved.
+- Do not use worktrees for this repo. Preserve the user's working tree;
+  do not reset uncommitted work without explicit permission. Stage only
+  changed files. If committing, include one `Co-authored-by` trailer for
+  the current model, not the historical October session's model name.
 
 ## Lean tooling (`submodules/aiq-lean-formalization-tools`)
 
