@@ -1,0 +1,29 @@
+{
+  "best": {
+    "k1": 25,
+    "k2": 25,
+    "tv_den": 4933350368865509640837610315994582805439728012,
+    "tv_num": 12255318415559330995522631403472464258192877
+  },
+  "examined": 2401,
+  "model": "Commander 99/50, complete segregation, two ideal exchanges",
+  "next_strictly_worse": {
+    "k1": 24,
+    "k2": 25,
+    "tv_den": 21893566725734510240403596076899036118815361,
+    "tv_num": 54505259250624939641848963642530652136668
+  },
+  "search_domain": {
+    "k1_max": 49,
+    "k1_min": 1,
+    "k2_max": 49,
+    "k2_min": 1
+  },
+  "state_definition": "x=original-left cards in the 50-card left pile; states 1..50",
+  "ties": [
+    [
+      25,
+      25
+    ]
+  ]
+}

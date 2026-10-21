@@ -54,6 +54,17 @@ Remaining symbolic targets (1--4 done):
 6. certify the finite `(25,25)` optimality search rather than only its
    first-mode surrogate.
 
+## October 2026 implementation tranche
+
+See [formalization_next_phase.md](formalization_next_phase.md) for the new
+source and verification status. The files `BernoulliLaplaceSemantic.lean`,
+`GSR.lean`, `FiberLifting.lean`, and `ProtocolCertificate.lean` are added to
+the library imports. They contain source proofs for the exact-array/semantic
+bridge, product-label GSR composition, recoverable-fiber TV preservation and
+intertwining, and terminal target TV error. Their Lean build must be run before
+marking these declarations verified. The expensive pair-optimality
+`native_decide` module is available as a separate optional build target.
+
 ## L2: ideal GSR local riffle
 
 Formalize one inverse GSR shuffle via independent binary labels. Repeated riffles can then be represented via larger labels (`a = 2^r`).

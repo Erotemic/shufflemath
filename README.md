@@ -111,6 +111,26 @@ python -m unittest discover -s tests -v
 - Keep the human-facing recommendation conditional on the model and measured ergonomics.
 - Keep one authority for each mathematical object: semantic distributions/kernels are `StdSimplex` based; matrices are a proved computational view, not a second probability definition.
 
+## Next-phase formalization sources (October 2026)
+
+The current development tranche adds a semantic bridge for the 50-state
+exact array certificates, an inverse-GSR label-sort model with
+product-alphabet composition, a generic recoverable-fiber TV isometry
+with a full/macro intertwining theorem, and a target-relative weighted
+protocol certificate. An optional module carries the expensive finite
+2,401-candidate exact pair search. See
+[`docs/formalization_next_phase.md`](docs/formalization_next_phase.md)
+for proof interfaces, remaining full-deck obligations, verification status,
+and targeted build commands.
+
+For independent exact reference calculations:
+
+```bash
+python3 experiments/commander_pair_search.py
+python3 experiments/gsr_inverse.py
+python3 experiments/oracle_gsr_budget.py --target 1/100
+```
+
 ## Near-term theorem ladder
 
 1. (done) prove the first eigenfunction/eigenvalue theorem for the general exchange
