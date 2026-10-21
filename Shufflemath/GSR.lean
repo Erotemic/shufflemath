@@ -44,7 +44,7 @@ private theorem filter_flatMap {β : Type*} (p : α → Bool)
     (xs.flatMap f).filter p = xs.flatMap (fun x => (f x).filter p) := by
   induction xs with
   | nil => rfl
-  | cons x xs ih => simp [List.flatMap, Function.comp_def, ih]
+  | cons x xs ih => simp [List.flatMap, Function.comp_def]
 
 private theorem filter_filter (p q : α → Bool) (xs : List α) :
     (xs.filter p).filter q = xs.filter (fun x => p x && q x) := by
@@ -60,7 +60,7 @@ theorem stableBuckets_comp (a b : Nat) (minor : α → Fin a) (major : α → Fi
     (deck : List α) :
     stableBuckets b major (stableBuckets a minor deck) =
       lexBuckets a b minor major deck := by
-  simp [stableBuckets, lexBuckets, filter_flatMap, filter_filter]
+  simp [stableBuckets, lexBuckets, filter_flatMap]
 
 /-- The lexicographically ordered pair alphabet has `b*a` labels.
 The explicit numeric encoding and its sorting compatibility are future work. -/
