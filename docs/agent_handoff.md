@@ -1,14 +1,58 @@
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-02-09. **Source basis:** the October 21 source snapshot,
+**Updated:** 2026-02-10. **Source basis:** the October 21 source snapshot,
 the fiber/disintegration tranche, and this session's F1 progress in
 `Shufflemath/CommanderFiberCount.lean` (compiles, no `sorry`/axiom). This is
 an *operational handoff*. `lean_plan.md` is the authority for overall scope and
 priority; `AGENTS.md` governs repository behavior.
 
+## Lean 4 module-system migration (done this session)
+
+Every library `.lean` file (24 `Shufflemath/*` + the `Shufflemath.lean`
+aggregator) and `dev/BernoulliLaplacePairOptimality.lean` were migrated from the
+old `import`-only style to Lean 4.34's **`module`** system. `lakefile.lean` was
+left as-is (Lake DSL files stay plain `import Lake`). The whole graph is
+atomic: a `module` file cannot `import` a non-`module` file in the same
+package, so all-or-nothing was required.
+
+The working per-file recipe (do NOT deviate):
+
+* Header: `module` on its own line, blank line, then imports.
+* **Every** `import X` → **`public import X`**. A plain `import` makes the name
+  "imported privately" and it will not resolve inside an `@[expose]` section
+  (the compiler says *"consider adding `public import …`"*).
+* Wrap the body in `@[expose] public section … end`. `@[expose]` (not bare
+  `public`) is what makes declarations **transparent across the module
+  boundary** — bare `public` exports by name but leaves them **opaque**
+  (consumer `rfl`/`simp`/`dsimp` cannot unfold them, which breaks this codebase's
+  heavy `simp [ … ]`/`change` usage).
+* **No `private` declarations inside an `@[expose]` section.** `@[expose]` +
+  `private` makes the decl vanish (even to later decls in the same namespace).
+  The 88 `private` decls were converted to plain `def`/`theorem`/`abbrev`/
+  `instance`/`lemma` (now exposed by the section).
+* Files that previously relied on Lean 4's **implicit end-of-file scope
+  close** (no explicit `end`, e.g. `BernoulliLaplaceCommanderBridge`,
+  `BernoulliLaplaceFiber`) must NOT get an appended bare `end` — let EOF close
+  the section. Files that already had balanced explicit `end`s keep the one
+  appended `end` that closes the section.
+* **`native_decide` needs a dual import**: files whose `native_decide` proves a
+  fact about another module's `def` (`BernoulliLaplace` → `TotalVariation`'s
+  `vectorTV`; `CommanderFiberWitness` → `CommanderPermutation`'s `project`;
+  `dev/BernoulliLaplacePairOptimality` → `BernoulliLaplace`) need both
+  `public import M` *and* `public meta import M` for that module `M`. The
+  term-level `public import` keeps `Finset.range`/`Rat.addCommMonoid`/etc.
+  usable in computable defs; the `meta import` lets the generated `_native`
+  code reference the target. A lone `meta import` demotes the re-exported
+  Mathlib names to meta-only and breaks the computable defs.
+
+Verified: `./dev/verify_next_phase.sh` (builds the next-phase overlay + 35
+Python tests, OK) and `./dev/verify_next_phase.sh --pair` (the 2,401-pair
+certificate via `lake env lean dev/…`, EXIT 0).
+
 ## Exactly where to resume
 
-**F1 is partway done.** `Shufflemath/CommanderFiberCount.lean` exists and
+**F1 is partway done.** *(F1a's `CommanderFiberCount.lean` now builds as a
+`module` file under the migration above.)* `Shufflemath/CommanderFiberCount.lean` exists and
 compiles (`lake build Shufflemath.CommanderFiberCount`, EXIT 0). It proves:
 
 * `leftEquiv (d) (h)` : the left action of deck `d` is a bijection

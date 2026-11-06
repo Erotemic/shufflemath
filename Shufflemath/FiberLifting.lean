@@ -1,4 +1,8 @@
-import Shufflemath.TotalVariation
+module
+
+public import Shufflemath.TotalVariation
+
+@[expose] public section
 
 namespace Shufflemath
 
@@ -120,3 +124,4 @@ theorem run_tv_eq_macro
 
 end FiberLifting
 end Shufflemath
+end

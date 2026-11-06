@@ -1,11 +1,15 @@
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Fintype.Powerset
-import Mathlib.Data.Fintype.Perm
-import Mathlib.Data.Fintype.Prod
-import Mathlib.Data.Finset.SDiff
-import Mathlib.Data.Finset.Basic
-import Shufflemath.BernoulliLaplaceFiber
-import Shufflemath.CommanderPermutation
+module
+
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fintype.Powerset
+public import Mathlib.Data.Fintype.Perm
+public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Data.Finset.SDiff
+public import Mathlib.Data.Finset.Basic
+public import Shufflemath.BernoulliLaplaceFiber
+public import Shufflemath.CommanderPermutation
+
+@[expose] public section
 
 namespace Shufflemath
 
@@ -153,3 +157,4 @@ theorem rightEquiv_card (S : Finset (Fin 99)) (hcard : S.card = 50) :
 end
 
 end Shufflemath
+end

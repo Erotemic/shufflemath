@@ -1,5 +1,10 @@
-import Shufflemath.CommanderPermutation
-import Mathlib.Tactic
+module
+
+public import Shufflemath.CommanderPermutation
+public meta import Shufflemath.CommanderPermutation
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace Shufflemath
 namespace CommanderPermutation
@@ -20,14 +25,14 @@ per state, not a computation over the permutation group.
 -/
 
 /-- Cyclic addition of a shift to a card identity. -/
-private def addShift (s i : Fin 99) : Fin 99 :=
+def addShift (s i : Fin 99) : Fin 99 :=
   ⟨(i.val + s.val) % 99, Nat.mod_lt _ (by decide)⟩
 
 /-- Cyclic subtraction of the same shift. -/
-private def subShift (s i : Fin 99) : Fin 99 :=
+def subShift (s i : Fin 99) : Fin 99 :=
   ⟨(i.val + 99 - s.val) % 99, Nat.mod_lt _ (by decide)⟩
 
-private theorem subShift_addShift (s i : Fin 99) :
+theorem subShift_addShift (s i : Fin 99) :
     subShift s (addShift s i) = i := by
   apply Fin.ext
   dsimp [subShift, addShift]
@@ -35,7 +40,7 @@ private theorem subShift_addShift (s i : Fin 99) :
   have hi := i.isLt
   omega
 
-private theorem addShift_subShift (s i : Fin 99) :
+theorem addShift_subShift (s i : Fin 99) :
     addShift s (subShift s i) = i := by
   apply Fin.ext
   dsimp [subShift, addShift]
@@ -111,3 +116,4 @@ theorem three_oracle_exchanges_exact_without_surjectivity_premise :
 
 end CommanderPermutation
 end Shufflemath
+end

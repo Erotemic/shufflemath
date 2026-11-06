@@ -20,16 +20,20 @@ Dependency direction is one-way: this module imports
 this one, and both are listed in the library root `Shufflemath.lean`,
 so no import cycle can form.
 -/
-import Shufflemath.BernoulliLaplaceGeneral
-import Shufflemath.Markov
-import Mathlib.Data.Finset.Powerset
-import Mathlib.Data.Finset.Prod
-import Mathlib.Data.Finset.Order
-import Mathlib.Data.Fintype.Defs
-import Mathlib.Data.Nat.Choose.Basic
-import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Algebra.BigOperators.Field
-import Mathlib.Tactic
+module
+
+public import Shufflemath.BernoulliLaplaceGeneral
+public import Shufflemath.Markov
+public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Finset.Prod
+public import Mathlib.Data.Finset.Order
+public import Mathlib.Data.Fintype.Defs
+public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.BigOperators.Field
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace Shufflemath
 namespace BernoulliLaplaceGeneral
@@ -61,15 +65,15 @@ of ordinary cards (there are `N - r` of them), as concrete `Fin` types.
 Choosing a pile `S` of size `m` with `x` specials is the same as choosing
 `S1 ⊆ starsUniv` with `|S1| = x` and `S2 ⊆ plainUniv` with
 `|S2| = m - x`. -/
-private def starsUniv (p : ExchangeAdmissible) : Finset (Fin p.r) :=
+def starsUniv (p : ExchangeAdmissible) : Finset (Fin p.r) :=
   Finset.univ
 
-private def plainUniv (p : ExchangeAdmissible) : Finset (Fin (p.N - p.r)) :=
+def plainUniv (p : ExchangeAdmissible) : Finset (Fin (p.N - p.r)) :=
   Finset.univ
 
 /-- The exchange fiber count for the macrostate pair `(x, y)`: see the
 section comment. -/
-private def fiberSum (p : ExchangeAdmissible) (x y : Nat) : Nat :=
+def fiberSum (p : ExchangeAdmissible) (x y : Nat) : Nat :=
   ∑ S1 ∈ (starsUniv p).powersetCard x,
   ∑ S2 ∈ (plainUniv p).powersetCard (p.m - x),
   ∑ a ∈ (Finset.range (p.k + 1)).filter (fun a => x - a ≤ y ∧ y - (x - a) ≤ p.k),
@@ -79,14 +83,14 @@ private def fiberSum (p : ExchangeAdmissible) (x y : Nat) : Nat :=
       ∑ _B2 ∈ (plainUniv p \ S2).powersetCard (p.k - (y - (x - a))), 1)
 
 /-- A sum of constant `1`s over a finset is its cardinality. -/
-private theorem sumOnes {α : Type*} (s : Finset α) : (∑ _x ∈ s, 1 : Nat) = s.card := by
+theorem sumOnes {α : Type*} (s : Finset α) : (∑ _x ∈ s, 1 : Nat) = s.card := by
   rw [Finset.sum_const_nat (fun _ _ => rfl)]
   simp
 
 /-- The `(A, B)` part of the fiber, given the pile `(S1, S2)` and the
 special-exchange index `a`: the four nested sums of `1`s collapse to the
 product of the four `powersetCard` cardinalities. -/
-private theorem fiberABcount (p : ExchangeAdmissible) (x y a : Nat)
+theorem fiberABcount (p : ExchangeAdmissible) (x y a : Nat)
     (S1 : Finset (Fin p.r)) (_hS1 : S1 ∈ (starsUniv p).powersetCard x)
     (S2 : Finset (Fin (p.N - p.r))) (_hS2 : S2 ∈ (plainUniv p).powersetCard (p.m - x))
     (_ha : a ∈ Finset.range (p.k + 1)) :
@@ -124,7 +128,7 @@ private theorem fiberABcount (p : ExchangeAdmissible) (x y a : Nat)
 the product of the four `powersetCard` cardinalities, i.e. the
 `a`-summand factors with the plain-card count written as
 `(N - r) - (m - x)`. -/
-private theorem fiberABchoose (p : ExchangeAdmissible) (x y a : Nat)
+theorem fiberABchoose (p : ExchangeAdmissible) (x y a : Nat)
     (S1 : Finset (Fin p.r)) (hS1 : S1 ∈ (starsUniv p).powersetCard x)
     (S2 : Finset (Fin (p.N - p.r))) (hS2 : S2 ∈ (plainUniv p).powersetCard (p.m - x))
     (ha : a ∈ Finset.range (p.k + 1))
@@ -166,7 +170,7 @@ private theorem fiberABchoose (p : ExchangeAdmissible) (x y a : Nat)
 
 /-! The main counting lemma: the exchange fiber of `(x, y)` factors into
 the stationary-weight factors and the transition numerator. -/
-private theorem fiberSum_eq (p : ExchangeAdmissible) (x y : Nat)
+theorem fiberSum_eq (p : ExchangeAdmissible) (x y : Nat)
     (hx : x ∈ stateFinset p.N p.m p.r) :
     fiberSum p x y =
       Nat.choose p.r x * Nat.choose (p.N - p.r) (p.m - x) *
@@ -320,26 +324,26 @@ range, restricted by a single predicate. The involution
 B1, B2, A1, A2)` is a bijection between the `(x, y)` and `(y, x)`
 instances of this finset. -/
 
-private abbrev fiber7Tuple (p : ExchangeAdmissible) :=
+abbrev fiber7Tuple (p : ExchangeAdmissible) :=
   (((((Finset (Fin p.r) × Finset (Fin (p.N - p.r))) × Nat) ×
     Finset (Fin p.r)) × Finset (Fin (p.N - p.r))) × Finset (Fin p.r)) ×
   Finset (Fin (p.N - p.r))
 
-private def tS1 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.1.1.1.1.1
-private def tS2 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.1.1.1.1.2
-private def tA {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.1.1.1.2
-private def tA1 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.1.1.2
-private def tA2 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.1.2
-private def tB1 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.2
-private def tB2 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.2
+def tS1 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.1.1.1.1.1
+def tS2 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.1.1.1.1.2
+def tA {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.1.1.1.2
+def tA1 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.1.1.2
+def tA2 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.1.2
+def tB1 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.1.2
+def tB2 {p : ExchangeAdmissible} (t : fiber7Tuple p) := t.2
 
-private def fiber7U1 (p : ExchangeAdmissible) :=
+def fiber7U1 (p : ExchangeAdmissible) :=
   (starsUniv p).powerset ×ˢ (plainUniv p).powerset
-private def fiber7U2 (p : ExchangeAdmissible) := fiber7U1 p ×ˢ Finset.range (p.k + 1)
-private def fiber7U3 (p : ExchangeAdmissible) := fiber7U2 p ×ˢ (starsUniv p).powerset
-private def fiber7U4 (p : ExchangeAdmissible) := fiber7U3 p ×ˢ (plainUniv p).powerset
-private def fiber7U5 (p : ExchangeAdmissible) := fiber7U4 p ×ˢ (starsUniv p).powerset
-private def fiber7Univ (p : ExchangeAdmissible) : Finset (fiber7Tuple p) :=
+def fiber7U2 (p : ExchangeAdmissible) := fiber7U1 p ×ˢ Finset.range (p.k + 1)
+def fiber7U3 (p : ExchangeAdmissible) := fiber7U2 p ×ˢ (starsUniv p).powerset
+def fiber7U4 (p : ExchangeAdmissible) := fiber7U3 p ×ˢ (plainUniv p).powerset
+def fiber7U5 (p : ExchangeAdmissible) := fiber7U4 p ×ˢ (starsUniv p).powerset
+def fiber7Univ (p : ExchangeAdmissible) : Finset (fiber7Tuple p) :=
   fiber7U5 p ×ˢ (plainUniv p).powerset
 
 abbrev fiber7Pred (p : ExchangeAdmissible) (x y : Nat) : fiber7Tuple p → Prop := fun t =>
@@ -349,23 +353,23 @@ abbrev fiber7Pred (p : ExchangeAdmissible) (x y : Nat) : fiber7Tuple p → Prop 
   (tB1 t).card = y - (x - tA t) ∧ (tB2 t).card = p.k - (y - (x - tA t)) ∧
   x - tA t ≤ y ∧ y - (x - tA t) ≤ p.k
 
-private def fiber7Set (p : ExchangeAdmissible) (x y : Nat) : Finset (fiber7Tuple p) := by
+def fiber7Set (p : ExchangeAdmissible) (x y : Nat) : Finset (fiber7Tuple p) := by
   exact (fiber7Univ p).filter (fiber7Pred p x y)
 
 /-- The 7-tuple repackaged as the 3-tuple `(S1, (S2, a))`. -/
-private def t3Of {p : ExchangeAdmissible} (t : fiber7Tuple p) :
+def t3Of {p : ExchangeAdmissible} (t : fiber7Tuple p) :
     Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ) :=
   (t.1.1.1.1.1.1, (t.1.1.1.1.1.2, t.1.1.1.1.2))
 
 /-- The 7-tuple repackaged as the 4-tuple `((A1, A2), (B1, B2))`. -/
-private def t4Of {p : ExchangeAdmissible} (t : fiber7Tuple p) :
+def t4Of {p : ExchangeAdmissible} (t : fiber7Tuple p) :
     (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
       (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) :=
   ((t.1.1.1.2, t.1.1.2), (t.1.2, t.2))
 
 /-- A 7-tuple rebuilt from a 3-tuple `((S1, S2), a)` and a 4-tuple
 `((A1, A2), (B1, B2))`. -/
-private def mk7 {p : ExchangeAdmissible}
+def mk7 {p : ExchangeAdmissible}
     (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ))
     (t4 : (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
       (Finset (Fin p.r) × Finset (Fin (p.N - p.r)))) : fiber7Tuple p :=
@@ -380,18 +384,18 @@ private def mk7 {p : ExchangeAdmissible}
     exact ((((((S1, S2), a), A1), A2), B1), B2)
 
 /-- The re-packaging is lossless in both directions. -/
-private theorem re7 {p : ExchangeAdmissible} (t : fiber7Tuple p) :
+theorem re7 {p : ExchangeAdmissible} (t : fiber7Tuple p) :
     mk7 (t3Of t) (t4Of t) = t := by
   rfl
 
-private theorem re7' {p : ExchangeAdmissible}
+theorem re7' {p : ExchangeAdmissible}
     (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ))
     (t4 : (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
       (Finset (Fin p.r) × Finset (Fin (p.N - p.r)))) :
     t3Of (mk7 t3 t4) = t3 := by
   rfl
 
-private theorem re7'' {p : ExchangeAdmissible}
+theorem re7'' {p : ExchangeAdmissible}
     (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ))
     (t4 : (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
       (Finset (Fin p.r) × Finset (Fin (p.N - p.r)))) :
@@ -400,13 +404,13 @@ private theorem re7'' {p : ExchangeAdmissible}
 
 /-- The 3-tuple part of the fiber: the two piles and the index, with the
 cardinality and guard restrictions. -/
-private def fiber3Set (p : ExchangeAdmissible) (x y : Nat) :
+def fiber3Set (p : ExchangeAdmissible) (x y : Nat) :
     Finset (Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ)) :=
   (starsUniv p).powersetCard x ×ˢ (plainUniv p).powersetCard (p.m - x) ×ˢ
     (Finset.range (p.k + 1)).filter (fun a => x - a ≤ y ∧ y - (x - a) ≤ p.k)
 
 /-- The ambient 4-tuple space. -/
-private def fiber4Max (p : ExchangeAdmissible) :
+def fiber4Max (p : ExchangeAdmissible) :
     Finset ((Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
       (Finset (Fin p.r) × Finset (Fin (p.N - p.r)))) :=
   ((starsUniv p).powerset ×ˢ (plainUniv p).powerset) ×ˢ
@@ -414,7 +418,7 @@ private def fiber4Max (p : ExchangeAdmissible) :
 
 /-- The 4-tuple `(A1, A2, B1, B2)` is a valid fiber element over the
 3-tuple `t3 = ((S1, S2), a)`. -/
-private abbrev isFiber4 (p : ExchangeAdmissible) (x y : Nat)
+abbrev isFiber4 (p : ExchangeAdmissible) (x y : Nat)
     (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ))
     (t4 : (Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
       (Finset (Fin p.r) × Finset (Fin (p.N - p.r)))) : Prop :=
@@ -424,7 +428,7 @@ private abbrev isFiber4 (p : ExchangeAdmissible) (x y : Nat)
     t4.2.2 ∈ (plainUniv p \ t3.2.1).powersetCard (p.k - (y - (x - t3.2.2)))
 
 /-- The 4-tuple fiber over a fixed 3-tuple. -/
-private def fiber4Set (p : ExchangeAdmissible) (x y : Nat)
+def fiber4Set (p : ExchangeAdmissible) (x y : Nat)
     (t3 : Finset (Fin p.r) × (Finset (Fin (p.N - p.r)) × ℕ)) :
     Finset ((Finset (Fin p.r) × Finset (Fin (p.N - p.r))) ×
       (Finset (Fin p.r) × Finset (Fin (p.N - p.r)))) :=
@@ -438,7 +442,7 @@ that lets the involution count the fiber. The 7-tuple repackages as a
 3-tuple (the two piles and the index) together with a 4-tuple (the
 exchanged cards); for a fixed 3-tuple the 4-tuple part is exactly the
 `fiberABchoose` fiber. -/
-private theorem fiberFlat (p : ExchangeAdmissible) (x y : Nat) :
+theorem fiberFlat (p : ExchangeAdmissible) (x y : Nat) :
     fiberSum p x y = (fiber7Set p x y).card := by
   dsimp only [fiberSum]
   -- (1) The 7-tuple fiber is in bijection with the filtered product of the
@@ -587,7 +591,7 @@ set_option linter.unusedVariables false
 /-- The exchange involution on 7-tuples. Applied to a tuple in the
 `(x, y)` fiber it lands in the `(y, x)` fiber; applying it again recovers
 the original tuple. -/
-private def fiber7Inv (p : ExchangeAdmissible) (x y : Nat) (t : fiber7Tuple p) :
+def fiber7Inv (p : ExchangeAdmissible) (x y : Nat) (t : fiber7Tuple p) :
     fiber7Tuple p := by
   let S1' := tS1 t \ tA1 t ∪ tB1 t
   let S2' := tS2 t \ tA2 t ∪ tB2 t
@@ -595,7 +599,7 @@ private def fiber7Inv (p : ExchangeAdmissible) (x y : Nat) (t : fiber7Tuple p) :
   exact ((((((S1', S2'), a'), tB1 t), tB2 t), tA1 t), tA2 t)
 set_option linter.unusedVariables true
 
-private theorem fiber7Inv_mem (p : ExchangeAdmissible) (x y : Nat) (hxle : x ≤ p.m)
+theorem fiber7Inv_mem (p : ExchangeAdmissible) (x y : Nat) (hxle : x ≤ p.m)
     (t : fiber7Tuple p) (ht : t ∈ fiber7Set p x y) :
     fiber7Inv p x y t ∈ fiber7Set p y x := by
   -- The left-pile capacity `x ≤ p.m` is *not* forced by the 12 fiber
@@ -777,7 +781,7 @@ private theorem fiber7Inv_mem (p : ExchangeAdmissible) (x y : Nat) (hxle : x ≤
       have halk : (tA t) ≤ p.k := by omega
       omega
 
-private theorem fiber7Inv_inv (p : ExchangeAdmissible) (x y : Nat) (t : fiber7Tuple p)
+theorem fiber7Inv_inv (p : ExchangeAdmissible) (x y : Nat) (t : fiber7Tuple p)
     (ht : t ∈ fiber7Set p x y) :
     fiber7Inv p y x (fiber7Inv p x y t) = t := by
   -- `hp` is kept in def form (no dsimp) so the `hc*` facts are def-named
@@ -870,7 +874,7 @@ private theorem fiber7Inv_inv (p : ExchangeAdmissible) (x y : Nat) (t : fiber7Tu
     · exact hB1
   · exact hB2
 
-private theorem fiberSum_swap (p : ExchangeAdmissible) (x y : Nat)
+theorem fiberSum_swap (p : ExchangeAdmissible) (x y : Nat)
     (hxle : x ≤ p.m) (hylo : y ≤ p.m) :
     fiberSum p x y = fiberSum p y x := by
   rw [fiberFlat p x y, fiberFlat p y x]
@@ -902,7 +906,7 @@ mass carries the Vandermonde factor `C(r, z)·C(N-r, m-z)` and the
 transition numerator is the rest of the fiber count (`fiberSum_eq`), so
 the identity is exactly `fiberSum_swap`. -/
 
-private theorem detailedBalance (p : ExchangeAdmissible) (x y : BLState p.N p.m p.r) :
+theorem detailedBalance (p : ExchangeAdmissible) (x y : BLState p.N p.m p.r) :
     blStationary p.N p.m p.r x * transitionWeight p.N p.m p.r p.k x.val y.val =
       blStationary p.N p.m p.r y * transitionWeight p.N p.m p.r p.k y.val x.val := by
   -- The common denominator: the deck choice times the exchange-pair
@@ -979,3 +983,4 @@ theorem blStationaryRun (p : ExchangeAdmissible) (n : Nat) :
 end detailedBalance
 end BernoulliLaplaceGeneral
 end Shufflemath
+end

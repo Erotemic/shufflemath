@@ -15,9 +15,13 @@ the transition weights of the two kernels and the masses of the two
 stationary distributions are equal pointwise. The concrete file stays
 untouched; the import direction is one-way (both concrete -> general).
 -/
-import Shufflemath.BernoulliLaplace
-import Shufflemath.BernoulliLaplaceGeneral
-import Mathlib.Tactic
+module
+
+public import Shufflemath.BernoulliLaplace
+public import Shufflemath.BernoulliLaplaceGeneral
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace Shufflemath
 
@@ -209,3 +213,4 @@ theorem commanderFirstModeFunc_concrete (i : CommanderState) :
   rw [← blFirstModeFactor_eq_firstModeFactor, commanderFirstMode_general_25]
   -- `leftCount (toBL i) = (toBL i).val`, so the two centered terms agree.
   simp [commanderLeftCount, commanderToBL]
+

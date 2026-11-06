@@ -1,4 +1,8 @@
-import Shufflemath.PhysicalRefinement
+module
+
+public import Shufflemath.PhysicalRefinement
+
+@[expose] public section
 
 namespace Shufflemath
 namespace PhysicalExchangeReduction
@@ -131,3 +135,4 @@ theorem run_tv_eq_macro_of_membership_exchange
 
 end PhysicalExchangeReduction
 end Shufflemath
+end

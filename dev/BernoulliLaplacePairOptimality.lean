@@ -1,4 +1,9 @@
-import Shufflemath.BernoulliLaplace
+module
+
+public import Shufflemath.BernoulliLaplace
+public meta import Shufflemath.BernoulliLaplace
+
+@[expose] public section
 
 namespace Shufflemath
 namespace BernoulliLaplace
@@ -38,7 +43,7 @@ theorem commanderPair25TV_value :
 
 /-- Nested finite forall needs an instance at namespace scope for native
 execution (a theorem-local instance would be a free variable). -/
-private instance pairOptimalityInnerDecidable :
+instance pairOptimalityInnerDecidable :
     DecidablePred (fun k₁ : Fin 49 =>
       ∀ k₂ : Fin 49,
         commanderPairTV exchange25 exchange25 ≤ commanderPairTV k₁ k₂) :=
@@ -55,3 +60,4 @@ theorem commanderPair25_minimizes_exact_TV :
 
 end BernoulliLaplace
 end Shufflemath
+end

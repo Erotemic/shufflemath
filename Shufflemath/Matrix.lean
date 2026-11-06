@@ -1,11 +1,15 @@
-import Shufflemath.Finite
-import Mathlib.LinearAlgebra.Matrix.Stochastic
-import Mathlib.Data.Matrix.Mul
-import Mathlib.Data.Matrix.Diagonal
-import Mathlib.Data.Finsupp.Basic
-import Mathlib.Algebra.BigOperators.Finsupp.Basic
-import Mathlib.Data.Finsupp.SMulWithZero
-import Mathlib.Algebra.Group.Monoid
+module
+
+public import Shufflemath.Finite
+public import Mathlib.LinearAlgebra.Matrix.Stochastic
+public import Mathlib.Data.Matrix.Mul
+public import Mathlib.Data.Matrix.Diagonal
+public import Mathlib.Data.Finsupp.Basic
+public import Mathlib.Algebra.BigOperators.Finsupp.Basic
+public import Mathlib.Data.Finsupp.SMulWithZero
+public import Mathlib.Algebra.Group.Monoid
+
+@[expose] public section
 
 namespace Shufflemath
 namespace FiniteKernel
@@ -169,3 +173,4 @@ theorem toMatrix_ofRowStochastic
 
 end FiniteKernel
 end Shufflemath
+end

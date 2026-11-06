@@ -1,6 +1,10 @@
-import Shufflemath.FiberLifting
-import Shufflemath.BernoulliLaplaceSemantic
-import Shufflemath.ProtocolCertificate
+module
+
+public import Shufflemath.FiberLifting
+public import Shufflemath.BernoulliLaplaceSemantic
+public import Shufflemath.ProtocolCertificate
+
+@[expose] public section
 
 namespace Shufflemath
 namespace OracleRefinement
@@ -274,3 +278,4 @@ theorem commander_oracle_three_exact
 
 end OracleRefinement
 end Shufflemath
+end

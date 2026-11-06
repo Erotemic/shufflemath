@@ -1,17 +1,19 @@
-import Shufflemath.Finite
-import Shufflemath.Matrix
-import Shufflemath.TotalVariation
-import Shufflemath.Perturbation
-import Shufflemath.Dobrushin
-import Shufflemath.Markov
-import Shufflemath.Cost
-import Shufflemath.BernoulliLaplace
-import Shufflemath.BernoulliLaplaceGeneral
-import Shufflemath.BernoulliLaplaceFiber
-import Shufflemath.BernoulliLaplaceCommanderBridge
-import Shufflemath.FiberLifting
-import Shufflemath.BernoulliLaplaceSemantic
-import Shufflemath.GSR
-import Shufflemath.ProtocolCertificate
-import Shufflemath.OracleRefinement
-import Shufflemath.PhysicalRefinement
+module
+
+public import Shufflemath.Finite
+public import Shufflemath.Matrix
+public import Shufflemath.TotalVariation
+public import Shufflemath.Perturbation
+public import Shufflemath.Dobrushin
+public import Shufflemath.Markov
+public import Shufflemath.Cost
+public import Shufflemath.BernoulliLaplace
+public import Shufflemath.BernoulliLaplaceGeneral
+public import Shufflemath.BernoulliLaplaceFiber
+public import Shufflemath.BernoulliLaplaceCommanderBridge
+public import Shufflemath.FiberLifting
+public import Shufflemath.BernoulliLaplaceSemantic
+public import Shufflemath.GSR
+public import Shufflemath.ProtocolCertificate
+public import Shufflemath.OracleRefinement
+public import Shufflemath.PhysicalRefinement

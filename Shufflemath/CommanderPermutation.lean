@@ -1,7 +1,11 @@
-import Shufflemath.OracleRefinement
-import Shufflemath.GSR
-import Mathlib.Data.Fintype.Perm
-import Mathlib.Tactic
+module
+
+public import Shufflemath.OracleRefinement
+public import Shufflemath.GSR
+public import Mathlib.Data.Fintype.Perm
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace Shufflemath
 namespace CommanderPermutation
@@ -36,7 +40,7 @@ instance : Nonempty Deck := ⟨Equiv.refl (Fin 99)⟩
 def leftPosition (i : Fin 50) : Fin 99 :=
   ⟨i.val, by omega⟩
 
-private theorem leftPosition_injective : Function.Injective leftPosition := by
+theorem leftPosition_injective : Function.Injective leftPosition := by
   intro a b hab
   apply Fin.ext
   simpa [leftPosition] using congrArg Fin.val hab
@@ -140,7 +144,7 @@ noncomputable def uniformFiber
 
 /-- Applying a deterministic kernel is the same as pushing the
 simplex forward along its underlying function. -/
-private theorem apply_deterministic {γ δ : Type*} (mu : Dist γ) (f : γ → δ) :
+theorem apply_deterministic {γ δ : Type*} (mu : Dist γ) (f : γ → δ) :
     FiniteKernel.apply mu (FiniteKernel.deterministic f) = mu.map f := by
   change (mu.map (fun x => Convexity.StdSimplex.single (f x))).join = mu.map f
   rw [Dist.join_sConvexComb]
@@ -223,3 +227,4 @@ theorem two_oracle_exchanges_uniform
 
 end CommanderPermutation
 end Shufflemath
+end

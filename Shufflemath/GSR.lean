@@ -1,5 +1,9 @@
-import Shufflemath.Finite
-import Mathlib.Tactic
+module
+
+public import Shufflemath.Finite
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace Shufflemath
 namespace GSR
@@ -39,14 +43,14 @@ def lexBuckets (a b : Nat) (minor : α → Fin a) (major : α → Fin b)
     (List.range a).flatMap fun i =>
       deck.filter (fun card => ((major card).val == j) && ((minor card).val == i))
 
-private theorem filter_flatMap {β : Type*} (p : α → Bool)
+theorem filter_flatMap {β : Type*} (p : α → Bool)
     (xs : List β) (f : β → List α) :
     (xs.flatMap f).filter p = xs.flatMap (fun x => (f x).filter p) := by
   induction xs with
   | nil => rfl
   | cons x xs ih => simp [List.flatMap, Function.comp_def]
 
-private theorem filter_filter (p q : α → Bool) (xs : List α) :
+theorem filter_filter (p q : α → Bool) (xs : List α) :
     (xs.filter p).filter q = xs.filter (fun x => p x && q x) := by
   induction xs with
   | nil => rfl
@@ -108,7 +112,7 @@ noncomputable def productLabelShuffle (a b : Nat)
   fun deck => FiniteKernel.apply minorSource (fun minor =>
     majorSource.map (fun major => lexBuckets a b minor major deck))
 
-private theorem apply_deterministic {β γ : Type*} (mu : Dist β) (f : β → γ) :
+theorem apply_deterministic {β γ : Type*} (mu : Dist β) (f : β → γ) :
     FiniteKernel.apply mu (FiniteKernel.deterministic f) = mu.map f := by
   change (mu.map (fun x => Convexity.StdSimplex.single (f x))).join = mu.map f
   rw [Dist.join_sConvexComb]
@@ -117,7 +121,7 @@ private theorem apply_deterministic {β γ : Type*} (mu : Dist β) (f : β → �
       rw [Convexity.StdSimplex.map_map]
     _ = mu.map f := Convexity.StdSimplex.iConvexComb_single (mu.map f)
 
-private theorem comp_deterministic_left {β γ δ : Type*}
+theorem comp_deterministic_left {β γ δ : Type*}
     (f : β → γ) (K : FiniteKernel γ δ) :
     FiniteKernel.comp (FiniteKernel.deterministic f) K = fun x => K (f x) := by
   funext x
@@ -172,3 +176,4 @@ theorem idealShuffle_comp (n a b : Nat) (ha : 0 < a) (hb : 0 < b) :
 
 end GSR
 end Shufflemath
+end

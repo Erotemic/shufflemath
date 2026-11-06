@@ -1,4 +1,8 @@
-import Shufflemath.OracleRefinement
+module
+
+public import Shufflemath.OracleRefinement
+
+@[expose] public section
 
 namespace Shufflemath
 namespace PhysicalRefinement
@@ -165,3 +169,4 @@ theorem finite_local_uniform_bound
 
 end PhysicalRefinement
 end Shufflemath
+end

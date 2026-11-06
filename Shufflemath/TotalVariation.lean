@@ -1,7 +1,11 @@
-import Shufflemath.Matrix
-import Mathlib.Data.Finset.Max
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Algebra.Order.Sub.Basic
+module
+
+public import Shufflemath.Matrix
+public import Mathlib.Data.Finset.Max
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Algebra.Order.Sub.Basic
+
+@[expose] public section
 
 namespace Shufflemath
 
@@ -258,7 +262,7 @@ def positiveSum (p q : alpha -> Rat) : Rat :=
 
 /-- Pointwise: the positive parts of `a - b` and `b - a` add to `|a - b|`
 and differ by `a - b`. -/
-private theorem maxDiffAbs {a b : Rat} :
+theorem maxDiffAbs {a b : Rat} :
     max 0 (a - b) + max 0 (b - a) = |a - b| := by
   cases le_total a b with
   | inl h =>
@@ -276,7 +280,7 @@ private theorem maxDiffAbs {a b : Rat} :
     rw [h1, h2]
     simpa only [add_zero] using (abs_of_nonneg (sub_nonneg_of_le h)).symm
 
-private theorem maxDiffSub {a b : Rat} :
+theorem maxDiffSub {a b : Rat} :
     max 0 (a - b) - max 0 (b - a) = a - b := by
   cases le_total a b with
   | inl h =>
@@ -298,7 +302,7 @@ private theorem maxDiffSub {a b : Rat} :
 sum: off the positive set the positive part vanishes, and on it it is
 `p - q` itself. (Probability hypotheses are only used to state the result
 in TV-friendly form; the identity itself is pointwise. -/
-private theorem sumPosPartEqPositiveSum
+theorem sumPosPartEqPositiveSum
     (p q : alpha -> Rat) :
     Finset.sum Finset.univ (fun x => max 0 (p x - q x)) = positiveSum p q := by
   let u := fun x => max 0 (p x - q x)
@@ -494,3 +498,4 @@ theorem dobrushinCoeff_le_one
 
 end MatrixTV
 end Shufflemath
+end

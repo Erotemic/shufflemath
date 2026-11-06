@@ -1,5 +1,9 @@
-import Shufflemath.BernoulliLaplace
-import Shufflemath.Matrix
+module
+
+public import Shufflemath.BernoulliLaplace
+public import Shufflemath.Matrix
+
+@[expose] public section
 
 namespace Shufflemath
 namespace BernoulliLaplace
@@ -15,11 +19,11 @@ Therefore the existing exact rational certificates are also statements
 about the authoritative `StdSimplex` distributions.
 -/
 
-private theorem arrayGet_ofFn (f : CommanderState → Rat) (x : CommanderState) :
+theorem arrayGet_ofFn (f : CommanderState → Rat) (x : CommanderState) :
     commanderArrayGet (Array.ofFn f) x = f x := by
   simp [commanderArrayGet, x.isLt]
 
-private theorem tableGet_eq_matrix (x y : CommanderState) :
+theorem tableGet_eq_matrix (x y : CommanderState) :
     commanderTableGet commanderExchange25Table x y =
       commanderExchange25Matrix x y := by
   simp [commanderTableGet, commanderExchange25Table, x.isLt, y.isLt]
@@ -73,14 +77,14 @@ theorem runCommanderArray_eq_run (n : Nat) (p : CommanderArray)
           (FiniteKernel.apply mu commanderExchange25)) y
       exact ih _ _ (stepCommanderArray_eq_apply p mu h)
 
-private theorem initialArray_eq_mass (x : CommanderState) :
+theorem initialArray_eq_mass (x : CommanderState) :
     commanderArrayGet commanderInitialArray x =
       Dist.mass (Dist.pointMass commanderSegregatedState) x := by
   rw [show commanderArrayGet commanderInitialArray x = commanderInitialVector x from
     arrayGet_ofFn commanderInitialVector x]
   simp [commanderInitialVector, Dist.mass_pointMass]
 
-private theorem stationaryArray_eq_mass (x : CommanderState) :
+theorem stationaryArray_eq_mass (x : CommanderState) :
     commanderStationaryVector x = Dist.mass commanderStationary x := by
   exact (Dist.mass_ofFun commanderStationaryVector
     commanderStationaryVector_nonneg commanderStationaryVector_total x).symm
@@ -132,3 +136,4 @@ theorem commander_tv_after_three_semantic :
 
 end BernoulliLaplace
 end Shufflemath
+end

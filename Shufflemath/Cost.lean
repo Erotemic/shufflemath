@@ -1,4 +1,8 @@
-import Shufflemath.Finite
+module
+
+public import Shufflemath.Finite
+
+@[expose] public section
 
 namespace Shufflemath
 
@@ -34,3 +38,4 @@ theorem protocolCost_append (xs ys : List (CostedKernel alpha)) :
 
 end CostedKernel
 end Shufflemath
+end

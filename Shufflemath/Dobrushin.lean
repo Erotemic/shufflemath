@@ -1,10 +1,12 @@
-import Shufflemath.Finite
-import Shufflemath.Matrix
-import Shufflemath.TotalVariation
-import Mathlib.Data.Finset.Max
-import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Tactic
+module
+
+public import Shufflemath.Finite
+public import Shufflemath.Matrix
+public import Shufflemath.TotalVariation
+public import Mathlib.Data.Finset.Max
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Tactic
 
 /- Dobrushin contraction constants for kernels, the general-alphabet
 counterpart of `MatrixTV`. For a kernel `K : α → Dist β`, the Dobrushin
@@ -36,6 +38,8 @@ Main results:
 Unlike the fixed-size `MatrixTV.dobrushinCoeff`, the rows here are
 distributions, so the definition works at the kernel level directly and the
 matrix case is recovered as a special case. -/
+
+@[expose] public section
 
 namespace Shufflemath
 
@@ -148,7 +152,7 @@ theorem dobrushinCoeff_zero
 -- ---------------------------------------------------------------------------
 
 /-- A univ-sum of a function gated by membership in `t` is the `t`-sum. -/
-private theorem sumUnivIte [Fintype alpha] [DecidableEq alpha]
+theorem sumUnivIte [Fintype alpha] [DecidableEq alpha]
     (f : alpha -> Rat) (t : Finset alpha) :
     Finset.sum (Finset.univ : Finset alpha) (fun x => if x ∈ t then f x else 0) =
     Finset.sum t f := by
@@ -486,7 +490,7 @@ theorem run_contraction
 -- ---------------------------------------------------------------------------
 
 /-- A row-stochastic matrix viewed as a kernel. -/
-private noncomputable def matrixKernel
+noncomputable def matrixKernel
     [Fintype alpha] [DecidableEq alpha]
     (P : Matrix alpha alpha Rat) (hP : P ∈ Matrix.rowStochastic Rat alpha)
     (i : alpha) : Dist alpha := by
@@ -531,3 +535,4 @@ theorem dobrushinCoeff_matrix_link
 end Dobrushin
 
 end Shufflemath
+end

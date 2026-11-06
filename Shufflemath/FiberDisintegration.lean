@@ -1,6 +1,10 @@
-import Shufflemath.GSR
-import Shufflemath.FiberLifting
-import Mathlib.Tactic
+module
+
+public import Shufflemath.GSR
+public import Shufflemath.FiberLifting
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace Shufflemath
 namespace FiberDisintegration
@@ -41,7 +45,7 @@ theorem fiber_card_pos (observe : β → α)
   exact ⟨b, by simp [fiberSet, hb]⟩
 
 omit [Fintype β] [DecidableEq β] [Nonempty β] in
-private theorem sum_if_constant (s : Finset β) (p : β → Prop)
+theorem sum_if_constant (s : Finset β) (p : β → Prop)
     [DecidablePred p] (c : Rat) :
     (∑ b ∈ s, if p b then c else 0) = ((s.filter p).card : Rat) * c := by
   classical
@@ -170,7 +174,7 @@ theorem fiberLaw_recovers (observe : β → α)
     simp [hxy]
 
 omit [DecidableEq β] in
-private theorem uniform_mass (b : β) :
+theorem uniform_mass (b : β) :
     Dist.mass (GSR.uniformDist β) b = (Fintype.card β : Rat)⁻¹ := by
   simp [GSR.uniformDist]
 
@@ -232,3 +236,4 @@ theorem stationary_disintegrates_of_mass
 
 end FiberDisintegration
 end Shufflemath
+end

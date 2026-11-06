@@ -1,13 +1,17 @@
-import Shufflemath.TotalVariation
-import Shufflemath.Dobrushin
-import Mathlib.Data.Finset.Max
-import Mathlib.Algebra.Group.Monoid
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
+module
+
+public import Shufflemath.TotalVariation
+public import Shufflemath.Dobrushin
+public import Mathlib.Data.Finset.Max
+public import Mathlib.Algebra.Group.Monoid
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 -- The protocol theorems whnf `dobrushinCoeff (compList …)` (a max over all
 -- row pairs of the composed kernel) while elaborating the telescoping
 -- bounds; give the compiler room for that one-time definitional expansion.
 set_option maxHeartbeats 400000
+
+@[expose] public section
 
 namespace Shufflemath
 
@@ -63,7 +67,7 @@ reduces to `apply_discrepancy_bound` (`hybridTelescope_n1`).
 
 variable {alpha beta : Type*}
 
-private def kernelDiscrepancySet [Fintype alpha] [Fintype beta] [DecidableEq alpha]
+def kernelDiscrepancySet [Fintype alpha] [Fintype beta] [DecidableEq alpha]
     [DecidableEq beta] (K L : FiniteKernel alpha beta) : Finset Rat :=
   (Finset.univ : Finset alpha).image (fun x => Dist.tv (K x) (L x))
 
@@ -239,7 +243,7 @@ theorem compList_submult [Fintype alpha] [DecidableEq alpha] [Nonempty alpha]
 /-- The contraction of a composed kernel is at most the product of the
 per-kernel coefficients: the tail pushes the two starting distributions
 closer by at most the product. -/
-private theorem compList_contraction_prod [Fintype alpha] [DecidableEq alpha]
+theorem compList_contraction_prod [Fintype alpha] [DecidableEq alpha]
     [Nonempty alpha] (Ks : List (FiniteKernel alpha alpha)) (p q : Dist alpha) :
     Dist.tv (FiniteKernel.apply p (compList Ks)) (FiniteKernel.apply q (compList Ks)) ≤
     (List.map dobrushinCoeff Ks).prod * Dist.tv p q := by
@@ -252,7 +256,7 @@ private theorem compList_contraction_prod [Fintype alpha] [DecidableEq alpha]
       · exact Dist.tv_nonneg p q
 
 /-- A list of nonnegative factors has nonnegative product. -/
-private theorem list_prod_nonneg (l : List Rat) (h : ∀ (a : Rat), a ∈ l → 0 ≤ a) :
+theorem list_prod_nonneg (l : List Rat) (h : ∀ (a : Rat), a ∈ l → 0 ≤ a) :
     0 ≤ l.prod := by
   induction l with
   | nil => simp
@@ -263,7 +267,7 @@ private theorem list_prod_nonneg (l : List Rat) (h : ∀ (a : Rat), a ∈ l → 
 
 /-- A list of factors in `[0, d]` has product at most `d` raised to the
 length. -/
-private theorem list_prod_le_pow_of_le (l : List Rat) (d : Rat) (hd0 : 0 ≤ d)
+theorem list_prod_le_pow_of_le (l : List Rat) (d : Rat) (hd0 : 0 ≤ d)
     (h : ∀ (x : Rat), x ∈ l → 0 ≤ x ∧ x ≤ d) : l.prod ≤ d ^ l.length := by
   induction l with
   | nil =>
@@ -298,7 +302,7 @@ theorem weightedTelescopeBound_cons (Δ0 : Rat) (Δs δs : List Rat) :
       Δ0 * δs.prod + weightedTelescopeBound Δs (δs.drop 1) := rfl
 
 /-- Membership is preserved by `drop` (a dropped list is a suffix). -/
-private theorem mem_of_mem_drop {l : List α} {n : Nat} {a : α}
+theorem mem_of_mem_drop {l : List α} {n : Nat} {a : α}
     (h : a ∈ l.drop n) : a ∈ l := by
   induction n generalizing l with
   | zero => simpa only [List.drop_zero] using h
@@ -314,7 +318,7 @@ private theorem mem_of_mem_drop {l : List α} {n : Nat} {a : α}
 nonnegative, and `δ` carries one coefficient per `Δ` slot except the
 last, then the weighted bound is dominated by the uniform-`d` telescope:
 termwise `Δ_i · ∏_{j≥i} δ_j ≤ Δ_i · d^{n-1-i}`. -/
-private theorem wtB_le_uniform (Δ δ : List Rat) (d : Rat) (hd0 : 0 ≤ d)
+theorem wtB_le_uniform (Δ δ : List Rat) (d : Rat) (hd0 : 0 ≤ d)
     (hlen : δ.length = Δ.length - 1)
     (hd : ∀ (a : Rat), a ∈ δ → 0 ≤ a) (hdle : ∀ (a : Rat), a ∈ δ → a ≤ d)
     (hΔ : ∀ (a : Rat), a ∈ Δ → 0 ≤ a) :
@@ -580,3 +584,4 @@ theorem weightedTelescope_3step [Fintype alpha] [DecidableEq alpha] [Nonempty al
   simpa only [hbound] using h
 
 end Shufflemath
+end

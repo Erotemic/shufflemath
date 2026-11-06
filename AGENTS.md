@@ -44,6 +44,15 @@ The legacy `dev/verify.sh` calls `lake update`: do not use that as the
 normal incremental verification path. The expensive exhaustive pair
 certificate is opt-in: `./dev/verify_next_phase.sh --pair`.
 
+The library uses Lean 4.34's **`module`** system: every `Shufflemath/*.lean`
+and the `Shufflemath.lean` aggregator start with a `module` header, use
+`public import`, and wrap their body in an `@[expose] public section`. Keep new
+or edited Lean files in that shape — the exact recipe (why `@[expose]`, why
+`public import`, `native_decide`'s dual `public meta import`, the ban on
+`private` inside `@[expose]` sections, and end-of-file scope auto-close) is
+documented in `docs/agent_handoff.md`. `lakefile.lean` stays a plain Lake DSL
+file (no `module`).
+
 ### Lean proof development and diagnostic output
 
 - **Compilation, not an axiom-print inventory, is the routine proof-development

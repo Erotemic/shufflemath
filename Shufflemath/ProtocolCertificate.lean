@@ -1,5 +1,9 @@
-import Shufflemath.Perturbation
-import Shufflemath.Cost
+module
+
+public import Shufflemath.Perturbation
+public import Shufflemath.Cost
+
+@[expose] public section
 
 namespace Shufflemath
 
@@ -65,3 +69,4 @@ theorem kernelOfCosted_cons (op : CostedKernel α) (ops : List (CostedKernel α)
 
 end ProtocolCertificate
 end Shufflemath
+end

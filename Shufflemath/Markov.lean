@@ -7,9 +7,13 @@ Abstract theory only — no concrete chain (the Commander chain lives in
 `BernoulliLaplaceGeneral.lean`). Everything is exact rational arithmetic
 over finite types.
 -/
-import Shufflemath.Finite
-import Shufflemath.TotalVariation
-import Mathlib.Tactic
+module
+
+public import Shufflemath.Finite
+public import Shufflemath.TotalVariation
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace Shufflemath
 
@@ -179,3 +183,4 @@ theorem stationary_of_detailedBalance
   exact detailedBalance_implies_stationary mu K hdb x
 
 end Shufflemath
+end

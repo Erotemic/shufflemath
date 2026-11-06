@@ -1,6 +1,11 @@
-import Shufflemath.TotalVariation
-import Mathlib.Data.Nat.Choose.Basic
-import Mathlib.Data.Fintype.Defs
+module
+
+public import Shufflemath.TotalVariation
+public meta import Shufflemath.TotalVariation
+public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Data.Fintype.Defs
+
+@[expose] public section
 
 namespace Shufflemath
 namespace BernoulliLaplace
@@ -105,7 +110,7 @@ Mathlib's finite-forall decider does not recursively synthesize itself beneath
 another `∀` binder. Keeping this instance at namespace scope is important for
 `native_decide`: a theorem-local `letI` becomes a free variable in the compiled
 decision procedure and therefore cannot be natively evaluated. -/
-private instance commanderExchange25RowNonnegDecidable :
+instance commanderExchange25RowNonnegDecidable :
     DecidablePred (fun i : CommanderState =>
       ∀ j : CommanderState, 0 <= commanderExchange25Matrix i j) :=
   fun _ => Fintype.decidableForallFintype
@@ -242,3 +247,4 @@ theorem commander_tv_after_three_exchange25 :
 
 end BernoulliLaplace
 end Shufflemath
+end

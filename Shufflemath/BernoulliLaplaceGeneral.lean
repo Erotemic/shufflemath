@@ -39,20 +39,24 @@ Commander `N = 99, m = 50, r = 50` this is `1 ≤ x ≤ 50`, matching
 pile holds at most `m` cards, and the deck holds at most `r` special
 cards.
 -/
-import Shufflemath.Finite
-import Shufflemath.Markov
-import Mathlib.Data.Nat.Choose.Basic
-import Mathlib.Data.Nat.Choose.Vandermonde
-import Mathlib.Algebra.BigOperators.NatAntidiagonal
-import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
-import Mathlib.Algebra.BigOperators.Field
-import Mathlib.Data.Fintype.Defs
-import Mathlib.Data.Finset.Interval
-import Mathlib.Data.Finset.Order
-import Mathlib.Data.Finset.Prod
-import Mathlib.Data.Finset.Powerset
-import Mathlib.Tactic
+module
+
+public import Shufflemath.Finite
+public import Shufflemath.Markov
+public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Data.Nat.Choose.Vandermonde
+public import Mathlib.Algebra.BigOperators.NatAntidiagonal
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+public import Mathlib.Algebra.BigOperators.Field
+public import Mathlib.Data.Fintype.Defs
+public import Mathlib.Data.Finset.Interval
+public import Mathlib.Data.Finset.Order
+public import Mathlib.Data.Finset.Prod
+public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace Shufflemath
 namespace BernoulliLaplaceGeneral
@@ -223,7 +227,7 @@ with the guards of the definition made explicit. This is definitionally
 equal to the body of `transitionNumerator` (the `a`-term): the
 `let remaining := x - a` and `let b := y - remaining` bindings of the
 definition are inlined here. -/
-private def guardedTerm (N m r k x a y : Nat) : Nat :=
+def guardedTerm (N m r k x a y : Nat) : Nat :=
   if x - a ≤ y then
     if y - (x - a) ≤ k then
       Nat.choose x a * Nat.choose (m - x) (k - a) *
@@ -237,20 +241,20 @@ pile, `k - a` of the other kind leave with them; `b` special cards
 return from the right pile, `k - b` of the other kind. The fourth factor
 counts the non-special cards in the right pile
 (`(N - m) - (r - x)`). -/
-private def exchangeTerm (N m r k x a b : Nat) : Nat :=
+def exchangeTerm (N m r k x a b : Nat) : Nat :=
   Nat.choose x a * Nat.choose (m - x) (k - a) *
     Nat.choose (r - x) b * Nat.choose (N - m - (r - x)) (k - b)
 
 variable {N m r k : Nat}
 
 /-- The term vanishes for `b > r - x`: the third factor is zero. -/
-private theorem exchangeTerm_zero_above (N m r k x a b : Nat) (hb : r - x < b) :
+theorem exchangeTerm_zero_above (N m r k x a b : Nat) (hb : r - x < b) :
     exchangeTerm N m r k x a b = 0 := by
   rw [exchangeTerm, Nat.choose_eq_zero_of_lt hb, mul_zero, zero_mul]
 
 /-- `blLo N m r` is just `r - (N - m)` (Nat subtraction already floors
 at zero). -/
-private theorem blLo_eq_tsub (N m r : Nat) : blLo N m r = r - (N - m) := by
+theorem blLo_eq_tsub (N m r : Nat) : blLo N m r = r - (N - m) := by
   rw [blLo_def, max_zero]
 
 variable {N m r k : Nat}
@@ -264,7 +268,7 @@ non-special cards, but the exchange would draw `k - b` of them, which
 exceeds the supply since `y < r - (N - m) ≤ x` (the `r ≤ N - m` case is
 vacuous: then `blLo = 0` and `y < 0` is impossible). For `a > x` the
 first factor `choose x a` is zero. -/
-private theorem num_zero_below_lo (p : ExchangeAdmissible) (x y : Nat) (_hx : x ≤ p.m)
+theorem num_zero_below_lo (p : ExchangeAdmissible) (x y : Nat) (_hx : x ≤ p.m)
     (hlo : blLo p.N p.m p.r ≤ x) (hy : y < blLo p.N p.m p.r) (_hym : y ≤ p.m) :
     transitionNumerator p.N p.m p.r p.k x y = 0 := by
   rw [blLo_eq_tsub] at hy hlo
@@ -328,7 +332,7 @@ for `a ≤ x` the target `b = y - (x - a)` exceeds `r - x` (the number of
 special cards in the right pile), so the third factor is zero; for
 `a > x` the first factor is zero. Used to close the row sum over the
 admissible window when `blHi = min m r < m`. -/
-private theorem num_zero_above_r (p : ExchangeAdmissible) (x y : Nat) (_hx : x ≤ p.m)
+theorem num_zero_above_r (p : ExchangeAdmissible) (x y : Nat) (_hx : x ≤ p.m)
     (hxr : x ≤ p.r) (hyr : y > p.r) :
     transitionNumerator p.N p.m p.r p.k x y = 0 := by
   rw [transitionNumerator]
@@ -377,7 +381,7 @@ or beyond the exchange size the guards fail; within the window the
 third factor `choose (r - x) b` kills the term for `b > r - x`). That
 support is in bijection, via `b = y - (x - a)`, with the support of the
 RHS, `b ∈ [0, min (k, r - x)]`. -/
-private theorem innerYToB (N m r k x a : Nat) (hm : x ≤ m) (_ha : a ≤ k) :
+theorem innerYToB (N m r k x a : Nat) (hm : x ≤ m) (_ha : a ≤ k) :
     (∑ y ∈ Finset.range (m + 1), guardedTerm N m r k x a y) =
     ∑ b ∈ Finset.range (k + 1), exchangeTerm N m r k x a b := by
   by_cases hax : a ≤ x
@@ -623,7 +627,7 @@ variable {N m r k : Nat}
 `guardedTerm`, weighted by `y - (x - a)` (the number `b` of special cards
 returning from the right pile), reindexes to the `b`-sum of
 `exchangeTerm` weighted by `b`. -/
-private theorem innerYToB_b (N m r k x a : Nat) (hm : x ≤ m) (ha : a ≤ k) :
+theorem innerYToB_b (N m r k x a : Nat) (hm : x ≤ m) (ha : a ≤ k) :
     (∑ y ∈ Finset.range (m + 1), (y - (x - a)) * (guardedTerm N m r k x a y)) =
     (∑ b ∈ Finset.range (k + 1), (b : Nat) * (exchangeTerm N m r k x a b)) := by
   by_cases hax : a ≤ x
@@ -868,7 +872,7 @@ variable {N m r k : Nat}
 
 /-- Vandermonde's identity in `range` form:
 `∑ b < k + 1, choose M b * choose L (k - b) = choose (M + L) k`. -/
-private theorem vandermondeRange (M L k : Nat) : (∑ b ∈ Finset.range (k + 1),
+theorem vandermondeRange (M L k : Nat) : (∑ b ∈ Finset.range (k + 1),
     Nat.choose M b * Nat.choose L (k - b)) =
     Nat.choose (M + L) k := by
   rw [Nat.add_choose_eq M L k]
@@ -1083,7 +1087,7 @@ coercion. -/
 `choose r b = 0`, or the case is impossible). This is what lets the
 Vandermonde sum over the whole range `(0..m]` be restricted to the
 admissible window. -/
-private theorem blStationaryTerm_zero (p : ExchangeAdmissible) (b : ℕ)
+theorem blStationaryTerm_zero (p : ExchangeAdmissible) (b : ℕ)
     (hb : b ∈ Finset.range (p.m + 1) \ stateFinset p.N p.m p.r) :
     Nat.choose p.r b * Nat.choose (p.N - p.r) (p.m - b) = 0 := by
   simp only [stateFinset, Finset.mem_Icc, Finset.mem_sdiff] at hb
@@ -1279,10 +1283,10 @@ def blFirstModeFactor (N m k : Nat) : Rat :=
 `Nat` terms. Wrapper `def`s keep the `Nat.cast` of a product opaque
 (a `: Rat` ascription on a product would normalize to a product of
 casts, which the `Nat.cast_*` lemmas cannot match). -/
-private def gProd (N m r k x a y : Nat) : Nat := y * (guardedTerm N m r k x a y)
-private def gProdA (N m r k x a y : Nat) : Nat := (x - a) * (guardedTerm N m r k x a y)
-private def gProdB (N m r k x a y : Nat) : Nat := (y - (x - a)) * (guardedTerm N m r k x a y)
-private def gSplit (N m r k x a y : Nat) : Nat :=
+def gProd (N m r k x a y : Nat) : Nat := y * (guardedTerm N m r k x a y)
+def gProdA (N m r k x a y : Nat) : Nat := (x - a) * (guardedTerm N m r k x a y)
+def gProdB (N m r k x a y : Nat) : Nat := (y - (x - a)) * (guardedTerm N m r k x a y)
+def gSplit (N m r k x a y : Nat) : Nat :=
   (x - a) * (guardedTerm N m r k x a y) + (y - (x - a)) * (guardedTerm N m r k x a y)
 
 /-- Weighted inner reindexing: for fixed `a <= k`, the `y`-sum of
@@ -1290,7 +1294,7 @@ private def gSplit (N m r k x a y : Nat) : Nat :=
 `(x - a) * (b-sum) + (b-weighted b-sum)`, all as `Rat` sums.
 The `y = (x-a) + (y-(x-a))` split is done in `Nat` (inside `Nat.cast`);
 each half is then bridged to its `b`-sum by `innerYToB` / `innerYToB_b`. -/
-private theorem innerYToB_w (N m r k x a : Nat) (hm : x <= m) (ha : a <= k) :
+theorem innerYToB_w (N m r k x a : Nat) (hm : x <= m) (ha : a <= k) :
     (∑ y ∈ Finset.range (m + 1), (gProd N m r k x a y : Rat)) =
       ((x : Rat) - (a : Rat)) * (∑ b ∈ Finset.range (k + 1), (exchangeTerm N m r k x a b : Rat))
       + (∑ b ∈ Finset.range (k + 1), (b : Rat) * (exchangeTerm N m r k x a b : Rat)) := by
@@ -1677,7 +1681,7 @@ conditional-mean computation. -/
 
 /-- The `b`-sum of the exchange term for fixed `a` is the `a`-factor
 times the right-pile Vandermonde: `C(x,a)·C(m-x,k-a)·C(N-m,k)`. -/
-private theorem bSumE_nat (N m r k x a : Nat) (hrx : r - x ≤ N - m) :
+theorem bSumE_nat (N m r k x a : Nat) (hrx : r - x ≤ N - m) :
     (∑ b ∈ Finset.range (k + 1), exchangeTerm N m r k x a b) =
       (Nat.choose x a * Nat.choose (m - x) (k - a)) * Nat.choose (N - m) k := by
   have h1 : (∑ b ∈ Finset.range (k + 1), exchangeTerm N m r k x a b) =
@@ -2252,7 +2256,7 @@ theorem blFirstModeFunc (p : ExchangeAdmissible) (x : BLState p.N p.m p.r) :
   /-- `a - b < c` from `a < b + c` and `b ≤ a` (the subtraction is proper, so
   `a - b + b = a < b + c`; commute and cancel `b`). Used to show the
   admissible interval's lower end stays below the smaller pile size. -/
-  private lemma subLtM {a b c : Nat} (h : a < b + c) (hb : b ≤ a) : a - b < c := by
+  lemma subLtM {a b c : Nat} (h : a < b + c) (hb : b ≤ a) : a - b < c := by
     have hsum : a - b + b = a := Nat.sub_add_cancel hb
     have hlt : a - b + b < b + c := by
       rw [hsum]
@@ -2333,3 +2337,4 @@ theorem blFirstModeFunc (p : ExchangeAdmissible) (x : BLState p.N p.m p.r) :
 end firstMode
 end BernoulliLaplaceGeneral
 end Shufflemath
+end

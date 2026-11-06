@@ -5,6 +5,13 @@ For a new agent, begin with [agent_handoff.md](agent_handoff.md). Historical
 phase notes are linked at the end; they do not override this plan. Read
 `AGENTS.md` before modifying code.
 
+> **Toolchain note (2026-02-10):** the library now uses Lean 4.34's `module`
+> system (`module` header + `public import` + `@[expose] public section`). See
+> `agent_handoff.md` §"Lean 4 module-system migration" for the exact recipe
+> (dual `public import`/`public meta import` for `native_decide`, no `private`
+> in `@[expose]` sections, EOF scope auto-close). The math and proof content is
+> unchanged by this migration.
+
 ## Objective and model boundary
 
 Produce a theorem for a *specified finite physical protocol* on 99 individually

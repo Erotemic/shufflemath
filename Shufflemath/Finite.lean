@@ -1,7 +1,11 @@
-import Mathlib.Geometry.Convex.ConvexSpace.Defs
-import Mathlib.Data.Finsupp.SMulWithZero
-import Mathlib.Algebra.BigOperators.Finsupp.Basic
-import Mathlib.Tactic
+module
+
+public import Mathlib.Geometry.Convex.ConvexSpace.Defs
+public import Mathlib.Data.Finsupp.SMulWithZero
+public import Mathlib.Algebra.BigOperators.Finsupp.Basic
+public import Mathlib.Tactic
+
+@[expose] public section
 
 namespace Shufflemath
 
@@ -172,13 +176,13 @@ sums.
 -- rearrange the finite sums (`mapDomain`, `add_smul`, and the `Finsupp` sum
 -- Fubini lemmas).
 
-private theorem map_join_kernels {X Y : Type*} (sigma : Dist (Dist X)) (L : X -> Dist Y) :
+theorem map_join_kernels {X Y : Type*} (sigma : Dist (Dist X)) (L : X -> Dist Y) :
     (sigma.join).map L = (sigma.map fun d => d.map L).join := by
   ext1
   simp [Finsupp.mapDomain, add_smul, Finsupp.sum_sum_index, Finsupp.sum_smul_index,
     Finsupp.smul_sum]
 
-private theorem join_join_kernels {X : Type*} (sigma : Dist (Dist (Dist X))) :
+theorem join_join_kernels {X : Type*} (sigma : Dist (Dist (Dist X))) :
     (sigma.join).join = (sigma.map fun d => d.join).join := by
   ext1
   simp [Finsupp.mapDomain, add_smul, Finsupp.sum_sum_index, Finsupp.sum_smul_index,
@@ -260,7 +264,7 @@ theorem apply_id_left (mu : Dist alpha) : apply mu identity = mu := by
 This is not definitional (`n + 1` is not a `Nat` constructor), but it is the
 bridge that lets the induction lemmas below move between the `n + 1` form
 that `induction` produces and the `Nat.succ` form the kernel reduces. -/
-private theorem run_rec_eq (n : Nat) (K : FiniteKernel alpha alpha) (x : Dist alpha) :
+theorem run_rec_eq (n : Nat) (K : FiniteKernel alpha alpha) (x : Dist alpha) :
     run K (n + 1) x = run K n (apply x K) := by
   cases n with
   | zero =>
@@ -272,7 +276,7 @@ private theorem run_rec_eq (n : Nat) (K : FiniteKernel alpha alpha) (x : Dist al
 /-- Simultaneous induction hypothesis for `run`: both the "self-apply" and the
     "one more step" equations, proved together because each one-step case is
     the other at the previous level. -/
-private theorem run_apply_self_and_succ (n : Nat) (K : FiniteKernel alpha alpha) :
+theorem run_apply_self_and_succ (n : Nat) (K : FiniteKernel alpha alpha) :
     (forall mu : Dist alpha, run K n (apply mu K) = apply (run K n mu) K) ∧
     (forall mu : Dist alpha, run K (Nat.succ n) mu = apply (run K n mu) K) := by
   induction n with
@@ -356,3 +360,4 @@ end
 
 end Shufflemath
 
+end

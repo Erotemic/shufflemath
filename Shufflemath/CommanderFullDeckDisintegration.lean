@@ -1,6 +1,10 @@
-import Shufflemath.CommanderFiberWitness
-import Shufflemath.FiberDisintegration
-import Shufflemath.PhysicalExchangeReduction
+module
+
+public import Shufflemath.CommanderFiberWitness
+public import Shufflemath.FiberDisintegration
+public import Shufflemath.PhysicalExchangeReduction
+
+@[expose] public section
 
 namespace Shufflemath
 namespace CommanderFullDeckDisintegration
@@ -147,3 +151,4 @@ theorem two_physical_perfect_exchanges_uniform_of_counts
 
 end CommanderFullDeckDisintegration
 end Shufflemath
+end
