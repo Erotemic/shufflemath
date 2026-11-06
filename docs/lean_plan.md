@@ -83,6 +83,15 @@ This is **not proved** by `CommanderPermutation.project_surjective`: an
 inhabited fiber need not have the right *cardinality*. Build a structural
 counting proof, without evaluating a type containing `99!` permutations.
 
+> **Progress (2026-02-09):** `Shufflemath/CommanderFiberCount.lean` exists and
+> compiles. It proves the two *action* bijections and their exact counts:
+> `leftEquiv` (`Fin 50 ≃ left pile`, `50!` such) and `rightEquiv`
+> (`Fin 49 ≃ right pile`, `49!` such), both built with `Equiv.ofInjective` plus
+> a `Set.range` equality. These are the building blocks of F1a's preferred
+> bijection. **Remaining:** the deck-level assembly `decksWithLeft S ≃
+> (Fin 50 ≃ S) × (Fin 49 ≃ right pile)` giving `50! · 49!` (F1a), then F1b/F1c/F1d.
+> See `docs/agent_handoff.md` for the hard-won `Set`-form vs subtype API notes.
+
 Split into small compilable subresults, preferably in a new dedicated
 `Shufflemath/CommanderFiberCount.lean` importing only what is needed:
 

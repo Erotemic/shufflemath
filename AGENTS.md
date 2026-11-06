@@ -31,7 +31,8 @@ lake build \
   Shufflemath.CommanderFiberWitness \
   Shufflemath.FiberDisintegration \
   Shufflemath.PhysicalExchangeReduction \
-  Shufflemath.CommanderFullDeckDisintegration
+  Shufflemath.CommanderFullDeckDisintegration \
+  Shufflemath.CommanderFiberCount
 ./dev/verify_next_phase.sh
 ```
 

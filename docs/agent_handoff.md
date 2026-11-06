@@ -1,27 +1,59 @@
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-10-21. **Source basis:** the October 21 source snapshot
-(`9257fa35bb1b`), the October 21 fiber/disintegration overlay and its three
-successive compilation fixes, plus the user's reported local build output.
-This is an *operational handoff*. `lean_plan.md` is the authority for overall
-scope and priority; `AGENTS.md` governs repository behavior.
+**Updated:** 2026-02-09. **Source basis:** the October 21 source snapshot,
+the fiber/disintegration tranche, and this session's F1 progress in
+`Shufflemath/CommanderFiberCount.lean` (compiles, no `sorry`/axiom). This is
+an *operational handoff*. `lean_plan.md` is the authority for overall scope and
+priority; `AGENTS.md` governs repository behavior.
 
 ## Exactly where to resume
 
-**Begin F1a in `docs/lean_plan.md`: count complete 99-card permutations
-with a fixed left-pile membership subset.** The latest
-`FiberDisintegration.lean` correction compiled as part of the completed
-October 21 tranche, confirmed by the user's established workflow when they
-moved on. The previous parser error is resolved; it is not an active task.
+**F1 is partway done.** `Shufflemath/CommanderFiberCount.lean` exists and
+compiles (`lake build Shufflemath.CommanderFiberCount`, EXIT 0). It proves:
 
-Implement F1a in `Shufflemath/CommanderFiberCount.lean` as specified by
-the roadmap. Once that file exists, verify that target directly:
+* `leftEquiv (d) (h)` : the left action of deck `d` is a bijection
+  `Fin 50 ≃ (left pile = S)`, built via `Equiv.ofInjective` + an equality of its
+  `Set.range` with `S` (this cast pattern is what works — do **not** try to
+  build the equiv to a subtype by hand with `⟨x, proof⟩`; it fights the parser
+  and `Equiv.ofBijective`'s opaque function).
+* `leftEquiv_card` : `Fintype.card (Fin 50 ≃ S) = 50!` (via `Fintype.card_equiv`
+  + `Fintype.card_fin` + `Fintype.equivFinOfCardEq`).
+* `rightEquiv (d) (h)` : the right action is a bijection
+  `Fin 49 ≃ ((Finset.univ \ S) : Set)` — same `Equiv.ofInjective` + `Set.range`
+  pattern.
+* `rightEquiv_card` : `Fintype.card (Fin 49 ≃ rightPile S) = 49!`, where
+  `rightPile S = {x // x ∈ (Finset.univ \ S)}` gets its `Fintype` from
+  `Fintype.Subtype.fintype` and its size from `Finset.card_compl`.
 
-```bash
-cd ~/code/shufflemath
-lake exe cache get
-lake build Shufflemath.CommanderFiberCount
-```
+**Next (F1 completion):** combine the two actions into a deck-level bijection
+`decksWithLeft S ≃ (Fin 50 ≃ S) × (Fin 49 ≃ (Fin 99 ∖ S))` (a `pasteDeck` plus
+its inverse), giving `Fintype.card (decksWithLeft S) = 50! · 49!` (F1a);
+then the `x`-fiber union over `choose 50 (x.val+1) * choose 49 (49 - x.val)`
+memberships (F1b); then rational normalization to the existing
+`commanderStationary` mass and the exported `HasCommanderFiberCounts` (F1c/d).
+
+### Hard-won API notes for this step
+
+* `rightEquiv`'s codomain is the *Set* form `((Finset.univ \ S) : Set)`; the
+  counting `rightPile S` is the *Finset*-membership subtype. They are the same
+  elements; their `Fintype`s coincide (both reduce to `Finset.card_compl` = 49).
+  The remaining friction is only the `Equiv`-level cast between the two
+  representations when assembling the product.
+* `Fintype.card_coe` does **not** auto-fire on the double coercion
+  `Fintype.card ↑↑S`; use `Fintype.card_coe` with an explicit `simp`/`rw`, or
+  bridge through a single-coercion subtype.
+* `Set.mem_sdiff` (top-level `mem_sdiff` inside `namespace Set`) is `Iff.rfl`
+  and its `.mp`/`.mpr` projections do **not** resolve by name; destructure a
+  `x ∈ a \ b` goal directly with `⟨...⟩` / `rcases` (Set sdiff is definitionally
+  `∧`).
+* Do **not** define `rightPosition` inside the `section` — a section
+  `variable (S)` leaks into a `def` as an implicit leading parameter, so
+  `rightPosition j` then expects `j : Finset (Fin 99)`. Keep `rightPosition`
+  (and `rightPile`) at namespace level; they don't use the section variables.
+* `Finset.compl` / `Sᶜ` (the Finset complement) triggers a kernel `whnf`
+  **timeout**; use `Finset.univ \ S` (sdiff) and, where a Set is needed,
+  `((Finset.univ \ S) : Set)`. `Finset.compl_eq_univ_sdiff` bridges sdiff
+  back to `Sᶜ` for `Finset.card_compl`.
 
 At the end of the new tranche, run `./dev/verify_next_phase.sh`. Do not
 rerun established modules solely to resolve an invented verification doubt.
@@ -39,6 +71,7 @@ default.
 | Constructive witness of all 50 macro fibers | `CommanderFiberWitness.lean` | Implemented and compiled |
 | Uniform fiber disintegration and membership reduction | `FiberDisintegration.lean`, `PhysicalExchangeReduction.lean` | Implemented and compiled, including the v3 correction |
 | Conditional full-uniform oracle and physical-perfect results | `CommanderFullDeckDisintegration.lean` | Compiles; **counting and membership hypotheses still open** |
+| Left/right action bijections + exact 50!/49! counts (F1) | `CommanderFiberCount.lean` | **This session: compiles; deck-level assembly + HasCommanderFiberCounts remain** |
 | Optional 2,401-pair exact TV minimum | `dev/BernoulliLaplacePairOptimality.lean` | Separate opt-in target; not a prerequisite for F1-F5 |
 
 Last observed local warnings from `CommanderPermutation.lean` (`simpa`
