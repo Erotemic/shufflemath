@@ -90,13 +90,39 @@ Finset-membership subtypes**, which is what `Fintype.card_of_subtype` /
   equiv-transport lemma; `Fintype.card_equiv` is for counting the equiv space
   itself and is *not* the right tool here.)
 
-**Next (F1b):** count the membership sets of the fiber over a fixed left pile
-`S` — the set of all `(leftEquiv, rightEquiv)` pairs is already `decksLR_prod`,
-and F1b needs the membership-set / resample structure on the fiber so the
-stationary mass can be computed. Keep `decksWithLeft_card` as the count
-primitive. F1c normalizes to `commanderStationary` mass; F1d exports
-`HasCommanderFiberCounts` (via `change` + `rw [Dist.mass_ofFun]`, never `simp`
-on `commanderStationary` directly).
+**F1b is COMPLETE and green.** `Shufflemath/CommanderFiberMembership.lean`
+builds (`lake build Shufflemath.CommanderFiberMembership`, EXIT 0) and proves the
+membership-set count. The fiber over `x` (where `k = x.val + 1` initially-left
+cards remain) is determined, before resampling, by which cards end up in the
+left pile. The `50`-card membership sets carrying exactly `k` initially-left
+cards are counted by a bijection with left-right pairs:
+
+* `fiberMembershipSets k := (powersetCard 50 univ).filter (S ↦ (S ∩ leftOrigSet).card = k)`;
+  `leftRightPairs k := powersetCard k leftOrigSet ×ˢ powersetCard (50 - k) rightOrigSet`.
+* `S_decomp` (`S = (S ∩ left) ∪ (S ∩ right)`, via the union partition) and
+  `S_decomp_disjoint` (the two parts are disjoint).
+* `unionMap_mem_fiber` (forward: a `(k, 50-k)` pair unions to a fiber member) and
+  `fiberMem_to_pairs` (backward: a fiber member splits as `(S ∩ left, S ∩ right)`);
+  `leftPart_of_union` / `rightPart_of_union` (a part is recovered by intersecting the
+  union with the corresponding pile); `unionMap_injective` (disjointness forces a
+  unique split).
+* `fiberMembershipSets_eq_image` (the fiber membership sets are exactly the image of
+  the pairs under `unionMap`) and the F1b deliverable
+  **`fiberMembershipSets_card : #(fiberMembershipSets k) = choose 50 k * choose 49 (50 - k)`**
+  (via `card_image_of_injOn` + `card_product` + `card_powersetCard` + the pile sizes).
+
+Set-theory notes: use `Finset.subset_empty.mp` for `s ⊆ ∅ → s = ∅`,
+`Finset.inter_subset_inter` + `Finset.Subset.rfl` for the disjoint-intersection
+proofs, `Finset.union_inter_distrib_right` for `(a ∪ b) ∩ c`, and `omega` (with
+a `k ≤ 50` side-lemma) for the truncated-Nat arithmetic `k + (50 - k) = 50`
+(`ring` cannot do truncated subtraction). `Finset` has no `subset_univ` and no
+`mem_empty`; `s ⊆ univ` is trivial (`Finset.mem_univ`).
+
+**Next (F1c):** combine the membership count with `decksWithLeft_card` to get the
+full fiber cardinality `#(fiber k) = choose 50 k * choose 49 (50 - k) * 50! * 49!`,
+normalize to `commanderStationary` mass (using `choose 99 50 * 50! * 49! = 99!`),
+and **F1d** exports `HasCommanderFiberCounts` (via `change` +
+`rw [Dist.mass_ofFun]`, never `simp` on `commanderStationary` directly).
 
 **Resolved blocker (for the record):** the section-`variable (S)` pattern is
 **abandoned** in this file. Every def/theorem takes an explicit `(S : Finset

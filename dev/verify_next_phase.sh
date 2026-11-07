@@ -15,6 +15,7 @@ lake build \
   Shufflemath.CommanderPermutation \
   Shufflemath.CommanderFiberWitness \
   Shufflemath.CommanderFiberCount \
+  Shufflemath.CommanderFiberMembership \
   Shufflemath.FiberDisintegration \
   Shufflemath.PhysicalExchangeReduction \
   Shufflemath.CommanderFullDeckDisintegration
