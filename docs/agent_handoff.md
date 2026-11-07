@@ -118,11 +118,65 @@ a `k ≤ 50` side-lemma) for the truncated-Nat arithmetic `k + (50 - k) = 50`
 (`ring` cannot do truncated subtraction). `Finset` has no `subset_univ` and no
 `mem_empty`; `s ⊆ univ` is trivial (`Finset.mem_univ`).
 
-**Next (F1c):** combine the membership count with `decksWithLeft_card` to get the
-full fiber cardinality `#(fiber k) = choose 50 k * choose 49 (50 - k) * 50! * 49!`,
-normalize to `commanderStationary` mass (using `choose 99 50 * 50! * 49! = 99!`),
-and **F1d** exports `HasCommanderFiberCounts` (via `change` +
-`rw [Dist.mass_ofFun]`, never `simp` on `commanderStationary` directly).
+**F1 bridge is COMPLETE and green.** `leftOriginalCount_eq_leftCardsInter (d : Deck) :
+leftOriginalCount d = (leftCards d ∩ leftOrigSet).card` is now in
+`Shufflemath/CommanderFiberCount.lean`. It is the key link: the macro count
+`leftOriginalCount d` equals the number of originally-left cards *in the left
+pile*, i.e. the size of `leftCards d ∩ leftOrigSet`, where `leftCards d` is the
+left-pile membership (a 50-subset of card identities). Proof: `unfold` the three
+defs, show the left pile `∩ leftOrigSet` equals the *image of the selected
+left positions* (an `ext` on `Fin 99` with `rcases` on the existential/`And`
+forms — `Finset` has no `subset_univ`/`mem_empty`; use `mem_inter`/`mem_image`/
+`mem_filter`/`mem_univ` + `and_true`/`true_and` + `leftOrigSet` in the `simp`),
+then `Finset.card_image_of_injective` on the injective left-position map
+(`d.injective` ⊢ `leftPosition_injective`).
+
+**Next (F1c + F1d) — the final F1 assembly.** Two facts remain, then F1d:
+
+1. **Full fiber count** `#(fiberType k) = #(fiberMembershipSets k) * 50! * 49!`.
+   Define `fiberType (k) := {d : Deck // leftOriginalCount d = k}` (a `Fintype`
+   subtype). The fiber decomposes over the membership sets: each `d` has a unique
+   `leftCards d ∈ fiberMembershipSets k` (by the bridge, since
+   `leftOriginalCount d = k ↔ leftCards d ∈ fiberMembershipSets k`), and the decks
+   over a fixed membership `S` are `decksWithLeft S` (card `50! * 49!` by
+   `decksWithLeft_card`). The natural statement is a `Fintype` bijection
+   `fiberType k ≃ fiberSigma k` where
+   `fiberSigma k := Σ S : {S // S ∈ fiberMembershipSets k}, decksWithLeft S.val`,
+   then `Fintype.card_sigma` + `Finset.sum_const` + `Fintype.card_of_subtype`
+   gives `#fiberSigma k = #(fiberMembershipSets k) * 50! * 49!`.
+
+   **Obstacle found (do not re-derive):** the dependent-`Sigma` route hits a
+   *maximum recursion depth* in the Lean kernel when `decksWithLeft S.val` is
+   indexed by the *subtype* variable `S : {S // S ∈ fiberMembershipSets k}` (the
+   concrete-S form `decksWithLeft leftOrigSet` builds fine in isolation —
+   `test_dwl`). The `Equiv`-level `ext` on the Sigma equality also resists
+   `⟨Subtype.ext ?_, Subtype.ext ?_⟩`. **Recommended path:** prove the fiber
+   count at the *Finset* level instead of via a dependent `Fintype` — take
+   `fiberFin (k) := (Finset.univ : Finset Deck).filter (fun d => leftOriginalCount d = k)`
+   and show `#fiberFin k = Finset.sum (fiberMembershipSets k) (fun S =>
+   Fintype.card (decksWithLeft S))` via `Finset.biUnion` with the pairwise-
+   disjointness given by the bridge (`leftCards d` is a unique membership, so the
+   filters are disjoint), where each term is `decksWithLeft_card` and the sum is
+   `#(fiberMembershipSets k) * 50! * 49!` (constant summand).
+   `#(fiberFin k) = #fiberType k` (Fintype vs. Finset filter) closes the loop.
+
+2. **Normalization + F1d.** With `#(fiberType k) = choose 50 k * choose 49 (50-k)
+   * 50! * 49!` (F1b × F1a) and `#Deck = 99!`, the stationary mass for a state
+   `x` (with `k = commanderLeftCount x = x.val + 1`) is
+   `#(fiberSet project x) / #Deck = choose 50 k * choose 49 (50-k) * 50! * 49! / 99!`
+   `= choose 50 k * choose 49 (50-k) / choose 99 50` (using
+   `choose 99 50 * 50! * 49! = 99!`, i.e. `Nat.choose_mul_factorial` /
+   `Nat.factorial_choose`). This equals `commanderStationaryVector x` by its
+definition (`choose 50 (commanderLeftCount x) * choose 49 (50 - commanderLeftCount x)
+   / choose 99 50`). F1d then exports `HasCommanderFiberCounts` by connecting
+   `fiberSet project x` to `fiberType (commanderLeftCount x)` (via
+   `project_val_eq`-style: `project d = x ↔ leftOriginalCount d = x.val + 1`),
+   then `change Dist.mass (Dist.ofFun _ _ _) x = _` + `rw [Dist.mass_ofFun _]`
+   (**never `simp`/`dsimp` on `commanderStationary` directly — it is a
+   `noncomputable` `Dist.ofFun` and the projection stalls**).
+
+**`#Deck = 99!`:** `Fintype.card (Equiv.Perm (Fin 99))` — use
+`Fintype.card_perm` / `Fintype.card_equivFin` (`#(Perm (Fin n)) = n!`).
 
 **Resolved blocker (for the record):** the section-`variable (S)` pattern is
 **abandoned** in this file. Every def/theorem takes an explicit `(S : Finset

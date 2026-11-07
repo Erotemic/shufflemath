@@ -441,5 +441,36 @@ theorem leftOrigSet_univ_rightOrigSet :
       true_and, iff_true]
   exact Nat.lt_or_ge c.val 50
 
+/-- The left-position image of a deck is injective. -/
+private theorem leftImageInj (d : Deck) :
+    Function.Injective (fun i : Fin 50 => d (leftPosition i)) := by
+  intro i j hij
+  exact leftPosition_injective (d.injective hij)
+
+/-- **Bridge between the macro count and the left-pile membership:** the number of
+  initially-left cards in the left pile (`leftOriginalCount`) equals the size of the
+  left pile's intersection with the original left identities. This lets the macro
+  count be read off from the membership set `leftCards d`, which is the key link for
+  counting the fiber over a fixed macro state. -/
+theorem leftOriginalCount_eq_leftCardsInter (d : Deck) :
+    leftOriginalCount d = (leftCards d ∩ leftOrigSet).card := by
+  unfold leftOriginalCount leftCards leftOrigSet
+  have hset : ((Finset.univ : Finset (Fin 50)).image (fun i => d (leftPosition i))) ∩
+      ((Finset.univ : Finset (Fin 99)).filter (fun c => c.val < 50)) =
+      ((Finset.univ : Finset (Fin 50)).filter (fun i => (d (leftPosition i)).val < 50)).image
+        (fun i => d (leftPosition i)) := by
+    apply Finset.ext
+    intro y
+    simp only [Finset.mem_inter, Finset.mem_image, Finset.mem_filter, Finset.mem_univ,
+        and_true, true_and, leftOrigSet]
+    constructor
+    · intro hy
+      rcases hy with ⟨⟨a, rfl⟩, hyv⟩
+      exact ⟨a, hyv, rfl⟩
+    · intro hy
+      rcases hy with ⟨a, hav, rfl⟩
+      exact ⟨⟨a, rfl⟩, hav⟩
+  rw [hset, (Finset.card_image_of_injective _ (leftImageInj d)).symm]
+
 end Shufflemath
 end
