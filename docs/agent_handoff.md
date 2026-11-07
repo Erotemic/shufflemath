@@ -51,67 +51,60 @@ certificate via `lake env lean dev/…`, EXIT 0).
 
 ## Exactly where to resume
 
-**F1 is partway done.** **(F1a's `CommanderFiberCount.lean` builds as a `module` file, and now also
-proves the `deckFun`/`pasteDeck`/`left_inv` foundation listed below.)* `Shufflemath/CommanderFiberCount.lean` exists and
-compiles (`lake build Shufflemath.CommanderFiberCount`, EXIT 0). It proves:
+**F1a is COMPLETE and green.** `Shufflemath/CommanderFiberCount.lean` builds
+(`lake build Shufflemath.CommanderFiberCount`, EXIT 0) and now proves the deck
+counting theorem. The file uses **explicit `S` parameters** (no `section` /
+`variable` — that pattern leaks `S` into implicit leading arguments and blocks
+the deck-level equiv; see the resolved note below). All equivs target **plain
+Finset-membership subtypes**, which is what `Fintype.card_of_subtype` /
+`Finset.card_sddiff_of_subset` / `Fintype.card_equiv` want.
 
-* `leftEquiv (d) (h)` : the left action of deck `d` is a bijection
-  `Fin 50 ≃ (left pile = S)`, built via `Equiv.ofInjective` + an equality of its
-  `Set.range` with `S` (this cast pattern is what works — do **not** try to
-  build the equiv to a subtype by hand with `⟨x, proof⟩`; it fights the parser
-  and `Equiv.ofBijective`'s opaque function).
-* `leftEquiv_card` : `Fintype.card (Fin 50 ≃ S) = 50!` (via `Fintype.card_equiv`
-  + `Fintype.card_fin` + `Fintype.equivFinOfCardEq`).
-* `rightEquiv (d) (h)` : the right action is a bijection
-  `Fin 49 ≃ ((Finset.univ \ S) : Set)` — same `Equiv.ofInjective` + `Set.range`
-  pattern.
-* `rightEquiv_card` : `Fintype.card (Fin 49 ≃ rightPile S) = 49!`, where
-  `rightPile S = {x // x ∈ (Finset.univ \ S)}` gets its `Fintype` from
-  `Fintype.Subtype.fintype` and its size from `Finset.card_compl`.
+* `leftPile S := {x // x ∈ S}` and `rightPile S := {x // x ∈ (Finset.univ \ S)}`
+  (abbrevs, so `Fintype.Subtype.fintype` synthesizes).
+* `leftEquiv S d hd : Fin 50 ≃ leftPile S` — built via
+  `Equiv.ofBijective (leftFun S d hd) ⟨inj, surj⟩`; `leftFun i = ⟨d
+  (leftPosition i), leftCardInS⟩`. **Key:** build the equiv to the plain
+  subtype (NOT to `(S : Set)`); the `⟨x, proof⟩` construction works once the
+  target is `{x // x ∈ S}`. `leftEquiv_apply`, `leftEquiv_card = 50!`.
+* `rightEquiv S d hd : Fin 49 ≃ rightPile S` — `rightFun j = ⟨d (rightPosition
+  j), rightCardInS⟩`; `rightCardInS` reduces to `Finset.univ \ S` and closes
+  with `simp only [Finset.mem_sdiff]` + `constructor` (membership in an sdiff
+  is *not* an inductive type, so a bare `constructor` fails).
+  `rightEquiv_apply`, `rightEquiv_card = 49!`.
+* `deckFunSub S eL eR p` / `deckFunInvSub` — the position-wise (resp. value-wise)
+  assembly, now over the subtype equivs; `left_invSub` (`deckFunSub ∘ deckFunInvSub
+  = id`), `deckFunSub_left` / `deckFunSub_right`.
+* `pasteDeckSub S eL eR : Deck` — `Equiv.ofBijective (deckFunSub …)`; surjectivity
+  is `left_invSub`, injectivity is `Finite.injective_iff_surjective` (namespace
+  **`Finite`**). `pasteDeckSub_leftCards` (left pile = `S`), `pasteDeckSub_self`
+  (`pasteDeckSub (leftEquiv d) (rightEquiv d) = d`, by `apply Equiv.ext` +
+  `change` + `split_ifs` — **`split_ifs` is the only tactic that splits a
+  named-binder `if` inside a `def`**).
+* `toLR / fromLR` and the inverse laws `fromLR_toLR`, `toLR_fromLR`; then
+  `decksLR : decksWithLeft S ≃ (Fin 50 ≃ leftPile S) × (Fin 49 ≃ rightPile S)`
+  via `Equiv.ofBijective (toLR S) ⟨inj, surj⟩`, where injectivity and
+  surjectivity fall out of the two inverse laws (no `admit`/`sorry`).
+* **`decksWithLeft_card : Fintype.card (decksWithLeft S) = 50! · 49!`** — the
+  F1a deliverable: `rw [Fintype.card_congr (decksLR S), Fintype.card_prod]` +
+  `simp [leftEquiv_card, rightEquiv_card]`. (`Fintype.card_congr` is the
+  equiv-transport lemma; `Fintype.card_equiv` is for counting the equiv space
+  itself and is *not* the right tool here.)
 
-**F1a foundation is complete and green.** Added to
-`Shufflemath/CommanderFiberCount.lean` (namespace level, explicit `S`):
+**Next (F1b):** count the membership sets of the fiber over a fixed left pile
+`S` — the set of all `(leftEquiv, rightEquiv)` pairs is already `decksLR_prod`,
+and F1b needs the membership-set / resample structure on the fiber so the
+stationary mass can be computed. Keep `decksWithLeft_card` as the count
+primitive. F1c normalizes to `commanderStationary` mass; F1d exports
+`HasCommanderFiberCounts` (via `change` + `rw [Dist.mass_ofFun]`, never `simp`
+on `commanderStationary` directly).
 
-* `leftIndex`/`rightIndex` — the pile-index of a position in the left/right
-  half; `leftIndex_leftPos`, `rightIndex_rightPos`, `leftPosition_leftIndex`,
-  `rightPosition_rightIndex` (index ⇄ position round-trips).
-* `deckFun S eL eR p` — the deck assembled *position-wise*: a left position
-  gets `eL`'s value, a right position gets `eR`'s value; `deckFunInv` is the
-  pointwise inverse (value-wise).
-* `deckFun_left`/`deckFun_right` — at a left/right position, `deckFun` gives
-  `eL`/`eR`'s value (proved by `unfold deckFun; split_ifs` — `split_ifs` is the
-  *only* tactic that splits a named-binder `if` inside a `def`).
-* `left_inv` — `deckFun S eL eR (deckFunInv S eL eR y) = y` (the key inverse
-  law; both branches close with `change` + `Equiv.apply_symm_apply`).
-* `pasteDeck S eL eR : Deck` — a valid `Equiv.Perm (Fin 99)`, built via
-  `Equiv.ofBijective (deckFun …)` where surjectivity is `left_inv` and
-  injectivity is `Finite.injective_iff_surjective` (it lives in namespace
-  **`Finite`**, not `Fintype`).
-* `pasteDeck_leftCards` — the assembled deck's left pile is exactly `S`.
-* `decksWithLeft S := {d : Deck // leftCards d = S}`.
-
-**Next (F1a completion):** build `decksLR : decksWithLeft S ≃
-(Fin 50 ≃ S) × (Fin 49 ≃ (Fin 99 ∖ S))` via `toLR = (leftEquiv, rightEquiv)`
-/ `fromLR = (pasteDeck, pasteDeck_leftCards)` and prove it a bijection, then
-`decksWithLeft_card : Fintype.card (decksWithLeft S) = 50! · 49!` by
-`Fintype.card_equiv decksLR` + `Fintype.card_prod` + the existing
-`leftEquiv_card`/`rightEquiv_card`.
-
-**Exact blocker hit (do not re-derive from scratch):** the deck-level equiv
-must live in the *same* `section` as `leftEquiv`/`rightEquiv` (their `variable
-(S)` makes `S` an implicit leading arg, and calling `leftEquiv d hd` from a
-different section mis-binds `d` to `S`). Even *inside* that section, calling
-`leftEquiv d hd` with an explicit `d` does not auto-resolve the implicit `S`
-(the elaborator consumes `d` as `S`); passing it explicitly as
-`leftEquiv S d hd` then mis-parses (`(leftEquiv S d hd) i` reports type `↑↑S`,
-a section-`variable` double-coercion artifact, and `hcard` intermittently
-reports "unknown"). **Recommended fix:** drop the `variable (S) (hcard)`
-section and give `leftEquiv`/`rightEquiv` (and the new `decksLR`/card)
-explicit `(S)` parameters, matching the already-green `deckFun`/`pasteDeck`
-which use explicit `S` and compose cleanly. Then `leftEquiv_apply :
-(leftEquiv S d hd) i .val = d (leftPosition i)` (unfold `leftEquiv` =
-`hrange ▸ Equiv.ofInjective (fun i => d (leftPosition i))`) should close, and
-the `decksLR` inverse laws follow.
+**Resolved blocker (for the record):** the section-`variable (S)` pattern is
+**abandoned** in this file. Every def/theorem takes an explicit `(S : Finset
+(Fin 99))` argument. The old Set-form `deckFun` / `pasteDeck` /
+`decksWithLeft` (using `Equiv (Fin 50) (S : Set)`) have been *removed*; the
+new subtype-form `deckFunSub` / `pasteDeckSub` / `decksLR` replace them.
+`decksWithLeft` itself (the `abbrev`) is unchanged and is the subtype the deck
+count is stated over.
 
 ### Hard-won API notes for this step
 

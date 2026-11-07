@@ -90,14 +90,19 @@ This is **not proved** by `CommanderPermutation.project_surjective`: an
 inhabited fiber need not have the right *cardinality*. Build a structural
 counting proof, without evaluating a type containing `99!` permutations.
 
-> **Progress (2026-02-09):** `Shufflemath/CommanderFiberCount.lean` exists and
-> compiles. It proves the two *action* bijections and their exact counts:
-> `leftEquiv` (`Fin 50 ≃ left pile`, `50!` such) and `rightEquiv`
-> (`Fin 49 ≃ right pile`, `49!` such), both built with `Equiv.ofInjective` plus
-> a `Set.range` equality. These are the building blocks of F1a's preferred
-> bijection. **Remaining:** the deck-level assembly `decksWithLeft S ≃
-> (Fin 50 ≃ S) × (Fin 49 ≃ right pile)` giving `50! · 49!` (F1a), then F1b/F1c/F1d.
-> See `docs/agent_handoff.md` for the hard-won `Set`-form vs subtype API notes.
+> **Progress (F1a complete, 2026-02):** `Shufflemath/CommanderFiberCount.lean`
+> compiles and now proves the full deck count. The two action bijections
+> `leftEquiv` (`Fin 50 ≃ leftPile S`, `50!` such) and `rightEquiv` (`Fin 49 ≃
+> rightPile S`, `49!` such) are built over **plain Finset-membership subtypes**
+> (`Equiv.ofBijective`), and the deck-level bijection
+> `decksLR : decksWithLeft S ≃ (Fin 50 ≃ leftPile S) × (Fin 49 ≃ rightPile S)`
+> gives **`decksWithLeft_card : Fintype.card (decksWithLeft S) = 50! · 49!`**
+> (via `Fintype.card_congr` + `Fintype.card_prod` + `leftEquiv_card` /
+> `rightEquiv_card`). The section-`variable (S)` pattern was abandoned for
+> explicit `(S)` parameters. **Remaining:** F1b (count membership sets over the
+> fiber for a fixed originally-left count `x.val + 1`), F1c (normalize to
+> `commanderStationary` mass), F1d (export `HasCommanderFiberCounts`).
+> See `docs/agent_handoff.md` for the API notes.
 
 Split into small compilable subresults, preferably in a new dedicated
 `Shufflemath/CommanderFiberCount.lean` importing only what is needed:
