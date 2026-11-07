@@ -6,8 +6,13 @@ public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Finset.SDiff
 public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Finset.Prod
+public import Mathlib.Data.Nat.Choose.Basic
+public import Shufflemath.BernoulliLaplace
 public import Shufflemath.BernoulliLaplaceFiber
 public import Shufflemath.CommanderPermutation
+public import Shufflemath.FiberDisintegration
 
 @[expose] public section
 
@@ -367,5 +372,74 @@ theorem decksWithLeft_card (S : Finset (Fin 99)) (hcard : S.card = 50) :
     Fintype.card (decksWithLeft S) = Nat.factorial 50 * Nat.factorial 49 := by
   rw [Fintype.card_congr (decksLR S), Fintype.card_prod]
   simp [leftEquiv_card S hcard, rightEquiv_card S hcard]
+
+/-!
+## Originally-left / originally-right card sets (F1b foundation)
+
+The 99-card deck splits into the 50 initially-left card identities (`0..49`)
+and the 49 initially-right ones (`50..98`).  These two Finsets are disjoint
+and cover `Fin 99`, with cards `50` and `49` respectively.
+-/
+
+/-- The 50 initially-left card identities (cards `0..49`), as a Finset of `Fin 99`. -/
+def leftOrigSet : Finset (Fin 99) :=
+  (Finset.univ : Finset (Fin 99)).filter (fun c => c.val < 50)
+
+/-- The 49 initially-right card identities (cards `50..98`), as a Finset of `Fin 99`. -/
+def rightOrigSet : Finset (Fin 99) :=
+  (Finset.univ : Finset (Fin 99)).filter (fun c => 50 ≤ c.val)
+
+/-- `leftOrigSet` is the image of the 50 initially-left positions into `Fin 99`. -/
+theorem leftOrigSet_eq_image :
+    leftOrigSet = (Finset.univ : Finset (Fin 50)).image (fun i : Fin 50 =>
+        ⟨i.val, Nat.lt_trans i.isLt (by decide)⟩) := by
+  ext c
+  simp only [leftOrigSet, Finset.mem_filter, Finset.mem_univ, Finset.mem_image]
+  constructor
+  · intro hc
+    use ⟨c.val, hc.2⟩
+  · intro himg
+    rcases himg with ⟨i, _, heq⟩
+    have hv : c.val = i.val := by rw [← heq]
+    simpa [hv] using i.isLt
+
+/-- There are exactly 50 initially-left card identities. -/
+theorem leftOrigSet_card : leftOrigSet.card = 50 := by
+  rw [leftOrigSet_eq_image, Finset.card_image_of_injective _
+      (fun i j hij => Fin.ext (by simpa using congrArg (fun (x : Fin 99) => x.val) hij))]
+  simp
+
+/-- `rightOrigSet` is the complement of `leftOrigSet` in `Fin 99`. -/
+theorem rightOrigSet_sdiff : rightOrigSet = (Finset.univ : Finset (Fin 99)) \ leftOrigSet := by
+  ext c
+  simp only [rightOrigSet, leftOrigSet, Finset.mem_filter, Finset.mem_sdiff, Finset.mem_univ]
+  by_cases hc : c.val < 50 <;> simp [hc] <;> (try omega)
+
+/-- There are exactly 49 initially-right card identities. -/
+theorem rightOrigSet_card : rightOrigSet.card = 49 := by
+  rw [rightOrigSet_sdiff, Finset.card_sdiff_of_subset (Finset.subset_univ leftOrigSet),
+      leftOrigSet_card]
+  norm_num
+
+/-- The left and right card sets are disjoint. -/
+theorem leftOrigSet_disjoint_rightOrigSet : leftOrigSet ∩ rightOrigSet = ∅ := by
+  ext c
+  simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, leftOrigSet, rightOrigSet,
+      true_and]
+  constructor
+  · intro h
+    rcases h with ⟨h1, h2⟩
+    omega
+  · intro h
+    contradiction
+
+/-- The left and right card sets cover all of `Fin 99`. -/
+theorem leftOrigSet_univ_rightOrigSet :
+    leftOrigSet ∪ rightOrigSet = (Finset.univ : Finset (Fin 99)) := by
+  ext c
+  simp only [Finset.mem_union, Finset.mem_filter, Finset.mem_univ, leftOrigSet, rightOrigSet,
+      true_and, iff_true]
+  exact Nat.lt_or_ge c.val 50
+
 end Shufflemath
 end
