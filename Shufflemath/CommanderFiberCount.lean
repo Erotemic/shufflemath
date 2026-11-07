@@ -12,6 +12,7 @@ public import Shufflemath.CommanderPermutation
 @[expose] public section
 
 namespace Shufflemath
+open Shufflemath.CommanderPermutation
 
 open Shufflemath.CommanderPermutation
 
@@ -55,6 +56,125 @@ def rightPosition (j : Fin 49) : Fin 99 := ⟨50 + j.val, by omega⟩
   supplies its `Fintype` instance. -/
 abbrev rightPile (S : Finset (Fin 99)) := {x : Fin 99 // x ∈ (Finset.univ : Finset (Fin 99)) \ S}
 
+/-- The left-pile index of a position in the left half. -/
+def leftIndex (p : Fin 99) (h : p.val < 50) : Fin 50 := ⟨p.val, h⟩
+
+/-- The right-pile index of a position in the right half. -/
+def rightIndex (p : Fin 99) (h : ¬ p.val < 50) : Fin 49 := ⟨p.val - 50, by omega⟩
+
+theorem leftIndex_leftPos (i : Fin 50) (h : (leftPosition i).val < 50) :
+    leftIndex (leftPosition i) h = i := by
+  apply Fin.ext; simp only [leftIndex, leftPosition]
+
+theorem rightIndex_rightPos (j : Fin 49) (h : ¬ (rightPosition j).val < 50) :
+    rightIndex (rightPosition j) h = j := by
+  apply Fin.ext; simp only [rightIndex, rightPosition]; omega
+
+theorem leftPosition_leftIndex (p : Fin 99) (h : p.val < 50) :
+    leftPosition (leftIndex p h) = p := by
+  apply Fin.ext; simp only [leftPosition, leftIndex]
+
+theorem rightPosition_rightIndex (p : Fin 99) (h : ¬ p.val < 50) :
+    rightPosition (rightIndex p h) = p := by
+  have hge : 50 ≤ p.val := by omega
+  apply Fin.ext; simp only [rightPosition, rightIndex]
+  omega
+
+/-- The deck assembled position-wise from a left bijection and a right bijection. -/
+def deckFun (S : Finset (Fin 99))
+    (eL : Equiv (Fin 50) (S : Set (Fin 99)))
+    (eR : Equiv (Fin 49) ((Finset.univ : Finset (Fin 99)) \ S : Set (Fin 99)))
+    (p : Fin 99) : Fin 99 :=
+  if hL : p.val < 50 then (eL (leftIndex p hL)).val else (eR (rightIndex p hL)).val
+
+/-- The pointwise inverse of `deckFun`. -/
+def deckFunInv (S : Finset (Fin 99))
+    (eL : Equiv (Fin 50) (S : Set (Fin 99)))
+    (eR : Equiv (Fin 49) ((Finset.univ : Finset (Fin 99)) \ S : Set (Fin 99)))
+    (y : Fin 99) : Fin 99 :=
+  if h : y ∈ S then leftPosition (eL.symm ⟨y, Finset.mem_coe.1 h⟩)
+  else rightPosition (eR.symm ⟨y, by simpa [h, Finset.mem_sdiff, Finset.mem_univ]⟩)
+
+lemma deckFun_left (S : Finset (Fin 99))
+    (eL : Equiv (Fin 50) (S : Set (Fin 99)))
+    (eR : Equiv (Fin 49) ((Finset.univ : Finset (Fin 99)) \ S : Set (Fin 99)))
+    (i : Fin 50) : deckFun S eL eR (leftPosition i) = (eL i).val := by
+  unfold deckFun
+  split_ifs with hL
+  · simpa [leftIndex_leftPos i hL]
+  · exfalso
+    have hlt : (leftPosition i).val < 50 := by simp only [leftPosition]; exact i.isLt
+    exact hL hlt
+
+lemma deckFun_right (S : Finset (Fin 99))
+    (eL : Equiv (Fin 50) (S : Set (Fin 99)))
+    (eR : Equiv (Fin 49) ((Finset.univ : Finset (Fin 99)) \ S : Set (Fin 99)))
+    (j : Fin 49) : deckFun S eL eR (rightPosition j) = (eR j).val := by
+  unfold deckFun
+  split_ifs with hL
+  · exfalso
+    have hge : ¬ (rightPosition j).val < 50 := by simp only [rightPosition]; omega
+    exact hge hL
+  · simpa [rightIndex_rightPos j hL]
+
+/-- Applying `deckFun` after `deckFunInv` is the identity. -/
+theorem left_inv (S : Finset (Fin 99))
+    (eL : Equiv (Fin 50) (S : Set (Fin 99)))
+    (eR : Equiv (Fin 49) ((Finset.univ : Finset (Fin 99)) \ S : Set (Fin 99)))
+    (y : Fin 99) : deckFun S eL eR (deckFunInv S eL eR y) = y := by
+  unfold deckFunInv
+  split_ifs with h
+  · -- y ∈ S
+    let i := eL.symm ⟨y, Finset.mem_coe.1 h⟩
+    rw [deckFun_left]
+    change (eL (eL.symm ⟨y, Finset.mem_coe.1 h⟩)).val = y
+    rw [eL.apply_symm_apply]
+  · -- y ∉ S
+    let j := eR.symm ⟨y, by simpa [h, Finset.mem_sdiff, Finset.mem_univ]⟩
+    rw [deckFun_right]
+    change (eR (eR.symm ⟨y, by simpa [h, Finset.mem_sdiff, Finset.mem_univ]⟩)).val = y
+    rw [eR.apply_symm_apply]
+
+/-- The deck assembled from a left bijection and a right bijection; it is a
+  permutation and its left pile is exactly `S`. -/
+noncomputable def pasteDeck (S : Finset (Fin 99))
+    (eL : Equiv (Fin 50) (S : Set (Fin 99)))
+    (eR : Equiv (Fin 49) ((Finset.univ : Finset (Fin 99)) \ S : Set (Fin 99)))
+    : Deck :=
+  Equiv.ofBijective (deckFun S eL eR) (by
+    have hSurj : Function.Surjective (deckFun S eL eR) := by
+      intro y
+      exact ⟨deckFunInv S eL eR y, left_inv S eL eR y⟩
+    exact ⟨(Finite.injective_iff_surjective (f := deckFun S eL eR)).2 hSurj,
+      hSurj⟩)
+
+/-- The left pile of the assembled deck is exactly `S`. -/
+theorem pasteDeck_leftCards (S : Finset (Fin 99))
+    (eL : Equiv (Fin 50) (S : Set (Fin 99)))
+    (eR : Equiv (Fin 49) ((Finset.univ : Finset (Fin 99)) \ S : Set (Fin 99)))
+    : leftCards (pasteDeck S eL eR) = S := by
+  have hmain : leftCards (pasteDeck S eL eR) =
+      (Finset.univ : Finset (Fin 50)).image (fun i => (eL i).val) := by
+    dsimp only [leftCards, pasteDeck, deckFun]
+    rw [Equiv.coe_ofBijective]
+    congr
+    funext i
+    simpa [deckFun_left]
+  rw [hmain]
+  ext x
+  constructor
+  · -- x in the assembled left pile means x = (eL i).val for some i, hence x in S
+    intro hx
+    obtain ⟨i, _, hi⟩ := Finset.mem_image.1 hx
+    have hSset : x ∈ (S : Set (Fin 99)) := by simpa [hi.symm] using (eL i).property
+    exact Finset.mem_coe.1 hSset
+  · -- x in S is the image of its preimage under the left bijection
+    intro hx
+    refine Finset.mem_image.mpr ⟨eL.symm ⟨x, Finset.mem_coe.1 hx⟩, by simp, ?_⟩
+    simpa [eL.apply_symm_apply]
+
+/-- Decks whose left 50 cards are exactly `S`. -/
+abbrev decksWithLeft (S : Finset (Fin 99)) := {d : Deck // leftCards d = S}
 
 section
 
@@ -139,19 +259,6 @@ theorem leftEquiv_card (S : Finset (Fin 99)) (hcard : S.card = 50) :
   have hS : Fintype.card (S : Set (Fin 99)) = 50 := by
     rw [← Set.toFinset_card]; simp; exact hcard
   have e : Fin 50 ≃ (S : Set (Fin 99)) := (Fintype.equivFinOfCardEq hS).symm
-  rw [Fintype.card_equiv e, Fintype.card_fin]
-
-
-
-/-- There are `49!` bijections `Fin 49 ≃ (Fin 99 ∖ S)`. -/
-theorem rightEquiv_card (S : Finset (Fin 99)) (hcard : S.card = 50) :
-    Fintype.card (Equiv (Fin 49) (rightPile S)) = Nat.factorial 49 := by
-  have hR : Fintype.card (rightPile S) = 49 := by
-    classical
-    dsimp only [rightPile]
-    rw [Fintype.card_coe, ← Finset.compl_eq_univ_sdiff, Finset.card_compl,
-      Fintype.card_fin, hcard]
-  have e : Fin 49 ≃ (rightPile S) := (Fintype.equivFinOfCardEq hR).symm
   rw [Fintype.card_equiv e, Fintype.card_fin]
 
 end

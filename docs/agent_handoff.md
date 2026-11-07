@@ -51,8 +51,8 @@ certificate via `lake env lean dev/…`, EXIT 0).
 
 ## Exactly where to resume
 
-**F1 is partway done.** *(F1a's `CommanderFiberCount.lean` now builds as a
-`module` file under the migration above.)* `Shufflemath/CommanderFiberCount.lean` exists and
+**F1 is partway done.** **(F1a's `CommanderFiberCount.lean` builds as a `module` file, and now also
+proves the `deckFun`/`pasteDeck`/`left_inv` foundation listed below.)* `Shufflemath/CommanderFiberCount.lean` exists and
 compiles (`lake build Shufflemath.CommanderFiberCount`, EXIT 0). It proves:
 
 * `leftEquiv (d) (h)` : the left action of deck `d` is a bijection
@@ -69,12 +69,49 @@ compiles (`lake build Shufflemath.CommanderFiberCount`, EXIT 0). It proves:
   `rightPile S = {x // x ∈ (Finset.univ \ S)}` gets its `Fintype` from
   `Fintype.Subtype.fintype` and its size from `Finset.card_compl`.
 
-**Next (F1 completion):** combine the two actions into a deck-level bijection
-`decksWithLeft S ≃ (Fin 50 ≃ S) × (Fin 49 ≃ (Fin 99 ∖ S))` (a `pasteDeck` plus
-its inverse), giving `Fintype.card (decksWithLeft S) = 50! · 49!` (F1a);
-then the `x`-fiber union over `choose 50 (x.val+1) * choose 49 (49 - x.val)`
-memberships (F1b); then rational normalization to the existing
-`commanderStationary` mass and the exported `HasCommanderFiberCounts` (F1c/d).
+**F1a foundation is complete and green.** Added to
+`Shufflemath/CommanderFiberCount.lean` (namespace level, explicit `S`):
+
+* `leftIndex`/`rightIndex` — the pile-index of a position in the left/right
+  half; `leftIndex_leftPos`, `rightIndex_rightPos`, `leftPosition_leftIndex`,
+  `rightPosition_rightIndex` (index ⇄ position round-trips).
+* `deckFun S eL eR p` — the deck assembled *position-wise*: a left position
+  gets `eL`'s value, a right position gets `eR`'s value; `deckFunInv` is the
+  pointwise inverse (value-wise).
+* `deckFun_left`/`deckFun_right` — at a left/right position, `deckFun` gives
+  `eL`/`eR`'s value (proved by `unfold deckFun; split_ifs` — `split_ifs` is the
+  *only* tactic that splits a named-binder `if` inside a `def`).
+* `left_inv` — `deckFun S eL eR (deckFunInv S eL eR y) = y` (the key inverse
+  law; both branches close with `change` + `Equiv.apply_symm_apply`).
+* `pasteDeck S eL eR : Deck` — a valid `Equiv.Perm (Fin 99)`, built via
+  `Equiv.ofBijective (deckFun …)` where surjectivity is `left_inv` and
+  injectivity is `Finite.injective_iff_surjective` (it lives in namespace
+  **`Finite`**, not `Fintype`).
+* `pasteDeck_leftCards` — the assembled deck's left pile is exactly `S`.
+* `decksWithLeft S := {d : Deck // leftCards d = S}`.
+
+**Next (F1a completion):** build `decksLR : decksWithLeft S ≃
+(Fin 50 ≃ S) × (Fin 49 ≃ (Fin 99 ∖ S))` via `toLR = (leftEquiv, rightEquiv)`
+/ `fromLR = (pasteDeck, pasteDeck_leftCards)` and prove it a bijection, then
+`decksWithLeft_card : Fintype.card (decksWithLeft S) = 50! · 49!` by
+`Fintype.card_equiv decksLR` + `Fintype.card_prod` + the existing
+`leftEquiv_card`/`rightEquiv_card`.
+
+**Exact blocker hit (do not re-derive from scratch):** the deck-level equiv
+must live in the *same* `section` as `leftEquiv`/`rightEquiv` (their `variable
+(S)` makes `S` an implicit leading arg, and calling `leftEquiv d hd` from a
+different section mis-binds `d` to `S`). Even *inside* that section, calling
+`leftEquiv d hd` with an explicit `d` does not auto-resolve the implicit `S`
+(the elaborator consumes `d` as `S`); passing it explicitly as
+`leftEquiv S d hd` then mis-parses (`(leftEquiv S d hd) i` reports type `↑↑S`,
+a section-`variable` double-coercion artifact, and `hcard` intermittently
+reports "unknown"). **Recommended fix:** drop the `variable (S) (hcard)`
+section and give `leftEquiv`/`rightEquiv` (and the new `decksLR`/card)
+explicit `(S)` parameters, matching the already-green `deckFun`/`pasteDeck`
+which use explicit `S` and compose cleanly. Then `leftEquiv_apply :
+(leftEquiv S d hd) i .val = d (leftPosition i)` (unfold `leftEquiv` =
+`hrange ▸ Equiv.ofInjective (fun i => d (leftPosition i))`) should close, and
+the `decksLR` inverse laws follow.
 
 ### Hard-won API notes for this step
 
