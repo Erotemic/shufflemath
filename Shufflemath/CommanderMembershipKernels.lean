@@ -48,6 +48,15 @@ perfect-local shuffle never changes it, which is the invariant the
 /-- The exact left-pile membership: a 50-element set of card identities. -/
 abbrev Membership := {S : Finset (Fin 99) // S.card = 50}
 
+/-- The 50-card subsets of the 99 identities form a finite type: the set
+  `{S | S.card = 50}` is a subset of the univ of the finite type of all
+  99-card-subsets, so it is finite. -/
+noncomputable instance : Fintype Membership := by
+  classical
+  let s : Set (Finset (Fin 99)) := {S | S.card = 50}
+  have hs : s.Finite := Set.Finite.subset Set.finite_univ (fun _ _ => Set.mem_univ _)
+  exact Set.Finite.fintype hs
+
 /-- Read the left-pile membership of a deck. -/
 def membership (d : Deck) : Membership :=
   ⟨leftCards d, leftCards_card d⟩
@@ -145,6 +154,88 @@ theorem localLift_preserves_membership :
       (fun (d : decksWithLeft m.1) => membership (d.val)) = Dist.pointMass m
   rw [hconstant]
   exact Convexity.StdSimplex.map_const (GSR.uniformDist (decksWithLeft m.1)) m
+
+/-!
+## The marked-count fiber of the membership type
+
+`MembershipFiber k` is the sub-fintype of memberships carrying exactly `k`
+marked cards. Its `Fintype.card` is the F1b count of
+`fiberMembershipSets k` (itself `choose 50 k * choose 49 (50 - k)`), via
+the bijection that a membership is its 50-card set.
+-/ 
+
+/-- The memberships carrying exactly `k` marked cards. -/
+def MembershipFiber (k : Nat) := {m : Membership // membershipCount m = k}
+
+/-- The marked-count fiber of the membership type is finite: it is a
+  subset of the univ of the (finite) membership type. -/
+noncomputable instance (k : Nat) : Fintype (MembershipFiber k) := by
+  classical
+  let s : Set Membership := {m | membershipCount m = k}
+  have hs : s.Finite := Set.Finite.subset Set.finite_univ (fun _ _ => Set.mem_univ _)
+  exact Set.Finite.fintype hs
+
+/-- A membership's marked count is `k` iff its 50-card set lies in the
+  F1b `fiberMembershipSets` fiber. -/
+theorem membershipCount_iff_fiberMembershipSets (m : Membership) (k : Nat) :
+    membershipCount m = k ↔ m.1 ∈ fiberMembershipSets k := by
+  simp only [membershipCount, fiberMembershipSets, Finset.mem_filter,
+      Finset.mem_powersetCard, Finset.subset_univ]
+  constructor
+  · intro h
+    exact And.intro (by simpa using m.2) h
+  · intro h
+    exact h.2
+
+/-- The membership fiber over a marked count `k` is in bijection with the
+  F1b `fiberMembershipSets k` finset: a membership is exactly its 50-card
+  set, so `Fintype.card (MembershipFiber k) = (fiberMembershipSets k).card`,
+  which by F1b is `choose 50 k * choose 49 (50 - k)`. -/
+theorem MembershipFiber_card (k : Nat) :
+    Fintype.card (MembershipFiber k) = (fiberMembershipSets k).card := by
+  classical
+  have hcard1 : Fintype.card (MembershipFiber k) =
+      Fintype.card {S : Finset (Fin 99) // S ∈ fiberMembershipSets k} := by
+    apply Fintype.card_congr
+    classical
+    refine ⟨fun m => ?_, fun S => ?_, ?_, ?_⟩
+    · -- toFun : MembershipFiber k → {S // S ∈ fiberMembershipSets k}
+      exact ⟨m.1, by
+        simp only [fiberMembershipSets, Finset.mem_filter]
+        refine ⟨?_, ?_⟩
+        · rw [Finset.mem_powersetCard]
+          exact ⟨Finset.subset_univ _, m.1.2⟩
+        · exact m.property
+      ⟩
+    · -- invFun : {S // S ∈ fiberMembershipSets k} → MembershipFiber k
+      have hmem : S.val ∈ powersetCard 50 (univ : Finset (Fin 99)) ∧
+          (S.val ∩ leftOrigSet).card = k := by
+        have hprop := S.property
+        simp only [fiberMembershipSets, Finset.mem_filter] at hprop
+        exact hprop
+      have hcard50 : S.val.card = 50 := by
+        have h1 : S.val ∈ powersetCard 50 (univ : Finset (Fin 99)) := hmem.1
+        simp only [Finset.mem_powersetCard, Finset.subset_univ] at h1
+        exact h1.2
+      exact ⟨⟨S.val, hcard50⟩, by
+        simp only [membershipCount]
+        exact hmem.2⟩
+    · -- left_inv
+      intro m
+      apply Subtype.ext
+      rfl
+    · -- right_inv
+      intro S
+      apply Subtype.ext
+      rfl
+  have hcard2 : Fintype.card {S : Finset (Fin 99) // S ∈ fiberMembershipSets k} =
+      (fiberMembershipSets k).card := by
+    classical
+    exact Fintype.card_ofFinset (fiberMembershipSets k) (fun _ => Iff.rfl)
+  calc
+    Fintype.card (MembershipFiber k) =
+      Fintype.card {S : Finset (Fin 99) // S ∈ fiberMembershipSets k} := hcard1
+    _ = (fiberMembershipSets k).card := hcard2
 
 end CommanderMembershipKernels
 end Shufflemath
