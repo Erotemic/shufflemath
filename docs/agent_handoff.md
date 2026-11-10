@@ -94,13 +94,14 @@ certificate via `lake env lean dev/…`, EXIT 0).
 
 ## Exactly where to resume
 
-**F1a is COMPLETE and green.** `Shufflemath/CommanderFiberCount.lean` builds
-(`lake build Shufflemath.CommanderFiberCount`, EXIT 0) and now proves the deck
-counting theorem. The file uses **explicit `S` parameters** (no `section` /
-`variable` — that pattern leaks `S` into implicit leading arguments and blocks
-the deck-level equiv; see the resolved note below). All equivs target **plain
-Finset-membership subtypes**, which is what `Fintype.card_of_subtype` /
-`Finset.card_sddiff_of_subset` / `Fintype.card_equiv` want.
+**F1 is COMPLETE and green (commit `12e66df`).** All of F1a-F1d are proved:
+`decksWithLeft_card = 50! * 49!` (F1a, `CommanderFiberCount`),
+`fiberMembershipSets_card = choose 50 k * choose 49 (50 - k)` (F1b),
+`fiberFin_card` / `fiberSet_card` (F1c, `CommanderFiberMembership`), and
+`commander_fiber_counts : HasCommanderFiberCounts` plus the unconditional
+two-/three-exchange corollaries (F1d, `CommanderFullDeckDisintegration`).
+The F1a/F1b API notes below remain useful reference. **Resume at F2**
+(see **Next (F2)** below and `docs/lean_plan.md`).
 
 * `leftPile S := {x // x ∈ S}` and `rightPile S := {x // x ∈ (Finset.univ \ S)}`
   (abbrevs, so `Fintype.Subtype.fintype` synthesizes).
@@ -174,7 +175,47 @@ forms — `Finset` has no `subset_univ`/`mem_empty`; use `mem_inter`/`mem_image`
 then `Finset.card_image_of_injective` on the injective left-position map
 (`d.injective` ⊢ `leftPosition_injective`).
 
-**Next (F1c + F1d) — the final F1 assembly.** Two facts remain, then F1d:
+**Next (F1c + F1d) — the final F1 assembly. COMPLETE (commit `12e66df`).**
+Done via the Finset-level route described below: the section map
+`d -> (leftCards d, d)` reindexes `fiberFin k` onto the fiber-sigma
+`(fiberMembershipSets k).sigma leftCardsFin` (injective on the fiber by
+`congrArg` on the second component), and `Finset.card_sigma` (Fubini) plus
+`decksWithLeft_card` gives `fiberFin_card`/`fiberSet_card`. Two Lean-4.34
+facts worth keeping: `Prod` and `Sigma` are **distinct** types (a
+`Finset.sigma` finset cannot be ascribed to a `×` finset), so the sigma is
+stated over the Sigma type and the pair equality in
+`fiberFin_image_eq_sigma` is closed with `Sigma.ext` plus `HEq.refl` (the
+`x.2 ≍ x.2` subgoal is a definitional refl, since both sides are the same
+projection). And in `commander_fiber_counts` the final goal is closed by
+`div_eq_div_iff` + `hfact` (`99! = choose 99 50 * 50! * 49!`, proved by
+`native_decide` on exact `Rat` — `norm_num` and `rw [← Nat.cast_mul]` both
+stall on the casted product) + `simp only [Nat.cast_mul]` + `ring`.
+
+**Next (F2) — the concrete membership and perfect-local kernels.**
+Per `docs/lean_plan.md` §F2 (F1 is done, so the uniform targets exist):
+
+1. Define `Membership` as the subtype of 50-element subsets of card
+   identities in `Fin 99` (or an equivalent bijective type).
+2. Define `membership : Deck -> Membership`, and prove that its marked-card
+   count agrees with `CommanderPermutation.project` (the left-pile
+   intersection count already has the bridge
+   `leftOriginalCount_eq_leftCardsInter` in `CommanderFiberMembership`).
+3. Define `localLift : FiniteKernel Membership Deck` as uniform orderings of
+   the *given membership set* (i.e. `decksWithLeft S` uniformly — the
+   `decksWithLeft_card` bijection of F1a is the counting base), and prove
+   `localLift.comp (FiniteKernel.deterministic membership) = identity`
+   (pile membership is preserved: this is a *perfect local* shuffle).
+4. Define `membershipLift : FiniteKernel CommanderState Membership` as the
+   uniform law among memberships with a specified marked count, and prove
+   `membershipLift.comp localLift = FiberDisintegration.fiberLaw project
+   project_surjective` (or first prove a generic version and specialize).
+
+Neither `localLift` nor the physical local shuffle may change pile
+membership; do not confuse `localLift` with the canonical oracle's
+count-fiber reset.
+
+*Historical F1c/F1d plan notes (superseded by the completed proof above; the
+obstacle and tactic warnings remain useful):*
 
 1. **Full fiber count** `#(fiberType k) = #(fiberMembershipSets k) * 50! * 49!`.
    Define `fiberType (k) := {d : Deck // leftOriginalCount d = k}` (a `Fintype`

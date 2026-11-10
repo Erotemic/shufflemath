@@ -90,19 +90,27 @@ This is **not proved** by `CommanderPermutation.project_surjective`: an
 inhabited fiber need not have the right *cardinality*. Build a structural
 counting proof, without evaluating a type containing `99!` permutations.
 
-> **Progress (F1a complete, 2026-02):** `Shufflemath/CommanderFiberCount.lean`
-> compiles and now proves the full deck count. The two action bijections
-> `leftEquiv` (`Fin 50 ≃ leftPile S`, `50!` such) and `rightEquiv` (`Fin 49 ≃
-> rightPile S`, `49!` such) are built over **plain Finset-membership subtypes**
-> (`Equiv.ofBijective`), and the deck-level bijection
-> `decksLR : decksWithLeft S ≃ (Fin 50 ≃ leftPile S) × (Fin 49 ≃ rightPile S)`
-> gives **`decksWithLeft_card : Fintype.card (decksWithLeft S) = 50! · 49!`**
-> (via `Fintype.card_congr` + `Fintype.card_prod` + `leftEquiv_card` /
-> `rightEquiv_card`). The section-`variable (S)` pattern was abandoned for
-> explicit `(S)` parameters. **Remaining:** F1b (count membership sets over the
-> fiber for a fixed originally-left count `x.val + 1`), F1c (normalize to
-> `commanderStationary` mass), F1d (export `HasCommanderFiberCounts`).
-> See `docs/agent_handoff.md` for the API notes.
+> **Progress (F1 complete, 2026-11):** All of F1a-F1d are proved and
+> committed (`12e66df`). F1a (`decksWithLeft_card = 50! * 49!`) lives in
+> `Shufflemath/CommanderFiberCount.lean`. F1b (`fiberMembershipSets_card =
+> choose 50 k * choose 49 (50 - k)`), F1c, and F1d live in
+> `Shufflemath/CommanderFiberMembership.lean` and
+> `Shufflemath/CommanderFullDeckDisintegration.lean`:
+> - **F1c:** `fiberSet_card` proves the fiber at state `x` has exactly
+>   `choose 50 (x.val + 1) * choose 49 (50 - (x.val + 1)) * 50! * 49!` decks.
+>   Proof shape: the macro fiber `fiberFin k` is reindexed by the section map
+>   `d -> (leftCards d, d)` (injective on the fiber), which is exactly the
+>   fiber-sigma `(fiberMembershipSets k).sigma leftCardsFin`; `Finset.card_sigma`
+>   (Fubini) then reduces the count to the F1b sum times the F1a per-membership
+>   count. The dependent-Sigma finset is stated over the Sigma type directly
+>   (`Prod` and `Sigma` are distinct in Lean 4.34); the pair equality in the
+>   image lemma is closed with `Sigma.ext` plus `HEq.refl`.
+> - **F1d:** `commander_fiber_counts : HasCommanderFiberCounts` is unconditional.
+>   The hypergeometric stationary mass equals the normalized fiber count because
+>   `99! = choose 99 50 * 50! * 49!` (exact rational arithmetic, `native_decide`).
+>   The two-/three-exchange uniformity corollaries and
+>   `commander_uniform_disintegration_unconditional` follow.
+> Verified with `./dev/verify_next_phase.sh` (35 Python tests).
 
 Split into small compilable subresults, preferably in a new dedicated
 `Shufflemath/CommanderFiberCount.lean` importing only what is needed:
