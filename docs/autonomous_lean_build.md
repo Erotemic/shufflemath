@@ -9,7 +9,8 @@ historical model-specific commit trailer, or restart from the old GSR
 
 1. [AGENTS.md](../AGENTS.md) for repository conventions;
 2. [docs/agent_handoff.md](agent_handoff.md) for the exact current first
-   action and verification state;
+   action and verification state; its **Standing rules** section is the
+   **active** do-not-stop deadline rule (Nov 12, 2026);
 3. [docs/lean_plan.md](lean_plan.md) for the active theorem dependencies.
 
 The historical autonomous work is recorded in

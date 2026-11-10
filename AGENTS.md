@@ -14,6 +14,14 @@ formalization (library `Shufflemath`).
 - **Active status and work queue:** `docs/lean_plan.md`.
 - **Current single next action and proof acceptance criteria:**
   `docs/agent_handoff.md`.
+- **Active do-not-stop rule:** `docs/agent_handoff.md` contains a
+  **Standing rules** section (the revived October autonomous-build protocol)
+  that is **active until Thu Nov 12 22:27:06 EST 2026**: do not stop, ask, or
+  end the session before then; compaction is not a stopping signal; its
+  compaction-resume protocol, small-batch commit gates, and stuck protocol are
+  binding. It has been re-pointed at the current work queue
+  (`docs/lean_plan.md`) and the current verification path
+  (`./dev/verify_next_phase.sh`).
 - `docs/autonomous_lean_build.md` is an **archived October 4-12 session**;
   its expired deadline, old agent instructions, and model-specific commit
   attribution do not apply. `docs/formalization_next_phase.md` and the

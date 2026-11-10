@@ -1,10 +1,53 @@
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-02-10. **Source basis:** the October 21 source snapshot,
+**Updated:** 2026-11-09. **Source basis:** the October 21 source snapshot,
 the fiber/disintegration tranche, and this session's F1 progress in
 `Shufflemath/CommanderFiberCount.lean` (compiles, no `sorry`/axiom). This is
 an *operational handoff*. `lean_plan.md` is the authority for overall scope and
 priority; `AGENTS.md` governs repository behavior.
+
+## Standing rules for the agent reading this document (non-negotiable)
+
+1. **Do not stop, ask, or end the session before Thu Nov 12 22:27:06 EST 2026.**
+   This is a long autonomous build. You **will be compacted multiple times**;
+   compaction is normal and is not a stopping signal.
+2. **After every compaction, do exactly this, in order:**
+   a. Read this document top to bottom, then `AGENTS.md` and
+      `docs/lean_plan.md`.
+   b. Run `git log --oneline -10` and `git status --short` in
+      `/home/joncrall/code/shufflemath`.
+   c. Run the targeted `lake build` commands listed in `AGENTS.md` to confirm
+      the tree is green (if red, fix before anything else).
+   d. Resume work at the "Exactly where to resume" / "Next (F1c + F1d)" items
+      in this file and the next unchecked item in `docs/lean_plan.md`.
+3. **Small batches only.** One batch = 1–3 related lemmas/theorems in one
+   file. Each batch must end with: targeted `lake build` green → `git add`
+   + `git commit`. Never let the working tree carry more than one batch of
+   uncommitted work.
+4. **Commit trailer (exact):** one `Co-authored-by` trailer naming the
+   **current** model only (see `AGENTS.md`; never the October session's model
+   name). Subject line: short imperative, e.g.
+   `Add fiber count over membership sets`.
+5. **Every commit must build.** The affected modules must pass `lake build`
+   before you commit. `./dev/verify_next_phase.sh` must pass at the end of
+   each tranche (F1, F2, …) in `docs/lean_plan.md`. The legacy
+   `./dev/verify.sh` (which runs `lake update`) is **not** the verification
+   path.
+6. **Keep this document updated.** After each commit, tick the item in
+   "Exactly where to resume", update `docs/lean_plan.md`, and adjust the next
+   action. This file is the only thing a compacted/fresh agent can trust; the
+   conversation is not.
+7. **Do not stop early even if the current tranche is all done.** Fall
+   through to the next item in `docs/lean_plan.md` (F2, F3, F4, F5), then to
+   the verification pass (re-run `./dev/verify_next_phase.sh`, audit
+   docstrings, re-check regression values), until the deadline.
+8. **Stuck protocol.** If a single proof resists ~2 build iterations, write a
+   `-- TODO(proof): <sketch>` comment at the exact location, commit what
+   builds, move to the next item, and return later. Never leave a broken
+   build, never leave a `sorry` or `admit`.
+9. **Taste rules:** exact `Rat` arithmetic only; no
+   `set_option maxHeartbeats 0`; no floating point in proofs; docstring on
+   every nontrivial theorem; no sweeping refactors of existing names.
 
 ## Lean 4 module-system migration (done this session)
 
