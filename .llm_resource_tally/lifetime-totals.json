@@ -19,45 +19,45 @@
     "non_committing_work": "requires_reconcile",
     "compaction_usage": "measured_signals_only_when_runtime_omits_usage"
   },
-  "through": "2026-11-07T05:38:58.401737+00:00",
-  "ledger_rows": 56,
-  "commits_accounted": 52,
-  "turns": 4471,
+  "through": "2026-11-10T03:42:21.219970+00:00",
+  "ledger_rows": 58,
+  "commits_accounted": 54,
+  "turns": 4569,
   "tokens": {
-    "input": 26010445,
+    "input": 26346682,
     "cache_write": 0,
-    "cache_read": 396776512,
-    "output": 8103258,
-    "billable_input": 422786957
+    "cache_read": 404089152,
+    "output": 8242712,
+    "billable_input": 430435834
   },
   "by_model": {
     "litellm/qwen3.8-27b-dbirks-hyperqwen-long": {
-      "input": 19393036,
+      "input": 19688227,
       "cache_write": 0,
-      "cache_read": 248509248,
-      "output": 6035576
+      "cache_read": 255667776,
+      "output": 6166966
     },
     "litellm/qwen3.8-27b-dbirks-hyperqwen-huge": {
-      "input": 6617409,
+      "input": 6658455,
       "cache_write": 0,
-      "cache_read": 148267264,
-      "output": 2067682
+      "cache_read": 148421376,
+      "output": 2075746
     }
   },
   "by_activity": {
     "unlabeled": {
-      "input": 26010445,
+      "input": 26346682,
       "cache_write": 0,
-      "cache_read": 396776512,
-      "output": 8103258
+      "cache_read": 404089152,
+      "output": 8242712
     }
   },
   "by_agent": {
     "pi": {
-      "input": 26010445,
+      "input": 26346682,
       "cache_write": 0,
-      "cache_read": 396776512,
-      "output": 8103258
+      "cache_read": 404089152,
+      "output": 8242712
     }
   },
   "server_tool_calls": {
@@ -65,7 +65,7 @@
     "web_fetch": 0
   },
   "time": {
-    "wall_clock_s": 488540.5
+    "wall_clock_s": 490830.3
   },
   "compaction_signals": {
     "events": 0,
