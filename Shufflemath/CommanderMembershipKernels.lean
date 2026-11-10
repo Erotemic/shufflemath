@@ -84,6 +84,68 @@ theorem membershipFiber_iff (d : Deck) (x : CommanderState) :
     rw [hL] at h
     exact (project_eq_iff_leftOriginalCount d x).mpr h
 
+/-!
+## The perfect-local kernel
+
+A *perfect local* shuffle randomizes only the order of the cards, inside
+the piles they already occupy: it never moves a card from one pile to the
+other. `localLift` is that operation as a kernel from memberships to
+full decks: given the exact left-pile content `m`, resample uniformly
+among all decks whose left pile is `m.1`. F1a supplies the fiber count
+(`decksWithLeft_card = 50! * 49!`), so the resampling law is exact.
+
+The law `localLift.comp (deterministic membership) = identity` says that
+resampling inside a membership and then re-reading the membership is the
+identity — the precise statement that pile membership is preserved.
+-/ 
+
+/-- The perfect-local kernel: uniform among all decks whose left pile is
+  exactly the given membership's 50-card set (the F1a fiber, card
+  `50! * 49!`). -/
+noncomputable def localLift : FiniteKernel Membership Deck := by
+  classical
+  intro m
+  letI : Nonempty (decksWithLeft m.1) := by
+    have hpos : 0 < Fintype.card (decksWithLeft m.1) := by
+      rw [decksWithLeft_card m.1 m.2]
+      exact Nat.mul_pos (Nat.factorial_pos 50) (Nat.factorial_pos 49)
+    by_contra hne
+    have hzero : Fintype.card (decksWithLeft m.1) = 0 := by
+      letI : IsEmpty (decksWithLeft m.1) := IsEmpty.mk (fun x => hne (Nonempty.intro x))
+      exact Fintype.card_eq_zero
+    linarith
+  exact (GSR.uniformDist (decksWithLeft m.1)).map Subtype.val
+
+/-- A perfect-local resample preserves pile membership: applying
+  `localLift` and then re-reading `membership` is the identity kernel. -/
+theorem localLift_preserves_membership :
+    FiniteKernel.comp localLift (FiniteKernel.deterministic membership) =
+      FiniteKernel.identity := by
+  funext m
+  haveI : Nonempty (decksWithLeft m.1) := by
+    have hpos : 0 < Fintype.card (decksWithLeft m.1) := by
+      rw [decksWithLeft_card m.1 m.2]
+      exact Nat.mul_pos (Nat.factorial_pos 50) (Nat.factorial_pos 49)
+    by_contra hne
+    have hzero : Fintype.card (decksWithLeft m.1) = 0 := by
+      letI : IsEmpty (decksWithLeft m.1) := IsEmpty.mk (fun x => hne (Nonempty.intro x))
+      exact Fintype.card_eq_zero
+    linarith
+  change FiniteKernel.apply
+      ((GSR.uniformDist (decksWithLeft m.1)).map Subtype.val)
+      (FiniteKernel.deterministic membership) = Dist.pointMass m
+  rw [apply_deterministic, Convexity.StdSimplex.map_map]
+  have hconstant :
+      (fun (d : decksWithLeft m.1) => membership (d.val)) = (fun _ => m) := by
+    funext d
+    apply Subtype.ext
+    rw [membership_leftCards (d.val)]
+    exact d.property
+  change (GSR.uniformDist (decksWithLeft m.1)).map
+      (fun (d : decksWithLeft m.1) => membership (d.val)) = Dist.pointMass m
+  rw [hconstant]
+  exact Convexity.StdSimplex.map_const (GSR.uniformDist (decksWithLeft m.1)) m
+
 end CommanderMembershipKernels
 end Shufflemath
 end
