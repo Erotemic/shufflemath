@@ -134,5 +134,79 @@ def markedInLeft (d : Deck) (L : Finset (Fin 50)) : Nat := (markedLeftPos d ∩ 
 /-- The number of marked cards currently sitting at the selected right positions. -/
 def markedInRight (d : Deck) (R : Finset (Fin 49)) : Nat := (markedRightPos d ∩ R).card
 
+/-- The *left* part of the post-exchange left pile, restricted to the marked
+  cards, is exactly the image of the *marked unselected* left positions: a card
+  is a marked unselected-left card iff it sits at a marked position that was not
+  selected for exchange. -/
+theorem newLeftCards_leftPart_marked (d : Deck) (L : Finset (Fin 50)) :
+    Finset.image (fun (l : Fin 50) => d (leftPosition l)) ((univ : Finset (Fin 50)) \ L) ∩ leftOrigSet
+      = Finset.image (fun (l : Fin 50) => d (leftPosition l)) (markedLeftPos d \ L) := by
+  let fL : Fin 50 → Fin 99 := fun (l : Fin 50) => d (leftPosition l)
+  ext c
+  constructor
+  · -- forward: a marked card in the unselected left part sits at a marked unselected position
+    intro hc
+    rcases Finset.mem_inter.mp hc with ⟨hcA, hcM⟩
+    rcases Finset.mem_image.mp hcA with ⟨l, hl, rfl⟩
+    rcases Finset.mem_sdiff.mp hl with ⟨hlU, hlN⟩
+    have hval : (fL l).val < 50 := by
+      simp only [leftOrigSet, Finset.mem_filter, Finset.mem_univ] at hcM
+      exact hcM.2
+    apply Finset.mem_image.mpr
+    refine ⟨l, ?_, rfl⟩
+    apply Finset.mem_sdiff.mpr
+    constructor
+    · simp only [markedLeftPos, Finset.mem_filter]
+      exact ⟨Finset.mem_univ _, hval⟩
+    · exact hlN
+  · -- backward: the image of a marked unselected position is a marked unselected-left card
+    intro hc
+    rcases Finset.mem_image.mp hc with ⟨l, hl, rfl⟩
+    rcases Finset.mem_sdiff.mp hl with ⟨hlM, hlN⟩
+    simp only [markedLeftPos, Finset.mem_filter] at hlM
+    rcases hlM with ⟨hlU, hlMval⟩
+    apply Finset.mem_inter.mpr
+    constructor
+    · apply Finset.mem_image.mpr
+      refine ⟨l, ?_, rfl⟩
+      apply Finset.mem_sdiff.mpr
+      exact ⟨Finset.mem_univ _, hlN⟩
+    · simp only [leftOrigSet, Finset.mem_filter]
+      exact ⟨Finset.mem_univ _, hlMval⟩
+
+/-- The *right* part of the post-exchange left pile, restricted to the marked
+  cards, is exactly the image of the *marked selected* right positions. -/
+theorem newLeftCards_rightPart_marked (d : Deck) (R : Finset (Fin 49)) :
+    Finset.image (fun (r : Fin 49) => d (rightPosition r)) R ∩ leftOrigSet
+      = Finset.image (fun (r : Fin 49) => d (rightPosition r)) (markedRightPos d ∩ R) := by
+  let fR : Fin 49 → Fin 99 := fun (r : Fin 49) => d (rightPosition r)
+  ext c
+  constructor
+  · intro hc
+    rcases Finset.mem_inter.mp hc with ⟨hcB, hcM⟩
+    rcases Finset.mem_image.mp hcB with ⟨r, hr, rfl⟩
+    have hval : (fR r).val < 50 := by
+      simp only [leftOrigSet, Finset.mem_filter, Finset.mem_univ] at hcM
+      exact hcM.2
+    apply Finset.mem_image.mpr
+    refine ⟨r, ?_, rfl⟩
+    apply Finset.mem_inter.mpr
+    constructor
+    · simp only [markedRightPos, Finset.mem_filter]
+      exact ⟨Finset.mem_univ _, hval⟩
+    · exact hr
+  · intro hc
+    rcases Finset.mem_image.mp hc with ⟨r, hr, rfl⟩
+    rcases Finset.mem_inter.mp hr with ⟨hrM, hrR⟩
+    simp only [markedRightPos, Finset.mem_filter] at hrM
+    rcases hrM with ⟨hrU, hrMval⟩
+    apply Finset.mem_inter.mpr
+    constructor
+    · apply Finset.mem_image.mpr
+      refine ⟨r, ?_, rfl⟩
+      exact hrR
+    · simp only [leftOrigSet, Finset.mem_filter]
+      exact ⟨Finset.mem_univ _, hrMval⟩
+
 end CommanderPhysicalExchange
 end Shufflemath
