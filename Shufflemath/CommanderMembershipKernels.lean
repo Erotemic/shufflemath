@@ -174,6 +174,46 @@ theorem localLift_mass (m : Membership) (d : Deck) :
   dsimp only [localLift]
   exact FiberDisintegration.fiberLaw_mass membership membership_surjective m d
 
+/-- The membership fiber (the `Finset` of decks whose `membership` equals
+  `m`) is exactly the left-card fiber (the `Finset` of decks whose left
+  card set is `m.1`). The two predicates `membership d = m` and
+  `leftCards d = m.1` are the same `Subtype` equality. -/
+theorem fiberSet_membership_eq_leftCardsFin (m : Membership) :
+    FiberDisintegration.fiberSet membership m = leftCardsFin m.1 := by
+  apply Finset.ext
+  intro d
+  simp [FiberDisintegration.fiberSet, leftCardsFin]
+  constructor
+  · -- membership d = m → leftCards d = m.1
+    intro h
+    -- The Subtype equality h : membership d = m. Apply the coercion
+    -- (· : Finset (Fin 99)) to both sides to get the Finset equality.
+    have hcoerce : (membership d : Finset (Fin 99)) = (m : Finset (Fin 99)) :=
+      congrArg (fun (x : Membership) => (x : Finset (Fin 99))) h
+    simpa [membership_leftCards] using hcoerce
+  · -- leftCards d = m.1 → membership d = m
+    intro h
+    apply Subtype.ext
+    rw [membership_leftCards d]
+    exact h
+
+/-- Every membership fiber has exactly `50! * 49!` decks (the F1a fiber
+  count), by the `leftCardsFin` bridge to the `decksWithLeft` subtype. -/
+theorem fiberSet_membership_card (m : Membership) :
+    (FiberDisintegration.fiberSet membership m).card =
+      Nat.factorial 50 * Nat.factorial 49 := by
+  rw [fiberSet_membership_eq_leftCardsFin]
+  classical
+  unfold leftCardsFin
+  let p := fun (d : Deck) => leftCards d = m.1
+  have hT : Set.toFinset {d : Deck | p d} = Finset.filter p Finset.univ :=
+    Set.toFinset_ofPred (p := p)
+  have hH : ∀ d, d ∈ Set.toFinset {d : Deck | p d} ↔ p d :=
+    fun d => by simp
+  rw [← hT, ← (Fintype.card_of_subtype (s := Set.toFinset {d : Deck | p d})
+      (p := p) hH)]
+  exact decksWithLeft_card m.1 m.2
+
 /-!
 ## The marked-count fiber of the membership type
 
