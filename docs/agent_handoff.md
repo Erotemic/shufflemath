@@ -205,6 +205,25 @@ After F2c-iv-b, run `./dev/verify_next_phase.sh`, then proceed to **F3**
 (25-position `rawExchange` membership law). The F1 API notes below remain
 useful reference.
 
+**F4.1 (standalone GSR product-alphabet) progress — independent of the
+`Equiv.Perm` wall, in `GSR.lean` (all green, committed):** the single-label
+lexicographic core is done: `encodeLabel`/`decodeLabel` split a `Fin (a*b)`
+label into a `Fin b` major and `Fin a` minor (a bijection, with
+`encodeLabel_decodeLabel`/`decodeLabel_encodeLabel`); `combineLabels`/
+`splitLabels` lift this per-card to label arrays and assemble the
+`labelReparam` `Equiv`; `map_bijective_uniformDist` (a bijection carries the
+uniform law to the uniform law on the target, proved via the singleton-fiber
+pushforward mass) plus `productUniformLabels` and
+`productLabels_pushforward_uniform` show the `(a*b)`-alphabet GSR label law
+equals the pushforward of the independent product of a `b`- and an
+`a`-alphabet law. **Remaining F4.1:** the sorting-compatibility lemma
+(`stableBuckets (a*b) (combineLabels …) deck = lexBuckets … deck`, via mixed-
+radiex uniqueness of `major*a+minor` and the `range (a*b)` block decomposition)
+and the kernel equality `productLabelShuffle (uniform) = idealShuffle` that
+follows. *Note:* the first `noCarryEq`/`rangeProductBlocks` attempts hit
+`List.range.loop` / `Nat`-cancellation elaboration issues and were reverted;
+retry with the `Int`-cast or explicit `Nat.eq_of_mul_eq_mul_left`.
+
 * `leftPile S := {x // x ∈ S}` and `rightPile S := {x // x ∈ (Finset.univ \ S)}`
   (abbrevs, so `Fintype.Subtype.fintype` synthesizes).
 * `leftEquiv S d hd : Fin 50 ≃ leftPile S` — built via

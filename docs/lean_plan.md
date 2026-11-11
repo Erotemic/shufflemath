@@ -232,6 +232,21 @@ algebra can advance in parallel.
 1. Extend `GSR.idealShuffle_comp`'s product-label theorem to the numeric
    uniform `Fin (a*b)` label alphabet via an explicit encoding and proof
    of pushed-forward uniformity. The present theorem is not this result.
+
+   *Progress (clean dedicated pass):* the single-label core is done in
+   `GSR.lean`: `encodeLabel`/`decodeLabel` give the lexicographic split of a
+   `Fin (a*b)` label into a `Fin b` major and `Fin a` minor (a bijection,
+   `encodeLabel_decodeLabel`/`decodeLabel_encodeLabel`); `combineLabels`/
+   `splitLabels` lift this per-card to label arrays and assemble the
+   `labelReparam` `Equiv`; `map_bijective_uniformDist` (a bijection carries
+   the uniform law to the uniform law on the target) plus
+   `productLabels_pushforward_uniform` prove the `(a*b)`-alphabet GSR label
+   law equals the pushforward of the independent product of a `b`- and an
+   `a`-alphabet law. *Remaining:* the sorting-compatibility lemma
+   (`stableBuckets (a*b) (combineLabels ...) deck = lexBuckets ... deck`,
+   via the mixed-radix uniqueness of `major*a + minor` and the block
+   decomposition of `range (a*b)`), and the kernel equality
+   `productLabelShuffle (uniform) = idealShuffle` that follows from the two.
 2. Define a permutation-preserving local-GSR kernel for the ordered cards in
    each *fixed* pile. Prove it cannot change the membership state.
 3. Establish the row-wise bound against *physical perfect-local* shuffling:
