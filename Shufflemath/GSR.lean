@@ -140,6 +140,70 @@ theorem encodeLabel_decodeLabel {a b : Nat} (ha : 0 < a) (hb : 0 < b) (p : Fin b
     simp only [encodeLabel]
     exact hmin
 
+/-!
+## The label reparameterization (F4.1)
+
+A `Fin (a*b)` label array decomposes, per card, into an independent `Fin b`
+major and `Fin a` minor array. This is a bijection on label arrays, which is
+what lets a single `(a*b)`-alphabet GSR shuffle be read as a product of a
+`b`-alphabet and an `a`-alphabet shuffle.
+-/ 
+
+/-- The forward reparameterization: combine a `Fin a` minor array and a `Fin b`
+  major array into a single `Fin (a*b)` array (per card). -/
+noncomputable def combineLabels {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
+    (minor : Fin n → Fin a) (major : Fin n → Fin b) : Fin n → Fin (a*b) :=
+  fun i => decodeLabel ha hb (major i, minor i)
+
+/-- The inverse reparameterization: split a `Fin (a*b)` array into its `Fin a`
+  minor and `Fin b` major components (per card). -/
+noncomputable def splitLabels {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
+    (labels : Fin n → Fin (a*b)) : (Fin n → Fin a) × (Fin n → Fin b) :=
+  (fun i => (encodeLabel ha (labels i)).2, fun i => (encodeLabel ha (labels i)).1)
+
+/-- `splitLabels ∘ combineLabels = id`: re-splitting a recombined pair recovers
+  the original minor and major arrays. -/
+theorem splitLabels_combineLabels {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
+    (minor : Fin n → Fin a) (major : Fin n → Fin b) :
+    splitLabels ha hb (combineLabels ha hb minor major) = (minor, major) := by
+  apply Prod.ext
+  · -- first component (minor): (splitLabels (combineLabels minor major)).1 = minor
+    funext i
+    apply Fin.ext
+    simp only [combineLabels, splitLabels, Prod.snd]
+    have h : encodeLabel ha (decodeLabel ha hb (major i, minor i)) = (major i, minor i) :=
+      encodeLabel_decodeLabel ha hb (major i, minor i)
+    simpa [h] using rfl
+  · -- second component (major): (splitLabels (combineLabels minor major)).2 = major
+    funext i
+    apply Fin.ext
+    simp only [combineLabels, splitLabels, Prod.fst]
+    have h : encodeLabel ha (decodeLabel ha hb (major i, minor i)) = (major i, minor i) :=
+      encodeLabel_decodeLabel ha hb (major i, minor i)
+    simpa [h] using rfl
+
+/-- `combineLabels ∘ splitLabels = id`: recombining a split label array
+  recovers the original array. -/
+theorem combineLabels_splitLabels {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
+    (labels : Fin n → Fin (a*b)) :
+    combineLabels ha hb (splitLabels ha hb labels).1 (splitLabels ha hb labels).2 = labels := by
+  funext i
+  simp only [combineLabels, splitLabels]
+  have hpair : ((encodeLabel ha (labels i)).1, (encodeLabel ha (labels i)).2) =
+      encodeLabel ha (labels i) := rfl
+  rw [hpair]
+  exact decodeLabel_encodeLabel ha hb (labels i)
+
+/-- The `combineLabels`/`splitLabels` reparameterization is a bijection: a
+  single `(a*b)`-alphabet label array is the same data as an independent `Fin a`
+  minor array and a `Fin b` major array. -/
+noncomputable def labelReparam {n a b : Nat} (ha : 0 < a) (hb : 0 < b) :
+    (Fin n → Fin a) × (Fin n → Fin b) ≃ (Fin n → Fin (a*b)) where
+  toFun := fun p => combineLabels ha hb p.1 p.2
+  invFun := splitLabels ha hb
+  left_inv := fun p => splitLabels_combineLabels ha hb p.1 p.2
+  right_inv := fun labels => combineLabels_splitLabels ha hb labels
+
 /-! ## Exact probability law, with `StdSimplex` as the sole distribution authority -/
 
 /-- Uniform distribution on any inhabited finite type, in exact rationals. -/
