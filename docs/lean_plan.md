@@ -186,6 +186,16 @@ Do not confuse `localLift` with the canonical oracle's count-fiber reset.
 > direct consequence of the *already-proved* `membershipFiberCount_eq_fiberMembershipSets`
 > (F2c-i), `decksWithLeft_card` (F1a), and `fiberSet_card` (F1c). Only the
 > `localLift` pushforward-mass lemma still needs proving.
+>
+> **Additional finding (this session):** the `localLift` pushforward-mass lemma
+> (`localLift_mass`) ALSO hits the `DecidableEq (Equiv.Perm (Fin 99))` wall.
+> The `leftCards d = m.1` (`Finset` equality) inside the `Finsupp.mapDomain`
+> pushforward mass recurses under deep `simp`/`whnf`, because the `Finset`
+> structure of `leftCards d` involves the `Perm`-dependent `image`. The
+> `Decidable` synthesis for the `Finset` equality works in isolation, but the
+> `simp`/`rw` on the `if` (in the context of the `mapDomain`) recurses.
+> The `localLift_mass` theorem is **removed from the file** (stubbed) to keep
+> the build green. The F2c-iv-b capstone is **not proved** this session.
 
 ### F3. Prove the 25-position physical-exchange membership law
 

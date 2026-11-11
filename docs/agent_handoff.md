@@ -192,6 +192,25 @@ equality of `exchangeThenLocalReset d L R`) and F4.5. F1's count theorems
 (`decksWithLeft_card`, `fiberMembershipSets_card`, `fiberSet_card`) all avoid
 it and remain fully usable.
 
+**New finding (this session):** The `localLift_mass` theorem (the last
+technical lemma for the F2c-iv-b capstone) was attempted with the
+`Finsupp.mapDomain` pushforward route (converting `localLift` to a clean
+`noncomputable def` + `IsFifty`/`Nonempty` instances, so that
+`dsimp only [localLift, Dist.mass, Convexity.StdSimplex.map]` now closes the
+`map → weights.mapDomain` step). The in-range case (via
+`Finsupp.mapDomain_apply_of_injective`) and the out-of-range case (via
+`Finsupp.mapDomain_of_not_mem_image_support`) are structurally correct, but
+the **`if leftCards d = m.1`** (the `Finset` equality) in the target
+recurses under `simp`/`rw` in the `mapDomain` context (the `Finset`
+structure of `leftCards d` involves the `Perm`-dependent `image`). The
+`Decidable` synthesis for the `Finset` equality works in isolation (verified),
+but the `simp`/`rw` on the `if` (combined with the `mapDomain`) recurses.
+The `localLift_mass` theorem is **removed from the file** (stubbed) to keep
+the build green. The F2c-iv-b capstone is **not proved** this session.
+Route 1 (finset count, no `DecidableEq`) also fails: the
+`Finset.univ.filter (fun x => d = x.val)` needs the `Decidable` for the
+`Equiv.Perm` equality, which recurses.
+
 **Old (harder) fallbacks:** (1) target `uniformFiber` (a `Fintype.card`
 weight) and prove `Fintype.card (Fiber x) = membershipFiberCount k · 50!49!`
 via a finset count; (2) transport `Fiber x` to `Σ (m : MembershipFiber k),

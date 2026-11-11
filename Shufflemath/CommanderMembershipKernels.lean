@@ -57,6 +57,29 @@ noncomputable instance : Fintype Membership := by
   have hs : s.Finite := Set.Finite.subset Set.finite_univ (fun _ _ => Set.mem_univ _)
   exact Set.Finite.fintype hs
 
+/-- A 50-element `Finset (Fin 99)` — the shape of a possible left pile.
+  Phrased as a class so that the `Nonempty` instance below can be resolved by
+  typeclass search whenever a 50-set is in view. -/
+class IsFifty (S : Finset (Fin 99)) : Prop where
+  card : S.card = 50
+
+instance (m : Membership) : IsFifty m.1 := ⟨m.2⟩
+
+/-- Every 50-card set is the left pile of some deck (F1a), so its
+  `decksWithLeft` fiber is inhabited. As a resolvable instance this lets the
+  `localLift` pushforward unfold cleanly in downstream proofs. -/
+noncomputable instance (S : Finset (Fin 99)) [h : IsFifty S] :
+    Nonempty (decksWithLeft S) := by
+  classical
+  have hpos : 0 < Fintype.card (decksWithLeft S) := by
+    rw [decksWithLeft_card S h.card]
+    exact Nat.mul_pos (Nat.factorial_pos 50) (Nat.factorial_pos 49)
+  by_contra hne
+  have hzero : Fintype.card (decksWithLeft S) = 0 := by
+    letI : IsEmpty (decksWithLeft S) := IsEmpty.mk (fun x => hne (Nonempty.intro x))
+    exact Fintype.card_eq_zero
+  linarith
+
 /-- Read the left-pile membership of a deck. -/
 def membership (d : Deck) : Membership :=
   ⟨leftCards d, leftCards_card d⟩
@@ -111,19 +134,8 @@ identity — the precise statement that pile membership is preserved.
 /-- The perfect-local kernel: uniform among all decks whose left pile is
   exactly the given membership's 50-card set (the F1a fiber, card
   `50! * 49!`). -/
-noncomputable def localLift : FiniteKernel Membership Deck := by
-  classical
-  intro m
-  letI : Nonempty (decksWithLeft m.1) := by
-    have hpos : 0 < Fintype.card (decksWithLeft m.1) := by
-      rw [decksWithLeft_card m.1 m.2]
-      exact Nat.mul_pos (Nat.factorial_pos 50) (Nat.factorial_pos 49)
-    by_contra hne
-    have hzero : Fintype.card (decksWithLeft m.1) = 0 := by
-      letI : IsEmpty (decksWithLeft m.1) := IsEmpty.mk (fun x => hne (Nonempty.intro x))
-      exact Fintype.card_eq_zero
-    linarith
-  exact (GSR.uniformDist (decksWithLeft m.1)).map Subtype.val
+noncomputable def localLift : FiniteKernel Membership Deck :=
+  fun m => (GSR.uniformDist (decksWithLeft m.1)).map Subtype.val
 
 /-- A perfect-local resample preserves pile membership: applying
   `localLift` and then re-reading `membership` is the identity kernel. -/
