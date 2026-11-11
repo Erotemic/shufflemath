@@ -208,5 +208,67 @@ theorem newLeftCards_rightPart_marked (d : Deck) (R : Finset (Fin 49)) :
     · simp only [leftOrigSet, Finset.mem_filter]
       exact ⟨Finset.mem_univ _, hrMval⟩
 
+/-- **F3b:** the post-exchange macro count. The number of marked (initially-
+  left) cards in the new left pile equals the old count minus the marked cards
+  that left (at the selected left positions) plus the marked cards that came in
+  (at the selected right positions). This is the counting content of the
+  `hMembershipExchange` premise: it says exactly how the 25-position exchange
+  moves the marked-card count, at the level of the selected sets. -/
+theorem newLeftOriginalCount_eq (d : Deck) (L : Finset (Fin 50)) (R : Finset (Fin 49)) :
+    (newLeftCards d L R ∩ leftOrigSet).card =
+      (leftOriginalCount d - markedInLeft d L) + markedInRight d R := by
+  classical
+  let fL : Fin 50 → Fin 99 := fun (l : Fin 50) => d (leftPosition l)
+  let fR : Fin 49 → Fin 99 := fun (r : Fin 49) => d (rightPosition r)
+  let leftPart : Finset (Fin 99) := Finset.image fL (univ \ L)
+  let rightPart : Finset (Fin 99) := Finset.image fR R
+  let mLeft : Finset (Fin 99) := Finset.image fL (markedLeftPos d \ L)
+  let mRight : Finset (Fin 99) := Finset.image fR (markedRightPos d ∩ R)
+  have hinjL : Function.Injective fL := d.injective.comp leftPosition_injective
+  have hinjR : Function.Injective fR := d.injective.comp rightPosition_injective
+  have hA : leftPart ∩ leftOrigSet = mLeft := by simpa using newLeftCards_leftPart_marked d L
+  have hB : rightPart ∩ leftOrigSet = mRight := by simpa using newLeftCards_rightPart_marked d R
+  -- the marked left and right parts sit at disjoint positions, so the two image
+  -- sets are disjoint (the same argument as newLeftCards_parts_disjoint)
+  have hdisjM : Disjoint mLeft mRight := by
+    rw [Finset.disjoint_iff_inter_eq_empty]
+    apply Finset.ext
+    intro c
+    constructor
+    · intro hc
+      rcases Finset.mem_inter.mp hc with ⟨hcL, hcR⟩
+      rcases Finset.mem_image.mp hcL with ⟨l, _, heqL⟩
+      rcases Finset.mem_image.mp hcR with ⟨r, _, heqR⟩
+      -- heqL : fL l = c; heqR : fR r = c, so fL l = fR r
+      have heq : fL l = fR r := heqL.trans heqR.symm
+      have hne : leftPosition l ≠ rightPosition r := by
+        intro heq2
+        have hval : (leftPosition l).val = (rightPosition r).val := congrArg Fin.val heq2
+        have hL : (leftPosition l).val < 50 := by simp [leftPosition]
+        have hR : 50 ≤ (rightPosition r).val := by simp [rightPosition]
+        omega
+      have hne' : fL l ≠ fR r := fun heq3 => hne (d.injective heq3)
+      exact False.elim (hne' heq)
+    · intro hc
+      have hne : ¬ c ∈ (∅ : Finset (Fin 99)) := by simp
+      exact False.elim (hne hc)
+  calc
+    (newLeftCards d L R ∩ leftOrigSet).card
+        = ((leftPart ∪ rightPart) ∩ leftOrigSet).card := by rfl
+    _ = (mLeft ∪ mRight).card := by
+          rw [Finset.union_inter_distrib_right, hA, hB]
+    _ = mLeft.card + mRight.card := by rw [Finset.card_union_of_disjoint hdisjM]
+    _ = (Finset.image fL (markedLeftPos d \ L)).card +
+        (Finset.image fR (markedRightPos d ∩ R)).card := by
+          simp only [mLeft, mRight]
+    _ = (markedLeftPos d \ L).card + (markedRightPos d ∩ R).card := by
+          rw [Finset.card_image_of_injective _ hinjL,
+              Finset.card_image_of_injective _ hinjR]
+    _ = ((markedLeftPos d).card - (L ∩ markedLeftPos d).card) + (markedRightPos d ∩ R).card := by
+          rw [Finset.card_sdiff]
+    _ = (leftOriginalCount d - markedInLeft d L) + markedInRight d R := by
+          rw [markedLeftPos_card, markedInLeft, markedInRight]
+          <;> simp only [Finset.inter_comm]
+
 end CommanderPhysicalExchange
 end Shufflemath
