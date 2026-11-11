@@ -170,19 +170,37 @@ Do not confuse `localLift` with the canonical oracle's count-fiber reset.
 > **Still open (F2c-iv-b, the capstone):** the two-layer equality
 > `membershipLift.comp localLift = FiberDisintegration.fiberLaw project
 > project_surjective` (equivalently `= uniformFiber project_surjective`).
-> It is blocked on a Lean normalisation wall: every `Fintype` instance over a
-> subtype of `Deck = Equiv.Perm (Fin 99)` (e.g. `Fiber x`,
-> `decksWithLeft S`) whnf-recurses (and the `toLR`/`fromLR`/`pasteDeckSub`
-> machinery times out the heartbeat when unfolded), so the finset-card
-> `(fiberSet project x).card` that `fiberLaw`'s weight uses cannot be
-> `simp`/`ext`/`rfl`-related to the F1a `Fintype.card (decksWithLeft S)`
-> count. The F1a/F1b *theorems* (`decksWithLeft_card`, `fiberMembershipSets_card`)
-> are usable without recursion (as F2b's `localLift` shows); only whnf of the
-> instances is forbidden. See `docs/agent_handoff.md` for the candidate
-> approaches (transport through the good `decksLR_prod` product type, or
-> target `uniformFiber` whose weight is the `Fintype.card` of `Fiber x`).
+> *Revised assessment (F3 session):* this is **tractable** and does **not**
+> require whnf'ing the `Equiv.Perm` Fintype instances. The mass of the two-layer
+> kernel at a deck `d` (given `x`) is the `apply_mass_eq_sum` pushforward
+> `∑_m mass(membershipLift x) m * mass(localLift m) d`, which collapses to the
+> single term `m = membership d` (the `localLift` mass is supported on
+> `leftCards d = m.1`), giving
+> `if project d = x then 1/(membershipFiberCount k) * (Fintype.card (decksWithLeft
+> (membership d).1))⁻¹ else 0`. The `fiberLaw` mass is
+> `if project d = x then (fiberSet project x).card⁻¹ else 0`. Equality follows
+> from the arithmetic identity
+> `membershipFiberCount k * Fintype.card (decksWithLeft (membership d).1) =
+> (fiberSet project x).card`, which is exactly
+> `choose 50 k * choose 49 (50-k) * 50! * 49! = (fiberSet project x).card` — a
+> direct consequence of the *already-proved* `membershipFiberCount_eq_fiberMembershipSets`
+> (F2c-i), `decksWithLeft_card` (F1a), and `fiberSet_card` (F1c). Only the
+> `localLift` pushforward-mass lemma still needs proving.
 
 ### F3. Prove the 25-position physical-exchange membership law
+
+> **Progress (F3, 2026-11):** In `Shufflemath/CommanderPhysicalExchange`:
+> the post-exchange left-pile membership `newLeftCards d L R` is defined (item
+> 1, at the membership level — the pairing only affects ordering, not
+> membership) and shown to be a valid 50-card membership with disjoint parts.
+> The **macro-count transition** is proved (`newLeftOriginalCount_eq`): the
+> marked cards in the new left pile equal the old count minus the marked cards
+> at the selected left positions plus the marked cards at the selected right
+> positions — the exact count content of the `hMembershipExchange` premise,
+> stated at the selected-set level. *Still open:* the deck-level
+> `rawExchange : FiniteKernel Deck Deck` kernel (item 2), the full
+> `hMembershipExchange` law (item 3, depends on the F2c-iv-b capstone), and the
+> unconditional physical-perfect-local 2-exchange TV theorem (item 4).
 
 **Dependency:** F2.
 
