@@ -116,28 +116,61 @@ Crucially, the F1a/F1b *theorems* (`decksWithLeft_card`,
 `fiberMembershipSets_card`) **are** usable without recursion (F2b's `localLift`
 `rw [decksWithLeft_card]` proves it); only *whnf of the instances* is forbidden.
 
-**Candidate approaches (try in this order):**
-1. *Target `uniformFiber` instead of `fiberLaw`.*
-   `uniformFiber hsurj x = (GSR.uniformDist (Fiber x)).map Subtype.val` has
-   mass `(if project d = x then (Fintype.card (Fiber x))⁻¹ else 0)` — a
-   `Fintype.card`, not a finset card. Prove the two-layer LHS mass
-   `(if project d = x then 1/(membershipFiberCount k) * 1/(Fintype.card
-   (decksWithLeft (membership d).1)) else 0)` equals it, using
-   `apply_mass_eq_sum` + `decksWithLeft_card` (= `50!49!`) and a proof that
-   `Fintype.card (Fiber x) = membershipFiberCount k * 50!49!`.
-2. *Compute `Fintype.card (Fiber x)` through a GOOD type.* Transport
-   `Fiber x` to `Σ (m : MembershipFiber k), decksLR_prod m.1` (a Sigma over the
-   *good* `MembershipFiber` and the *good* `decksLR_prod` product type — no
-   `Equiv.Perm`), via the bijection `d ↦ (membership d, toLR (membership d).1
-   ⟨d, membership_leftCards d⟩)`. Then
-   `Fintype.card_congr` + the F1a/F1b count theorems. **Caution:** a first
-   attempt at this `GoodFiber`/`fiberLR` equiv timed out the heartbeat
-   (200000) on the `fromLR`/`toLR` inverse proofs — if retried, keep the
-   inverse proofs to `fromLR_toLR`/`toLR_fromLR` *as stated* (do not `unfold`
-   `toLR`/`fromLR`/`pasteDeckSub`), or avoid the full equiv by proving the card
-   equality with a direct `Finset`-level `toLR`-image count.
-3. *Generic form first* (as the plan suggests): a `twoLayerFiberLaw` for a
-   surjection `f ∘ g` whose `g`-fibers have a common size, then specialize.
+**Revised approach (simpler than the earlier `Equiv.Perm` transport — no
+instance whnf needed).** Prove it by *pointwise mass equality*, using the
+already-proved `apply_mass_eq_sum` (the two-layer pushforward mass is the
+two-level sum) and `FiberDisintegration.fiberLaw_mass`. At each deck `d`, with
+`m := membership d`:
+- LHS mass `= ∑_m [mass (membershipLift x) m] · [mass (localLift m) d]`. This
+  sum collapses to the single term at `m = membership d`: `membershipLift` is
+  supported on `MembershipFiber k` and `localLift m` is supported on decks with
+  `leftCards = m.1`, so only `m = membership d` (whose `leftCards` is `leftCards
+  d`) can be nonzero, and only when `project d = x`.
+- RHS mass `= if project d = x then (fiberSet project x).card⁻¹ else 0`.
+
+So the law reduces to the **arithmetic identity** (all three factors already
+proved by F1a `decksWithLeft_card` + F1b `fiberMembershipSets_card` + F1c
+`fiberSet_card` + F2c-i `membershipFiberCount_eq_fiberMembershipSets`):
+```
+(membershipFiberCount k) · (Fintype.card (decksWithLeft (membership d).1))
+    = (fiberSet project x).card
+```
+when `project d = x`.
+
+**The one remaining technical lemma.**
+`localLift_mass (m d) : mass (localLift m) d = if leftCards d = m.1 then
+(Fintype.card (decksWithLeft m.1))⁻¹ else 0.`
+`localLift m = (GSR.uniformDist (decksWithLeft m.1)).map Subtype.val`.
+`mass (map f s) y` is the pushforward `(Finset.univ.filter (fun x ↦ f x = y)).sum
+(fun x ↦ mass s x)` (`FunOnFinite.linearMap_apply_apply` / `Finsupp.mapDomain`).
+With `s` uniform, this is a constant summed over the preimage `{x : decksWithLeft
+m.1, x.val = d}`, which has one member iff `leftCards d = m.1` (Subtype.val is
+injective) → `(Fintype.card (decksWithLeft m.1))⁻¹` or `0`.
+
+*Where the last attempt stalled:* the `have` establishing
+`mass ((GSR.uniformDist T).map Subtype.val) d = (Finset.univ.filter (fun x : T ↦
+Subtype.val x = d)).sum (fun x ↦ mass (GSR.uniformDist T) x)` did not close under
+`simp only [Convexity.StdSimplex.map, FunOnFinite.linearMap_apply_apply, Dist.mass]` —
+the `map → FunOnFinite.linearMap → Finsupp.mapDomain` chain (with the
+stdSimplex→function coercion of the weights) needs more unfolding than plain
+`simp`. Try unfolding `Convexitey.StdSimplex.map` to the structure whose
+`.weights` is `FunOnFinite.linearMap Rat Rat Subtype.val (s : T → Rat)`, coercing
+the stdSimplex to its weight function, then applying `FunOnFinite.linearMap_apply`
+`Apply` + `Finsupp.sum_fintype`; or use `Finsupp.mapDomain_apply'` with the full
+support. Once that one `have` closes, `localLift_mass` follows from
+`Finset.sum_const` + the fiber-card `= 1 or 0`, and the two-layer law follows from
+the arithmetic identity.
+
+**Old (harder) approaches, only if the mass route fails:** (1) target
+`uniformFiber` (a `Fintype.card` weight) and prove `Fintype.card (Fiber x) =
+membershipFiberCount k · 50!49!`; (2) transport `Fiber x` to
+`Σ (m : MembershipFiber k), decksLR_prod m.1` via `d ↦ (membership d, toLR …)`
+with `Fintype.card_congr` — *a first `GoodFiber`/`fiberLR` attempt timed out the
+200000-heartbeat limit on the `fromLR`/`toLR` inverse proofs; if retried, keep
+those inverse proofs to `fromLR_toLR`/`toLR_fromLR` as stated (do not `unfold`
+`toLR`/`fromLR`/`pasteDeckSub`)*; (3) a generic `twoLayerFiberLaw` for a
+surjection `f ∘ g` with common-sized `g`-fibers, then specialize. The F1 API
+notes below remain useful reference.
 
 After F2c-iv-b, run `./dev/verify_next_phase.sh`, then proceed to **F3**
 (25-position `rawExchange` membership law). The F1 API notes below remain
