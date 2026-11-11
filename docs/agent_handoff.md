@@ -161,16 +161,45 @@ support. Once that one `have` closes, `localLift_mass` follows from
 `Finset.sum_const` + the fiber-card `= 1 or 0`, and the two-layer law follows from
 the arithmetic identity.
 
-**Old (harder) approaches, only if the mass route fails:** (1) target
-`uniformFiber` (a `Fintype.card` weight) and prove `Fintype.card (Fiber x) =
-membershipFiberCount k · 50!49!`; (2) transport `Fiber x` to
-`Σ (m : MembershipFiber k), decksLR_prod m.1` via `d ↦ (membership d, toLR …)`
-with `Fintype.card_congr` — *a first `GoodFiber`/`fiberLR` attempt timed out the
-200000-heartbeat limit on the `fromLR`/`toLR` inverse proofs; if retried, keep
-those inverse proofs to `fromLR_toLR`/`toLR_fromLR` as stated (do not `unfold`
-`toLR`/`fromLR`/`pasteDeckSub`)*; (3) a generic `twoLayerFiberLaw` for a
-surjection `f ∘ g` with common-sized `g`-fibers, then specialize. The F1 API
-notes below remain useful reference.
+**Where the last attempt stalled (the real wall).** The two-layer law and
+`localLift_mass` reduce cleanly to a pushforward-mass computation
+`mass (map Subtype.val (GSR.uniformDist T)) d = ∑_{x : T, x.val = d}
+(Fintype.card T)⁻¹`. The route `GSR.apply_deterministic` + `apply_mass_eq_sum`
+**works** (the pushforward sum step passes) once a `DecidableEq T` instance is
+in scope. The blocker: **`DecidableEq (Equiv.Perm (Fin 99))` synthesizes by
+`infer_instance`** (via `Equiv.ext_iff` + the `Fintype (Fin 99)` domain), but
+**using it in a deep `simp` / `whnf` recurses to max-recursion-depth**
+(the same `Equiv.Perm` instance-recursion wall as the `Fintype` one).
+Specifically, the final step that reduces `c · (if p then 1 else 0)` with
+`c = (Fintype.card (decksWithLeft m.1))⁻¹` hit `maximum recursion depth`.
+
+**How to proceed.** Two viable routes, both avoiding deep simp over the
+`Equiv.Perm` instance:
+1. *Avoid the `if`-on-`Deck`-equality entirely.* Prove `localLift_mass` by
+   showing the pushforward sum equals `c · (fiber-card)` where the fiber-card
+   is computed by a **finset count** (`(Finset.univ.filter (fun x => d = x.val)).card
+   = 1 or 0` via `Subtype.ext`, no `DecidableEq`), keeping `c` as an
+   *unfoldable local `let`* but never `simp`-ing `Fintype.card (decksWithLeft …)`
+   — reduce `c·1`/`c·0` with targeted `rw [mul_one]`/`rw [mul_zero]` (or
+   `ring`/`norm_num`), not `simp`.
+2. *Construct a non-recursive `DecidableEq (Equiv.Perm (Fin 99))` instance* by
+   explicit extensionality (`e1 = e2 ↔ ∀ i, e1 i = e2 i`) with a `Fintype
+   (Fin 99)`-based decidability, and verify it does not recurse under the
+   `Fintype (decksWithLeft …)` finset instance.
+
+This same wall blocks F3.3 (`hMembershipExchange`, which decides `Equiv.Perm`
+equality of `exchangeThenLocalReset d L R`) and F4.5. F1's count theorems
+(`decksWithLeft_card`, `fiberMembershipSets_card`, `fiberSet_card`) all avoid
+it and remain fully usable.
+
+**Old (harder) fallbacks:** (1) target `uniformFiber` (a `Fintype.card`
+weight) and prove `Fintype.card (Fiber x) = membershipFiberCount k · 50!49!`
+via a finset count; (2) transport `Fiber x` to `Σ (m : MembershipFiber k),
+decksLR_prod m.1` with `Fintype.card_congr` (a first `GoodFiber`/`fiberLR`
+attempt timed out the 200000-heartbeat limit on the `fromLR`/`toLR` inverse
+proofs — if retried, keep those to `fromLR_toLR`/`toLR_fromLR` as stated);
+(3) a generic `twoLayerFiberLaw` for a surjection `f ∘ g` with common-sized
+`g`-fibers, then specialize. The F1 API notes below remain useful reference.
 
 After F2c-iv-b, run `./dev/verify_next_phase.sh`, then proceed to **F3**
 (25-position `rawExchange` membership law). The F1 API notes below remain
