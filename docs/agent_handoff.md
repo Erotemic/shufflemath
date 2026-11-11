@@ -1,8 +1,8 @@
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-09. **Source basis:** the October 21 source snapshot,
-the fiber/disintegration tranche, and this session's F1 progress in
-`Shufflemath/CommanderFiberCount.lean` (compiles, no `sorry`/axiom). This is
+**Updated:** 2026-11-11. **Source basis:** the November 11 snapshot at
+`9786c4b`, with F1 complete, F2's two-layer equality open, and parallel F3/F4
+progress recorded in `docs/lean_plan.md`. This is
 an *operational handoff*. `lean_plan.md` is the authority for overall scope and
 priority; `AGENTS.md` governs repository behavior.
 
@@ -18,8 +18,8 @@ priority; `AGENTS.md` governs repository behavior.
       `/home/joncrall/code/shufflemath`.
    c. Run the targeted `lake build` commands listed in `AGENTS.md` to confirm
       the tree is green (if red, fix before anything else).
-   d. Resume work at the "Exactly where to resume" / "Next (F1c + F1d)" items
-      in this file and the next unchecked item in `docs/lean_plan.md`.
+   d. Resume at the current F2 intervention in this file and the next
+      unchecked item in `docs/lean_plan.md`.
 3. **Small batches only.** One batch = 1–3 related lemmas/theorems in one
    file. Each batch must end with: targeted `lake build` green → `git add`
    + `git commit`. Never let the working tree carry more than one batch of
@@ -91,6 +91,21 @@ The working per-file recipe (do NOT deviate):
 Verified: `./dev/verify_next_phase.sh` (builds the next-phase overlay + 35
 Python tests, OK) and `./dev/verify_next_phase.sh --pair` (the 2,401-pair
 certificate via `lake env lean dev/…`, EXIT 0).
+
+## Current F2 intervention (2026-11-11)
+
+**Read [`f2_fiberlaw_unblock.md`](f2_fiberlaw_unblock.md) before attempting
+`localLift_mass` again.** The existing generic
+`FiberDisintegration.fiberLaw membership membership_surjective` supplies the
+perfect-local kernel *with a pointwise mass theorem already proved*. Use it
+instead of re-deriving the pushforward of `uniformDist` through `Subtype.val`.
+This is a proposed proof strategy, not a completed Lean result; compile each
+step. The longer `mapDomain`/`DecidableEq` diagnosis below records prior
+attempts, but is no longer the recommended route.
+
+`./dev/verify_next_phase.sh` now lists both currently active modules
+`Shufflemath.CommanderMembershipKernels` and
+`Shufflemath.CommanderPhysicalExchange`; retain them when extending the script.
 
 ## Exactly where to resume
 

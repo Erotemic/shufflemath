@@ -13,7 +13,8 @@ formalization (library `Shufflemath`).
 
 - **Active status and work queue:** `docs/lean_plan.md`.
 - **Current single next action and proof acceptance criteria:**
-  `docs/agent_handoff.md`.
+  `docs/agent_handoff.md`. For the current F2 blocker, see
+  `docs/f2_fiberlaw_unblock.md`.
 - **Active do-not-stop rule:** `docs/agent_handoff.md` contains a
   **Standing rules** section (the revived October autonomous-build protocol)
   that is **active until Thu Nov 12 22:27:06 EST 2026**: do not stop, ask, or
@@ -28,7 +29,8 @@ formalization (library `Shufflemath`).
   dependency audit are historical design notes, not the next-work queue.
 - The user has confirmed the completed October 21 disintegration tranche
   compiles by moving on to the documentation handoff. Do not reopen its
-  compilation status without concrete contrary evidence. **Begin at F1.**
+  compilation status without concrete contrary evidence. **F1 is complete;
+  resume at the F2c-iv-b capstone.**
 
 ## Build and verify
 
@@ -41,7 +43,9 @@ lake build \
   Shufflemath.PhysicalExchangeReduction \
   Shufflemath.CommanderFullDeckDisintegration \
   Shufflemath.CommanderFiberCount \
-  Shufflemath.CommanderFiberMembership
+  Shufflemath.CommanderFiberMembership \
+  Shufflemath.CommanderMembershipKernels \
+  Shufflemath.CommanderPhysicalExchange
 ./dev/verify_next_phase.sh
 ```
 

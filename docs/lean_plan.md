@@ -1,6 +1,6 @@
 # Lean formalization roadmap (current)
 
-Status date: **2026-10-21**. This is the **single active mathematical task list**.
+Status date: **2026-11-11**. This is the **single active mathematical task list**.
 For a new agent, begin with [agent_handoff.md](agent_handoff.md). Historical
 phase notes are linked at the end; they do not override this plan. Read
 `AGENTS.md` before modifying code.
@@ -42,7 +42,7 @@ membership. See [full_deck_oracle_bridge.md](full_deck_oracle_bridge.md) and
 | Kernel error/composition | `Perturbation`, `Dobrushin`, `ProtocolCertificate`, `Cost` | Weighted TV telescope, contraction and generic cost/error interfaces |
 | BL macro chain | `BernoulliLaplace`, `BernoulliLaplaceGeneral`, `BernoulliLaplaceFiber`, `BernoulliLaplaceCommanderBridge` | General normalization, stationarity, reversibility, first centered eigenfunction and Commander specialization; exact 2-/3-step TV values |
 | Array/semantic bridge | `BernoulliLaplaceSemantic` | Exact array runs and semantic `FiniteKernel` runs agree |
-| Inverse GSR | `GSR` | Stable label buckets and product-*label* composition; not yet numeric `Fin (a*b)` uniform-law identification |
+| Inverse GSR | `GSR` | Stable label buckets and product-label composition; the uniform `Fin (a*b)` label-law pushforward is proved, while sorting compatibility and numeric-alphabet kernel equality remain |
 | Generic macro/micro TV | `FiberLifting`, `OracleRefinement` | Recoverable-lift TV isometry and canonical oracle intertwining, including schedule results |
 | Physical refinement interface | `PhysicalRefinement` | Conditional full-deck physical TV bound using a perfect-local reference and weighted row error |
 | Actual 99-card deck | `CommanderPermutation`, `CommanderFiberWitness` | `Equiv.Perm (Fin 99)`, count projection, explicit witness for each of the 50 fibers |
@@ -65,17 +65,18 @@ they do not establish the separate, still-open F1-F5 theorems.
 
 ## Current entry point
 
-**Start with F1a below.** The preceding fiber/disintegration tranche is
-complete and compiles. For new Lean work, run `lake exe cache get` followed
+**F1 is complete. Resume at F2c-iv-b** using
+[`f2_fiberlaw_unblock.md`](f2_fiberlaw_unblock.md). The preceding
+fiber/disintegration tranche compiles. For new Lean work, run `lake exe cache get` followed
 by the affected module's `lake build`; run `./dev/verify_next_phase.sh` when
 finishing a tranche. This is a regression workflow, not an extra gate on
 the existing results.
 
 ## Work queue in dependency order
 
-### F1. Prove the exact Commander fiber count -- FIRST mathematical task
+### F1. Prove the exact Commander fiber count -- COMPLETE
 
-**Goal:** discharge
+**Proved goal:** discharge
 `CommanderFullDeckDisintegration.HasCommanderFiberCounts`, already defined
 in `Shufflemath/CommanderFullDeckDisintegration.lean`:
 
@@ -86,7 +87,7 @@ forall x : BernoulliLaplace.CommanderState,
       (Fintype.card CommanderPermutation.Deck : Rat)
 ```
 
-This is **not proved** by `CommanderPermutation.project_surjective`: an
+This **cannot be proved solely** by `CommanderPermutation.project_surjective`: an
 inhabited fiber need not have the right *cardinality*. Build a structural
 counting proof, without evaluating a type containing `99!` permutations.
 
@@ -167,6 +168,14 @@ Do not confuse `localLift` with the canonical oracle's count-fiber reset.
 > decomposition `fiberSet_project_decomp` (the `project` fiber is the disjoint
 > union of the membership fibers) plus `membershipFiber_disjoint` are proved.
 >
+**New preferred intervention (Nov 11):** Model `localLift` as the already
+proved generic `FiberDisintegration.fiberLaw membership membership_surjective`.
+Its mass law and recovery theorem eliminate the blocked `Finsupp.mapDomain`
+pushforward proof. Use the existing `leftCardsFin`/`decksWithLeft` cardinality
+bridge from `CommanderFiberMembership.fiberFin_card`; details and proof order
+are in [`f2_fiberlaw_unblock.md`](f2_fiberlaw_unblock.md). This is a proposed
+route, not a theorem already in the tree.
+
 > **Still open (F2c-iv-b, the capstone):** the two-layer equality
 > `membershipLift.comp localLift = FiberDisintegration.fiberLaw project
 > project_surjective` (equivalently `= uniformFiber project_surjective`).
