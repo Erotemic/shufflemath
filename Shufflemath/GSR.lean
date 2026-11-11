@@ -354,6 +354,7 @@ theorem idealShuffle_comp (n a b : Nat) (ha : 0 < a) (hb : 0 < b) :
       productLabelShuffle a b (uniformLabels n a ha) (uniformLabels n b hb) :=
   labelShuffle_comp a b (uniformLabels n a ha) (uniformLabels n b hb)
 
+
 end GSR
 end Shufflemath
 end

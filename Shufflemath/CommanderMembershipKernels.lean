@@ -84,6 +84,17 @@ noncomputable instance (S : Finset (Fin 99)) [h : IsFifty S] :
 def membership (d : Deck) : Membership :=
   ⟨leftCards d, leftCards_card d⟩
 
+/-- The membership map is surjective: for every 50-card left-pile set there
+  is a deck realizing it. The witness comes from the `Nonempty` instance for
+  `decksWithLeft` (50-card sets), and the equality is a `Subtype.ext` on the
+  left-card set — no permutation is enumerated. -/
+theorem membership_surjective : Function.Surjective membership := by
+  intro m
+  obtain ⟨d⟩ : Nonempty (decksWithLeft m.1) := inferInstance
+  refine ⟨d.val, ?_⟩
+  apply Subtype.ext
+  exact d.property
+
 /-- The marked-card count carried by a membership: its intersection with
   the originally-left identities. -/
 def membershipCount (m : Membership) : Nat := (m.1 ∩ leftOrigSet).card
@@ -134,38 +145,34 @@ identity — the precise statement that pile membership is preserved.
 /-- The perfect-local kernel: uniform among all decks whose left pile is
   exactly the given membership's 50-card set (the F1a fiber, card
   `50! * 49!`). -/
-noncomputable def localLift : FiniteKernel Membership Deck :=
-  fun m => (GSR.uniformDist (decksWithLeft m.1)).map Subtype.val
+noncomputable def localLift : FiniteKernel Membership Deck := by
+  classical
+  exact FiberDisintegration.fiberLaw membership membership_surjective
 
 /-- A perfect-local resample preserves pile membership: applying
   `localLift` and then re-reading `membership` is the identity kernel. -/
 theorem localLift_preserves_membership :
     FiniteKernel.comp localLift (FiniteKernel.deterministic membership) =
       FiniteKernel.identity := by
-  funext m
-  haveI : Nonempty (decksWithLeft m.1) := by
-    have hpos : 0 < Fintype.card (decksWithLeft m.1) := by
-      rw [decksWithLeft_card m.1 m.2]
-      exact Nat.mul_pos (Nat.factorial_pos 50) (Nat.factorial_pos 49)
-    by_contra hne
-    have hzero : Fintype.card (decksWithLeft m.1) = 0 := by
-      letI : IsEmpty (decksWithLeft m.1) := IsEmpty.mk (fun x => hne (Nonempty.intro x))
-      exact Fintype.card_eq_zero
-    linarith
-  change FiniteKernel.apply
-      ((GSR.uniformDist (decksWithLeft m.1)).map Subtype.val)
-      (FiniteKernel.deterministic membership) = Dist.pointMass m
-  rw [apply_deterministic, Convexity.StdSimplex.map_map]
-  have hconstant :
-      (fun (d : decksWithLeft m.1) => membership (d.val)) = (fun _ => m) := by
-    funext d
-    apply Subtype.ext
-    rw [membership_leftCards (d.val)]
-    exact d.property
-  change (GSR.uniformDist (decksWithLeft m.1)).map
-      (fun (d : decksWithLeft m.1) => membership (d.val)) = Dist.pointMass m
-  rw [hconstant]
-  exact Convexity.StdSimplex.map_const (GSR.uniformDist (decksWithLeft m.1)) m
+  -- localLift is the generic fiberLaw for the membership observation, so the
+  -- preservation law is exactly the generic recovery theorem.
+  dsimp only [localLift]
+  exact FiberDisintegration.fiberLaw_recovers membership membership_surjective
+
+/-- The pushforward-mass formula for the perfect-local kernel. This is
+  exactly the generic `FiberDisintegration.fiberLaw_mass` for the `membership`
+  observation: the mass at a deck `d` is the inverse of the fiber cardinality
+  when `membership d = m`, and `0` otherwise. The equality predicate is the
+  `Membership` (sub-type) equality — *not* the expanded `leftCards d = m.1`
+  Finset equality — which keeps the proof out of the `Equiv.Perm`
+  normalisation wall. -/
+@[simp]
+theorem localLift_mass (m : Membership) (d : Deck) :
+    Dist.mass (localLift m) d =
+      (if membership d = m then
+         ((FiberDisintegration.fiberSet membership m).card : Rat)⁻¹ else 0) := by
+  dsimp only [localLift]
+  exact FiberDisintegration.fiberLaw_mass membership membership_surjective m d
 
 /-!
 ## The marked-count fiber of the membership type
