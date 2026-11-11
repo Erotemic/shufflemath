@@ -158,6 +158,30 @@ for uniform targets.
 Neither `localLift` nor a physical local shuffle may change pile membership.
 Do not confuse `localLift` with the canonical oracle's count-fiber reset.
 
+> **Progress (F2, 2026-11):** In `Shufflemath/CommanderMembershipKernels`:
+> items 1–2 (`Membership`, `membership`, `membershipCount`, and the
+> count-agreement `membershipFiber_iff`) and item 3 (`localLift` +
+> `localLift_preserves_membership`) are proved. Of item 4, the `membershipLift`
+> kernel (normalised to sum 1 via the F1b fiber count) and the generic
+> `apply_mass_eq_sum` pushforward law are proved, and the *structural*
+> decomposition `fiberSet_project_decomp` (the `project` fiber is the disjoint
+> union of the membership fibers) plus `membershipFiber_disjoint` are proved.
+>
+> **Still open (F2c-iv-b, the capstone):** the two-layer equality
+> `membershipLift.comp localLift = FiberDisintegration.fiberLaw project
+> project_surjective` (equivalently `= uniformFiber project_surjective`).
+> It is blocked on a Lean normalisation wall: every `Fintype` instance over a
+> subtype of `Deck = Equiv.Perm (Fin 99)` (e.g. `Fiber x`,
+> `decksWithLeft S`) whnf-recurses (and the `toLR`/`fromLR`/`pasteDeckSub`
+> machinery times out the heartbeat when unfolded), so the finset-card
+> `(fiberSet project x).card` that `fiberLaw`'s weight uses cannot be
+> `simp`/`ext`/`rfl`-related to the F1a `Fintype.card (decksWithLeft S)`
+> count. The F1a/F1b *theorems* (`decksWithLeft_card`, `fiberMembershipSets_card`)
+> are usable without recursion (as F2b's `localLift` shows); only whnf of the
+> instances is forbidden. See `docs/agent_handoff.md` for the candidate
+> approaches (transport through the good `decksLR_prod` product type, or
+> target `uniformFiber` whose weight is the `Fintype.card` of `Fiber x`).
+
 ### F3. Prove the 25-position physical-exchange membership law
 
 **Dependency:** F2.

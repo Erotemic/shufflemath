@@ -94,14 +94,54 @@ certificate via `lake env lean dev/…`, EXIT 0).
 
 ## Exactly where to resume
 
-**F1 is COMPLETE and green (commit `12e66df`).** All of F1a-F1d are proved:
-`decksWithLeft_card = 50! * 49!` (F1a, `CommanderFiberCount`),
-`fiberMembershipSets_card = choose 50 k * choose 49 (50 - k)` (F1b),
-`fiberFin_card` / `fiberSet_card` (F1c, `CommanderFiberMembership`), and
-`commander_fiber_counts : HasCommanderFiberCounts` plus the unconditional
-two-/three-exchange corollaries (F1d, `CommanderFullDeckDisintegration`).
-The F1a/F1b API notes below remain useful reference. **Resume at F2**
-(see **Next (F2)** below and `docs/lean_plan.md`).
+**F1 is COMPLETE (commit `12e66df`). F2 is ~90% complete.** In
+`Shufflemath/CommanderMembershipKernels` (green, committed):
+* F2a: `Membership`, `membership`, `membershipCount`, `membershipFiber_iff`.
+* F2b: `localLift` (perfect-local) + `localLift_preserves_membership`.
+* F2c-i: `MembershipFiber` + `MembershipFiber_card` + `membershipFiberCount`.
+* F2c-ii/iii: `membershipLift` (normalised to sum 1) + `apply_mass_eq_sum`.
+* F2c-iv-a: `fiberSet_project_decomp` + `membershipFiber_disjoint`.
+
+**Resume at F2c-iv-b — the F2 capstone**:
+`membershipLift.comp localLift = FiberDisintegration.fiberLaw project
+project_surjective` (equivalently `= uniformFiber project_surjective`).
+
+**The obstacle (Lean normalisation wall).** Every `Fintype` instance over a
+subtype of `Deck = Equiv.Perm (Fin 99)` (e.g. `Fiber x = {d // project d = x}`,
+`decksWithLeft S`) **whnf-recurses** (and `toLR`/`fromLR`/`pasteDeckSub` time
+out the heartbeat when unfolded). So the *finset* card
+`(fiberSet project x).card` that `fiberLaw`'s weight uses cannot be related by
+`simp`/`ext`/`rfl`/`change` to the F1a `Fintype.card (decksWithLeft S)` count.
+Crucially, the F1a/F1b *theorems* (`decksWithLeft_card`,
+`fiberMembershipSets_card`) **are** usable without recursion (F2b's `localLift`
+`rw [decksWithLeft_card]` proves it); only *whnf of the instances* is forbidden.
+
+**Candidate approaches (try in this order):**
+1. *Target `uniformFiber` instead of `fiberLaw`.*
+   `uniformFiber hsurj x = (GSR.uniformDist (Fiber x)).map Subtype.val` has
+   mass `(if project d = x then (Fintype.card (Fiber x))⁻¹ else 0)` — a
+   `Fintype.card`, not a finset card. Prove the two-layer LHS mass
+   `(if project d = x then 1/(membershipFiberCount k) * 1/(Fintype.card
+   (decksWithLeft (membership d).1)) else 0)` equals it, using
+   `apply_mass_eq_sum` + `decksWithLeft_card` (= `50!49!`) and a proof that
+   `Fintype.card (Fiber x) = membershipFiberCount k * 50!49!`.
+2. *Compute `Fintype.card (Fiber x)` through a GOOD type.* Transport
+   `Fiber x` to `Σ (m : MembershipFiber k), decksLR_prod m.1` (a Sigma over the
+   *good* `MembershipFiber` and the *good* `decksLR_prod` product type — no
+   `Equiv.Perm`), via the bijection `d ↦ (membership d, toLR (membership d).1
+   ⟨d, membership_leftCards d⟩)`. Then
+   `Fintype.card_congr` + the F1a/F1b count theorems. **Caution:** a first
+   attempt at this `GoodFiber`/`fiberLR` equiv timed out the heartbeat
+   (200000) on the `fromLR`/`toLR` inverse proofs — if retried, keep the
+   inverse proofs to `fromLR_toLR`/`toLR_fromLR` *as stated* (do not `unfold`
+   `toLR`/`fromLR`/`pasteDeckSub`), or avoid the full equiv by proving the card
+   equality with a direct `Finset`-level `toLR`-image count.
+3. *Generic form first* (as the plan suggests): a `twoLayerFiberLaw` for a
+   surjection `f ∘ g` whose `g`-fibers have a common size, then specialize.
+
+After F2c-iv-b, run `./dev/verify_next_phase.sh`, then proceed to **F3**
+(25-position `rawExchange` membership law). The F1 API notes below remain
+useful reference.
 
 * `leftPile S := {x // x ∈ S}` and `rightPile S := {x // x ∈ (Finset.univ \ S)}`
   (abbrevs, so `Fintype.Subtype.fintype` synthesizes).
