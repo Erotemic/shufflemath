@@ -158,22 +158,22 @@ theorem localLift_preserves_membership :
 /-!
 ## The marked-count fiber of the membership type
 
-`MembershipFiber k` is the sub-fintype of memberships carrying exactly `k`
-marked cards. Its `Fintype.card` is the F1b count of
-`fiberMembershipSets k` (itself `choose 50 k * choose 49 (50 - k)`), via
-the bijection that a membership is its 50-card set.
--/ 
+`MembershipFiber k` is the sub-type of memberships carrying exactly `k`
+marked cards. Its `Fintype` instance is the standard set-based one (a
+`MembershipFiber k = {m // membershipCount m = k}` is definitionally the
+up-cast of the set `{m | membershipCount m = k}`), whose `Fintype.card` is
+the F1b count of `fiberMembershipSets k` (itself `choose 50 k * choose 49
+(50 - k)`), via the bijection that a membership is its 50-card set.
+
+No custom `Fintype` instance is declared here: a second, hand-written
+instance for the same (definitionally equal) type would produce two distinct
+`Fintype.card` terms that do not definitionally unify, breaking the
+`Fintype.card_ofFinset` bridge used in the macro-kernel normalisation proof.
+Keeping the single set-based instance makes that bridge direct.
+-/
 
 /-- The memberships carrying exactly `k` marked cards. -/
-def MembershipFiber (k : Nat) := {m : Membership // membershipCount m = k}
-
-/-- The marked-count fiber of the membership type is finite: it is a
-  subset of the univ of the (finite) membership type. -/
-noncomputable instance (k : Nat) : Fintype (MembershipFiber k) := by
-  classical
-  let s : Set Membership := {m | membershipCount m = k}
-  have hs : s.Finite := Set.Finite.subset Set.finite_univ (fun _ _ => Set.mem_univ _)
-  exact Set.Finite.fintype hs
+abbrev MembershipFiber (k : Nat) := {m : Membership // membershipCount m = k}
 
 /-- A membership's marked count is `k` iff its 50-card set lies in the
   F1b `fiberMembershipSets` fiber. -/
@@ -236,6 +236,128 @@ theorem MembershipFiber_card (k : Nat) :
     Fintype.card (MembershipFiber k) =
       Fintype.card {S : Finset (Fin 99) // S ∈ fiberMembershipSets k} := hcard1
     _ = (fiberMembershipSets k).card := hcard2
+
+/-!
+## The macro-to-membership lift and the two-layer fiber law
+
+`membershipLift` is the commander-side half of the F2 disintegration:
+from a macrostate `x` it resamples uniformly among the memberships that
+carry `commanderLeftCount x` marked cards. Composed with the perfect
+local `localLift`, it is exactly the macro fiber law of `project` —
+the two-layer lift of `commanderFiberLift` through the membership layer.
+
+The weight is written with the F1b *Finset* count
+`(fiberMembershipSets k).card = choose 50 k * choose 49 (50 - k)` rather
+than a `Fintype.card` of the membership sub-fintype, so the
+normalisation is a pure finite-cardinality computation.
+-/
+
+/-- The macro-to-membership lift: uniform among the memberships carrying
+  `commanderLeftCount x` marked cards (the F1b fiber, with count
+  `choose 50 k * choose 49 (50 - k)`). -/
+/- The F1b fiber count `choose 50 k * choose 49 (50 - k)`, written as a
+  standalone `def` so the normalisation proof below can reference the
+  concrete `Nat` product without whnf-expanding the `fiberMembershipSets`
+  finset definition (whose `univ : Finset (Fin 99)` base carries a
+  `Fintype` instance that cycles under aggressive whnf). -/
+def membershipFiberCount (k : Nat) : Nat :=
+  Nat.choose 50 k * Nat.choose 49 (50 - k)
+
+/-- The standalone count agrees with the F1b finset count. -/
+theorem membershipFiberCount_eq_fiberMembershipSets (k : Nat) :
+    membershipFiberCount k = (fiberMembershipSets k).card :=
+  (fiberMembershipSets_card k).symm
+
+/-- The macro-to-membership lift: from a macrostate `x` it resamples
+  uniformly among the memberships whose marked count equals
+  `commanderLeftCount x`, and assigns zero mass to the rest. This is the
+  commander-side half of the F2 disintegration; composing it with the
+  perfect-local `localLift` recovers the full `project`-fiber uniform
+  resampling. The normalisation (sum-to-one) proof reduces the weighted
+  sum to the F1b fiber count times its reciprocal. -/
+noncomputable def membershipLift : FiniteKernel CommanderState Membership :=
+  fun x => Dist.ofFun
+    (fun m => if membershipCount m = commanderLeftCount x
+        then 1 / (↑(membershipFiberCount (commanderLeftCount x)) : Rat)
+        else 0)
+    (fun m => by split_ifs <;> positivity)
+    (by
+      let k := commanderLeftCount x
+      have hsum1 : (∑ m : Membership, if membershipCount m = k
+          then 1 / (↑(membershipFiberCount k) : Rat) else 0) =
+          ((membershipFiberCount k) : Rat) *
+            (1 / (↑(membershipFiberCount k) : Rat)) := by
+        calc
+          (∑ m : Membership, if membershipCount m = k
+              then 1 / (↑(membershipFiberCount k) : Rat) else 0) =
+            (∑ m ∈ (Finset.univ : Finset Membership),
+              if membershipCount m = k
+              then 1 / (↑(membershipFiberCount k) : Rat) else 0) := by
+            rfl
+          _ = ((Finset.univ.filter (fun m => membershipCount m = k)).card : Rat) *
+              (1 / (↑(membershipFiberCount k) : Rat)) := by
+            rw [FiberDisintegration.sum_if_constant
+                (Finset.univ : Finset Membership) (fun m => membershipCount m = k)
+                (1 / (↑(membershipFiberCount k) : Rat))]
+          _ = ((membershipFiberCount k) : Rat) *
+              (1 / (↑(membershipFiberCount k) : Rat)) := by
+            -- The univ-filter count is the Fintype card of the membership
+            -- sub-fintype (F2c-i), which is the F1b finset card, which is
+            -- the standalone choose product by F1b.
+            have hfin : (Finset.univ.filter (fun m => membershipCount m = k)).card =
+                Fintype.card (MembershipFiber k) := by
+              exact (@Fintype.card_ofFinset Membership (fun m => membershipCount m = k)
+                  (Finset.univ.filter (fun m => membershipCount m = k))
+                  (fun m => by
+                    simp [Finset.mem_filter, Finset.mem_univ]
+                    exact Iff.rfl)).symm
+            have hcard : (Finset.univ.filter (fun m => membershipCount m = k)).card =
+                membershipFiberCount k := by
+              calc
+                (Finset.univ.filter (fun m => membershipCount m = k)).card =
+                    Fintype.card (MembershipFiber k) := hfin
+                _ = (fiberMembershipSets k).card := MembershipFiber_card k
+                _ = membershipFiberCount k :=
+                    (membershipFiberCount_eq_fiberMembershipSets k).symm
+            rw [hcard]
+      rw [hsum1]
+      have hpos : 0 < membershipFiberCount k := by
+        unfold membershipFiberCount
+        have hk1 : 1 ≤ k := by
+          change 1 ≤ x.val + 1
+          omega
+        have hk2 : k ≤ 50 := by
+          change (x.val + 1) ≤ 50
+          omega
+        exact Nat.mul_pos (Nat.choose_pos hk2) (Nat.choose_pos (by omega))
+      have hnonzero : (↑(membershipFiberCount k) : Rat) ≠ 0 := by
+        exact_mod_cast Nat.ne_of_gt hpos
+      field_simp [hnonzero])
+
+/-- The mass of `apply μ K` at `b` is the two-level weighted sum over the
+  intermediate states: the standard pushforward formula. -/
+theorem apply_mass_eq_sum
+    {α β : Type*} [Fintype α] [DecidableEq α]
+    (μ : Dist α) (K : FiniteKernel α β) (b : β) :
+    Dist.mass (FiniteKernel.apply μ K) b =
+      (∑ a : α, Dist.mass μ a * Dist.mass (K a) b) := by
+  unfold Dist.mass FiniteKernel.apply
+  simp only [Dist.join_sConvexComb, Convexity.StdSimplex.map,
+      Convexity.StdSimplex.weights_sConvexComb, Finsupp.sum_apply,
+      Finsupp.smul_apply]
+  -- ((μ.weights).mapDomain K).sum (fun L r => r • (L.weights b)) =
+  --   (μ.weights).sum (fun a r => r • (K a).weights b)
+  have hFubini : ((μ.weights).mapDomain K).sum
+      (fun (L : Dist β) (r : Rat) => r • (L.weights b)) =
+      (μ.weights).sum (fun a (r : Rat) => r • ((K a).weights b)) := by
+    classical
+    exact Finsupp.sum_mapDomain_index
+      (fun _ => by simp)
+      (fun _ _ _ => by ring)
+  rw [hFubini]
+  simpa using (μ.weights).sum_fintype
+    (fun a (r : Rat) => r • ((K a).weights b))
+    (fun _ => by simp)
 
 end CommanderMembershipKernels
 end Shufflemath
