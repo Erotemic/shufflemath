@@ -359,6 +359,59 @@ theorem apply_mass_eq_sum
     (fun a (r : Rat) => r • ((K a).weights b))
     (fun _ => by simp)
 
+/-!
+## The two-layer fiber law
+
+`membershipLift.comp localLift` resamples a macrostate's fiber in two
+stages: first a membership (uniform among those with the macrostate's marked
+count), then a deck ordering (uniform within that membership). This section
+proves that equals the direct `FiberDisintegration.fiberLaw project`.
+
+The first steps are structural: the `project` fiber over `x` is exactly the
+(disjoint) union, over the memberships carrying `commanderLeftCount x`, of
+the membership fibers.
+-/ 
+
+/-- The memberships carrying a given marked count `k`, as a finset. -/
+noncomputable def memCountFiber (k : Nat) : Finset Membership :=
+  (Finset.univ : Finset Membership).filter (fun m => membershipCount m = k)
+
+/-- The `project` fiber over a macrostate `x` is the disjoint union, over
+  the memberships carrying `commanderLeftCount x` marked cards, of the
+  membership fibers. -/
+theorem fiberSet_project_decomp (x : CommanderState) :
+    FiberDisintegration.fiberSet project x =
+      (memCountFiber (commanderLeftCount x)).biUnion
+        (fun m => FiberDisintegration.fiberSet membership m) := by
+  classical
+  ext d
+  simp only [FiberDisintegration.fiberSet, memCountFiber, Finset.mem_biUnion,
+      Finset.mem_filter, Finset.mem_univ, true_and, and_true]
+  -- project d = x ↔ ∃ m, membershipCount m = commanderLeftCount x ∧ membership d = m
+  constructor
+  · intro h
+    refine ⟨membership d, ?_, rfl⟩
+    exact (membershipFiber_iff d x).mp h
+  · rintro ⟨m, hmcount, hmem⟩
+    have hcnt : membershipCount (membership d) = commanderLeftCount x := by
+      rw [hmem]
+      exact hmcount
+    exact (membershipFiber_iff d x).mpr hcnt
+
+/-- Distinct memberships have disjoint deck fibers: a deck has a unique
+  left-pile membership. -/
+theorem membershipFiber_disjoint (m m' : Membership) (h : m ≠ m') :
+    Disjoint (FiberDisintegration.fiberSet membership m)
+      (FiberDisintegration.fiberSet membership m') := by
+  classical
+  by_contra hND
+  rw [Finset.not_disjoint_iff] at hND
+  rcases hND with ⟨d, hd1, hd2⟩
+  simp only [FiberDisintegration.fiberSet, Finset.mem_filter, Finset.mem_univ,
+      true_and] at hd1 hd2
+  -- hd1 : membership d = m, hd2 : membership d = m'
+  exact h (hd1.symm.trans hd2)
+
 end CommanderMembershipKernels
 end Shufflemath
 end
