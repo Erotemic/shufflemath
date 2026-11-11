@@ -72,6 +72,74 @@ theorem productAlphabet_card (a b : Nat) :
     Fintype.card (Fin b × Fin a) = b * a := by
   simp
 
+/-!
+## Bayer--Diaconis product-alphabet encoding (F4.1, single-label core)
+
+A `Fin (a*b)` label decomposes lexicographically into a `Fin b` *major* and a
+`Fin a` *minor* component: the numeric value `m*a + n` has major `m` and minor
+`n`. The decomposition is a bijection (a monotone reindexing), which is what
+makes a single `a*b`-alphabet GSR shuffle the same shuffle as an independent
+`b`-alphabet and `a`-alphabet product-label shuffle.
+-/ 
+
+/-- Lexicographic decomposition of a `Fin (a*b)` label into its `(major, minor)`
+  components: numeric `m*a + n` has major `m : Fin b` and minor `n : Fin a`. -/
+noncomputable def encodeLabel {a b : Nat} (ha : 0 < a) (k : Fin (a*b)) :
+    Fin b × Fin a :=
+  (Fin.mk (k.val / a) (Nat.div_lt_of_lt_mul k.isLt),
+   Fin.mk (k.val % a) (Nat.mod_lt k.val ha))
+
+/-- The inverse of `encodeLabel`: the `Fin (a*b)` label with major `m` and
+  minor `n` has numeric value `m*a + n`. -/
+noncomputable def decodeLabel {a b : Nat} (ha : 0 < a) (hb : 0 < b) (p : Fin b × Fin a) :
+    Fin (a*b) :=
+  Fin.mk (p.1.val * a + p.2.val) (by
+    have h1 : p.1.val < b := p.1.isLt
+    have h2 : p.2.val < a := p.2.isLt
+    calc
+      p.1.val * a + p.2.val < p.1.val * a + a := Nat.add_lt_add_left h2 (p.1.val * a)
+      _ = (p.1.val + 1) * a := by ring
+      _ ≤ b * a := Nat.mul_le_mul_right a (Nat.succ_le_of_lt h1)
+      _ = a * b := Nat.mul_comm _ _)
+
+/-- `decodeLabel` is a left inverse of `encodeLabel`. -/
+theorem decodeLabel_encodeLabel {a b : Nat} (ha : 0 < a) (hb : 0 < b) (k : Fin (a*b)) :
+    decodeLabel ha hb (encodeLabel ha k) = k := by
+  simp only [encodeLabel, decodeLabel]
+  rw [Fin.ext_iff]
+  simpa [Nat.mul_comm] using Nat.div_add_mod k.val a
+
+/-- `encodeLabel` is a left inverse of `decodeLabel`. -/
+theorem encodeLabel_decodeLabel {a b : Nat} (ha : 0 < a) (hb : 0 < b) (p : Fin b × Fin a) :
+    encodeLabel ha (decodeLabel ha hb p) = p := by
+  have hdecval : (decodeLabel ha hb p).val = p.1.val * a + p.2.val := rfl
+  have h2 : p.2.val < a := p.2.isLt
+  have h2m : p.2.val % a = p.2.val := Nat.mod_eq_of_lt h2
+  have hcarry : (p.1.val * a) % a + p.2.val % a < a := by
+    simp only [Nat.mul_comm, Nat.mul_mod_right, Nat.zero_add, h2m]
+    exact h2
+  have hmaj : (decodeLabel ha hb p).val / a = p.1.val := by
+    rw [hdecval, Nat.add_div_eq_of_add_mod_lt hcarry]
+    rw [show (p.1.val * a) / a = p.1.val by
+      rw [Nat.mul_comm, Nat.mul_div_cancel_left _ ha]]
+    rw [Nat.div_eq_of_lt h2, Nat.add_zero]
+  have hmin : (decodeLabel ha hb p).val % a = p.2.val := by
+    rw [hdecval, Nat.add_mod]
+    have hmul : (p.1.val * a) % a = 0 := by
+      rw [Nat.mul_comm]
+      exact Nat.mul_mod_right _ _
+    rw [hmul, Nat.zero_add, Nat.mod_mod]
+    exact h2m
+  apply Prod.ext
+  · -- major component
+    apply Fin.ext
+    simp only [encodeLabel]
+    exact hmaj
+  · -- minor component
+    apply Fin.ext
+    simp only [encodeLabel]
+    exact hmin
+
 /-! ## Exact probability law, with `StdSimplex` as the sole distribution authority -/
 
 /-- Uniform distribution on any inhabited finite type, in exact rationals. -/
