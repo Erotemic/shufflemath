@@ -103,5 +103,36 @@ theorem newLeftCards_card (d : Deck) (L : Finset (Fin 50)) (R : Finset (Fin 49))
   rw [Finset.card_sdiff, Finset.inter_eq_left.mpr hLsub, hL, hR]
   norm_num
 
+/-!
+## The macro-count transition
+
+The macro state of a deck is how many *initially-left* (marked) cards sit in
+the left pile, `leftOriginalCount`. Exchanging the selected positions moves
+the marked cards at the selected left positions out and the marked cards at
+the selected right positions in, so the new marked count is the old count
+minus what left plus what came in. This is the count content of the
+`hMembershipExchange` premise, stated at the level of the selected sets.
+-/ 
+
+/-- The initially-left (marked) positions among the 50 left positions. Its
+  cardinality is exactly the macro count `leftOriginalCount`. -/
+def markedLeftPos (d : Deck) : Finset (Fin 50) :=
+  Finset.filter (fun (l : Fin 50) => (d (leftPosition l)).val < 50) (univ : Finset (Fin 50))
+
+/-- `markedLeftPos` counts the marked cards in the left pile. -/
+theorem markedLeftPos_card (d : Deck) : (markedLeftPos d).card = leftOriginalCount d := by
+  unfold markedLeftPos
+  simp only [leftOriginalCount]
+
+/-- The initially-left (marked) positions among the 49 right positions. -/
+def markedRightPos (d : Deck) : Finset (Fin 49) :=
+  Finset.filter (fun (r : Fin 49) => (d (rightPosition r)).val < 50) (univ : Finset (Fin 49))
+
+/-- The number of marked cards currently sitting at the selected left positions. -/
+def markedInLeft (d : Deck) (L : Finset (Fin 50)) : Nat := (markedLeftPos d ∩ L).card
+
+/-- The number of marked cards currently sitting at the selected right positions. -/
+def markedInRight (d : Deck) (R : Finset (Fin 49)) : Nat := (markedRightPos d ∩ R).card
+
 end CommanderPhysicalExchange
 end Shufflemath
