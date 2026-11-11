@@ -223,6 +223,54 @@ noncomputable def uniformLabels (n a : Nat) (ha : 0 < a) :
   letI : Nonempty (Fin n → Fin a) := ⟨fun _ => ⟨0, ha⟩⟩
   exact uniformDist (Fin n → Fin a)
 
+/-- Pushing the uniform law through a bijection gives the uniform law on the
+  target. A bijection preserves cardinality, so the equal-mass uniform law is
+  carried to the equal-mass uniform law on the target type. -/
+theorem map_bijective_uniformDist {X Y : Type*} [Fintype X] [Fintype Y]
+    [Nonempty X] [Nonempty Y] (e : X ≃ Y) :
+    (uniformDist X).map e = uniformDist Y := by
+  ext y
+  change Dist.mass ((uniformDist X).map e) y = Dist.mass (uniformDist Y) y
+  -- LHS: the bijection fiber over y is the singleton {e.symm y}
+  have hLHS : Dist.mass ((uniformDist X).map e) y = (Fintype.card X : Rat)⁻¹ := by
+    have hy : y = e (e.symm y) := (Equiv.apply_symm_apply e y).symm
+    rw [hy]
+    simp only [Dist.mass, Convexity.StdSimplex.map]
+    rw [Finsupp.mapDomain_apply_of_injective e.injective]
+    simp only [Dist.mass, uniformDist, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm]
+  -- RHS: uniform
+  have hRHS : Dist.mass (uniformDist Y) y = (Fintype.card Y : Rat)⁻¹ := by
+    simp only [Dist.mass, uniformDist, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm]
+  -- the two cardinalities agree (e is a bijection)
+  have hcard : (Fintype.card X : Rat) = (Fintype.card Y : Rat) := by
+    exact_mod_cast Fintype.card_congr e
+  rw [hLHS, hRHS]
+  simpa [hcard] using rfl
+
+/-- The independent product of two uniform label laws: a uniform law on the
+  product of a `Fin a` minor array and a `Fin b` major array. -/
+noncomputable def productUniformLabels {n a b : Nat} (ha : 0 < a) (hb : 0 < b) :
+    Dist ((Fin n → Fin a) × (Fin n → Fin b)) := by
+  letI : Nonempty ((Fin n → Fin a) × (Fin n → Fin b)) :=
+    ⟨(fun _ => ⟨0, ha⟩, fun _ => ⟨0, hb⟩)⟩
+  exact uniformDist ((Fin n → Fin a) × (Fin n → Fin b))
+
+/-- The per-card `labelReparam` carries the product of two uniform label laws
+  (independent uniform `Fin a` and `Fin b` arrays) to the uniform `Fin (a*b)`
+  label law: a `(a*b)`-alphabet GSR label has the same law as the independent
+  product of a `b`- and an `a`-alphabet label. -/
+theorem productLabels_pushforward_uniform {n a b : Nat} (ha : 0 < a) (hb : 0 < b) :
+    (productUniformLabels ha hb).map (labelReparam ha hb) =
+      uniformLabels n (a*b) (mul_pos ha hb) := by
+  letI : Nonempty (Fin n → Fin (a*b)) := ⟨fun _ => ⟨0, mul_pos ha hb⟩⟩
+  letI : Nonempty ((Fin n → Fin a) × (Fin n → Fin b)) :=
+    ⟨(fun _ => ⟨0, ha⟩, fun _ => ⟨0, hb⟩)⟩
+  have hRHS : uniformLabels n (a*b) (mul_pos ha hb) =
+      uniformDist (Fin n → Fin (a*b)) := by
+    simp only [uniformLabels]
+  rw [hRHS]
+  exact map_bijective_uniformDist (labelReparam ha hb)
+
 /-- A stable-label shuffle with any specified finite label law. This
 includes uniform GSR and nonuniform independent-card labels as special
 cases. The output is a well-formed distribution by `StdSimplex.map`. -/
