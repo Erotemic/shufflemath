@@ -1,10 +1,11 @@
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-12. **Source basis:** the Nov 12 session (F4.1 sorting-
-compatibility wall broken, F4.2 core done, F3 item 3 core still open). The
-Nov 11 snapshot below is reference. This is
-an *operational handoff*. `lean_plan.md` is the authority for overall scope and
-priority; `AGENTS.md` governs repository behavior.
+**Updated:** 2026-11-12. **Source basis:** the Nov 12 session — F4.1 index-level
+content + `combineVal_pred_eq` (the `=`/`Prop` per-card bridge) proved; F4.2
+**core** (`permutedLeftCards_eq`: a within-pile relabel cannot change the
+membership state) proved; F3 item 3 core still open. The Nov 11 snapshot below
+is reference. This is an *operational handoff*. `lean_plan.md` is the authority
+for overall scope and priority; `AGENTS.md` governs repository behavior.
 
 ## Standing rules for the agent reading this document (non-negotiable)
 
@@ -147,13 +148,26 @@ made the following committed progress (see `git log --oneline -12`):
   see `docs/f3_membership_exchange.md`. F3 item 4 (2-exchange TV) and F4.3–F4.5
   remain downstream of it.
 
-**Recommended next action:** continue F4.1 (the `Bool`-bridge + flatMap
-assembly for `stableBuckets_combine_eq_lex`) — it is the most advanced open
-item and its index-level content is already proved. If the `==`/`decide` bridge
-resists ~2 iterations, apply the stuck protocol (`-- TODO(proof)`, commit what
-builds) and move to F4.2's GSR-product kernel. Then F4.3 (row-wise TV bound),
-F4.4 (telescope), and F5 (costs/optimizer). After each tranche, re-run
-`./dev/verify_next_phase.sh`.
+**Recommended next action:** two open fronts, in priority order:
+1. **F4.2 bijection** (`docs/f42_local_gsr.md`): prove `pileRelabelFn` is
+   injective/surjective (the `leftVal` helper closes with
+   `dsimp [pileRelabelFn]; simp [h, leftPosition]`; the `rightVal` helper —
+   `50 ≤ 50 + (pr _).val` — resists `omega`/`nlinarith`, try
+   `Nat.le_add_left`+`Nat.add_comm`). Then `Equiv.ofBijective` → `permuteWithinPiles`
+   → the GSR product over the two piles.
+2. **F4.1 Bool-bridge** (`docs/f41_sorting_compatibility.md`): lift
+   `combineVal_pred_eq` to the `Bool`/`==`/`&&` world that `List.filter` uses
+   (the direct `simp [Nat.beq_eq]` bridge fails on the `Bool`-equality goal;
+   the `by_cases` route on the three `==` bools is the identified path), then
+   assemble `stableBuckets_combine_eq_lex` with `rangeMap_divmod_eq_nested` +
+   `List.flatMap_map`.
+3. **F3 item 3 core** (the hard hypergeometric identity, see
+   `docs/f3_membership_exchange.md`) is the critical path for F3 item 4 and
+   F4.5; attack it after the two F4 fronts make their next step.
+
+Apply the stuck protocol (`-- TODO(proof)`, commit what builds, move on) after
+~2 failed iterations on any single proof. Re-run `./dev/verify_next_phase.sh`
+after each tranche.
 
 ### (Prior state, Nov 11 — reference)
 
