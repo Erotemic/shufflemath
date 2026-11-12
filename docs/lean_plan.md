@@ -199,26 +199,38 @@ route, not a theorem already in the tree.
 
 ### F3. Prove the 25-position physical-exchange membership law
 
-> **Progress (F3, 2026-11):** In `Shufflemath/CommanderPhysicalExchange`:
-> the post-exchange left-pile membership `newLeftCards d L R` is defined (item
-> 1, at the membership level — the pairing only affects ordering, not
-> membership) and shown to be a valid 50-card membership with disjoint parts.
-> The **macro-count transition** is proved (`newLeftOriginalCount_eq`): the
-> marked cards in the new left pile equal the old count minus the marked cards
-> at the selected left positions plus the marked cards at the selected right
-> positions — the exact count content of the `hMembershipExchange` premise,
-> stated at the selected-set level. *Still open:* the deck-level
-> `rawExchange : FiniteKernel Deck Deck` kernel (item 2), the full
-> `hMembershipExchange` law (item 3), and the unconditional physical-perfect-local
-> 2-exchange TV theorem (item 4).
+> **Progress (F3, 2026-11-12):** In `Shufflemath/CommanderPhysicalExchange`:
+> **(item 1, done)** the post-exchange left-pile membership `newLeftCards d L R`
+> and the macro-count transition `newLeftOriginalCount_eq`.
+> **(item 2, done, commits `b25d5f4`)** the deck-level `rawExchange : FiniteKernel
+> Deck Deck` kernel, built as the composition of the membership-level exchange law
+> `rawExchangeMembership` (pushforward of a uniform 25+25 `(L,R)` choice to its
+> post-exchange membership `newLeftCards d L R`) and the uniform membership-fiber
+> lift `localLift`; with the push-through lemma
+> `rawExchange_membership_pushforward` (`comp rawExchange (deterministic membership)
+> = rawExchangeMembership`).
+> **(item 3a, done, commit `958d5f5`)** the structural reduction
+> `hMembershipExchange_lhs_reduces`: the `hMembershipExchange` premise's left-hand
+> side equals `comp (fiberLaw project) rawExchangeMembership` (via `comp_assoc` +
+> the F2 capstone + the push-through). So the core law is
+> `comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25 membershipLift`.
 >
-> **F2 dependency now satisfied:** the F2c-iv-b capstone
-> (`membershipLift_localLift_eq_fiberLaw`) is proved (commit `19d417c`), so the
-> `hMembershipExchange` law (item 3) — which composes the physical exchange with
-> the two-layer membership fiber law — is now unblocked. F3 is the next active
-> work item.
+> **(item 3 core, OPEN — the hard counting identity):** prove
+> `comp (FiberDisintegration.fiberLaw project project_surjective) rawExchangeMembership
+> = comp commanderExchange25 membershipLift`. Both sides are
+> `FiniteKernel CommanderState Membership`. Mass-at-`m` (from input `x`) reduces to the
+> exact counting identity
+> `|{ (d,(L,R)) : project d = x, newLeftCards d L R = m }| / (|fiber project x| * choose 50 25 * choose 49 25)
+>  = transitionWeight 99 50 25 (count x) (count m) / |{m' : count m' = count m}|`.
+> This has two parts: (i) the new-count distribution of the physical exchange equals
+> the Bernoulli--Laplace `transitionWeight` hypergeometric sum, and (ii) *given* the new
+> count, the new membership is *uniform* over that count's fiber (a symmetry/group-action
+> statement). Part (ii) is the harder half. This is on the critical path for item 4 and
+> F4.5.
+> **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
+> which depends on item 3 core.
 
-**Dependency:** F2.
+**Dependency:** F2 (satisfied: `membershipLift_localLift_eq_fiberLaw`, commit `19d417c`).
 
 1. Specify the raw operation exactly: choose 25 distinct positions from each
    pile uniformly; swap the selected positions in a fixed bijective pairing.
