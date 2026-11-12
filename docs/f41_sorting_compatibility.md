@@ -106,3 +106,48 @@ idealShuffle n (a*b) (a*b)` follows by composing it with
   `split_ifs`/`by_cases` on the `Bool`s.
 - Default `simp` is safe inside `GSR.lean` for these `List`/`Fin`/`Nat` terms
   (no `Equiv.Perm (Fin 99)` terms in this file).
+
+## The F4.1 kernel equality (precise next step)
+
+**Statement to prove** (the F4.1 headline result, per `lean_plan.md`):
+
+```lean
+theorem productLabelShuffle_ideal {n a b : Nat} (ha : 0 < a) (hb : 0 < b) :
+    productLabelShuffle a b (uniformLabels n a ha) (uniformLabels n b hb) =
+      idealShuffle n (a*b) (mul_pos ha hb)
+```
+
+**Proof route (worked out Nov 12, unproven):**
+1. `funext deck`.
+2. **Joint-distribution bridge** (the one new lemma):
+   `FiniteKernel.apply (uniformLabels n a ha)
+      (fun minor => (uniformLabels n b hb).map (fun major => f (minor, major)))
+     = (productUniformLabels ha hb).map f`
+   for arbitrary `f`. Both sides put mass `#{(minor,major) : f(minor,major) = x}
+   / (a^n * b^n)` at `x`. The LHS mass follows from `FiniteKernel.apply_mass`
+   (in `Shufflemath/Finite.lean`, `namespace FiniteKernel`); the RHS from
+   `productUniformLabels` being `uniformDist` over the product (card `a^n*b^n`
+   via `Fintype.card_fun`/`Fintype.card_prod`).
+3. `productUniformLabels.map (fun p => lexBuckets a b p.1 p.2 deck)`: rewrite
+   `lexBuckets a b p.1 p.2 deck = stableBuckets (a*b) (combineLabels p.1 p.2) deck`
+   via `stableBuckets_combine_eq_lex`, and `combineLabels p.1 p.2 = labelReparam p`.
+4. `= (productUniformLabels.map (labelReparam ha hb)).map (fun labels =>
+   stableBuckets (a*b) labels deck)` (map composition).
+5. `= (uniformLabels n (a*b) (mul_pos ha hb)).map (...)` via
+   `productLabels_pushforward_uniform`.
+6. `= idealShuffle n (a*b) (mul_pos ha hb)` (rfl).
+
+**Wall (Nov 12):** the bridge's `Finsupp.ext`/mass route stalls on the
+`typeclass instance problem is stuck` for `Finsupp.ext` over
+`(Fin n → Fin a) × (Fin n → Fin b)` (the `DecidableEq`/`Fintype` instances do
+not synthesize in the `Finsupp` weight-reindexing context), and the
+`Convexity.StdSimplex.map` reduces to `FunOnFinite.linearMap` (deep
+`Finsupp.mapDomain` machinery). Next agent: prove the bridge at the
+`Finsupp`-weight level (both sides are `uniformDist` pushforwards, so a
+`Fintype.card`-arithmetic `Finsupp.ext` should close it) — or, if the
+`FunOnFinite` level is too deep, prove it via the `FiniteKernel.apply_mass`
+identity plus `map`-mass, carefully supplying the `[Fintype]`/`[DecidableEq]`
+instances explicitly for `Fin n → Fin a`, `Fin n → Fin b`, and their product.
+The `labelShuffle_comp` / `idealShuffle_comp` theorems (already in GSR.lean)
+give the equivalent reformulation
+`comp (idealShuffle n a) (idealShuffle n b) = idealShuffle n (a*b)`.
