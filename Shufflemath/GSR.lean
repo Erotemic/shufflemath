@@ -210,6 +210,71 @@ theorem combinedLabel_pred {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
   · rintro ⟨h1, h2⟩
     rw [h1, h2]
 
+-- Arithmetic lemmas for the mixed-radix sorting-compatibility: a number in the
+-- block `a*b' .. a*b' + a - 1` divides by `a` to `b'` with remainder the offset.
+theorem div_block (a b' x : Nat) (ha : 0 < a) (hx : x < a) : (a * b' + x) / a = b' := by
+  have hle : (a*b' + x)/a ≤ b' := by
+    have hgoal : a*b' + x ≤ b'*a + a - 1 := by
+      have hlt : x + 1 ≤ a := Nat.succ_le_of_lt hx
+      have hcomm : b'*a = a*b' := by ring
+      omega
+    exact (Nat.div_le_iff_le_mul ha).mpr hgoal
+  have hge : b' ≤ (a*b' + x)/a := by
+    by_contra hnot
+    have hlt : (a*b' + x)/a < b' := Nat.lt_of_not_ge hnot
+    rw [Nat.div_lt_iff_lt_mul ha] at hlt
+    have hcomm : b'*a = a*b' := by ring
+    rw [hcomm] at hlt
+    exact absurd hlt (Nat.not_lt_of_ge (Nat.le_add_right (a*b') x))
+  exact le_antisymm hle hge
+
+theorem mod_block (a b' x : Nat) (ha : 0 < a) (hx : x < a) : (a * b' + x) % a = x := by
+  have h1 : (a*b' + x) % a = ((a*b') % a + x % a) % a := by rw [Nat.add_mod]
+  rw [h1]
+  have h2 : (a*b') % a = 0 := by
+    have hcomm : a*b' = b'*a := by ring
+    rw [hcomm]
+    exact Nat.mul_mod_left b' a
+  have h3 : x % a = x := Nat.mod_eq_of_lt hx
+  rw [h2, h3, Nat.zero_add]
+  exact Nat.mod_eq_of_lt hx
+
+-- The (div, mod) sequence over `range (a*b)` is exactly the nested (j, i)
+-- sequence over `range b x range a` in lexicographic order: iterating the
+-- numeric values `0 .. a*b - 1` and splitting each as `j*a + i` (j = k/a,
+-- i = k % a) walks the (j, i) grid in exactly the lexBuckets order.
+theorem rangeMap_divmod_eq_nested (a b : Nat) (ha : 0 < a) :
+    (List.range (a * b)).map (fun k => (k / a, k % a)) =
+      (List.range b).flatMap (fun j => (List.range a).map (fun i => (j, i))) := by
+  induction b with
+  | zero =>
+      simp [List.range_zero]
+  | succ b' ih =>
+    -- LHS: split the last block (a*b' .. a*b' + a - 1)
+    have hLHS : (List.range (a * Nat.succ b')).map (fun k => (k / a, k % a)) =
+        (List.range (a * b')).map (fun k => (k / a, k % a)) ++
+          (List.range a).map (fun i => (b', i)) := by
+      simp only [Nat.mul_succ]
+      rw [List.range_add]
+      rw [List.map_append]
+      rw [List.map_map]
+      have hp : (List.range a).map ((fun k => (k/a, k%a)) ∘ fun x => a*b' + x) =
+          (List.range a).map (fun i => (b', i)) := by
+        rw [List.map_eq_map_iff]
+        intro x hx
+        have hlt : x < a := List.mem_range.mp hx
+        have h1 : (a * b' + x) / a = b' := div_block a b' x ha hlt
+        have h2 : (a * b' + x) % a = x := mod_block a b' x ha hlt
+        simp only [h1, h2, Function.comp_apply]
+      rw [hp]
+    -- RHS: split off the last major index b'
+    have hRHS : (List.range (Nat.succ b')).flatMap (fun j => (List.range a).map (fun i => (j, i))) =
+        (List.range b').flatMap (fun j => (List.range a).map (fun i => (j, i))) ++
+          (List.range a).map (fun i => (b', i)) := by
+      rw [List.range_succ, List.flatMap_append]
+      simp
+    rw [hLHS, hRHS, ih]
+
 /-!
 ## The label reparameterization (F4.1)
 
