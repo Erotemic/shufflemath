@@ -2,6 +2,7 @@ module
 
 public import Shufflemath.CommanderPermutation
 public import Shufflemath.CommanderFiberMembership
+public import Shufflemath.CommanderFiberWitness
 public import Shufflemath.FiberDisintegration
 public import Mathlib.Tactic
 
@@ -479,6 +480,163 @@ theorem membershipFiber_disjoint (m m' : Membership) (h : m ≠ m') :
       true_and] at hd1 hd2
   -- hd1 : membership d = m, hd2 : membership d = m'
   exact h (hd1.symm.trans hd2)
+
+/-! ## F2c-iv-b: the two-layer membership fiber law
+
+Composing the macro-to-membership lift with the perfect-local lift
+(`membershipLift.comp localLift`) is exactly the direct uniform resampling
+on the `project` fiber (`fiberLaw project`): picking a membership uniformly
+among those carrying the macrostate's marked count, and then resampling a
+deck uniformly inside that membership's left-pile fiber, is the same law as
+resampling a deck uniformly inside the `project` fiber, because that
+`project` fiber is the disjoint union of the membership fibers (F2c-iv-a)
+and every membership fiber has the same cardinality `50! * 49!` (F1a).
+
+The proof works at the *mass* level (a `Rat` computation over the
+`Membership` type), avoiding the `Equiv.Perm (Fin 99)` normalisation wall by
+never `simp`-ing with the default set (which would unfold `membership`/
+`leftCards`); it uses `simp only` with explicit lemmas and the `if_pos`/
+`if_neg` rewrite lemmas, then lifts to the kernel equality via
+`StdSimplex.weights_inj` + `Finsupp.ext`.
+-/
+theorem membershipLift_localLift_eq_fiberLaw :
+    membershipLift.comp localLift =
+      FiberDisintegration.fiberLaw project project_surjective := by
+  funext x
+  apply (Convexity.StdSimplex.weights_inj
+      (f := (membershipLift.comp localLift) x)
+      (g := (FiberDisintegration.fiberLaw project project_surjective) x)).mp
+  apply Finsupp.ext
+  intro d
+  -- The `Finsupp.ext` goal is at the `weights d` level; `Dist.mass` is
+  -- definitionally `weights`, so fold it back to the `mass` form.
+  rw [← Dist.mass, ← Dist.mass]
+  classical
+  let k := commanderLeftCount x
+  -- LHS: the two-layer pushforward mass is the two-level sum over memberships.
+  have hL : Dist.mass ((membershipLift.comp localLift) x) d =
+      (∑ m : Membership, Dist.mass (membershipLift x) m * Dist.mass (localLift m) d) := by
+    change Dist.mass (FiniteKernel.apply (membershipLift x) localLift) d =
+      (∑ m : Membership, Dist.mass (membershipLift x) m * Dist.mass (localLift m) d)
+    exact apply_mass_eq_sum (membershipLift x) localLift d
+  -- RHS: the `project`-fiber uniform mass.
+  have hR : Dist.mass ((FiberDisintegration.fiberLaw project project_surjective) x) d =
+      (if project d = x then ((FiberDisintegration.fiberSet project x).card : Rat)⁻¹ else 0) := by
+    rw [FiberDisintegration.fiberLaw_mass]
+  rw [hL, hR]
+  -- Expand both summand masses to their explicit `ite` forms.
+  have hsum : (∑ m : Membership, Dist.mass (membershipLift x) m * Dist.mass (localLift m) d) =
+      (∑ m : Membership,
+        (if membershipCount m = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) *
+        (if membership d = m then ((FiberDisintegration.fiberSet membership m).card : Rat)⁻¹ else 0)) := by
+    apply Finset.sum_congr rfl
+    intro m _
+    rw [membershipLift_mass, localLift_mass]
+  rw [hsum]
+  -- The `localLift` factor is a point-mass selector at `m = membership d`, so
+  -- the product of the two `ite`s is itself an `ite` on that equality.
+  -- `simp only` (not `simp`) avoids the default set, which would unfold
+  -- `membership`/`leftCards` and hit the `Equiv.Perm` normalisation wall.
+  have hprod (m : Membership) :
+      (if membershipCount m = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) *
+        (if membership d = m then ((FiberDisintegration.fiberSet membership m).card : Rat)⁻¹ else 0) =
+        (if membership d = m then
+           ((if membershipCount m = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) *
+              ((FiberDisintegration.fiberSet membership m).card : Rat)⁻¹)
+           else 0) := by
+    by_cases hm : membership d = m <;> simp only [hm, ite_true, ite_false, mul_zero]
+  have hsum2 : (∑ m : Membership,
+        (if membershipCount m = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) *
+        (if membership d = m then ((FiberDisintegration.fiberSet membership m).card : Rat)⁻¹ else 0)) =
+      (∑ m : Membership,
+        (if membership d = m then
+           ((if membershipCount m = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) *
+              ((FiberDisintegration.fiberSet membership m).card : Rat)⁻¹)
+           else 0)) := by
+    apply Finset.sum_congr rfl
+    intro m _
+    exact hprod m
+  rw [hsum2]
+  -- Collapse the selector sum to the single membership `membership d`:
+  -- the `univ` filtered by `membership d = m` is the singleton `{membership d}`.
+  have hsel : (∑ m : Membership,
+        (if membership d = m then
+           ((if membershipCount m = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) *
+              ((FiberDisintegration.fiberSet membership m).card : Rat)⁻¹)
+           else 0)) =
+      (if membershipCount (membership d) = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) *
+      ((FiberDisintegration.fiberSet membership (membership d)).card : Rat)⁻¹ := by
+    have hfilter : (Finset.univ : Finset Membership).filter (fun m => membership d = m) =
+        {membership d} := by
+      apply Finset.ext
+      intro m
+      simp only [Finset.mem_filter, Finset.mem_univ, Finset.mem_singleton, eq_comm, true_and]
+    have hA : (∑ m : Membership,
+        (if membership d = m then
+           ((if membershipCount m = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) *
+              ((FiberDisintegration.fiberSet membership m).card : Rat)⁻¹)
+           else 0)) =
+        (∑ m ∈ (Finset.univ : Finset Membership),
+           (if membership d = m then
+              ((if membershipCount m = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) *
+                 ((FiberDisintegration.fiberSet membership m).card : Rat)⁻¹)
+              else 0)) := rfl
+    rw [hA]
+    have hB : (∑ m ∈ (Finset.univ : Finset Membership),
+        (if membership d = m then
+           ((if membershipCount m = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) *
+              ((FiberDisintegration.fiberSet membership m).card : Rat)⁻¹)
+           else 0)) =
+        (∑ m ∈ (Finset.univ : Finset Membership).filter (fun m => membership d = m),
+           (if membershipCount m = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) *
+              ((FiberDisintegration.fiberSet membership m).card : Rat)⁻¹) := by
+      rw [← Finset.sum_filter]
+    rw [hB, hfilter]
+    rw [Finset.sum_singleton]
+  rw [hsel]
+  -- Both `ite`s are on `project d = x` (membershipFiber_iff). Split on it and
+  -- reduce each `ite` with `if_pos`/`if_neg` (proven lemmas, no normalisation).
+  by_cases hpx : project d = x
+  · -- Both `ite`s take their `then` branch.
+    have hcnt : membershipCount (membership d) = k := (membershipFiber_iff d x).mp hpx
+    have hLred : (if membershipCount (membership d) = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) =
+        (1 : Rat) / (↑(membershipFiberCount k) : Rat) := by
+      rw [ite_eq_left hcnt]
+    have hRred : (if project d = x then ((FiberDisintegration.fiberSet project x).card : Rat)⁻¹ else 0) =
+        ((FiberDisintegration.fiberSet project x).card : Rat)⁻¹ := by
+      rw [ite_eq_left hpx]
+    rw [hLred, hRred]
+    have hcnt2 : (FiberDisintegration.fiberSet membership (membership d)).card =
+        Nat.factorial 50 * Nat.factorial 49 := fiberSet_membership_card (membership d)
+    have hproj : (FiberDisintegration.fiberSet project x).card =
+        Nat.choose 50 (commanderLeftCount x) * Nat.choose 49 (50 - commanderLeftCount x) *
+          Nat.factorial 50 * Nat.factorial 49 := fiberSet_card x
+    have hmc : (membershipFiberCount k : Nat) =
+        Nat.choose 50 k * Nat.choose 49 (50 - k) := rfl
+    rw [hcnt2, hproj, hmc, show k = commanderLeftCount x from rfl]
+    -- `(1/↑A) * (↑B)⁻¹ = (↑(A·B))⁻¹` for `A = choose 50 k' · choose 49 (50-k')`,
+    -- `B = 50!·49!`: a pure `Nat`/`Rat` field identity (no `Equiv.Perm` normalisation).
+    let A := Nat.choose 50 (commanderLeftCount x) * Nat.choose 49 (50 - commanderLeftCount x)
+    let B := Nat.factorial 50 * Nat.factorial 49
+    have hcast : (↑(Nat.choose 50 (commanderLeftCount x) * Nat.choose 49 (50 - commanderLeftCount x) *
+        Nat.factorial 50 * Nat.factorial 49) : Rat) = (↑A : Rat) * (↑B : Rat) := by
+      rw [Nat.cast_mul, Nat.cast_mul, Nat.cast_mul]
+      <;> ring
+    rw [hcast]
+    have h1 : (1 / (↑A : Rat)) = (↑A : Rat)⁻¹ := by rw [div_eq_mul_inv, one_mul]
+    rw [h1, mul_comm, mul_inv_rev]
+  · -- Both `ite`s take their `else` branch.
+    have hnot : membershipCount (membership d) ≠ k := by
+      intro h
+      exact hpx ((membershipFiber_iff d x).mpr h)
+    have hLred : (if membershipCount (membership d) = k then (1 : Rat) / (↑(membershipFiberCount k) : Rat) else 0) =
+        (0 : Rat) := by
+      rw [ite_eq_right hnot]
+    have hRred : (if project d = x then ((FiberDisintegration.fiberSet project x).card : Rat)⁻¹ else 0) =
+        (0 : Rat) := by
+      rw [ite_eq_right hpx]
+    rw [hLred, hRred]
+    ring
 
 end CommanderMembershipKernels
 end Shufflemath
