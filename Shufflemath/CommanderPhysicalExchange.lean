@@ -366,6 +366,27 @@ theorem rawExchange_membership_pushforward :
   simp only [FiniteKernel.comp_assoc, localLift_preserves_membership,
       FiniteKernel.comp_id_right]
 
+/-! ## The `hMembershipExchange` intertwining law (F3 item 3)
+
+The `hMembershipExchange` premise of the physical-exchange reduction:
+starting from the two-layer (membership-then-deck) lift and reading the
+membership after the physical exchange equals applying the macro count exchange
+and then lifting uniformly to a membership. The left-hand side reduces, by the
+F2 capstone (`membershipLift_localLift_eq_fiberLaw`) and the exchange's
+membership push-through, to pushing the uniform *project-fiber* deck law through
+the membership-level exchange.
+-/ 
+
+-- The left-hand side of the `hMembershipExchange` premise is the uniform
+-- project-fiber deck law pushed through the membership-level exchange.
+theorem hMembershipExchange_lhs_reduces :
+    FiniteKernel.comp (FiniteKernel.comp (FiniteKernel.comp membershipLift localLift) rawExchange)
+      (FiniteKernel.deterministic membership) =
+      FiniteKernel.comp (FiberDisintegration.fiberLaw project project_surjective)
+        rawExchangeMembership := by
+  simp only [FiniteKernel.comp_assoc, rawExchange_membership_pushforward,
+      membershipLift_localLift_eq_fiberLaw]
+
 end CommanderPhysicalExchange
 end Shufflemath
 end
