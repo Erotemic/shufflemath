@@ -1,0 +1,95 @@
+module
+
+public import Shufflemath.CommanderPermutation
+public import Shufflemath.CommanderFiberCount
+public import Shufflemath.CommanderMembershipKernels
+public import Mathlib.Data.Finset.Basic
+public import Mathlib.Tactic
+
+@[expose] public section
+
+namespace Shufflemath
+namespace CommanderLocalGSR
+
+/-!
+# Local (within-pile) shuffling and membership preservation (F4.2)
+
+A *local* shuffle acts only *within* the two fixed working piles: it permutes
+the 50 cards among the left-pile positions and the 49 cards among the right-pile
+positions, and never moves a card between the piles. This file defines that
+within-pile relabeling of deck positions and proves the central F4.2 fact:
+**a local shuffle cannot change the membership state** (the set of named cards
+in the left pile). The local-GSR *kernel* is the product of a GSR shuffle on
+each pile applied through this mechanism; the deterministic pile-permutation
+and its membership-preservation are established here.
+-/
+
+open CommanderPermutation
+
+/-- A function on the 99 deck positions that permutes the *left* pile by `pl`
+  and the *right* pile by `pr`, and never moves a card between the piles. A
+  left position `leftPosition i` goes to `leftPosition (pl i)`; a right position
+  `rightPosition j` goes to `rightPosition (pr j)`. -/
+def pileRelabelFn (pl : Equiv.Perm (Fin 50)) (pr : Equiv.Perm (Fin 49)) (p : Fin 99) : Fin 99 :=
+  if h : p.val < 50 then
+    leftPosition (pl ⟨p.val, h⟩)
+  else
+    rightPosition (pr ⟨p.val - 50, by omega⟩)
+
+/-- A left position stays a left position, permuted by `pl`. -/
+theorem pileRelabelFn_left (pl : Equiv.Perm (Fin 50)) (pr : Equiv.Perm (Fin 49)) (i : Fin 50) :
+    pileRelabelFn pl pr (leftPosition i) = leftPosition (pl i) := by
+  simp [pileRelabelFn, leftPosition]
+  <;> omega
+
+/-- A right position stays a right position, permuted by `pr`. -/
+theorem pileRelabelFn_right (pl : Equiv.Perm (Fin 50)) (pr : Equiv.Perm (Fin 49)) (j : Fin 49) :
+    pileRelabelFn pl pr (rightPosition j) = rightPosition (pr j) := by
+  simp [pileRelabelFn, rightPosition]
+  <;> omega
+
+/-- The 50 cards occupying the left pile of the deck `d` after the within-pile
+  relabeling `pileRelabelFn pl pr`. -/
+def permutedLeftCards (d : Deck) (pl : Equiv.Perm (Fin 50)) (pr : Equiv.Perm (Fin 49)) :
+    Finset (Fin 99) :=
+  (Finset.univ : Finset (Fin 50)).image
+    (fun i => d (pileRelabelFn pl pr (leftPosition i)))
+
+-- A bijection on `Fin 50` leaves the image of `univ` under any `f` unchanged
+-- (reindexing): `univ.image (f ∘ pl) = univ.image f`.
+theorem univImage_reindex (f : Fin 50 → Fin 99) (pl : Equiv.Perm (Fin 50)) :
+    (Finset.univ : Finset (Fin 50)).image (f ∘ pl) =
+      (Finset.univ : Finset (Fin 50)).image f := by
+  ext y
+  simp only [Finset.mem_image, Finset.mem_univ, Function.comp_apply]
+  constructor
+  · intro hX
+    rcases hX with ⟨i, _, hfi⟩
+    exact ⟨pl i, by simp, hfi⟩
+  · intro hY
+    rcases hY with ⟨i, _, hfi⟩
+    have h : pl (pl.symm i) = i := pl.apply_symm_apply i
+    exact ⟨pl.symm i, by simp, by simpa [h, hfi]⟩
+
+/-- **F4.2 core.** A within-pile relabeling leaves the left-card set unchanged:
+  it permutes the 50 left positions by a bijection, so the set of named cards in
+  the left pile is the same. Hence the membership state is preserved. -/
+theorem permutedLeftCards_eq (d : Deck) (pl : Equiv.Perm (Fin 50)) (pr : Equiv.Perm (Fin 49)) :
+    permutedLeftCards d pl pr = leftCards d := by
+  unfold permutedLeftCards leftCards
+  -- the permuted image equals the pl-reindexed image (pointwise the maps agree)
+  have hg : (fun i : Fin 50 => d (pileRelabelFn pl pr (leftPosition i))) =
+      (fun i : Fin 50 => d (leftPosition (pl i))) := by
+    funext i
+    simpa [pileRelabelFn_left]
+  have hL : (Finset.univ : Finset (Fin 50)).image
+        (fun i => d (pileRelabelFn pl pr (leftPosition i))) =
+      (Finset.univ : Finset (Fin 50)).image
+        (fun i => d (leftPosition (pl i))) := by
+    simpa [hg]
+  -- then reindex by the bijection pl
+  exact hL.trans (univImage_reindex (fun i => d (leftPosition i)) pl)
+
+end CommanderLocalGSR
+end Shufflemath
+end
