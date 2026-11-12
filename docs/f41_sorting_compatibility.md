@@ -1,38 +1,37 @@
-# F4.1 sorting-compatibility: exact state and the `List.range` wall
+# F4.1 sorting-compatibility: exact state and the remaining `Bool` bridge
 
-**Status (2026-11-12):** Open. The *label-law* half of F4.1 is complete
-(committed); the *sorting* half — showing the single combined-label stable sort
-equals the lexicographic stable sort — is the remaining piece. This note
-captures exactly what is proved, the exact open statement, and why it is
-hard, so the next attempt does not repeat the failed routes.
+**Status (2026-11-12):** The *label-law* half of F4.1 is complete, and the
+*sorting* half is now down to a small `Bool`/`decide` bridge. The old
+"`List.range` wall" is **broken**: `List.range_add`
+(`List.range (m + n) = List.range m ++ List.map (fun x => m + x) (List.range n)`,
+which exists in this build) gives the block decomposition, and the index-level
+reindexing is now **proved and committed** as `rangeMap_divmod_eq_nested`. What
+remains is (a) the per-card filter predicate in the `==`/`&&`/`Bool` world and
+(b) assembling the flatMap — a mechanical but fiddly `Bool`/`decide` bridge.
 
 ## What is already proved (green, committed)
 
 In `Shufflemath/GSR.lean` (all inside `namespace GSR`):
 
-- `encodeLabel ha (k : Fin (a*b)) : Fin b × Fin a` and
-  `decodeLabel ha hb (Fin b × Fin a) : Fin (a*b)`, with both inverse laws
-  (`decodeLabel_encodeLabel`, `encodeLabel_decodeLabel`). The numeric encoding
-  is `major*a + minor`.
-- `combineLabels`/`splitLabels` and the `labelReparam : (Fin n → Fin a) ×
-  (Fin n → Fin b) ≃ (Fin n → Fin (a*b))` bijection.
-- `map_bijective_uniformDist`, `productLabels_pushforward_uniform`: a uniform
-  `Fin (a*b)` label law equals the independent product of a uniform `Fin b`
-  and a uniform `Fin a` label law pushed through `labelReparam`. **This is the
-  label-law half of F4.1** — the two shuffles have the *same label
-  distribution*.
-- `stableBuckets_comp`: `stableBuckets b major (stableBuckets a minor deck) =
-  lexBuckets a b minor major deck` (via `filter_flatMap`).
-- **`mixedRadix_unique`** (this session): `x*a + y = j*a + i` with `y < a`,
-  `i < a` forces `x = j` and `y = i`. Proved via the residue of each side
-  modulo `a` plus cancellation of the common `·a` term — **no `div`/`mod` of
-  the full number**, so it does not trigger `List.range`/`Nat.div` rewrite
-  loops.
-- **`combinedLabel_pred`** (this session): per card,
-  `(major c).val * a + (minor c).val = j*a + i ↔ (major c).val = j ∧
-  (minor c).val = i` (for `i < a`). This is `mixedRadix_unique` applied per
-  card and is the *pointwise* bridge between the combined-label bucket and the
-  `(major, minor)` lexicographic bucket.
+- `encodeLabel`/`decodeLabel` with both inverse laws (numeric `major*a + minor`);
+  `combineLabels`/`splitLabels`; `labelReparam`.
+- `map_bijective_uniformDist`, `productLabels_pushforward_uniform` (the
+  label-law half of F4.1).
+- `stableBuckets_comp`, `mixedRadix_unique`, `combinedLabel_pred` (the
+  `=`/`Prop`-world per-card bridge).
+- **`div_block` / `mod_block`** (this session): for `x < a`,
+  `(a*b' + x) / a = b'` and `(a*b' + x) % a = x`. Proved via
+  `Nat.div_le_iff_le_mul` / `Nat.div_lt_iff_lt_mul` (with the `b'*a = a*b'`
+  commutativity fed by `ring` + `omega`) and `Nat.add_mod` +
+  `Nat.mod_eq_of_lt` respectively.
+- **`rangeMap_divmod_eq_nested`** (this session, the crux): the `(div, mod)`
+  sequence over `List.range (a*b)`,
+  `(List.range (a*b)).map (fun k => (k / a, k % a))`, is *exactly* the nested
+  `(j, i)` sequence `(List.range b).flatMap (fun j => (List.range a).map (fun i
+  => (j, i)))` in lexicographic order. Proved by induction on `b` using
+  `List.range_add` for the block split, `List.map_append`/`List.map_map` on the
+  left, `List.range_succ`/`List.flatMap_append`/`List.flatMap_singleton` on the
+  right, and `div_block`/`mod_block` to simplify the last block.
 
 ## The exact open statement
 
@@ -43,83 +42,49 @@ theorem stableBuckets_combine_eq_lex {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
       lexBuckets a b minor major deck
 ```
 
-Once proved, the F4.1 kernel equality follows by composing with
-`productLabels_pushforward_uniform`:
+## What remains and why it is still fiddly
 
-```lean
--- productLabelShuffle a b (uniform) (uniform) = idealShuffle n (a*b) (a*b)
-```
-because `productLabelShuffle`'s body is `lexBuckets` on the product labels and
-`idealShuffle (a*b)`'s body is `stableBuckets (a*b)` on the `(a*b)`-labels, and
-the two label laws coincide (pushforward) and the two sorts coincide (this
-lemma).
+The index-level content is done. The remaining work is to thread it through the
+`List.filter` predicates, which live in the **`Bool` world** (`Nat.beq` `==` and
+`Bool` `&&`), whereas `combinedLabel_pred` and the division lemmas live in the
+**`Prop` world** (`=` and `∧`):
 
-## Why it is hard: the `List.range` wall
+1. **Per-card filter bridge.** Show, for the card `c` and index `k`:
+   `((major c).val * a + (minor c).val == k) ↔
+    ((major c).val == k/a && (minor c).val == k%a)` (Bool).
+   The `=`-world content is `combinedLabel_pred` at `j = k/a`, `i = k%a` plus
+   `k = (k/a)*a + (k%a)` (`Nat.div_add_mod`). The bridge
+   `simp [Nat.beq_eq]` *does* convert a bare `(x == j && y == i) ↔ (x = j ∧ y =
+   i)`, but the goal left by `List.filter_congr` is a `Bool` *equality*
+   `p c = q c` (i.e. `(A == k) = (B && C)`), for which `simp [Nat.beq_eq]` makes
+   no progress in this build. The workable route is a **`by_cases` / `split_ifs`
+   on the three `==` bools** (the `==` on a `Nat` comparison is a `Bool`, so
+   branch on `h : (x == y) = true` / `h : (x == y) = false`), using `h3` in each
+   case to force the two Bools to agree.
+2. **Assemble the flatMap.** Once the per-card filter is identified, rewrite
+   `stableBuckets`'s single `List.range (a*b)` flatMap into the nested
+   `(List.range b)`-outer / `(List.range a)`-inner flatMap of `lexBuckets`
+   using `rangeMap_divmod_eq_nested` plus `List.flatMap_map`
+   (`List.flatMap g (List.map f l) = List.flatMap (fun a => g (f a)) l`) and the
+   flatMap-associativity step `((L).map h).flatMap f = L.flatMap (f ∘ h)`
+   (induction, trivial).
 
-`List.range` is a **core Lean definition by non-structural recursion**
-(`List.range.loop`), so it does **not** `rw`/`simp` into structural pieces.
-Every route to the above equality needs to relate the *bucket order*
-(`List.range (a*b)` = `0,1,…,a*b-1`) to the *lexicographic order* of the
-`(major, minor)` pairs, and that relation is exactly a `List.range`
-reindexing that `rw` refuses.
-
-Concretely, the equality needs one of:
-
-1. **A `List.range` block split.** E.g.
-   `List.range (a*b) = (List.range b).concat (fun j => List.range' (j*a) a)`
-   (where `List.range' n m = [n, …, n+m-1]`). Then the LHS flatMap regroups
-   into the `j`/`i` double flatMap of the RHS, and `combinedLabel_pred`
-   closes the per-card predicate. The obstacle is *proving* the split lemma
-   itself: `List.range (m + n) = List.range m ++ List.range' m n` resists
-   `rw` and `simp` on `List.range`; it must be proved by induction on `n`
-   using the recursive unfolding, and no `range_succ`/`range_append` simp
-   lemma for `List.range` (as opposed to `Finset.range`/`Multiset.range`) is
-   exposed in this Mathlib build.
-
-2. **A stable-sort-uniqueness argument.** Show both sides are the unique
-   stable sort of `deck` by their (equal) total order. This needs a
-   rank function `Fin n → Fin (a*b)` (namely `combineLabels`) plus a lemma
-   that stably sorting by an order-reflecting relabeling is invariant. That
-   is a fresh, general lemma and is not currently in the library.
-
-3. **The cons-insertion induction** (the route this session probed). Define
-   `stableBuckets K f (c :: rest) = (stableBuckets K f rest).filter (f _ <
-   f c) ++ [c] ++ (stableBuckets K f rest).filter (f _ == f c) ++
-   (stableBuckets K f rest).filter (f _ > f c)` (a `c` lands at the front of
-   its bucket). Inducting on `deck` then reduces the theorem to showing the
-   `List.range K` flatMap equals the `<`/`=`/`>` regrouping — again the
-   `List.range` order. `List.cons_filter`/`List.filter_cons` (the names
-   tried) do not exist; the cons-filter split is `List.filter_cons`-style and
-   must be located or inlined.
-
-## Recommended next move
-
-The cleanest single lemma that unlocks everything is the **`List.range` block
-split**:
-
-```lean
--- PROPOSED (unproved): List.range (a * b) =
---   (List.range b).concat (fun j => List.range' (j * a) a)
-```
-
-Prove it by induction on `b` (base `b = 0`: both `[]`; step: use
-`List.range (m+n.succ) = List.range (m+n) ++ [m+n]` and
-`List.range' n (m+1) = List.range' n m ++ [n+m]`, both provable by a direct
-induction on the recursive `loop` definition). Then:
-- `stableBuckets (a*b) (combineLabels ...) deck` flatMap regroups over the
-  blocks into a `(List.range b)`-outer / `(List.range a)`-inner double flatMap,
-- the per-card predicate becomes `combinedLabel_pred` at `i`,
-- and `filter_flatMap`/`filter_filter` close it to `lexBuckets`.
+Once (1) and (2) are in place, `stableBuckets_combine_eq_lex` follows, and the
+F4.1 kernel equality `productLabelShuffle a b (uniform) (uniform) =
+idealShuffle n (a*b) (a*b)` follows by composing it with
+`productLabels_pushforward_uniform`.
 
 ## Dependencies / gotchas
 
-- In this Mathlib build `Finset.range` *does* have `range_add`/`range'`
-  theorems, but `List.range` does **not** (it is a core `loop` def). Do not
-  assume `List.range` simp lemmas.
-- `List.cons_filter` and `List.filter_cons` do not exist; use
-  `List.filter`'s `@[simp]`/`grind` lemma or inline the split.
-- `combinedLabel_pred` only needs `i < a` (the minor bucket bound) and `ha`;
-  it does *not* need `j < b`, matching how `mixedRadix_unique` is stated.
-- Default `simp` is safe *inside* `GSR.lean` for `List`/`Fin`/`Nat` terms here
-  (no `Equiv.Perm (Fin 99)` terms appear in this file), but keep it to
-  `stableBuckets`/`lexBuckets`/`filter_*` as in `stableBuckets_comp`.
+- `List.range_add` **does** exist in this build; the old "no `range_*` for
+  `List.range`" note is obsolete. `List.range_succ`, `List.map_append`,
+  `List.map_map`, `List.flatMap_append`, `List.flatMap_singleton`,
+  `List.flatMap_map`, `List.map_eq_map_iff`, `List.mem_range` all exist.
+- `Nat.div_eq_of_lt_mul`, `Nat.div_mul_add_mod`, `List.cons_filter`,
+  `List.filter_cons` do **not** exist. Use `Nat.div_le_iff_le_mul` /
+  `Nat.div_lt_iff_lt_mul` and `Nat.div_add_mod` instead.
+- `Nat.beq_eq : (x.beq y = true) = (x = y)` bridges a *bare* `==`/`=` comparison
+  but not a `Bool`-equality goal; for the filter predicate use explicit
+  `split_ifs`/`by_cases` on the `Bool`s.
+- Default `simp` is safe inside `GSR.lean` for these `List`/`Fin`/`Nat` terms
+  (no `Equiv.Perm (Fin 99)` terms in this file).
