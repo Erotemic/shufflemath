@@ -42,32 +42,36 @@ theorem stableBuckets_combine_eq_lex {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
       lexBuckets a b minor major deck
 ```
 
+- **`combineVal_pred_eq`** (this session): per card, its combined numeric value
+  equals `k` **iff** its major/minor are exactly `(k/a, k%a)`: `=
+  (combineLabels ... c).val = k ↔ (major c).val = k/a ∧ (minor c).val = k%a`. This
+  is the `=`/`Prop`-world per-card bridge (the `Bool`/`==`/`&&` filter predicate
+  is its `Nat.beq_eq` lift). Proven with `change`/`rfl` for the `decodeLabel`
+  value (avoids the `simp` recursion loop) and `rw` + `combinedLabel_pred` +
+  `Nat.div_add_mod` for the rest.
+
 ## What remains and why it is still fiddly
 
-The index-level content is done. The remaining work is to thread it through the
-`List.filter` predicates, which live in the **`Bool` world** (`Nat.beq` `==` and
-`Bool` `&&`), whereas `combinedLabel_pred` and the division lemmas live in the
-**`Prop` world** (`=` and `∧`):
+The index-level content and the `=`/`Prop` per-card fact are done. What remains
+is to lift `combineVal_pred_eq` into the `Bool`/`==`/`&&` world that
+`List.filter` uses, then assemble the flatMap:
 
-1. **Per-card filter bridge.** Show, for the card `c` and index `k`:
-   `((major c).val * a + (minor c).val == k) ↔
-    ((major c).val == k/a && (minor c).val == k%a)` (Bool).
-   The `=`-world content is `combinedLabel_pred` at `j = k/a`, `i = k%a` plus
-   `k = (k/a)*a + (k%a)` (`Nat.div_add_mod`). The bridge
-   `simp [Nat.beq_eq]` *does* convert a bare `(x == j && y == i) ↔ (x = j ∧ y =
-   i)`, but the goal left by `List.filter_congr` is a `Bool` *equality*
-   `p c = q c` (i.e. `(A == k) = (B && C)`), for which `simp [Nat.beq_eq]` makes
-   no progress in this build. The workable route is a **`by_cases` / `split_ifs`
-   on the three `==` bools** (the `==` on a `Nat` comparison is a `Bool`, so
-   branch on `h : (x == y) = true` / `h : (x == y) = false`), using `h3` in each
-   case to force the two Bools to agree.
-2. **Assemble the flatMap.** Once the per-card filter is identified, rewrite
-   `stableBuckets`'s single `List.range (a*b)` flatMap into the nested
+1. **`Bool`/`==`/`&&` lift.** `List.filter` predicates are `Bool`s (`Nat.beq`
+   `==`, `Bool` `&&`), while `combineVal_pred_eq` is `=`/`∧`. `Nat.beq_eq`
+   (`(x.beq y = true) = (x = y)`) bridges a *bare* `==`↔`=` comparison, and
+   `(b1 && b2) = true ↔ (b1 = true) ∧ (b2 = true)` and `b1 = b2 ↔
+   (b1 = true) = (b2 = true)` are `simp`-able, but the **`Bool`-equality goal
+   left by `List.filter_congr`** (`(A == k) = (B && C)`, where the outer `=` is
+   `Bool` equality) does **not** close with `simp [Nat.beq_eq]` in this build,
+   and a `by_cases`/`split_ifs` on the three `==` bools keeps hitting
+   `Bool`-vs-`Prop` / `decide` elaboration mismatches. The remaining content is
+   small: `X = true ↔ (combine c).val = k` and `B = true ↔ (major c).val = k/a`,
+   with `combineVal_pred_eq` equating the two `=` statements.
+2. **Assemble the flatMap.** Once the per-card `Bool` filter is identified,
+   rewrite `stableBuckets`'s single `List.range (a*b)` flatMap into the nested
    `(List.range b)`-outer / `(List.range a)`-inner flatMap of `lexBuckets`
    using `rangeMap_divmod_eq_nested` plus `List.flatMap_map`
-   (`List.flatMap g (List.map f l) = List.flatMap (fun a => g (f a)) l`) and the
-   flatMap-associativity step `((L).map h).flatMap f = L.flatMap (f ∘ h)`
-   (induction, trivial).
+   (`List.flatMap g (List.map f l) = List.flatMap (fun a => g (f a)) l`).
 
 Once (1) and (2) are in place, `stableBuckets_combine_eq_lex` follows, and the
 F4.1 kernel equality `productLabelShuffle a b (uniform) (uniform) =
