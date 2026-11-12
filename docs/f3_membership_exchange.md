@@ -145,3 +145,41 @@ This is the genuinely hard half and the main open sub-goal.
   count-`count y` membership fiber (F2c).
 - The `Membership` type is `{S : Finset (Fin 99) // S.card = 50}`;
   `membershipCount m = (m.1 ∩ leftOrigSet).card` is its count.
+
+## F3 item 3 part (i): the hypergeometric count — approach and current wall
+
+The count-level part (i) reduces to the standard hypergeometric fact: the
+`k`-subsets of `s = a ∪ b` (disjoint) with exactly `i` elements in `a` are
+`choose |a| i · choose |b| (k - i)` (for `i ≤ k`). This is a bijection with
+`(i`-subsets of `a`) × (`(k - i)`-subsets of `b`), via the disjoint-union
+decomposition `L = (L ∩ a) ∪ (L \ a)` and `L \ a ⊆ b`.
+
+**Committed foundation (Nov 12, `Shufflemath/FinsetCombinatorics.lean`):**
+`union_inter_parts` — for `A ⊆ a`, `B ⊆ b`, `a ∩ b = ∅`:
+`(A ∪ B) ∩ a = A` and `(A ∪ B) ∩ b = B`. The disjoint-union decomposition is
+unique, so the `(A, B)` pair is recoverable from its union.
+
+**Wall hit (Nov 12):** the next lemma, `sdiff_in_complement`
+(`L \ a ⊆ b ∧ (L ∩ a) ∪ (L \ a) = L`), trips on applying the subset hypothesis
+`hLs : L ⊆ s` to a membership `hxL : x ∈ L` to get `x ∈ s`. In this build,
+`Finset ⊆` is `s.1 ⊆ t.1` (a `Set`/`Multiset`-based relation, see
+`Finset.subset_def`/`mem_coe`), and:
+- `exact hLs hxL` **succeeds when `x ∈ s` is the direct goal**;
+- but `have hxs : x ∈ s := hLs hxL` (and `:= by exact hLs hxL`) **fail** with
+  "Type mismatch: After simplification, term" / "assumption failed".
+
+The `rcases`-derived `hxL` also behaves differently from a binder-derived
+`hxL`. The clean fix is to route the membership through `Finset.mem_coe`
+(`x ∈ (L : Set) ↔ x ∈ L`) explicitly, or to prove the two parts via the `Set`
+coercion where `hLs` applies cleanly. Once `sdiff_in_complement` is in, the
+`inter_powersetCard_count` counting lemma follows by showing the `Finset.image`
+of the map `L ↦ (L ∩ a, L \ a)` over the filtered `k`-subsets equals the
+`(i`-subsets of `a`) × (`(k - i)`-subsets of `b`) `Finset` product (whose
+cardinality is the product of the two `choose`s), with injectivity via
+`union_inter_parts`.
+
+Next agent: rework `sdiff_in_complement` with an explicit `Finset.mem_coe`
+conversion for the `hLs` application, then build `inter_powersetCard_count`,
+then instantiate for the left pile (`leftHyper`) and right pile (`rightHyper`)
+to close part (i). Part (ii) (within-count uniformity) remains the genuinely
+hard symmetry statement.
