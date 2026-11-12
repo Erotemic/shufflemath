@@ -190,6 +190,26 @@ theorem mixedRadix_unique {a x y j i : Nat} (ha : 0 < a) (hy : y < a) (hi : i < 
     exact Nat.mul_left_cancel ha h2'
   exact ⟨hxy, hyi⟩
 
+/-- The per-card sorting-compatibility predicate (F4.1): a card lands in the
+  lexicographic bucket `(major = j, minor = i)` exactly when its combined
+  `major*a + minor` label equals `j*a + i`. This is `mixedRadix_unique` applied
+  per card, and it is the pointwise bridge between the combined-label sort
+  (`stableBuckets (a*b) (combineLabels …)`) and the lexicographic sort
+  (`lexBuckets`). The bounds on the *given* bucket indices `j < b` and `i < a`
+  are all that is needed; the card's own components are in range by `Fin`. -/
+theorem combinedLabel_pred {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
+    (minor : Fin n → Fin a) (major : Fin n → Fin b) (c : Fin n) (j i : Nat)
+    (hi : i < a) :
+    (major c).val * a + (minor c).val = j * a + i ↔
+      (major c).val = j ∧ (minor c).val = i := by
+  have hnc : (minor c).val < a := (minor c).isLt
+  constructor
+  · intro h
+    rcases mixedRadix_unique ha hnc hi h with ⟨h1, h2⟩
+    exact ⟨h1, h2⟩
+  · rintro ⟨h1, h2⟩
+    rw [h1, h2]
+
 /-!
 ## The label reparameterization (F4.1)
 
