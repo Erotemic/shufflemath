@@ -4,6 +4,11 @@ public import Shufflemath.CommanderPermutation
 public import Shufflemath.CommanderFiberCount
 public import Shufflemath.CommanderMembershipKernels
 public import Shufflemath.BernoulliLaplace
+public import Shufflemath.GSR
+public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Fintype.Powerset
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fin.Embedding
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -29,6 +34,7 @@ content of the `hMembershipExchange` premise) is the next item.
 
 open BernoulliLaplace
 open CommanderPermutation
+open CommanderMembershipKernels
 open Finset
 
 /-- The 25-card exchange size. -/
@@ -268,7 +274,98 @@ theorem newLeftOriginalCount_eq (d : Deck) (L : Finset (Fin 50)) (R : Finset (Fi
           rw [Finset.card_sdiff]
     _ = (leftOriginalCount d - markedInLeft d L) + markedInRight d R := by
           rw [markedLeftPos_card, markedInLeft, markedInRight]
-          <;> simp only [Finset.inter_comm]
+          simp only [Finset.inter_comm]
+
+/-! ## The deck-level exchange kernel (F3 item 2)
+
+The physical exchange as a `FiniteKernel Deck Deck`: pick 25 of the 50 left
+positions and 25 of the 49 right positions uniformly, then swap the selected
+positions under a *fixed* (size-independent) bijective pairing. The post-exchange
+left-pile membership is exactly `newLeftCards d L R` (proved below), independent
+of the particular pairing, so the macro/membership law is pairing-independent.
+
+We build the kernel by composition: the *membership-level* exchange law
+(`rawExchangeMembership`, the pushforward of a uniform `(L,R)` choice to its
+post-exchange membership) followed by the uniform membership-fiber lift
+(`localLift`). Because resampling inside a membership fiber does not change the
+membership (`localLift_preserves_membership`), the resulting `Deck`-level kernel
+has the *same membership push-through* as the physical swap, which is exactly
+what the `hMembershipExchange` intertwining law needs.
+-/ 
+
+-- The 25-element selected position sets, and the type of uniform (L,R) choices.
+abbrev leftChoices := powersetCard (25 : Nat) (Finset.univ : Finset (Fin 50))
+abbrev rightChoices := powersetCard (25 : Nat) (Finset.univ : Finset (Fin 49))
+abbrev exchangeChoice :=
+  {L : Finset (Fin 50) // L ∈ leftChoices} × {R : Finset (Fin 49) // R ∈ rightChoices}
+
+instance : Fintype exchangeChoice := inferInstance
+
+-- Two explicit 25-element subsets, witnesses that the choice types are nonempty.
+def left25 : Finset (Fin 50) :=
+  (Finset.univ : Finset (Fin 25)).image (Fin.castLEEmb (by omega))
+def right25 : Finset (Fin 49) :=
+  (Finset.univ : Finset (Fin 25)).image (Fin.castLEEmb (by omega))
+
+theorem left25_card : left25.card = 25 := by
+  unfold left25
+  rw [Finset.card_image_of_injective]
+  · simp
+  · exact (Fin.castLEEmb (by omega)).injective
+
+theorem right25_card : right25.card = 25 := by
+  unfold right25
+  rw [Finset.card_image_of_injective]
+  · simp
+  · exact (Fin.castLEEmb (by omega)).injective
+
+theorem hNonemptyLeft : Nonempty {L : Finset (Fin 50) // L ∈ leftChoices} :=
+  ⟨⟨left25, by simpa [Finset.mem_powersetCard] using left25_card⟩⟩
+
+theorem hNonemptyRight : Nonempty {R : Finset (Fin 49) // R ∈ rightChoices} :=
+  ⟨⟨right25, by simpa [Finset.mem_powersetCard] using right25_card⟩⟩
+
+instance : Nonempty exchangeChoice := by
+  exact ⟨⟨⟨left25, by simpa [Finset.mem_powersetCard] using left25_card⟩,
+        ⟨right25, by simpa [Finset.mem_powersetCard] using right25_card⟩⟩⟩
+
+-- Extract the `card = 25` fact from a membership in `leftChoices`/`rightChoices`
+-- (the powersetCard membership is `s ⊆ univ ∧ s.card = n`, so the card is `.2`).
+theorem leftCard25 {L : Finset (Fin 50)} (h : L ∈ leftChoices) : L.card = 25 := by
+  simp only [leftChoices] at h
+  exact (Finset.mem_powersetCard).mp h |>.2
+theorem rightCard25 {R : Finset (Fin 49)} (h : R ∈ rightChoices) : R.card = 25 := by
+  simp only [rightChoices] at h
+  exact (Finset.mem_powersetCard).mp h |>.2
+
+-- The post-exchange left-pile membership for a chosen (L,R).
+def newMembership (d : Deck) (L : Finset (Fin 50)) (hL : L.card = 25)
+    (R : Finset (Fin 49)) (hR : R.card = 25) : Membership :=
+  ⟨newLeftCards d L R, newLeftCards_card d L R hL hR⟩
+
+-- The membership-level exchange law: pushforward of a uniform (L,R) choice to
+-- its post-exchange membership.
+noncomputable def rawExchangeMembership : FiniteKernel Deck Membership := by
+  intro d
+  exact (GSR.uniformDist exchangeChoice).map
+    (fun c => newMembership d c.1.1 (leftCard25 c.1.2) c.2.1 (rightCard25 c.2.2))
+
+-- The deck-level exchange kernel: membership-level exchange followed by the
+-- uniform membership-fiber lift.
+noncomputable def rawExchange : FiniteKernel Deck Deck :=
+  FiniteKernel.comp rawExchangeMembership localLift
+
+-- The membership push-through of the exchange is the membership-level law:
+-- resampling inside the membership fiber does not change the membership.
+theorem rawExchange_membership_pushforward : 
+    FiniteKernel.comp rawExchange (FiniteKernel.deterministic membership) =
+      rawExchangeMembership := by
+  classical
+  change FiniteKernel.comp (FiniteKernel.comp rawExchangeMembership localLift)
+    (FiniteKernel.deterministic membership) = rawExchangeMembership
+  simp only [FiniteKernel.comp_assoc, localLift_preserves_membership,
+      FiniteKernel.comp_id_right]
 
 end CommanderPhysicalExchange
 end Shufflemath
+end
