@@ -8,20 +8,6 @@ public import Mathlib.Tactic
 namespace Shufflemath
 namespace GSR
 
-/-!
-## Small `Bool` helpers
-
-`Bool` facts used by the F4.1 sorting-compatibility `Bool`/`==`/`&&` filter
-bridge.
--/
-
--- `(x && y) = true` holds exactly when both are `true`. A clean `Iff` form
--- (the `=`-of-`Prop` `Bool.and_eq_true_eq_eq_true_and_eq_true` is an `Eq` of
--- props, not an `Iff`, and does not compose with the `↔` from
--- `Bool.eq_iff_iff`).
-theorem and_true_iff (x y : Bool) : (x && y) = true ↔ (x = true) ∧ (y = true) := by
-  by_cases hx : x = true <;> by_cases hy : y = true <;> simp
-
 
 /-!
 # Inverse GSR shuffles via finite labels
@@ -364,6 +350,59 @@ theorem combineVal_pred_eq {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
     exact (combinedLabel_pred ha hb minor major c (k/a) (k%a) (Nat.mod_lt k ha)).mp h
   · rintro ⟨h1, h2⟩
     rw [hval, hk, h1, h2]
+
+-- F4.1 per-card `Bool`/`==`/`&&` filter bridge: the combined numeric value
+-- equals `k` (as a `Bool` `==`) iff the major equals `k/a` and the minor
+-- equals `k%a` (as `Bool` `==` / `&&`). This is exactly the per-card
+-- predicate `List.filter` uses in `stableBuckets`, so the sorting-compatibility
+-- can be assembled from it. Proof: `Bool.eq_iff_iff.mpr` turns the `Bool`
+-- equality into an `Iff` of `= true`s; `beq_iff_eq` and `Bool.and_eq_true_iff`
+-- carry each side to the `=`/`Prop` world, leaving `combineVal_pred_eq`.
+theorem combineVal_filter_eq {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
+    (minor : Fin n → Fin a) (major : Fin n → Fin b) (c : Fin n) (k : Nat) :
+    ((combineLabels ha hb minor major c).val == k) =
+      (((major c).val == k / a) && ((minor c).val == k % a)) := by
+  apply Bool.eq_iff_iff.mpr
+  simp only [beq_iff_eq, Bool.and_eq_true_iff]
+  exact combineVal_pred_eq ha hb minor major c k
+
+-- F4.1 sorting compatibility: product-label stable sorting (by the combined
+-- `(a*b)` value) equals lexicographic stable sorting (by major, then minor).
+-- Assembled by transporting the bucket list along `rangeMap_divmod_eq_nested`,
+-- then `List.flatMap_map` and `List.flatMap_assoc`.
+theorem stableBuckets_combine_eq_lex {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
+    (minor : Fin n → Fin a) (major : Fin n → Fin b) (deck : List (Fin n)) :
+    stableBuckets (a*b) (combineLabels ha hb minor major) deck =
+      lexBuckets a b minor major deck := by
+  let bucket : Nat × Nat → List (Fin n) :=
+    fun p => deck.filter (fun c => ((major c).val == p.1) && ((minor c).val == p.2))
+  have hfilter (k : Nat) :
+      deck.filter (fun c => (combineLabels ha hb minor major c).val == k) =
+        bucket (k / a, k % a) := by
+    dsimp only [bucket]
+    apply congrArg (fun p : Fin n → Bool => deck.filter p)
+    funext c
+    exact combineVal_filter_eq ha hb minor major c k
+  have hfun :
+      (fun k : Nat => deck.filter (fun c => (combineLabels ha hb minor major c).val == k)) =
+        (fun k : Nat => bucket (k / a, k % a)) := by
+    funext k
+    exact hfilter k
+  calc
+    stableBuckets (a*b) (combineLabels ha hb minor major) deck =
+        (List.range (a*b)).flatMap (fun k => bucket (k/a, k%a)) := by
+      unfold stableBuckets
+      rw [hfun]
+    _ = ((List.range (a*b)).map (fun k => (k/a, k%a))).flatMap bucket := by
+      rw [List.flatMap_map]
+    _ = ((List.range b).flatMap
+          (fun j => (List.range a).map (fun i => (j, i)))).flatMap bucket := by
+      rw [rangeMap_divmod_eq_nested a b ha]
+    _ = (List.range b).flatMap
+          (fun j => (List.range a).flatMap (fun i => bucket (j, i))) := by
+      rw [List.flatMap_assoc]
+      simp only [List.flatMap_map]
+    _ = lexBuckets a b minor major deck := rfl
 
 /-- The `combineLabels`/`splitLabels` reparameterization is a bijection: a
   single `(a*b)`-alphabet label array is the same data as an independent `Fin a`
