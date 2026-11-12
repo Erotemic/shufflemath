@@ -90,6 +90,30 @@ theorem permutedLeftCards_eq (d : Deck) (pl : Equiv.Perm (Fin 50)) (pr : Equiv.P
   -- then reindex by the bijection pl
   exact hL.trans (univImage_reindex (fun i => d (leftPosition i)) pl)
 
+-- Building blocks for the bijection proof: a left position maps to a left
+-- position, and a right position maps to a right position. The `if` in
+-- `pileRelabelFn` has a fresh binder, so the reduction is driven by `by_cases`
+-- on the same condition (which `simp` then uses to close the `if`), not by the
+-- hypothesis directly.
+
+-- A left position (`p.val < 50`) maps to a left position.
+theorem pileRelabelFn_leftVal (pl : Equiv.Perm (Fin 50)) (pr : Equiv.Perm (Fin 49))
+    (p : Fin 99) (h : p.val < 50) : (pileRelabelFn pl pr p).val < 50 := by
+  by_cases hlt : p.val < 50
+  · dsimp only [pileRelabelFn]
+    simp [hlt, leftPosition]
+  · exfalso
+    omega
+
+-- A right position (`50 ≤ p.val`) maps to a right position.
+theorem pileRelabelFn_rightVal (pl : Equiv.Perm (Fin 50)) (pr : Equiv.Perm (Fin 49))
+    (p : Fin 99) (h : 50 ≤ p.val) : 50 ≤ (pileRelabelFn pl pr p).val := by
+  by_cases hlt : p.val < 50
+  · exfalso
+    omega
+  · dsimp only [pileRelabelFn]
+    simp [hlt, rightPosition]
+
 end CommanderLocalGSR
 end Shufflemath
 end

@@ -21,6 +21,11 @@ the `k`-invariant.
 - **`univImage_reindex`** — the general reindexing lemma: any injective `f`
   satisfies `univ.image f = univ.image id` (so a bijection leaves the full
   image unchanged). The core is proved by this.
+- **`pileRelabelFn_leftVal` / `pileRelabelFn_rightVal`** — a left position maps
+  to a left position and a right to a right. The `if` in `pileRelabelFn` has a
+  fresh binder, so the reduction is driven by `by_cases` on the same condition
+  (which `simp` then uses to close the `if`) rather than the hypothesis
+  directly. These are the building blocks for the injective/surjective proof.
 
 ## Remaining: package as a `FiniteKernel Deck Deck`
 
