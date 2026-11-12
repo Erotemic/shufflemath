@@ -1,11 +1,15 @@
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-12. **Source basis:** the Nov 12 session — F4.1 index-level
-content + `combineVal_pred_eq` (the `=`/`Prop` per-card bridge) proved; F4.2
-**core** (`permutedLeftCards_eq`: a within-pile relabel cannot change the
-membership state) proved; F3 item 3 core still open. The Nov 11 snapshot below
-is reference. This is an *operational handoff*. `lean_plan.md` is the authority
-for overall scope and priority; `AGENTS.md` governs repository behavior.
+**Updated:** 2026-11-12 (17 commits). **Source basis:** F4.1 `combineVal_pred_eq`
+(the `=`/`Prop` per-card bridge) + all index-level ingredients proved; F4.2 **core**
+(`permutedLeftCards_eq`: a within-pile relabel cannot change the membership state)
++ `pileRelabelFn_leftVal`/`_rightVal` helpers proved; new
+`Shufflemath/FinsetCombinatorics` (`union_inter_parts`, the uniqueness foundation
+for the F3 item-3 hypergeometric count). F3 item 3 core (both parts), F4.2
+bijection, F4.1 `Bool`-bridge kernel equality still open. The Nov 11 snapshot
+below is reference. This is an *operational handoff*. `lean_plan.md` is the
+authority for overall scope and priority; `AGENTS.md` governs repository
+behavior.
 
 ## Standing rules for the agent reading this document (non-negotiable)
 
@@ -173,6 +177,33 @@ Priority order for the remaining items:
 Apply the stuck protocol (`-- TODO(proof)`, commit what builds, move on) after
 ~2 failed iterations on any single proof. Re-run `./dev/verify_next_phase.sh`
 after each tranche.
+
+**Walls hit this session (do not re-derive):**
+- **`Finset ⊆` is `Set`/`Multiset`-based** (`Finset.subset_def`, `mem_coe`).
+  Applying a subset hypothesis `hLs : L ⊆ s` to a membership `hxL : x ∈ L` to
+  get `x ∈ s`: `exact hLs hxL` works when `x ∈ s` is the *direct goal*, but
+  `have h : x ∈ s := hLs hxL` (and `:= by exact hLs hxL`) fail with "Type
+  mismatch / assumption failed". A `rcases`-derived `hxL` behaves differently
+  from a binder-derived one. Route through `Finset.mem_coe` or make `x ∈ s`
+  the direct goal. (This blocked `sdiff_in_complement`; see
+  `docs/f3_membership_exchange.md`.)
+- **`pileRelabelFn`'s `if h : p.val < 50` has a fresh binder.** Reduce it with
+  `dsimp only [pileRelabelFn]` + `simp [hlt]` (or `by_cases hlt` then
+  `split_ifs`), not with the hypothesis directly. The `leftVal`/`rightVal`
+  helpers use exactly this. The `Fin` proof-irrelevance of `⟨v, h1⟩` vs
+  `⟨v, h2⟩` (same `val`, different `isLt`) means `⟨v, h1⟩ = ⟨v, h2⟩` needs
+  `Fin.ext`/`rfl` on `v`, not definitional equality.
+- **`Bool`/`==`/`&&` filter bridge** (`List.filter_congr` leaves a `Bool`-
+  equality goal): `Nat.beq_eq` bridges a *bare* `==`↔`=` comparison and
+  `(b1 && b2) = true ↔ (b1 = true) ∧ (b2 = true)` is simp-able, but the
+  full `Bool`-equality goal resists `simp [Nat.beq_eq]` in this build. The
+  `by_cases`/`split_ifs` route on the three `==` bools (using `combineVal_pred_eq`
+  in the `=` world) is the identified path — not yet completed.
+- **F4.2 injective proof**: the same-pile case reduces to
+  `leftPosition (pl ⟨p⟩) = leftPosition (pl ⟨q⟩)` → `⟨p⟩ = ⟨q⟩` → `p.val =
+  q.val` (via `leftPosition_injective` + `pl.injective` + `Fin.ext`); the
+  cross-pile cases use `pileRelabelFn_leftVal`/`_rightVal` (disjoint ranges).
+  The `if`-reduction + `Fin` proof-irrelevance are the fiddly parts.
 
 ### (Prior state, Nov 11 — reference)
 
