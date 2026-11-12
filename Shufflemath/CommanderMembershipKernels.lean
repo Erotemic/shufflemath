@@ -393,8 +393,17 @@ noncomputable def membershipLift : FiniteKernel CommanderState Membership :=
         exact_mod_cast Nat.ne_of_gt hpos
       field_simp [hnonzero])
 
-/-- The mass of `apply μ K` at `b` is the two-level weighted sum over the
-  intermediate states: the standard pushforward formula. -/
+/-- The pointwise mass of the membership-lift kernel: `1 / membershipFiberCount k`
+  when `m` carries `k` marked cards (i.e. `m` is in the `MembershipFiber k`),
+  else `0`. -/
+@[simp]
+theorem membershipLift_mass (x : CommanderState) (m : Membership) :
+    Dist.mass (membershipLift x) m =
+      (if membershipCount m = commanderLeftCount x
+         then (1 : Rat) / (↑(membershipFiberCount (commanderLeftCount x)) : Rat)
+         else 0) := by
+  simp [membershipLift, Dist.ofFun, Dist.mass]
+
 theorem apply_mass_eq_sum
     {α β : Type*} [Fintype α] [DecidableEq α]
     (μ : Dist α) (K : FiniteKernel α β) (b : β) :
