@@ -117,56 +117,39 @@ attempts, but is no longer the recommended route.
 * F2c-ii/iii: `membershipLift` (normalised to sum 1) + `apply_mass_eq_sum`.
 * F2c-iv-a: `fiberSet_project_decomp` + `membershipFiber_disjoint`.
 
-**Resume at F2c-iv-b — the F2 capstone**:
-`membershipLift.comp localLift = FiberDisintegration.fiberLaw project
-project_surjective`.
+**F2 is COMPLETE (commit `19d417c`) — resume at F3.**
 
-**Current status (post-Nov-11, this session).** Since the Nov 11 intervention,
-`localLift` *is* the generic `FiberDisintegration.fiberLaw membership
-membership_surjective`, and `localLift_mass` is proved (one line, via
-`fiberLaw_mass`) and is in the tree. Earlier session notes claiming
-"`localLift_mass` is removed" or "the `Finsupp.mapDomain` pushforward recurses"
-are **superseded** by that redefinition — do not re-attempt the
-`mapDomain`/`DecidableEq (Equiv.Perm …)` routes.
+The F2c-iv-b capstone `membershipLift.comp localLift =
+FiberDisintegration.fiberLaw project project_surjective` is **proved** (full
+*kernel* form, not just point-mass). The earlier notes in this section and in
+[`f2c_ivb_sum_collapse.md`](f2c_ivb_sum_collapse.md) describing a
+normalisation / `ext` wall are **superseded**: the wall was the *default
+`simp` set* (and `field_simp`, which uses it) unfolding `membership`/`leftCards`
+(terms depending on `d : Equiv.Perm (Fin 99)`). Written with `simp only` over an
+explicit lemma list, `ite_eq_left`/`ite_eq_right` `ite` reductions, and
+`by_cases` on the `Membership`/`Nat` equalities, the proof never recurses, and
+the kernel-level lift is just `StdSimplex.weights_inj` + `Finsupp.ext` (both
+non-recursing over `Finsupp Deck`). **Do not re-attempt the `Finsupp.mapDomain`
+or `DecidableEq (Equiv.Perm …)` pushforward routes** — they are obsolete.
 
-What I established this session (measured by isolated probes):
-- The capstone **statement elaborates cleanly** — `#check` of
-  `fiberLaw project project_surjective` gives `FiniteKernel CommanderState
-  Deck`; a `by sorry` body compiles. Not a statement-level problem.
-- A **point-mass** proof (`mass (comp … x) d = mass (fiberLaw … x) d`) is
-  down to a **single** mechanical step: the two-level sum
-  `∑_m mass(membershipLift x) m * mass(localLift m) d` collapses to the one term
-  `m = membership d`, because the `localLift` row at `d` is a *selector*
-  (`0` elsewhere, `1/(50!·49!)` there — a constant, `fiberSet_membership_card`).
-  That collapse is the `Fintype`-sum point-mass fact
-  `(∑_m (if m = membership d then 1 else 0) : Rat) = 1`, which reduces via
-  `sum_if_constant` to the **non-recursing** filter-cardinality
-  `(Finset.univ.filter (fun m => m = membership d)).card = 1`.
-- What actually recurses (200k-heartbeat `whnf` timeouts) is the
-  `funext`/`ext`/`apply funext`/`refine funext` **tactic** on a `Dist Deck`
-  (`StdSimplex Rat Deck`) or `FiniteKernel … Deck` **equality** — the
-  `Fintype (Equiv.Perm (Fin 99))`/`DecidableEq` instances are the heavy terms;
-  `ext` on even a `fiberLaw` *self*-equality times out. `by_cases` on a
-  `Membership` (or `Nat`) equality, `rw` of the compiled `*_mass` lemmas,
-  `apply_mass_eq_sum` at `(Membership, Deck)`, and the filter-cardinality all
-  do **not** recurse.
+**Next action: F3 (25-position physical exchange).** In
+`Shufflemath/CommanderPhysicalExchange`, F3 items 1 (the `newLeftCards d L R`
+membership definition) and the macro-count transition (`newLeftOriginalCount_eq`)
+are done. The next items:
+1. **F3 item 2:** the deck-level `rawExchange : FiniteKernel Deck Deck` kernel
+   (choose 25 distinct positions from each pile uniformly; swap in a fixed
+   bijective pairing). Use counting/symmetry, not 99! enumeration.
+2. **F3 item 3:** discharge the `hMembershipExchange` premise of
+   `CommanderFullDeckDisintegration.two_physical_perfect_exchanges_uniform_of_counts`
+   through `PhysicalExchangeReduction.intertwining_of_membership_exchange` — now
+   unblocked since F2 (the two-layer membership fiber law) is complete.
+3. **F3 item 4:** the unconditional physical-perfect-local 2-exchange TV
+   theorem.
 
-**Net:** the mathematical content is provable at the `mass`/`Rat` level (the
-point-mass form). The only gap is `Fintype`-sum ↔ `Finset.sum`-over-`univ`
-definitional plumbing (an `rw` lambda-matching hiccup), *not* a normalization
-wall. The **kernel-equality** form additionally needs a final `funext`+`ext`
-over `Dist Deck` and is blocked on that extensionality wall; the point-mass
-form is the provable deliverable and the two are equivalent by function +
-`StdSimplex` extensionality.
-
-**Next action.** Read
-[`f2c_ivb_sum_collapse.md`](f2c_ivb_sum_collapse.md) — it has the full proof
-skeleton, the measured recurses/does-not list, and three concrete questions
-for GPT (the exact lemma sequence for the sum collapse; a one-shot `Fintype`
-point-mass lemma; and confirmation that the point-mass form is the acceptable
-F2c-iv-b statement). Once the sum collapse closes, run
-`./dev/verify_next_phase.sh`, then proceed to **F3** (25-position
-`rawExchange` membership law). The F1 API notes below remain useful reference.
+After F3, run `./dev/verify_next_phase.sh`, then **F4** (the standalone GSR
+product-alphabet in `GSR.lean` — sorting-compatibility / kernel equality — and
+the local-GSR kernel / row-wise TV / telescope). The F1 API notes below remain
+useful reference.
 
 **F4.1 (standalone GSR product-alphabet) progress — independent of the
 `Equiv.Perm` wall, in `GSR.lean` (all green, committed):** the single-label

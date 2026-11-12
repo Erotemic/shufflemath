@@ -159,14 +159,13 @@ for uniform targets.
 Neither `localLift` nor a physical local shuffle may change pile membership.
 Do not confuse `localLift` with the canonical oracle's count-fiber reset.
 
-> **Progress (F2, 2026-11):** In `Shufflemath/CommanderMembershipKernels`:
+> **Progress (F2, 2026-11): COMPLETE.** In `Shufflemath/CommanderMembershipKernels`:
 > items 1–2 (`Membership`, `membership`, `membershipCount`, and the
-> count-agreement `membershipFiber_iff`) and item 3 (`localLift` +
-> `localLift_preserves_membership`) are proved. Of item 4, the `membershipLift`
-> kernel (normalised to sum 1 via the F1b fiber count) and the generic
-> `apply_mass_eq_sum` pushforward law are proved, and the *structural*
-> decomposition `fiberSet_project_decomp` (the `project` fiber is the disjoint
-> union of the membership fibers) plus `membershipFiber_disjoint` are proved.
+> count-agreement `membershipFiber_iff`), item 3 (`localLift` +
+> `localLift_preserves_membership`), and item 4 (`membershipLift` +
+> `apply_mass_eq_sum` + the F2c-iv-b capstone
+> `membershipLift_localLift_eq_fiberLaw`) are all proved. The F2 disintegration
+> layer is done.
 >
 **New preferred intervention (Nov 11):** Model `localLift` as the already
 proved generic `FiberDisintegration.fiberLaw membership membership_surjective`.
@@ -176,35 +175,27 @@ bridge from `CommanderFiberMembership.fiberFin_card`; details and proof order
 are in [`f2_fiberlaw_unblock.md`](f2_fiberlaw_unblock.md). This is a proposed
 route, not a theorem already in the tree.
 
-> **Status (F2c-iv-b, the capstone, Nov 12):** the two-layer equality
+> **COMPLETE (F2c-iv-b, the capstone, Nov 12):** the two-layer equality
 > `membershipLift.comp localLift = FiberDisintegration.fiberLaw project
-> project_surjective`. Since the Nov 11 intervention, `localLift` *is* the
-> generic `fiberLaw membership membership_surjective`, and `localLift_mass` is
-> proved (one line, via `fiberLaw_mass`) and is in the tree.
+> project_surjective` is **proved** (commit `19d417c`), in the full
+> *kernel* form — not just the point-mass form. With this, **all of F2 is
+> complete**.
 >
-> The capstone **statement elaborates cleanly** (verified: `#check` of the
-> `fiberLaw project project_surjective` term gives `FiniteKernel
-> CommanderState Deck`; a `by sorry` body compiles). A **point-mass** proof is
-> down to a *single* mechanical step: the two-level sum
-> `∑_m mass(membershipLift x) m * mass(localLift m) d` collapses to the one
-> term `m = membership d` (the `localLift` row at `d` is a *selector*: `0`
-> elsewhere, `1/(50!·49!)` there, a constant since every membership fiber has
-> the same cardinality). That collapse is the `Fintype`-sum point-mass fact
-> `(∑_m (if m = membership d then 1 else 0) : Rat) = 1`, which reduces via
-> `sum_if_constant` to the non-recursing filter-cardinality
-> `(Finset.univ.filter (fun m => m = membership d)).card = 1`. The remaining
-> work is purely `Fintype`-sum ↔ `Finset.sum`-over-`univ` definitional plumbing
-> (a `rw` lambda-matching hiccup), **not** a normalization wall.
+> *How the wall actually broke (revising the Nov 12 difficulty note):* the
+> recursion was **not** a fundamental normalisation wall. It was the **default
+> `simp` set** (and `field_simp`, which uses it) unfolding `membership` / `leftCards`
+> (which depend on `d : Equiv.Perm (Fin 99)`). Once the proof is written with
+> `simp only` over an *explicit* lemma list (never the default set),
+> `if_pos`/`if_neg`-style `ite` reductions (`ite_eq_left`/`ite_eq_right`), and
+> `by_cases` on the `Membership`/`Nat` equalities, none of the `Rat`/`Finset`
+> arithmetic recurses. The kernel-level lift is then just
+> `StdSimplex.weights_inj` + `Finsupp.ext` (both confirmed non-recursing over
+> `Finsupp Deck`), applied to the point-mass equality.
 >
-> The **kernel-equality** form (vs. the point-mass form) additionally needs a
-> final `funext` + `ext` over `Dist Deck`, and *that* step recurses (the
-> `Fintype (Equiv.Perm (Fin 99))` / `DecidableEq` instances are the heavy
-> terms); `ext` on even a `fiberLaw` self-equality times out. So the point-mass
-> form is the provable deliverable and the kernel form is blocked on that
-> extensionality wall.
->
-> **Full difficulty note, measured probe results, and three concrete questions
-> for GPT:** [`f2c_ivb_sum_collapse.md`](f2c_ivb_sum_collapse.md).
+> The earlier "point-mass is the deliverable / kernel form is blocked" framing
+> in this file and in [`f2c_ivb_sum_collapse.md`](f2c_ivb_sum_collapse.md) is
+> **superseded**: the kernel-equality form is proved. That difficulty note is
+> kept as a record of the diagnosis but no longer reflects the open work.
 
 ### F3. Prove the 25-position physical-exchange membership law
 
@@ -218,8 +209,14 @@ route, not a theorem already in the tree.
 > positions — the exact count content of the `hMembershipExchange` premise,
 > stated at the selected-set level. *Still open:* the deck-level
 > `rawExchange : FiniteKernel Deck Deck` kernel (item 2), the full
-> `hMembershipExchange` law (item 3, depends on the F2c-iv-b capstone), and the
-> unconditional physical-perfect-local 2-exchange TV theorem (item 4).
+> `hMembershipExchange` law (item 3), and the unconditional physical-perfect-local
+> 2-exchange TV theorem (item 4).
+>
+> **F2 dependency now satisfied:** the F2c-iv-b capstone
+> (`membershipLift_localLift_eq_fiberLaw`) is proved (commit `19d417c`), so the
+> `hMembershipExchange` law (item 3) — which composes the physical exchange with
+> the two-layer membership fiber law — is now unblocked. F3 is the next active
+> work item.
 
 **Dependency:** F2.
 

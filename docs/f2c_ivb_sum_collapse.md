@@ -1,5 +1,16 @@
 # F2c-iv-b capstone: the two-level sum collapse (difficulty note)
 
+> **RESOLVED (Nov 12, commit `19d417c`):** the F2c-iv-b capstone
+> `membershipLift.comp localLift = FiberDisintegration.fiberLaw project
+> project_surjective` is **proved** in the full kernel form. The "wall" this
+> note describes was the **default `simp` set** (and `field_simp`) unfolding
+> `membership`/`leftCards` — not a fundamental normalisation barrier. Using
+> `simp only` over an explicit lemma list, `ite_eq_left`/`ite_eq_right`, and
+> `by_cases` on the `Membership`/`Nat` equalities, the proof never recurses; the
+> kernel lift is `StdSimplex.weights_inj` + `Finsupp.ext`. This note is kept as a
+> record of the diagnosis; the questions below are answered (the *kernel* form
+> is the deliverable, and it is proved). Do not treat it as open work.
+
 **Date:** 2026-10-21. **Author:** autonomous Lean build session.
 **Audience:** GPT / any reviewer with Mathlib context. This note records exactly
 where the F2c-iv-b capstone is blocked and what is already known, so the next
