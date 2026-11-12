@@ -183,3 +183,43 @@ conversion for the `hLs` application, then build `inter_powersetCard_count`,
 then instantiate for the left pile (`leftHyper`) and right pile (`rightHyper`)
 to close part (i). Part (ii) (within-count uniformity) remains the genuinely
 hard symmetry statement.
+
+## November 12: GPT-6 reversibility/overlap-count route (new approach)
+
+GPT-6 (`docs/qwen_unblock_nov12.md`) proposed a **more direct** route that
+bypasses both the hypergeometric `sdiff_in_complement` wall *and* the hard
+within-count uniformity (part ii) by using the existing Bernoulli-Laplace
+detailed-balance theorem. The key identities:
+
+- The membership transition is **symmetric**:
+  `K(S,T) = 1 / (choose(50,25)·choose(49,25))` when `|S∩T| = 25`, else `0`.
+  The `(A,B) ↦ T` map is injective (GPT sub-lemma 1).
+- `Overlap(x,y) = transitionNumerator(99,50,50,25,y,x)` (the *reversed*
+  numerator), and detailed balance gives the point mass
+  `= transitionWeight(...)/F(y)` with `F(z) = choose(50,z)·choose(49,50-z)`.
+  Within-count uniformity follows from the same computation (no `Sym(50)×Sym(49)`
+  action argument).
+
+**Committed foundation (Nov 12, `Shufflemath/FinsetCombinatorics.lean`, commit
+`a1e5345`):** `isExchangePair` + `exchangePair_unique_B`/`_A` (the pair is
+exactly `(S\T, T\S)`) + `cardSdiffInter`/`_2` (the `|S\T| = |S|-|S∩T|` card
+computations). This is GPT sub-lemma 1.
+
+**Wall hit (Nov 12):** the *existence* direction (`exchangePair_exists`: the
+canonical `(S\T, T\S)` is a valid 25/25 exchange when `|S∩T| = 25`) compiles for
+its individual pieces in isolation, but assembling the 5-conjunct
+`isExchangePair` in the `Fintype` context hits a `Finset`-quotient
+`rw`/`by simpa`-in-term-position quirk: `have h := by simpa using (Finset ⊆)`
+and `rw [card_sdiff_of_subset hsub]` mis-resolve when the surrounding theorem
+has a `Fintype α` instance (the implicit `s t`/`s₁ s₂` in the subset/card
+lemmas bind to the wrong metavariables). The fix pattern that works is a
+double-`by` `have` block (`have hBnoS := by have hxs := by simpa using ...`)
+and explicit `s t` args to the `sdiff_inter_self_*` rewrites — but even that
+only closed in isolation, not in the full 5-conjunct assembly. Next agent: get
+`exchangePair_exists` compiling (try proving the 5th conjunct
+`(S∩T) ∪ (T\S) = T` and the two card facts as separate top-level lemmas, then
+`exact ⟨...⟩`), then build the membership-level mass identity using
+`Shufflemath/BernoulliLaplaceFiber.lean`'s `detailedBalance` +
+`Shufflemath/BernoulliLaplaceCommanderBridge.lean` (check import direction
+first). The `transitionWeight 99 50 25` / `commanderExchange25` /
+`commanderToBL` symbols are in `Shufflemath/BernoulliLaplace.lean`.
