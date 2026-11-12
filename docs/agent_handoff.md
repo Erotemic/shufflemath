@@ -117,7 +117,7 @@ attempts, but is no longer the recommended route.
 * F2c-ii/iii: `membershipLift` (normalised to sum 1) + `apply_mass_eq_sum`.
 * F2c-iv-a: `fiberSet_project_decomp` + `membershipFiber_disjoint`.
 
-**F2 is COMPLETE (commit `19d417c`) — resume at F3.**
+**F2 is COMPLETE (commit `19d417c`). F3 items 1, 2, and 3a are COMPLETE. F3 item 3 core is the current hard item.**
 
 The F2c-iv-b capstone `membershipLift.comp localLift =
 FiberDisintegration.fiberLaw project project_surjective` is **proved** (full
@@ -132,19 +132,35 @@ the kernel-level lift is just `StdSimplex.weights_inj` + `Finsupp.ext` (both
 non-recursing over `Finsupp Deck`). **Do not re-attempt the `Finsupp.mapDomain`
 or `DecidableEq (Equiv.Perm …)` pushforward routes** — they are obsolete.
 
-**Next action: F3 (25-position physical exchange).** In
-`Shufflemath/CommanderPhysicalExchange`, F3 items 1 (the `newLeftCards d L R`
-membership definition) and the macro-count transition (`newLeftOriginalCount_eq`)
-are done. The next items:
-1. **F3 item 2:** the deck-level `rawExchange : FiniteKernel Deck Deck` kernel
-   (choose 25 distinct positions from each pile uniformly; swap in a fixed
-   bijective pairing). Use counting/symmetry, not 99! enumeration.
-2. **F3 item 3:** discharge the `hMembershipExchange` premise of
-   `CommanderFullDeckDisintegration.two_physical_perfect_exchanges_uniform_of_counts`
-   through `PhysicalExchangeReduction.intertwining_of_membership_exchange` — now
-   unblocked since F2 (the two-layer membership fiber law) is complete.
-3. **F3 item 4:** the unconditional physical-perfect-local 2-exchange TV
-   theorem.
+**Next action: F3 item 3 core (the `hMembershipExchange` counting identity).** In
+`Shufflemath/CommanderPhysicalExchange`, done: item 1 (`newLeftCards d L R`,
+`newLeftOriginalCount_eq`), item 2 (`rawExchange : FiniteKernel Deck Deck` via
+`rawExchangeMembership` + `localLift`, commit `b25d5f4`), item 3a
+(`hMembershipExchange_lhs_reduces`, commit `958d5f5`). The **open core** is:
+```
+comp (FiberDisintegration.fiberLaw project project_surjective) rawExchangeMembership
+  = comp BernoulliLaplace.commanderExchange25 membershipLift
+```
+Mass-at-`m` (from input `x`) is the exact counting identity
+`|{(d,(L,R)) : project d = x, newLeftCards d L R = m}| / (|fiber project x| * choose 50 25 * choose 49 25)
+= transitionWeight 99 50 25 (count x) (count m) / |{m' : count m' = count m}|`.
+Two parts: (i) the new-count distribution equals the Bernoulli--Laplace
+`transitionWeight` hypergeometric sum, (ii) *given* the new count the new
+membership is *uniform* over that count's fiber (a symmetry/group-action
+statement — the harder half). On the critical path for F3 item 4 (2-exchange TV)
+and F4.5.
+
+**Alternate if the F3 core stalls (stuck protocol): F4.1 (standalone GSR
+product-alphabet) in `GSR.lean`** — the sorting-compatibility lemma
+(`stableBuckets (a*b) (combineLabels …) deck = lexBuckets a b minor major deck`)
+and the kernel equality `productLabelShuffle (uniform) = idealShuffle`. The
+single-label core (encodeLabel/decodeLabel, combineLabels/splitLabels,
+labelReparam, map_bijective_uniformDist, productLabels_pushforward_uniform) is
+done. The sorting-compatibility prior attempts hit `List.range.loop` /
+`Nat`-cancellation elaboration and were reverted; retry with the `Int`-cast
+arithmetic or by proving `stableBuckets (a*b) (combineLabels …) deck =
+stableBuckets b major (stableBuckets a minor deck)` and reusing the existing
+`stableBuckets_comp` theorem (= `lexBuckets`).
 
 After F3, run `./dev/verify_next_phase.sh`, then **F4** (the standalone GSR
 product-alphabet in `GSR.lean` — sorting-compatibility / kernel equality — and
