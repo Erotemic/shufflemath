@@ -1,8 +1,8 @@
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-11. **Source basis:** the November 11 snapshot at
-`9786c4b`, with F1 complete, F2's two-layer equality open, and parallel F3/F4
-progress recorded in `docs/lean_plan.md`. This is
+**Updated:** 2026-11-12. **Source basis:** the Nov 12 session (F4.1 sorting-
+compatibility wall broken, F4.2 core done, F3 item 3 core still open). The
+Nov 11 snapshot below is reference. This is
 an *operational handoff*. `lean_plan.md` is the authority for overall scope and
 priority; `AGENTS.md` governs repository behavior.
 
@@ -109,7 +109,55 @@ attempts, but is no longer the recommended route.
 
 ## Exactly where to resume
 
-**F1 is COMPLETE (commit `12e66df`). F2 is ~90% complete.** In
+### Nov 12 session status (resume here first)
+
+**Build is green on all target modules; all committed.** The Nov 12 session
+made the following committed progress (see `git log --oneline -12`):
+
+- **F4.1 sorting-compatibility — the `List.range` wall is BROKEN.**
+  `List.range_add` exists in this build (`List.range (m+n) = List.range m ++
+  List.map (fun x => m + x) (List.range n)`), which gives the block
+  decomposition the old notes said was missing. On top of it, **three new
+  lemmas are committed in `GSR.lean`:** `div_block`/`mod_block` (for `x < a`,
+  `(a*b' + x)/a = b'` and `(a*b' + x)%a = x`) and `rangeMap_divmod_eq_nested`
+  (the `(div,mod)` sequence over `List.range (a*b)` equals the nested `(j,i)`
+  sequence over `List.range b × List.range a` in lexicographic order — the
+  *index-level* content of the sorting-compatibility, proved by induction on
+  `b`). **Remaining F4.1:** the per-card filter predicate in the `Bool`/`==`/`&&`
+  world (the `Nat.beq_eq` bridge handles a bare `==` comparison but not the
+  `Bool`-equality goal left by `List.filter_congr`; the route is `split_ifs` on
+  the `==` bools, using `combinedLabel_pred` + `Nat.div_add_mod` in the `=`
+  world) plus the flatMap assembly via `rangeMap_divmod_eq_nested` +
+  `List.flatMap_map`. Then the kernel equality
+  `productLabelShuffle a b (uniform) (uniform) = idealShuffle n (a*b) (a*b)`
+  follows. **Do not re-attempt the `Int`-cast or `noCarryEq` routes** (the
+  block decomposition is now available); also note the `decodeLabel` `Fin.val`
+  unfolding causes a `simp` recursion loop, so prove the `combineVal` fact by
+  `change`/`rfl`, not `simp`.
+- **F4.2 local-shuffle — core done.** New file `Shufflemath/CommanderLocalGSR.lean`
+  (green, committed): `pileRelabelFn pl pr` (left positions permuted by `pl`,
+  right by `pr`, never crossing piles) + `pileRelabelFn_left`/`_right`, and
+  `permutedLeftCards_eq` proving the left-card set of the permuted deck equals
+  `leftCards d` (via `univImage_reindex`, a bijection leaves the image of
+  `univ` unchanged). **This is the F4.2 core: a local shuffle cannot change the
+  membership state.** *Remaining F4.2:* prove `pileRelabelFn` is a bijection
+  (to make a valid `Deck`/`FiniteKernel`) and take the GSR product over the two
+  piles.
+- **F3 item 3 core — still open** (the hard hypergeometric counting identity);
+  see `docs/f3_membership_exchange.md`. F3 item 4 (2-exchange TV) and F4.3–F4.5
+  remain downstream of it.
+
+**Recommended next action:** continue F4.1 (the `Bool`-bridge + flatMap
+assembly for `stableBuckets_combine_eq_lex`) — it is the most advanced open
+item and its index-level content is already proved. If the `==`/`decide` bridge
+resists ~2 iterations, apply the stuck protocol (`-- TODO(proof)`, commit what
+builds) and move to F4.2's GSR-product kernel. Then F4.3 (row-wise TV bound),
+F4.4 (telescope), and F5 (costs/optimizer). After each tranche, re-run
+`./dev/verify_next_phase.sh`.
+
+### (Prior state, Nov 11 — reference)
+
+**F1 is COMPLETE (commit `12e66df`). F2 is COMPLETE.** In
 `Shufflemath/CommanderMembershipKernels` (green, committed):
 * F2a: `Membership`, `membership`, `membershipCount`, `membershipFiber_iff`.
 * F2b: `localLift` (perfect-local) + `localLift_preserves_membership`.
