@@ -140,6 +140,56 @@ theorem encodeLabel_decodeLabel {a b : Nat} (ha : 0 < a) (hb : 0 < b) (p : Fin b
     simp only [encodeLabel]
     exact hmin
 
+/-! ## Mixed-radix uniqueness without division (F4.1, sorting-compatibility core)
+
+The `Nat.div`/`Nat.mod`-free statement that a two-digit mixed-radix expansion
+with *no carry* is unique: if `x*a + y = j*a + i` with both low digits `y < a`
+and `i < a`, then the digits agree, `x = j` and `y = i`. This is exactly the
+predicate equivalence that makes sorting by the combined label `major*a + minor`
+agree with sorting by the `(major, minor)` pair, and it is stated without any
+`div`/`mod` so that `List`-level reindexing does not trigger rewrite loops.
+-/ 
+
+/-- No-carry mixed-radix uniqueness: `x*a + y = j*a + i` with `y < a` and
+  `i < a` forces `x = j` and `y = i`. The proof only uses the residue of the
+  two sides modulo `a` (the low digit is the residue) and then cancels the
+  common `·*a` term; no `div`/`mod` of the full number is taken. -/
+theorem mixedRadix_unique {a x y j i : Nat} (ha : 0 < a) (hy : y < a) (hi : i < a)
+    (h : x * a + y = j * a + i) : x = j ∧ y = i := by
+  -- the low digit (residue mod a) of each side is its minor part: adding a
+  -- multiple of `a` does not change the residue, and the minor part is < a.
+  have hymod : (x * a + y) % a = y := by
+    have h0 : (x * a + y) % a = ((x * a) % a + y % a) % a := Nat.add_mod (x * a) y a
+    rw [h0]
+    have hxamod : (x * a) % a = 0 := by
+      rw [Nat.mul_comm, Nat.mul_mod_right]
+    rw [hxamod]
+    have hy2 : y % a = y := Nat.mod_eq_of_lt hy
+    rw [hy2, Nat.zero_add]
+    exact Nat.mod_eq_of_lt hy
+  have himod : (j * a + i) % a = i := by
+    have h0 : (j * a + i) % a = ((j * a) % a + i % a) % a := Nat.add_mod (j * a) i a
+    rw [h0]
+    have hjamod : (j * a) % a = 0 := by
+      rw [Nat.mul_comm, Nat.mul_mod_right]
+    rw [hjamod]
+    have hi2 : i % a = i := Nat.mod_eq_of_lt hi
+    rw [hi2, Nat.zero_add]
+    exact Nat.mod_eq_of_lt hi
+  -- the two sides are equal, so their low digits (residues) agree
+  have hyi : y = i := by
+    have h1 : (x * a + y) % a = (j * a + i) % a := by rw [h]
+    simpa [hymod, himod] using h1
+  -- with the low digits equal, the common `·*a` term cancels
+  have hxy : x = j := by
+    have h1 : x * a + i = j * a + i := by simpa [hyi] using h
+    -- cancel the `+ i` (on the right) via commutativity + left cancellation
+    have h1c : i + x * a = i + j * a := by simpa [Nat.add_comm] using h1
+    have h2 : x * a = j * a := (Nat.add_right_inj).mp h1c
+    have h2' : a * x = a * j := by simpa [Nat.mul_comm] using h2
+    exact Nat.mul_left_cancel ha h2'
+  exact ⟨hxy, hyi⟩
+
 /-!
 ## The label reparameterization (F4.1)
 
