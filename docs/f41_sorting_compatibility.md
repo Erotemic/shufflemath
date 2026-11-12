@@ -1,13 +1,27 @@
 # F4.1 sorting-compatibility: exact state and the remaining `Bool` bridge
 
-**Status (2026-11-12):** The *label-law* half of F4.1 is complete, and the
-*sorting* half is now down to a small `Bool`/`decide` bridge. The old
-"`List.range` wall" is **broken**: `List.range_add`
-(`List.range (m + n) = List.range m ++ List.map (fun x => m + x) (List.range n)`,
-which exists in this build) gives the block decomposition, and the index-level
-reindexing is now **proved and committed** as `rangeMap_divmod_eq_nested`. What
-remains is (a) the per-card filter predicate in the `==`/`&&`/`Bool` world and
-(b) assembling the flatMap — a mechanical but fiddly `Bool`/`decide` bridge.
+**Status (2026-11-12): F4.1 is substantially along; the goal remains open on
+one bridge.** The *label-law* half is complete, and all the *mechanism
+ingredients* for the *sorting* half are proved and committed. The **F4.1 goal**
+is the kernel equality `productLabelShuffle a b (uniform a) (uniform b) =
+idealShuffle n (a*b)`, which *follows from* the list-level
+sorting-compatibility `stableBuckets (a*b) (combineLabels …) deck =
+lexBuckets a b minor major deck`. That list-level lemma is the remaining open
+item; its last step is the `Bool`/`==`/`&&` filter bridge. Proved and committed:
+
+- **`productLabels_pushforward_uniform`** — the *label-law* half: the uniform
+  `(a*b)`-alphabet label law equals the pushforward of the independent product
+  of a `b`- and an `a`-alphabet uniform label law through `labelReparam`
+  (`combineLabels`/`splitLabels`).
+- **`labelShuffle_comp`** — the F4.4 two-ruffle composition law: composing an
+  `a`-label stable shuffle and a `b`-label stable shuffle has the law of
+  independently sampling both and sorting by the combined `(b,a)`-lex label
+  (`productLabelShuffle`, built from `lexBuckets`).
+
+The old "`List.range` wall" is **broken**: `List.range_add` (`List.range
+(m + n) = List.range m ++ List.map (fun x => m + x) (List.range n)`, which
+exists in this build) gives the block decomposition, and the index-level
+reindexing is **proved and committed** as `rangeMap_divmod_eq_nested`.
 
 ## What is already proved (green, committed)
 

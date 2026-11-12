@@ -148,22 +148,27 @@ made the following committed progress (see `git log --oneline -12`):
   see `docs/f3_membership_exchange.md`. F3 item 4 (2-exchange TV) and F4.3–F4.5
   remain downstream of it.
 
-**Recommended next action:** two open fronts, in priority order:
-1. **F4.2 bijection** (`docs/f42_local_gsr.md`): prove `pileRelabelFn` is
-   injective/surjective (the `leftVal` helper closes with
-   `dsimp [pileRelabelFn]; simp [h, leftPosition]`; the `rightVal` helper —
-   `50 ≤ 50 + (pr _).val` — resists `omega`/`nlinarith`, try
-   `Nat.le_add_left`+`Nat.add_comm`). Then `Equiv.ofBijective` → `permuteWithinPiles`
-   → the GSR product over the two piles.
-2. **F4.1 Bool-bridge** (`docs/f41_sorting_compatibility.md`): lift
-   `combineVal_pred_eq` to the `Bool`/`==`/`&&` world that `List.filter` uses
-   (the direct `simp [Nat.beq_eq]` bridge fails on the `Bool`-equality goal;
-   the `by_cases` route on the three `==` bools is the identified path), then
-   assemble `stableBuckets_combine_eq_lex` with `rangeMap_divmod_eq_nested` +
-   `List.flatMap_map`.
-3. **F3 item 3 core** (the hard hypergeometric identity, see
-   `docs/f3_membership_exchange.md`) is the critical path for F3 item 4 and
-   F4.5; attack it after the two F4 fronts make their next step.
+**Recommended next action:** F4.1 is **substantially along** — the label-law
+(`productLabels_pushforward_uniform`), the two-ruffle composition law
+(`labelShuffle_comp`), and all the mechanism ingredients (`encodeLabel`/`decodeLabel`,
+`combineLabels`/`splitLabels`, `labelReparam`, `mixedRadix_unique`,
+`combineVal_pred_eq`, `rangeMap_divmod_eq_nested`, `div_block`/`mod_block`) are
+proved and committed. The **F4.1 goal** is the kernel equality
+`productLabelShuffle a b (uniform a) (uniform b) = idealShuffle n (a*b)`, which
+*follows from* the list-level sorting-compatibility
+`stableBuckets (a*b) (combineLabels …) = lexBuckets a b …` (the last step is the
+`Bool`/`==`/`&&` filter bridge — see `docs/f41_sorting_compatibility.md`). So
+F4.1 and its kernel equality remain open on that one bridge.
+
+Priority order for the remaining items:
+1. **F3 item 3 core** (`docs/f3_membership_exchange.md`) — the hard hypergeometric
+   counting identity; the critical path for F3 item 4 (2-exchange TV) and F4.5.
+2. **F4.2 bijection** (`docs/f42_local_gsr.md`) — `pileRelabelFn_leftVal`/`_rightVal`
+   helpers are done; the `leftVal`/`rightVal` disjoint-range case analysis for
+   injective/surjective is the remaining step, then the GSR product kernel.
+3. **F4.3** (row-wise TV bound) and **F4.5** (full-deck terminal bound — needs F3
+   item 4 and F4.3/F4.4), then **F5** (measured/parametric costs, bounded
+   optimizer certificate).
 
 Apply the stuck protocol (`-- TODO(proof)`, commit what builds, move on) after
 ~2 failed iterations on any single proof. Re-run `./dev/verify_next_phase.sh`
