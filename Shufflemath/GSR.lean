@@ -9,6 +9,21 @@ namespace Shufflemath
 namespace GSR
 
 /-!
+## Small `Bool` helpers
+
+`Bool` facts used by the F4.1 sorting-compatibility `Bool`/`==`/`&&` filter
+bridge.
+-/
+
+-- `(x && y) = true` holds exactly when both are `true`. A clean `Iff` form
+-- (the `=`-of-`Prop` `Bool.and_eq_true_eq_eq_true_and_eq_true` is an `Eq` of
+-- props, not an `Iff`, and does not compose with the `↔` from
+-- `Bool.eq_iff_iff`).
+theorem and_true_iff (x y : Bool) : (x && y) = true ↔ (x = true) ∧ (y = true) := by
+  by_cases hx : x = true <;> by_cases hy : y = true <;> simp
+
+
+/-!
 # Inverse GSR shuffles via finite labels
 
 An `a`-shuffle assigns a label in `Fin a` independently to each card, then
