@@ -4,6 +4,7 @@ public import Shufflemath.CommanderPermutation
 public import Shufflemath.CommanderFiberCount
 public import Shufflemath.CommanderMembershipKernels
 public import Mathlib.Data.Finset.Basic
+public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -113,6 +114,65 @@ theorem pileRelabelFn_rightVal (pl : Equiv.Perm (Fin 50)) (pr : Equiv.Perm (Fin 
     omega
   · dsimp only [pileRelabelFn]
     simp [hlt, rightPosition]
+
+
+/-! ## The `Equiv`-based pile relabeling (F4.2, GPT-6 construction)
+
+The within-pile relabeling as a full `Deck = Equiv.Perm (Fin 99)` *by
+construction*: transport a left permutation and a right permutation through the
+canonical `Fin 50 ⊕ Fin 49 ≃ Fin 99` equivalence. Bijectivity is inherited from
+`Equiv` composition — no four-case injectivity/surjectivity proof. This is the
+clean version of `pileRelabelFn` above (which keeps the explicit `if` for
+compatibility).
+-/
+
+/-- The within-pile pile-relabeling as a `Deck` permutation by `Equiv`
+  composition: `Fin 99 → (Fin 50 ⊕ Fin 49)`, apply `pl`/`pr` by
+  `Equiv.sumCongr`, then back. -/
+def pileRelabelEquiv (pl : Equiv.Perm (Fin 50)) (pr : Equiv.Perm (Fin 49)) : Deck :=
+  ((finSumFinEquiv (m := 50) (n := 49)).symm).trans
+    ((Equiv.sumCongr pl pr).trans (finSumFinEquiv (m := 50) (n := 49)))
+
+/-- A left position maps to the `pl`-image left position. -/
+theorem pileRelabelEquiv_left (pl : Equiv.Perm (Fin 50))
+    (pr : Equiv.Perm (Fin 49)) (i : Fin 50) :
+    pileRelabelEquiv pl pr (leftPosition i) = leftPosition (pl i) := by
+  dsimp only [leftPosition]
+  change (finSumFinEquiv (m := 50) (n := 49)
+    (Sum.map (⇑pl) (⇑pr) (finSumFinEquiv (m := 50) (n := 49).symm (Fin.castAdd 49 i)))) =
+    Fin.castAdd 49 (pl i)
+  rw [finSumFinEquiv_symm_apply_castAdd, Sum.map_inl, finSumFinEquiv_apply_left]
+
+/-- A right position maps to the `pr`-image right position. -/
+theorem pileRelabelEquiv_right (pl : Equiv.Perm (Fin 50))
+    (pr : Equiv.Perm (Fin 49)) (j : Fin 49) :
+    pileRelabelEquiv pl pr (rightPosition j) = rightPosition (pr j) := by
+  dsimp only [rightPosition]
+  change (finSumFinEquiv (m := 50) (n := 49)
+    (Sum.map (⇑pl) (⇑pr) (finSumFinEquiv (m := 50) (n := 49).symm (Fin.natAdd 50 j)))) =
+    Fin.natAdd 50 (pr j)
+  rw [finSumFinEquiv_symm_apply_natAdd, Sum.map_inr, finSumFinEquiv_apply_right]
+
+/-- Reindex the deck positions by the pile-preserving permutation before
+  reading cards. -/
+def reorderedDeck (d : Deck) (pl : Equiv.Perm (Fin 50)) (pr : Equiv.Perm (Fin 49)) : Deck :=
+  (pileRelabelEquiv pl pr).trans d
+
+/-- The reordered deck has exactly the original left-card set: a local (within-
+  pile) permutation cannot change which named cards sit in the left pile. -/
+theorem reorderedDeck_leftCards (d : Deck) (pl : Equiv.Perm (Fin 50))
+    (pr : Equiv.Perm (Fin 49)) :
+    leftCards (reorderedDeck d pl pr) = leftCards d := by
+  change (Finset.univ : Finset (Fin 50)).image
+      (fun i => (reorderedDeck d pl pr) (leftPosition i)) =
+    (Finset.univ : Finset (Fin 50)).image (fun i => d (leftPosition i))
+  have hfun :
+      (fun i : Fin 50 => (reorderedDeck d pl pr) (leftPosition i)) =
+        (fun i : Fin 50 => d (leftPosition (pl i))) := by
+    funext i
+    simp only [reorderedDeck, Equiv.trans_apply, pileRelabelEquiv_left]
+  rw [hfun]
+  exact univImage_reindex (fun i => d (leftPosition i)) pl
 
 end CommanderLocalGSR
 end Shufflemath
