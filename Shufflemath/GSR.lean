@@ -329,6 +329,27 @@ theorem combineLabels_splitLabels {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
   rw [hpair]
   exact decodeLabel_encodeLabel ha hb (labels i)
 
+-- Per card, its combined numeric value equals `k` iff its major/minor are
+-- exactly the `(div, mod)` decomposition of `k`. This is the `=`/`Prop`-world
+-- per-card bridge for the sorting-compatibility (the `Bool`/`==`/`&&` filter
+-- predicate is its `Nat.beq_eq` lift). Proven without `simp` on `decodeLabel`
+-- (which recurses) — `change`/`rfl` for the value, `rw` for the rest.
+theorem combineVal_pred_eq {n a b : Nat} (ha : 0 < a) (hb : 0 < b)
+    (minor : Fin n → Fin a) (major : Fin n → Fin b) (c : Fin n) (k : Nat) :
+    (combineLabels ha hb minor major c).val = k ↔
+      (major c).val = k/a ∧ (minor c).val = k%a := by
+  have hval : (combineLabels ha hb minor major c).val = (major c).val * a + (minor c).val := by
+    change (decodeLabel ha hb (major c, minor c)).val = (major c).val * a + (minor c).val
+    change (major c).val * a + (minor c).val = (major c).val * a + (minor c).val
+    rfl
+  have hk : k = (k/a)*a + k%a := by simpa [Nat.mul_comm] using (Nat.div_add_mod k a).symm
+  constructor
+  · intro h
+    rw [hval, hk] at h
+    exact (combinedLabel_pred ha hb minor major c (k/a) (k%a) (Nat.mod_lt k ha)).mp h
+  · rintro ⟨h1, h2⟩
+    rw [hval, hk, h1, h2]
+
 /-- The `combineLabels`/`splitLabels` reparameterization is a bijection: a
   single `(a*b)`-alphabet label array is the same data as an independent `Fin a`
   minor array and a `Fin b` major array. -/
