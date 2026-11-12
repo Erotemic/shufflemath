@@ -176,35 +176,35 @@ bridge from `CommanderFiberMembership.fiberFin_card`; details and proof order
 are in [`f2_fiberlaw_unblock.md`](f2_fiberlaw_unblock.md). This is a proposed
 route, not a theorem already in the tree.
 
-> **Still open (F2c-iv-b, the capstone):** the two-layer equality
+> **Status (F2c-iv-b, the capstone, Nov 12):** the two-layer equality
 > `membershipLift.comp localLift = FiberDisintegration.fiberLaw project
-> project_surjective` (equivalently `= uniformFiber project_surjective`).
-> *Revised assessment (F3 session):* this is **tractable** and does **not**
-> require whnf'ing the `Equiv.Perm` Fintype instances. The mass of the two-layer
-> kernel at a deck `d` (given `x`) is the `apply_mass_eq_sum` pushforward
-> `∑_m mass(membershipLift x) m * mass(localLift m) d`, which collapses to the
-> single term `m = membership d` (the `localLift` mass is supported on
-> `leftCards d = m.1`), giving
-> `if project d = x then 1/(membershipFiberCount k) * (Fintype.card (decksWithLeft
-> (membership d).1))⁻¹ else 0`. The `fiberLaw` mass is
-> `if project d = x then (fiberSet project x).card⁻¹ else 0`. Equality follows
-> from the arithmetic identity
-> `membershipFiberCount k * Fintype.card (decksWithLeft (membership d).1) =
-> (fiberSet project x).card`, which is exactly
-> `choose 50 k * choose 49 (50-k) * 50! * 49! = (fiberSet project x).card` — a
-> direct consequence of the *already-proved* `membershipFiberCount_eq_fiberMembershipSets`
-> (F2c-i), `decksWithLeft_card` (F1a), and `fiberSet_card` (F1c). Only the
-> `localLift` pushforward-mass lemma still needs proving.
+> project_surjective`. Since the Nov 11 intervention, `localLift` *is* the
+> generic `fiberLaw membership membership_surjective`, and `localLift_mass` is
+> proved (one line, via `fiberLaw_mass`) and is in the tree.
 >
-> **Additional finding (this session):** the `localLift` pushforward-mass lemma
-> (`localLift_mass`) ALSO hits the `DecidableEq (Equiv.Perm (Fin 99))` wall.
-> The `leftCards d = m.1` (`Finset` equality) inside the `Finsupp.mapDomain`
-> pushforward mass recurses under deep `simp`/`whnf`, because the `Finset`
-> structure of `leftCards d` involves the `Perm`-dependent `image`. The
-> `Decidable` synthesis for the `Finset` equality works in isolation, but the
-> `simp`/`rw` on the `if` (in the context of the `mapDomain`) recurses.
-> The `localLift_mass` theorem is **removed from the file** (stubbed) to keep
-> the build green. The F2c-iv-b capstone is **not proved** this session.
+> The capstone **statement elaborates cleanly** (verified: `#check` of the
+> `fiberLaw project project_surjective` term gives `FiniteKernel
+> CommanderState Deck`; a `by sorry` body compiles). A **point-mass** proof is
+> down to a *single* mechanical step: the two-level sum
+> `∑_m mass(membershipLift x) m * mass(localLift m) d` collapses to the one
+> term `m = membership d` (the `localLift` row at `d` is a *selector*: `0`
+> elsewhere, `1/(50!·49!)` there, a constant since every membership fiber has
+> the same cardinality). That collapse is the `Fintype`-sum point-mass fact
+> `(∑_m (if m = membership d then 1 else 0) : Rat) = 1`, which reduces via
+> `sum_if_constant` to the non-recursing filter-cardinality
+> `(Finset.univ.filter (fun m => m = membership d)).card = 1`. The remaining
+> work is purely `Fintype`-sum ↔ `Finset.sum`-over-`univ` definitional plumbing
+> (a `rw` lambda-matching hiccup), **not** a normalization wall.
+>
+> The **kernel-equality** form (vs. the point-mass form) additionally needs a
+> final `funext` + `ext` over `Dist Deck`, and *that* step recurses (the
+> `Fintype (Equiv.Perm (Fin 99))` / `DecidableEq` instances are the heavy
+> terms); `ext` on even a `fiberLaw` self-equality times out. So the point-mass
+> form is the provable deliverable and the kernel form is blocked on that
+> extensionality wall.
+>
+> **Full difficulty note, measured probe results, and three concrete questions
+> for GPT:** [`f2c_ivb_sum_collapse.md`](f2c_ivb_sum_collapse.md).
 
 ### F3. Prove the 25-position physical-exchange membership law
 

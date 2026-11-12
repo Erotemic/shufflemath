@@ -119,125 +119,54 @@ attempts, but is no longer the recommended route.
 
 **Resume at F2c-iv-b — the F2 capstone**:
 `membershipLift.comp localLift = FiberDisintegration.fiberLaw project
-project_surjective` (equivalently `= uniformFiber project_surjective`).
+project_surjective`.
 
-**The obstacle (Lean normalisation wall).** Every `Fintype` instance over a
-subtype of `Deck = Equiv.Perm (Fin 99)` (e.g. `Fiber x = {d // project d = x}`,
-`decksWithLeft S`) **whnf-recurses** (and `toLR`/`fromLR`/`pasteDeckSub` time
-out the heartbeat when unfolded). So the *finset* card
-`(fiberSet project x).card` that `fiberLaw`'s weight uses cannot be related by
-`simp`/`ext`/`rfl`/`change` to the F1a `Fintype.card (decksWithLeft S)` count.
-Crucially, the F1a/F1b *theorems* (`decksWithLeft_card`,
-`fiberMembershipSets_card`) **are** usable without recursion (F2b's `localLift`
-`rw [decksWithLeft_card]` proves it); only *whnf of the instances* is forbidden.
+**Current status (post-Nov-11, this session).** Since the Nov 11 intervention,
+`localLift` *is* the generic `FiberDisintegration.fiberLaw membership
+membership_surjective`, and `localLift_mass` is proved (one line, via
+`fiberLaw_mass`) and is in the tree. Earlier session notes claiming
+"`localLift_mass` is removed" or "the `Finsupp.mapDomain` pushforward recurses"
+are **superseded** by that redefinition — do not re-attempt the
+`mapDomain`/`DecidableEq (Equiv.Perm …)` routes.
 
-**Revised approach (simpler than the earlier `Equiv.Perm` transport — no
-instance whnf needed).** Prove it by *pointwise mass equality*, using the
-already-proved `apply_mass_eq_sum` (the two-layer pushforward mass is the
-two-level sum) and `FiberDisintegration.fiberLaw_mass`. At each deck `d`, with
-`m := membership d`:
-- LHS mass `= ∑_m [mass (membershipLift x) m] · [mass (localLift m) d]`. This
-  sum collapses to the single term at `m = membership d`: `membershipLift` is
-  supported on `MembershipFiber k` and `localLift m` is supported on decks with
-  `leftCards = m.1`, so only `m = membership d` (whose `leftCards` is `leftCards
-  d`) can be nonzero, and only when `project d = x`.
-- RHS mass `= if project d = x then (fiberSet project x).card⁻¹ else 0`.
+What I established this session (measured by isolated probes):
+- The capstone **statement elaborates cleanly** — `#check` of
+  `fiberLaw project project_surjective` gives `FiniteKernel CommanderState
+  Deck`; a `by sorry` body compiles. Not a statement-level problem.
+- A **point-mass** proof (`mass (comp … x) d = mass (fiberLaw … x) d`) is
+  down to a **single** mechanical step: the two-level sum
+  `∑_m mass(membershipLift x) m * mass(localLift m) d` collapses to the one term
+  `m = membership d`, because the `localLift` row at `d` is a *selector*
+  (`0` elsewhere, `1/(50!·49!)` there — a constant, `fiberSet_membership_card`).
+  That collapse is the `Fintype`-sum point-mass fact
+  `(∑_m (if m = membership d then 1 else 0) : Rat) = 1`, which reduces via
+  `sum_if_constant` to the **non-recursing** filter-cardinality
+  `(Finset.univ.filter (fun m => m = membership d)).card = 1`.
+- What actually recurses (200k-heartbeat `whnf` timeouts) is the
+  `funext`/`ext`/`apply funext`/`refine funext` **tactic** on a `Dist Deck`
+  (`StdSimplex Rat Deck`) or `FiniteKernel … Deck` **equality** — the
+  `Fintype (Equiv.Perm (Fin 99))`/`DecidableEq` instances are the heavy terms;
+  `ext` on even a `fiberLaw` *self*-equality times out. `by_cases` on a
+  `Membership` (or `Nat`) equality, `rw` of the compiled `*_mass` lemmas,
+  `apply_mass_eq_sum` at `(Membership, Deck)`, and the filter-cardinality all
+  do **not** recurse.
 
-So the law reduces to the **arithmetic identity** (all three factors already
-proved by F1a `decksWithLeft_card` + F1b `fiberMembershipSets_card` + F1c
-`fiberSet_card` + F2c-i `membershipFiberCount_eq_fiberMembershipSets`):
-```
-(membershipFiberCount k) · (Fintype.card (decksWithLeft (membership d).1))
-    = (fiberSet project x).card
-```
-when `project d = x`.
+**Net:** the mathematical content is provable at the `mass`/`Rat` level (the
+point-mass form). The only gap is `Fintype`-sum ↔ `Finset.sum`-over-`univ`
+definitional plumbing (an `rw` lambda-matching hiccup), *not* a normalization
+wall. The **kernel-equality** form additionally needs a final `funext`+`ext`
+over `Dist Deck` and is blocked on that extensionality wall; the point-mass
+form is the provable deliverable and the two are equivalent by function +
+`StdSimplex` extensionality.
 
-**The one remaining technical lemma.**
-`localLift_mass (m d) : mass (localLift m) d = if leftCards d = m.1 then
-(Fintype.card (decksWithLeft m.1))⁻¹ else 0.`
-`localLift m = (GSR.uniformDist (decksWithLeft m.1)).map Subtype.val`.
-`mass (map f s) y` is the pushforward `(Finset.univ.filter (fun x ↦ f x = y)).sum
-(fun x ↦ mass s x)` (`FunOnFinite.linearMap_apply_apply` / `Finsupp.mapDomain`).
-With `s` uniform, this is a constant summed over the preimage `{x : decksWithLeft
-m.1, x.val = d}`, which has one member iff `leftCards d = m.1` (Subtype.val is
-injective) → `(Fintype.card (decksWithLeft m.1))⁻¹` or `0`.
-
-*Where the last attempt stalled:* the `have` establishing
-`mass ((GSR.uniformDist T).map Subtype.val) d = (Finset.univ.filter (fun x : T ↦
-Subtype.val x = d)).sum (fun x ↦ mass (GSR.uniformDist T) x)` did not close under
-`simp only [Convexity.StdSimplex.map, FunOnFinite.linearMap_apply_apply, Dist.mass]` —
-the `map → FunOnFinite.linearMap → Finsupp.mapDomain` chain (with the
-stdSimplex→function coercion of the weights) needs more unfolding than plain
-`simp`. Try unfolding `Convexitey.StdSimplex.map` to the structure whose
-`.weights` is `FunOnFinite.linearMap Rat Rat Subtype.val (s : T → Rat)`, coercing
-the stdSimplex to its weight function, then applying `FunOnFinite.linearMap_apply`
-`Apply` + `Finsupp.sum_fintype`; or use `Finsupp.mapDomain_apply'` with the full
-support. Once that one `have` closes, `localLift_mass` follows from
-`Finset.sum_const` + the fiber-card `= 1 or 0`, and the two-layer law follows from
-the arithmetic identity.
-
-**Where the last attempt stalled (the real wall).** The two-layer law and
-`localLift_mass` reduce cleanly to a pushforward-mass computation
-`mass (map Subtype.val (GSR.uniformDist T)) d = ∑_{x : T, x.val = d}
-(Fintype.card T)⁻¹`. The route `GSR.apply_deterministic` + `apply_mass_eq_sum`
-**works** (the pushforward sum step passes) once a `DecidableEq T` instance is
-in scope. The blocker: **`DecidableEq (Equiv.Perm (Fin 99))` synthesizes by
-`infer_instance`** (via `Equiv.ext_iff` + the `Fintype (Fin 99)` domain), but
-**using it in a deep `simp` / `whnf` recurses to max-recursion-depth**
-(the same `Equiv.Perm` instance-recursion wall as the `Fintype` one).
-Specifically, the final step that reduces `c · (if p then 1 else 0)` with
-`c = (Fintype.card (decksWithLeft m.1))⁻¹` hit `maximum recursion depth`.
-
-**How to proceed.** Two viable routes, both avoiding deep simp over the
-`Equiv.Perm` instance:
-1. *Avoid the `if`-on-`Deck`-equality entirely.* Prove `localLift_mass` by
-   showing the pushforward sum equals `c · (fiber-card)` where the fiber-card
-   is computed by a **finset count** (`(Finset.univ.filter (fun x => d = x.val)).card
-   = 1 or 0` via `Subtype.ext`, no `DecidableEq`), keeping `c` as an
-   *unfoldable local `let`* but never `simp`-ing `Fintype.card (decksWithLeft …)`
-   — reduce `c·1`/`c·0` with targeted `rw [mul_one]`/`rw [mul_zero]` (or
-   `ring`/`norm_num`), not `simp`.
-2. *Construct a non-recursive `DecidableEq (Equiv.Perm (Fin 99))` instance* by
-   explicit extensionality (`e1 = e2 ↔ ∀ i, e1 i = e2 i`) with a `Fintype
-   (Fin 99)`-based decidability, and verify it does not recurse under the
-   `Fintype (decksWithLeft …)` finset instance.
-
-This same wall blocks F3.3 (`hMembershipExchange`, which decides `Equiv.Perm`
-equality of `exchangeThenLocalReset d L R`) and F4.5. F1's count theorems
-(`decksWithLeft_card`, `fiberMembershipSets_card`, `fiberSet_card`) all avoid
-it and remain fully usable.
-
-**New finding (this session):** The `localLift_mass` theorem (the last
-technical lemma for the F2c-iv-b capstone) was attempted with the
-`Finsupp.mapDomain` pushforward route (converting `localLift` to a clean
-`noncomputable def` + `IsFifty`/`Nonempty` instances, so that
-`dsimp only [localLift, Dist.mass, Convexity.StdSimplex.map]` now closes the
-`map → weights.mapDomain` step). The in-range case (via
-`Finsupp.mapDomain_apply_of_injective`) and the out-of-range case (via
-`Finsupp.mapDomain_of_not_mem_image_support`) are structurally correct, but
-the **`if leftCards d = m.1`** (the `Finset` equality) in the target
-recurses under `simp`/`rw` in the `mapDomain` context (the `Finset`
-structure of `leftCards d` involves the `Perm`-dependent `image`). The
-`Decidable` synthesis for the `Finset` equality works in isolation (verified),
-but the `simp`/`rw` on the `if` (combined with the `mapDomain`) recurses.
-The `localLift_mass` theorem is **removed from the file** (stubbed) to keep
-the build green. The F2c-iv-b capstone is **not proved** this session.
-Route 1 (finset count, no `DecidableEq`) also fails: the
-`Finset.univ.filter (fun x => d = x.val)` needs the `Decidable` for the
-`Equiv.Perm` equality, which recurses.
-
-**Old (harder) fallbacks:** (1) target `uniformFiber` (a `Fintype.card`
-weight) and prove `Fintype.card (Fiber x) = membershipFiberCount k · 50!49!`
-via a finset count; (2) transport `Fiber x` to `Σ (m : MembershipFiber k),
-decksLR_prod m.1` with `Fintype.card_congr` (a first `GoodFiber`/`fiberLR`
-attempt timed out the 200000-heartbeat limit on the `fromLR`/`toLR` inverse
-proofs — if retried, keep those to `fromLR_toLR`/`toLR_fromLR` as stated);
-(3) a generic `twoLayerFiberLaw` for a surjection `f ∘ g` with common-sized
-`g`-fibers, then specialize. The F1 API notes below remain useful reference.
-
-After F2c-iv-b, run `./dev/verify_next_phase.sh`, then proceed to **F3**
-(25-position `rawExchange` membership law). The F1 API notes below remain
-useful reference.
+**Next action.** Read
+[`f2c_ivb_sum_collapse.md`](f2c_ivb_sum_collapse.md) — it has the full proof
+skeleton, the measured recurses/does-not list, and three concrete questions
+for GPT (the exact lemma sequence for the sum collapse; a one-shot `Fintype`
+point-mass lemma; and confirmation that the point-mass form is the acceptable
+F2c-iv-b statement). Once the sum collapse closes, run
+`./dev/verify_next_phase.sh`, then proceed to **F3** (25-position
+`rawExchange` membership law). The F1 API notes below remain useful reference.
 
 **F4.1 (standalone GSR product-alphabet) progress — independent of the
 `Equiv.Perm` wall, in `GSR.lean` (all green, committed):** the single-label
