@@ -381,6 +381,49 @@ theorem run_compPow (n : Nat) (K : FiniteKernel alpha alpha) (mu : Dist alpha) :
 
 end FiniteKernel
 
+/-- The independent (tensor) product distribution: draw `a` from `μ`, then `b`
+from `ν`.  A valid probability law (total mass 1) because the total factors as
+`(∑_a μ a)·(∑_b ν b) = 1·1`.  This is the missing F4.2/F4.3 machinery for
+composing the two within-pile shuffles into a single deck-level law.  Defined
+as an explicit `ofFun` term (not a tactic-built `by`) so the mass simp-lemma
+below unfolds it. -/
+noncomputable def distProduct {α β : Type*} [Fintype α] [Fintype β]
+    [DecidableEq α] [DecidableEq β] [Nonempty α] [Nonempty β]
+    (μ : Dist α) (ν : Dist β) : Dist (α × β) :=
+  Dist.ofFun (fun p : α × β => Dist.mass μ p.1 * Dist.mass ν p.2)
+    (fun p => Rat.mul_nonneg (Dist.mass_nonneg μ p.1) (Dist.mass_nonneg ν p.2))
+    (by
+      classical
+      haveI : DecidableEq (α × β) := inferInstance
+      have hUniv : (Finset.univ : Finset (α × β)) =
+          (Finset.univ : Finset α) ×ˢ (Finset.univ : Finset β) := by
+        ext p
+        simp [Finset.mem_univ]
+      have hFac : (∑ a ∈ (Finset.univ : Finset α), ∑ b ∈ (Finset.univ : Finset β),
+                Dist.mass μ a * Dist.mass ν b) =
+          (∑ a ∈ (Finset.univ : Finset α), Dist.mass μ a * (∑ b ∈ (Finset.univ : Finset β), Dist.mass ν b)) := by
+        rw [Finset.sum_congr rfl (fun a _ => (Finset.mul_sum (Finset.univ) (fun b => Dist.mass ν b) (Dist.mass μ a)).symm)]
+      have hC : (∑ b ∈ (Finset.univ : Finset β), Dist.mass ν b) = 1 := by simp [Dist.sum_mass]
+      have hV : (∑ a ∈ (Finset.univ : Finset α), Dist.mass μ a) = 1 := by simp [Dist.sum_mass]
+      calc
+        (∑ p ∈ (Finset.univ : Finset (α × β)), Dist.mass μ p.1 * Dist.mass ν p.2) =
+          (∑ p ∈ (Finset.univ : Finset α) ×ˢ (Finset.univ : Finset β), Dist.mass μ p.1 * Dist.mass ν p.2) := by rw [hUniv]
+        _ = (∑ a ∈ (Finset.univ : Finset α), ∑ b ∈ (Finset.univ : Finset β), Dist.mass μ a * Dist.mass ν b) := by rw [Finset.sum_product]
+        _ = (∑ a ∈ (Finset.univ : Finset α), Dist.mass μ a * (∑ b ∈ (Finset.univ : Finset β), Dist.mass ν b)) := hFac
+        _ = (∑ a ∈ (Finset.univ : Finset α), Dist.mass μ a * 1) := by rw [hC]
+        _ = (∑ a ∈ (Finset.univ : Finset α), Dist.mass μ a) := by rw [Finset.sum_congr rfl (fun a _ => mul_one (Dist.mass μ a))]
+        _ = 1 := hV)
+
+/-- The mass of the independent product at `(a, b)` is the product of the
+marginal masses, `μ(a)·ν(b)` — the defining property that makes it a tensor
+product.  Immediate from the `ofFun` construction. -/
+@[simp]
+theorem distProduct_mass {α β : Type*} [Fintype α] [Fintype β]
+    [DecidableEq α] [DecidableEq β] [Nonempty α] [Nonempty β]
+    (μ : Dist α) (ν : Dist β) (a : α) (b : β) :
+    Dist.mass (distProduct μ ν) (a, b) = Dist.mass μ a * Dist.mass ν b := by
+  simp [distProduct, Dist.mass_ofFun]
+
 end
 
 end Shufflemath
