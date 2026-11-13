@@ -160,22 +160,20 @@ analysis of the two remaining hard walls:
   rewrite each resist repeated attempts. `stableBuckets_set` (above) is
   the essential *set* content; the multiset/permutation fact is the
   remaining sub-wall for the F4.2 GSR product.
-- **F3 item 3 general identity — precise wall.** The identity
-  `overlap_count (n m r k) x y = transitionNumerator (n m r k) y x`
-  (small decks + Commander spot checks proved by `native_decide`; see
-  `ExchangeOverlap.lean`) is a genuine hypergeometric convolution. Under
-  the index substitution `a = y - t` (matching the shared-mapped-card
-  count `t = x - (y - a)`), **three of the four `choose` factors match
-  exactly**: `choose(y, a) = choose(y, t)` (by `choose (y) (y-t) =
-  choose y t`), `choose(r-y, x-y+a) = choose(r-y, x-t)`, and
-  `choose(n-m-(r-y), k-x+y-a) = choose(n-m-(r-y), k-x+t)`. The **fourth**
-  factor differs: the overlap side has `choose(m-y, (m-k)-t)` (unmarked
-  of the target kept) while the transition side gives
-  `choose(m-y, k-y+t)` (unmarked of the source leaving). Closing the
-  remaining Vandermonde-type gap between these two sums is the open
-  combinatorial argument (the "uniform given the new count" half the
-  plan flags as the harder half). This is the single remaining blocker
-  for F3 item 4 and F4.5.
+- **F3 item 3 general identity — reduced to one counting lemma.** The
+  identity `overlap_count (n m r k) x y = transitionNumerator (n m r k) y x`
+  (small-deck + Commander `native_decide` checks in `ExchangeOverlap.lean`)
+  no longer needs the raw hypergeometric convolution. It follows from the
+  **fiber-counting lemma (CL)** —
+  `fiberSum p x y = choose(r, y) * choose(N - r, m - y) *
+  overlap_count (N m r k) x y` — plus the already-proved `fiberSum_swap`
+  and `fiberSum_eq` (the stationary `choose` factors cancel; the plain
+  factor is `N - r`, not `N - m`, which coincide only at `r = m`).
+  **CL is verified on all three small decks**
+  (`fiberCounting_{6321,7442,8431}`, `native_decide`). The **single
+  remaining piece** is the general (symbolic) proof of CL: reindexing the
+  7-way `fiberSum` sum into the `(S, T)` double count (the unique-exchange
+  per target). This is the last blocker for F3 item 4 and F4.5.
 
 **All 37 tests pass; working tree clean.**
 
