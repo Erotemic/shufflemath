@@ -28,6 +28,7 @@ public meta import Shufflemath.BernoulliLaplaceGeneral
 public import Shufflemath.BernoulliLaplaceFiber
 public meta import Shufflemath.BernoulliLaplaceFiber
 public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -190,3 +191,30 @@ theorem fiberCounting_8431 :
         Nat.choose 3 y.val * Nat.choose (8 - 3) (4 - y.val) *
           overlap_count 8 4 3 1 x.val y.val := by
   native_decide
+
+/-- A subset equals its intersection-with-T joined with its complement-with-T
+(the inverse pieces of the 2-part bin decomposition in the inner enumeration
+bridge).  This is the reconstruction identity the general fiber-counting
+lemma's bijection inverts. -/
+theorem inter_sdiff_union {r : Nat} (T1 S1 : Finset (Fin r)) :
+    S1 = (S1 ∩ T1) ∪ (S1 \ T1) := by
+  ext z
+  rw [Finset.mem_union, Finset.mem_inter, Finset.mem_sdiff]
+  by_cases hz : z ∈ T1 <;> simp [hz]
+
+-- TODO(proof): the 2-part bin bijection `s1_bij` — the inner enumeration bridge
+-- for the general fiber-counting lemma (CL).  The `S1`-slice
+-- `(stars.powersetCard x).filter (S1 => (S1 ∩ T1).card = t)` is in bijection
+-- with the 2-bin choice (t from T1, then x-t from stars \ T1) via
+-- `S1 ↦ (S1 ∩ T1, S1 \ T1)`, inverse `(A, B) ↦ A ∪ B`.
+-- `Finset.card_bij` with that map yields three routine subgoals (mem/inj/surj)
+-- using `Finset.mem_powersetCard`, `Finset.card_sdiff`,
+-- `Finset.card_union_add_card_inter`, and `inter_sdiff_union`.  The single wall:
+-- the 2-bin target finset.  `Finset.product a b` (the Cartesian product) does
+-- not `rw [Finset.card_product]` / `Finset.mem_product` in this build, and the
+-- `×˘` token does not parse.  Resume by building the target as an explicit
+-- `Finset.image` (or `sProd`) whose membership AND cardinality reductions fire,
+-- or prove the two bin cardinalities separately and close with a sigma Fubini.
+-- Once `s1_bij` and the analogous `s2_bij` land, the general CL is their
+-- product plus a sum over `t`; `fiberSum_swap` + `fiberSum_eq` finish F3 item 3.
+
