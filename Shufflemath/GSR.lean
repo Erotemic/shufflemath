@@ -67,6 +67,30 @@ theorem stableBuckets_comp (a b : Nat) (minor : α → Fin a) (major : α → Fi
       lexBuckets a b minor major deck := by
   simp [stableBuckets, lexBuckets, filter_flatMap]
 
+/-- **F4.2 (permutation step).** `stableBuckets` only reorders a deck: a card
+`x` appears in the bucketed output exactly when it is in the original deck. It
+lands in exactly one bucket (the one matching its label value), so no card is
+added or dropped. This is the deterministic backbone of the GSR shuffle being a
+permutation (and hence of a within-pile GSR shuffle preserving the membership
+state). -/
+theorem stableBuckets_set (a : Nat) (labels : α → Fin a) (deck : List α) (x : α) :
+    x ∈ stableBuckets a labels deck ↔ x ∈ deck := by
+  rw [stableBuckets]
+  rw [List.mem_flatMap]
+  constructor
+  · intro ⟨i, hi, hx⟩
+    rw [List.mem_filter] at hx
+    exact hx.1
+  · intro hx
+    use (labels x).val
+    constructor
+    · rw [List.mem_range]
+      exact (labels x).isLt
+    · rw [List.mem_filter]
+      constructor
+      · exact hx
+      · rw [beq_iff_eq]
+
 /-- The lexicographically ordered pair alphabet has `b*a` labels.
 The explicit numeric encoding and its sorting compatibility are future work. -/
 theorem productAlphabet_card (a b : Nat) :
