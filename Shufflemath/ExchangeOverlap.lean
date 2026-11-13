@@ -217,4 +217,29 @@ theorem inter_sdiff_union {r : Nat} (T1 S1 : Finset (Fin r)) :
 -- or prove the two bin cardinalities separately and close with a sigma Fubini.
 -- Once `s1_bij` and the analogous `s2_bij` land, the general CL is their
 -- product plus a sum over `t`; `fiberSum_swap` + `fiberSum_eq` finish F3 item 3.
+--
+-- **Clean derivation (5th session):** the general identity needs only the
+-- symbolic (CL) `fiberSum p x y = choose(r,y)*choose(N-r,m-y)*overlap_count
+-- (N m r k) x y`, because
+-- `(CL x y) + fiberSum_swap + fiberSum_eq (y x)` gives
+-- `choose(r,y)*choose(N-r,m-y)*overlap_count (N m r k) x y =
+--  fiberSum p x y = fiberSum p y x =
+--  choose(r,y)*choose(N-r,m-y)*transitionNumerator (N m r k) y x`, and the
+-- nonzero `choose` factor cancels to `overlap_count (N m r k) x y =
+-- transitionNumerator (N m r k) y x`.  Equivalently, reindexing the 7-tuple
+-- fiber to the `(S,T)` pair (with `A = S\\T`, `B = T\\S` uniquely
+-- determined, `|S∩T| = m-k`) gives `fiberSum = F(y)*overlap_count` directly.
+--
+-- **This build's Finset API walls (verified):** `Finset.card_le`,
+-- `Finset.card_le_of_subset`, `Finset.card_lt`, `Finset.not_mem_empty`,
+-- `Finset.mem_empty` all **do not exist**; `Finset.product`/`×˘` do not reduce
+-- under `rw [Finset.card_product]`/`Finset.mem_product` in isolation; and
+-- `rw [Finset.mem_powersetCard] at h` hits a `simp` recursion loop at the
+-- 4-tuple stage.  `Finset.sum_le_sum`, `Finset.card_powersetCard`,
+-- `Finset.mem_powersetCard`, `Finset.card_bij`, `Finset.card_sdiff`, and
+-- `Finset.inter_comm` all work.  `inter_sdiff_union` (the reconstruction
+-- identity) is proven above.  Resume the (CL) by proving the 7-tuple
+-- `fiber7Set` → `(S,T)` bijection with `Finset.card_bij` on explicit
+-- `Finset.image` targets (never bare `Finset.product`), bounding
+-- `(S1∩T1).card ≤ S1.card` via `sumOnes` + `Finset.sum_le_sum`.
 
