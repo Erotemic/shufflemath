@@ -56,6 +56,13 @@ behavior.
 9. **Taste rules:** exact `Rat` arithmetic only; no
    `set_option maxHeartbeats 0`; no floating point in proofs; docstring on
    every nontrivial theorem; no sweeping refactors of existing names.
+10. **No intermediate status reports — commit and move on.** Do not write
+   progress/status/"ready to continue" summaries to the user; those look like
+   stopping and tempt the session to end. The safety mechanism is a **commit**
+   plus continuing to the next proof step in the same turn. After each batch:
+   targeted `lake build` green → `git add` + `git commit` → immediately begin
+   the next item. A turn ends only on the stuck-protocol (rule 8) or the
+   deadline, never on a status update.
 
 ## Lean 4 module-system migration (done this session)
 
