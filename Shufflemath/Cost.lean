@@ -36,6 +36,23 @@ theorem protocolCost_append (xs ys : List (CostedKernel alpha)) :
     protocolCost (xs ++ ys) = protocolCost xs + protocolCost ys := by
   simp [protocolCost]
 
+/-- The total cost of a schedule of nonnegative-cost actions is nonnegative. -/
+theorem protocolCost_nonneg (ops : List (CostedKernel alpha)) :
+    0 <= protocolCost ops := by
+  induction ops with
+  | nil => simp [protocolCost]
+  | cons op ops ih =>
+      simp [protocolCost_cons]
+      exact add_nonneg op.cost_nonneg ih
+
 end CostedKernel
+
+/-- The physical action alphabet of the finite-GSR protocol: a local (within-
+pile) riffle, a card exchange between the two piles, or a split/recombine.
+Cost units are attached per action through a `CostedKernel`. -/
+inductive ActionKind
+| localRiffle
+| exchange
+| splitRecombine
 end Shufflemath
 end
