@@ -13,9 +13,11 @@ behavior.
 
 ## Standing rules for the agent reading this document (non-negotiable)
 
-1. **Do not stop, ask, or end the session before Thu Nov 12 22:27:06 EST 2026.**
-   This is a long autonomous build. You **will be compacted multiple times**;
-   compaction is normal and is not a stopping signal.
+1. **Do not stop, ask, or end the session before Wed Nov 18 23:59:59 EST 2026.**
+   (Deadline extended from the original Thu Nov 12 22:27:06 EST at the
+   user's request on the Nov 12 session.) This is a long autonomous build.
+   You **will be compacted multiple times**; compaction is normal and is not
+   a stopping signal.
 2. **After every compaction, do exactly this, in order:**
    a. Read this document top to bottom, then `AGENTS.md` and
       `docs/lean_plan.md`.

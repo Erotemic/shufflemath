@@ -17,7 +17,9 @@ formalization (library `Shufflemath`).
   `docs/f2_fiberlaw_unblock.md`.
 - **Active do-not-stop rule:** `docs/agent_handoff.md` contains a
   **Standing rules** section (the revived October autonomous-build protocol)
-  that is **active until Thu Nov 12 22:27:06 EST 2026**: do not stop, ask, or
+  that is **active until Wed Nov 18 23:59:59 EST 2026** (extended from the
+  original Thu Nov 12 22:27:06 EST at the user's request): do not stop, ask,
+  or
   end the session before then; compaction is not a stopping signal; its
   compaction-resume protocol, small-batch commit gates, and stuck protocol are
   binding. It has been re-pointed at the current work queue
