@@ -25,6 +25,8 @@ subtraction is wrong when `x - t` is negative: the saturation turns it into
 -/
 public import Shufflemath.BernoulliLaplaceGeneral
 public meta import Shufflemath.BernoulliLaplaceGeneral
+public import Shufflemath.BernoulliLaplaceFiber
+public meta import Shufflemath.BernoulliLaplaceFiber
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Tactic
 
@@ -120,4 +122,71 @@ theorem overlap_eq_revTransitionNumerator_cmdr_251 :
 matches the reference. -/
 theorem overlap_eq_revTransitionNumerator_cmdr_1040 :
     overlap_count 99 50 50 25 10 40 = transitionNumerator 99 50 50 25 40 10 := by
+  native_decide
+
+/-!
+## The fiber-counting lemma (F3 item 3, 4th-session reduction)
+
+The general identity
+`overlap_count (n m r k) x y = transitionNumerator (n m r k) y x`
+reduces to a single new counting lemma plus two already-proved facts:
+
+- **(CL) the fiber-counting lemma:**
+  `fiberSum p x y = choose(r, y) * choose(N - r, m - y) *
+     overlap_count (N m r k) x y`,
+  where `choose(r, y) * choose(N - r, m - y)` is the number of `m`-subsets
+  carrying `y` marked cards (the stationary-weight numerator).  Combinatorially,
+  `fiberSum p x y` counts the triples `(S, A, B)` with `|S| = m`, `x` marked in
+  `S`, `|A| = k ⊆ S`, `|B| = k ⊆ Sᶜ`, and `(S\A) ∪ B` carrying `y` marked; the
+  target `T = (S\A) ∪ B` satisfies `|S ∩ T| = m - k` and is recovered uniquely
+  from `(S, A, B)`, so this is the double count of `(S, T)` pairs with
+  `marked(S) = x`, `marked(T) = y`, `|S ∩ T| = m - k` = "(number of `y`-targets)
+  × (sources per fixed target)" = `choose(r, y) * choose(N - r, m - y) *
+  overlap_count (N m r k) x y`.
+- **`fiberSum_swap`** (`BernoulliLaplaceFiber`): `fiberSum p x y = fiberSum p y x`.
+
+From (CL) at `(x, y)` and `(y, x)` plus `fiberSum_swap`:
+`choose(r, y) * choose(N - r, m - y) * overlap_count (N m r k) x y =
+ choose(r, x) * choose(N - r, m - x) * overlap_count (N m r k) y x`.
+Combined with the already-proved `fiberSum_eq`
+(`fiberSum p x y = choose(r, x) * choose(N - r, m - x) *
+transitionNumerator (N m r k) x y`) the `choose` factors cancel and give
+`overlap_count (N m r k) x y = transitionNumerator (N m r k) y x`.
+
+(CL) is verified below by exact kernel computation on the three small decks.
+The general (symbolic) proof of (CL) — the 7-way `fiberSum` sum reindexed to the
+`(S, T)` double count — is the single remaining piece of F3 item 3.
+-/
+
+def overlapP6321 : BernoulliLaplaceGeneral.ExchangeAdmissible :=
+  ⟨6, 3, 2, 1, by norm_num, by norm_num, by norm_num, by norm_num, by norm_num, by norm_num⟩
+
+def overlapP7442 : BernoulliLaplaceGeneral.ExchangeAdmissible :=
+  ⟨7, 4, 4, 2, by norm_num, by norm_num, by norm_num, by norm_num, by norm_num, by norm_num⟩
+
+def overlapP8431 : BernoulliLaplaceGeneral.ExchangeAdmissible :=
+  ⟨8, 4, 3, 1, by norm_num, by norm_num, by norm_num, by norm_num, by norm_num, by norm_num⟩
+
+/-- (CL) for `(6,3,2,1)`, `x, y ∈ {0,1,2}`: `fiberSum = F(y) * overlap_count`. -/
+theorem fiberCounting_6321 :
+    ∀ (x y : Fin 3),
+      BernoulliLaplaceGeneral.fiberSum overlapP6321 x.val y.val =
+        Nat.choose 2 y.val * Nat.choose (6 - 2) (3 - y.val) *
+          overlap_count 6 3 2 1 x.val y.val := by
+  native_decide
+
+/-- (CL) for `(7,4,4,2)`, valid `x, y ∈ {1,2,3,4}`. -/
+theorem fiberCounting_7442 :
+    ∀ (x y : Fin 4),
+      BernoulliLaplaceGeneral.fiberSum overlapP7442 (1 + x.val) (1 + y.val) =
+        Nat.choose 4 (1 + y.val) * Nat.choose (7 - 4) (4 - (1 + y.val)) *
+          overlap_count 7 4 4 2 (1 + x.val) (1 + y.val) := by
+  native_decide
+
+/-- (CL) for `(8,4,3,1)`, `x, y ∈ {0,1,2,3}`. -/
+theorem fiberCounting_8431 :
+    ∀ (x y : Fin 4),
+      BernoulliLaplaceGeneral.fiberSum overlapP8431 x.val y.val =
+        Nat.choose 3 y.val * Nat.choose (8 - 3) (4 - y.val) *
+          overlap_count 8 4 3 1 x.val y.val := by
   native_decide
