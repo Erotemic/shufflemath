@@ -310,9 +310,16 @@ algebra can advance in parallel.
    **cannot change the membership state**. The bijection is now DONE via
    `pileRelabelEquiv` (`Fin.sumFinEquiv` + `Equiv.sumCongr` + `Equiv.trans`,
    building the `Fin 99 ≃ Fin 99` by construction) and `reorderedDeck` /
-   `reorderedDeck_leftCards`. *Remaining:* the **GSR product** — a
-   `FiniteKernel Deck Deck` in which the within-pile permutations are
-   GSR-distributed (route in `docs/qwen_unblock_nov12.md` §3).
+   `reorderedDeck_leftCards`. *Progress (5th session, `4e1b76f`):* **`gsrProductKernel (nL nR a b)`**
+   (`CommanderLocalGSR.lean`) is now in the library — it applies the F4.1
+   `GSR.idealShuffle` independently to the left and right piles (a
+   `FiniteKernel` on the pile-list product), and **`gsrLocal_preserves_pile`**
+   proves a within-pile GSR output holds exactly the pile's original cards
+   (via `stableBuckets_set`), i.e. a local GSR cannot change the membership
+   state. *Remaining:* lift the pile-list kernel to the full `Deck`
+   (`Equiv.Perm (Fin 99)`) — the distributional multiset/permutation fact
+   (output is a genuine rearrangement, not merely set-equal) is the sub-wall
+   (`List.mem_bind`/`length_filter`/`toMultiset` absent in this build).
 3. Establish the row-wise bound against *physical perfect-local* shuffling:
    for each deck, the TV discrepancy is no greater than the sum of the two
    local GSR-versus-uniform errors (49-card and 50-card working sets).
@@ -335,6 +342,18 @@ First prove the candidate's cost and **sufficient** TV upper bound; only then
 address finite-class minimum-cost claims. A search over conservative upper
 bounds is not proof that the candidate minimizes actual TV unless competing
 candidates have suitable lower bounds or exact TV values.
+
+*Progress (5th session, `e203310`/`ec68b71`):* the model-agnostic halves are
+in. **`ProtocolCertificate.costed_terminalTV_le`** proves a costed schedule's
+terminal TV ≤ its step kernels' weighted perturbation budget + the
+ideal-reference TV (the "sufficient TV upper bound" half; reuses
+`terminalTV_le_reference_add_budget`, so no F4 protocol instance is required).
+**`Cost.protocolCost_nonneg`** (a schedule of nonnegative-cost actions has
+nonnegative total cost) and the **`ActionKind`** action alphabet
+(`localRiffle`/`exchange`/`splitRecombine`) supply the "cost" and "action
+class" halves. *Remaining:* assemble these into the full F5 theorem over an
+explicit finite-GSR protocol (needs the F4.2 `Deck`-level GSR product and the
+F3 item 3/4 results), and state the optimization quantifiers separately.
 
 **Acceptance:** theorem with model, action class, initial state, target,
 terminal bound, and cost all explicit; separately state any optimization

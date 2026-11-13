@@ -1,16 +1,25 @@
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-12 (3rd session). **F4.1 is COMPLETE** — the capstone
-`productLabelShuffle a b (uniform) (uniform) = idealShuffle n (a*b)` is proved
-(`17ffab6`), with `apply_mass_dom` (`Finite.lean`) and the relaxed
-`map_uniform_mass` / joint-distribution bridge. Remaining: F4.2 GSR product
-(within-pile GSR-distributed permutations; wall: `List.mem_bind` absent), F3
-item 3 general identity (`overlap_count = transitionNumerator`, hypergeometric
-convolution), F3 item 4, F4.3 row-wise TV, F4.5 full-deck terminal bound, F5.
-`docs/lean_plan.md` is the authority; `docs/qwen_unblock_nov12.md` has the
-routes. This is an *operational handoff*. `lean_plan.md` is the
-authority for overall scope and priority; `AGENTS.md` governs repository
-behavior.
+**Updated:** 2026-11-12 (5th session). **F4.1 COMPLETE** (`17ffab6`) and
+**F4.2 GSR product is now in the library** (`4e1b76f`): `gsrProductKernel`
+(independent within-pile GSR riffles on the left and right piles, as a
+`FiniteKernel` on the pile-list product) + `gsrLocal_preserves_pile` (a
+within-pile GSR output holds exactly the pile's cards, via
+`stableBuckets_set`). **F5 model-agnostic pieces landed** (`e203310`,
+`ec68b71`): `ProtocolCertificate.costed_terminalTV_le` (a costed schedule's
+terminal TV ≤ ideal-reference error + weighted perturbation budget — the
+"sufficient TV bound" half of F5) and `Cost.protocolCost_nonneg` + the
+`ActionKind` action alphabet (the "cost" half). **F3 item 3** is reduced to
+the symbolic **fiber-counting lemma (CL)** `fiberSum p x y = choose(r,y)·
+choose(N-r,m-y)·overlap_count (N m r k) x y`; the clean derivation
+`(CL) + fiberSum_swap + fiberSum_eq (y x)` → `overlap_count (N m r k) x y =
+transitionNumerator (N m r k) y x` is recorded in `ExchangeOverlap.lean`
+(`ef93f8d`) along with this build's Finset API walls. Remaining: the general
+(symbolic) CL, F3 item 4, F4.3 row-wise TV, F4.5 full-deck terminal bound, and
+the F5 full theorem / optimization quantifiers. `docs/lean_plan.md` is the
+authority; `docs/qwen_unblock_nov12.md` has the routes. This is an
+*operational handoff*. `lean_plan.md` is the authority for overall scope and
+priority; `AGENTS.md` governs repository behavior.
 
 ## Standing rules for the agent reading this document (non-negotiable)
 
@@ -184,6 +193,43 @@ analysis of the two remaining hard walls:
 
 **All 37 tests pass; working tree clean.**
 
+
+### Nov 12 (5th) session status — resume here first
+
+This session advanced **F4.2**, **F5**, and the **F3 item 3** reduction (all
+committed; 37 tests pass; tree clean):
+
+- **F4.2 GSR product — `gsrProductKernel` + `gsrLocal_preserves_pile`**
+  (`CommanderLocalGSR.lean`, `4e1b76f`). `gsrProductKernel (nL nR a b) :
+  FiniteKernel (List (Fin nL) × List (Fin nR)) (same)` applies the F4.1
+  `GSR.idealShuffle` independently to each pile and joins the two outputs.
+  `gsrLocal_preserves_pile` states the membership content: a within-pile GSR
+  output holds exactly the pile's original cards (`stableBuckets_set`). The
+  *distributional* multiset/permutation fact (that the output is a genuine
+  `Multiset`-equal / `List.Perm`-equivalent rearrangement, not just set-equal)
+  remains the F4.2 sub-wall (missing `List.mem_bind`/`length_filter`/
+  `toMultiset` in this build); the set-preservation is the essential F4.2
+  content for membership.
+- **F5 — `costed_terminalTV_le` + `protocolCost_nonneg` + `ActionKind`**
+  (`e203310`, `ec68b71`). `ProtocolCertificate.costed_terminalTV_le`: a costed
+  schedule's terminal TV ≤ `errorBudget` of its step kernels + the
+  ideal-reference TV (reuses `terminalTV_le_reference_add_budget`; no F4
+  instance required, so it advances independently). `Cost.protocolCost_nonneg`
+  (a schedule of nonnegative-cost actions has nonnegative total cost) and the
+  `ActionKind` inductive (`localRiffle`/`exchange`/`splitRecombine`).
+- **F3 item 3 — clean CL derivation recorded** (`ExchangeOverlap.lean`,
+  `ef93f8d`): the general identity needs only the symbolic
+  `fiberSum p x y = choose(r,y)·choose(N-r,m-y)·overlap_count (N m r k) x y`,
+  because that plus `fiberSum_swap` and `fiberSum_eq (y x)` cancels the
+  nonzero `choose` factor to `overlap_count (N m r k) x y =
+  transitionNumerator (N m r k) y x`. Equivalently, reindex the 7-tuple fiber
+  to the `(S,T)` pair (`A = S\T`, `B = T\S`, `|S∩T| = m-k`). The recorded
+  TODO lists this build's Finset API walls (`Finset.card_le`,
+  `not_mem_empty`, `product`-notation, and `mem_powersetCard`-at-h recursion
+  all fail; use `sum_le_sum`, `card_bij` on `image` targets). `inter_sdiff_union`
+  (the reconstruction identity) is proven.
+
+**All 37 tests pass; working tree clean.**
 
 ### Nov 12 (2nd) session status — prior session (reference)
 
