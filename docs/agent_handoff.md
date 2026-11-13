@@ -154,6 +154,24 @@ This session (after GPT-6.5's unblock doc `docs/qwen_unblock_nov12.md`) made
   quirks; the individual pieces compile in isolation but the full assembly has
   not closed. See `docs/f3_membership_exchange.md`.
 
+- **F3 item 3 — the four-bin `overlap_count` def is in place.**
+  New file `Shufflemath/ExchangeOverlap.lean` (green, committed):
+  `overlap_count (n m r k) x y` is the four-bin (marked/unmarked ×
+  in/outside-T) `choose`-sum counting the `m`-subsets `S` with `x`
+  marked cards and `|S ∩ T| = m - k` for a fixed `T` holding `y`
+  marked identities.  This is the left-hand side of the F3 item 3
+  identity `overlap_count (n m r k) x y =
+  transitionNumerator (n m r k) y x` (reversed numerator; the Python
+  test `tests/test_exchange_overlap_identity.py` verifies it by exact
+  `int` arithmetic on three small decks + all 2,500 Commander pairs).
+  *Wall:* the Lean proof of the identity (or the small-deck
+  `norm_num` regression) is blocked because this Mathlib build's
+  `norm_num` has no `Nat.choose` / `Finset.sum (Finset.range …)`
+  extension (and `List.mem_bind`, `Fin.val_lt`, `List.toMultiset`
+  are absent; use `Fin.isLt` / `.2` and avoid those).  The
+  `Finset.sum_range_one`/`_succ` lemmas do exist for manual
+  expansion, but `range 26` is not practical by hand.
+
 **The GPT-6.5 unblock doc `docs/qwen_unblock_nov12.md` is the authoritative
 guide** for the remaining F4.1-kernel, F4.2-GSR-product, and F3-item-3
 routes. It contains the exact `Finsupp`/`Multiset`/`Equiv` routes and the
