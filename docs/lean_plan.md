@@ -42,7 +42,7 @@ membership. See [full_deck_oracle_bridge.md](full_deck_oracle_bridge.md) and
 | Kernel error/composition | `Perturbation`, `Dobrushin`, `ProtocolCertificate`, `Cost` | Weighted TV telescope, contraction and generic cost/error interfaces |
 | BL macro chain | `BernoulliLaplace`, `BernoulliLaplaceGeneral`, `BernoulliLaplaceFiber`, `BernoulliLaplaceCommanderBridge` | General normalization, stationarity, reversibility, first centered eigenfunction and Commander specialization; exact 2-/3-step TV values |
 | Array/semantic bridge | `BernoulliLaplaceSemantic` | Exact array runs and semantic `FiniteKernel` runs agree |
-| Inverse GSR | `GSR` | Stable label buckets and product-label composition; the uniform `Fin (a*b)` label-law pushforward is proved, while sorting compatibility and numeric-alphabet kernel equality remain |
+| Inverse GSR | `GSR` | **Complete.** `productLabelShuffle a b (uniform) (uniform) = idealShuffle n (a*b)` is proved (`productLabelShuffle_uniform_eq_ideal`), from the joint-distribution bridge, the `labelReparam` pushforward, and sorting compatibility |
 | Generic macro/micro TV | `FiberLifting`, `OracleRefinement` | Recoverable-lift TV isometry and canonical oracle intertwining, including schedule results |
 | Physical refinement interface | `PhysicalRefinement` | Conditional full-deck physical TV bound using a perfect-local reference and weighted row error |
 | Actual 99-card deck | `CommanderPermutation`, `CommanderFiberWitness` | `Equiv.Perm (Fin 99)`, count projection, explicit witness for each of the 50 fibers |
@@ -279,8 +279,14 @@ algebra can advance in parallel.
    `productLabelShuffle a b (uniform) (uniform) = idealShuffle n (a*b)` — a
    joint-distribution bridge (the sorting-compatibility lemma is now DONE:
    `stableBuckets_combine_eq_lex` + the per-card `Bool`/`==`/`&&` bridge
-   `combineVal_filter_eq`). Route in `docs/qwen_unblock_nov12.md` §2.
-   `productLabelShuffle (uniform) = idealShuffle` that follows from the two.
+   `combineVal_filter_eq`). **DONE:** the kernel equality
+   `productLabelShuffle_uniform_eq_ideal` is proved (`GSR.lean`, `17ffab6`)
+   via the joint-distribution bridge (iterated uniform `apply` = uniform
+   product law, `apply_uniform_uniform_eq_product`) + the `labelReparam`
+   pushforward + `stableBuckets_combine_eq_lex`. The bridge and
+   `map_uniform_mass` were relaxed (codomain needs only `DecidableEq`, not
+   `Fintype`, via `Finite.lean`'s `apply_mass_dom`) so they apply at the
+   deck level (`α = List (Fin n)`). **F4.1 is complete.**
 2. Define a permutation-preserving local-GSR kernel for the ordered cards in
    each *fixed* pile. Prove it cannot change the membership state.
 

@@ -1,13 +1,14 @@
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-12 (17 commits). **Source basis:** F4.1 `combineVal_pred_eq`
-(the `=`/`Prop` per-card bridge) + all index-level ingredients proved; F4.2 **core**
-(`permutedLeftCards_eq`: a within-pile relabel cannot change the membership state)
-+ `pileRelabelFn_leftVal`/`_rightVal` helpers proved; new
-`Shufflemath/FinsetCombinatorics` (`union_inter_parts`, the uniqueness foundation
-for the F3 item-3 hypergeometric count). F3 item 3 core (both parts), F4.2
-bijection, F4.1 `Bool`-bridge kernel equality still open. The Nov 11 snapshot
-below is reference. This is an *operational handoff*. `lean_plan.md` is the
+**Updated:** 2026-11-12 (3rd session). **F4.1 is COMPLETE** — the capstone
+`productLabelShuffle a b (uniform) (uniform) = idealShuffle n (a*b)` is proved
+(`17ffab6`), with `apply_mass_dom` (`Finite.lean`) and the relaxed
+`map_uniform_mass` / joint-distribution bridge. Remaining: F4.2 GSR product
+(within-pile GSR-distributed permutations; wall: `List.mem_bind` absent), F3
+item 3 general identity (`overlap_count = transitionNumerator`, hypergeometric
+convolution), F3 item 4, F4.3 row-wise TV, F4.5 full-deck terminal bound, F5.
+`docs/lean_plan.md` is the authority; `docs/qwen_unblock_nov12.md` has the
+routes. This is an *operational handoff*. `lean_plan.md` is the
 authority for overall scope and priority; `AGENTS.md` governs repository
 behavior.
 
@@ -116,7 +117,28 @@ attempts, but is no longer the recommended route.
 
 ## Exactly where to resume
 
-### Nov 12 (2nd) session status — resume here first
+### Nov 12 (3rd) session status — resume here first
+
+**F4.1 is COMPLETE.** The capstone theorem is proved and committed
+(`17ffab6`):
+
+- **`productLabelShuffle_uniform_eq_ideal`** (`GSR.lean`):
+  `productLabelShuffle a b (uniformLabels n a) (uniformLabels n b) =
+  idealShuffle n (a*b)` for `0 < a`, `0 < b`. A two-stage uniform
+  `a`- then `b`-label shuffle has exactly the law of a single uniform
+  `(a*b)`-alphabet inverse riffle. Assembled from the joint-distribution
+  bridge, the `labelReparam` pushforward, and the sorting-compatibility
+  identity.
+- **`apply_mass_dom`** (`Finite.lean`): the `apply`-row-mass formula with
+  the (unused) codomain `Fintype`/`DecidableEq` instances dropped, so the
+  bridge and `map_uniform_mass` apply at the deck level where the output is
+  `List (Fin n)` (not `Fintype`).
+- **Relaxed `map_uniform_mass` and the joint-distribution bridge** in
+  `GSR.lean` (codomain needs only `DecidableEq`).
+
+All 37 tests pass. **F4.1 is now a finished theorem in the library.**
+
+### Nov 12 (2nd) session status — prior session (reference)
 
 This session (after GPT-6.5's unblock doc `docs/qwen_unblock_nov12.md`) made
 **three substantial committed wins** (all 37 tests pass; working tree clean):
@@ -129,11 +151,8 @@ This session (after GPT-6.5's unblock doc `docs/qwen_unblock_nov12.md`) made
   `(x && y) = true ↔ x = true ∧ y = true`), NOT `Nat.beq_eq` (an
   `=`-of-`Prop`, which does not compose with `Bool.eq_iff_iff`). The proof
   goes `Bool.eq_iff_iff.mpr` → `beq_iff_eq` → the `=`-world `combinedLabel_pred`
-  → `Nat.div_add_mod`/`mod_lt`. **F4.1 remaining:** the kernel equality
-  `productLabelShuffle a b (uniform) (uniform) = idealShuffle n (a*b)` — a
-  joint-distribution bridge (route in `docs/qwen_unblock_nov12.md` §2).
-  F4.1 is *substantially* along (the per-card bridge is done), not
-  substantially complete.
+  → `Nat.div_add_mod`/`mod_lt`. **F4.1 kernel equality:** COMPLETED in the
+  3rd session (`productLabelShuffle_uniform_eq_ideal`, `17ffab6`).
 - **F4.2 local-shuffle — the bijection is DONE via `Equiv` construction.**
   `Shufflemath/CommanderLocalGSR.lean` now has `pileRelabelEquiv pl pr : Fin
   99 ≃ Fin 99` (built on GPT's **`finSumFinEquiv`** + `Equiv.sumCongr` +
