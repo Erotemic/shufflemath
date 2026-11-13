@@ -114,10 +114,56 @@ attempts, but is no longer the recommended route.
 
 ## Exactly where to resume
 
-### Nov 12 session status (resume here first)
+### Nov 12 (2nd) session status — resume here first
 
-**Build is green on all target modules; all committed.** The Nov 12 session
-made the following committed progress (see `git log --oneline -12`):
+This session (after GPT-6.5's unblock doc `docs/qwen_unblock_nov12.md`) made
+**three substantial committed wins** (all 37 tests pass; working tree clean):
+
+- **F4.1 sorting-compatibility — the `Bool`/`==`/`&&` bridge is DONE.**
+  The per-card filter predicate `combineVal_filter_eq` and the full
+  `stableBuckets_combine_eq_lex` are committed in `GSR.lean`. The key
+  correction from GPT's candidate: use **`beq_iff_eq`** (an `Iff`:
+  `(a == b) = true ↔ a = b`) and **`Bool.and_eq_true_iff`** (an `Iff`:
+  `(x && y) = true ↔ x = true ∧ y = true`), NOT `Nat.beq_eq` (an
+  `=`-of-`Prop`, which does not compose with `Bool.eq_iff_iff`). The proof
+  goes `Bool.eq_iff_iff.mpr` → `beq_iff_eq` → the `=`-world `combinedLabel_pred`
+  → `Nat.div_add_mod`/`mod_lt`. **F4.1 remaining:** the kernel equality
+  `productLabelShuffle a b (uniform) (uniform) = idealShuffle n (a*b)` — a
+  joint-distribution bridge (route in `docs/qwen_unblock_nov12.md` §2).
+  F4.1 is *substantially* along (the per-card bridge is done), not
+  substantially complete.
+- **F4.2 local-shuffle — the bijection is DONE via `Equiv` construction.**
+  `Shufflemath/CommanderLocalGSR.lean` now has `pileRelabelEquiv pl pr : Fin
+  99 ≃ Fin 99` (built on GPT's **`finSumFinEquiv`** + `Equiv.sumCongr` +
+  `Equiv.trans`, avoiding the manual `if p.val < 50` `Fin`-equality wall) and
+  `reorderedDeck`/`reorderedDeck_leftCards`. `finSumFinEquiv` itself does not
+  reduce under `simp` (it is defined by `Equiv.ofFun` with an explicit
+  `isLt` proof), so the apply-lemmas are `finSumFinEquiv_apply_left/right`.
+  **F4.2 remaining:** the *GSR product* — a `FiniteKernel Deck Deck` where
+  the pile permutations are GSR-distributed (route in the unblock doc §3).
+  The deterministic membership-preservation (`reorderedDeck_leftCards`) is done.
+- **F3 item 3 — sub-lemma 1 done; a new wall on the 5-conjunct assembly.**
+  `Shufflemath/FinsetCombinatorics.lean` now has `isExchangePair`,
+  `exchangePair_unique_B`, `exchangePair_unique_A`, `cardSdiffInter`, and
+  `cardSdiffInter2` (the 5-conjunct canonical-pair *cardinality* identity:
+  the pair `(S\T, T\S)` is a bijection between `P(S)×P(T)` and the
+  exchange-pair set, all provable via `Multiset`/`Finset` + `Multiset.ext`)
+  plus the `stableBuckets_multiset`-style foundation. **New wall:**
+  `exchangePair_exists` (assemble the 5-conjunct `isExchangePair` predicate
+  in a `Fintype` context) hits `Finset`-quotient `rw`/`by simpa`-in-term-position
+  quirks; the individual pieces compile in isolation but the full assembly has
+  not closed. See `docs/f3_membership_exchange.md`.
+
+**The GPT-6.5 unblock doc `docs/qwen_unblock_nov12.md` is the authoritative
+guide** for the remaining F4.1-kernel, F4.2-GSR-product, and F3-item-3
+routes. It contains the exact `Finsupp`/`Multiset`/`Equiv` routes and the
+specific Mathlib lemmas (`Fin.sumFinEquiv`, `Equiv.sumCongr`,
+`Multiset.ofFin`, `Finsupp.image_sum`, etc.).
+
+### Nov 12 (1st) session status — prior to the GPT-6.5 unblock
+
+**Build was green on all target modules; all committed.** The first Nov 12
+session made the following committed progress (see `git log`):
 
 - **F4.1 sorting-compatibility — the `List.range` wall is BROKEN.**
   `List.range_add` exists in this build (`List.range (m+n) = List.range m ++
@@ -230,7 +276,7 @@ the kernel-level lift is just `StdSimplex.weights_inj` + `Finsupp.ext` (both
 non-recursing over `Finsupp Deck`). **Do not re-attempt the `Finsupp.mapDomain`
 or `DecidableEq (Equiv.Perm …)` pushforward routes** — they are obsolete.
 
-**Next action: F3 item 3 core (the `hMembershipExchange` counting identity).** In
+**(Nov 11 reference) Next action: F3 item 3 core.** In
 `Shufflemath/CommanderPhysicalExchange`, done: item 1 (`newLeftCards d L R`,
 `newLeftOriginalCount_eq`), item 2 (`rawExchange : FiniteKernel Deck Deck` via
 `rawExchangeMembership` + `localLift`, commit `b25d5f4`), item 3a

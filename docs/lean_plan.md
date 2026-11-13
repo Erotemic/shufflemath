@@ -275,10 +275,11 @@ algebra can advance in parallel.
    `x = j ∧ y = i`, proved via `Nat.add_mod`/`Nat.mod_eq_of_lt`/`Nat.mul_mod_right`/
    `Nat.add_right_inj`/`Nat.mul_left_cancel`) and `combinedLabel_pred`
    (per-card: `major c * a + minor c = j*a + i ↔ major c = j ∧ minor c = i`).
-   *Remaining:* the sorting-compatibility lemma
-   (`stableBuckets (a*b) (combineLabels ...) deck = lexBuckets ... deck`;
-   via the mixed-radix uniqueness of `major*a + minor` and the block
-   decomposition of `range (a*b)`), and the kernel equality
+   *Remaining:* the **kernel equality**
+   `productLabelShuffle a b (uniform) (uniform) = idealShuffle n (a*b)` — a
+   joint-distribution bridge (the sorting-compatibility lemma is now DONE:
+   `stableBuckets_combine_eq_lex` + the per-card `Bool`/`==`/`&&` bridge
+   `combineVal_filter_eq`). Route in `docs/qwen_unblock_nov12.md` §2.
    `productLabelShuffle (uniform) = idealShuffle` that follows from the two.
 2. Define a permutation-preserving local-GSR kernel for the ordered cards in
    each *fixed* pile. Prove it cannot change the membership state.
@@ -291,9 +292,12 @@ algebra can advance in parallel.
    `permutedLeftCards_eq` proves the left-card set of the permuted deck equals
    `leftCards d` (reindexing the 50 left positions by a bijection leaves the
    image of `univ` unchanged, `univImage_reindex`), i.e. a local shuffle
-   **cannot change the membership state**. *Remaining:* package this into a
-   `FiniteKernel Deck Deck` (prove `pileRelabelFn` is a bijection to get a
-   valid deck) and take the GSR product over the two piles.
+   **cannot change the membership state**. The bijection is now DONE via
+   `pileRelabelEquiv` (`Fin.sumFinEquiv` + `Equiv.sumCongr` + `Equiv.trans`,
+   building the `Fin 99 ≃ Fin 99` by construction) and `reorderedDeck` /
+   `reorderedDeck_leftCards`. *Remaining:* the **GSR product** — a
+   `FiniteKernel Deck Deck` in which the within-pile permutations are
+   GSR-distributed (route in `docs/qwen_unblock_nov12.md` §3).
 3. Establish the row-wise bound against *physical perfect-local* shuffling:
    for each deck, the TV discrepancy is no greater than the sum of the two
    local GSR-versus-uniform errors (49-card and 50-card working sets).
