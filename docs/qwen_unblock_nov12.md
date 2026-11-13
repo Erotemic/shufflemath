@@ -214,6 +214,28 @@ pure algebra. **The single remaining piece is the general (symbolic) proof of
 (CL)** — reindexing the 7-way `fiberSum` sum to the `(S, T)` double count —
 which the small-deck `native_decide` instances confirm pointwise.
 
+**Concrete next target for the general CL** — the inner enumeration bridge.
+Fix a target `(T1, T2)` with `|T1| = y`, `|T2| = m - y` (marked/plain parts).
+An `(S1, S2)` with `|S1| = x`, `|S2| = m - x`, `|S1 ∩ T1| + |S2 ∩ T2| = m - k`
+decomposes *uniquely* into four independent bin choices once `t = |S1 ∩ T1|`
+is fixed:
+
+| bin | universe | size picked | `choose` factor |
+|---|---|---|---|
+| `S1 ∩ T1`   | `T1` (size `y`)          | `t`          | `choose(y, t)` |
+| `S1 \ T1`   | `stars \ T1` (`r - y`)  | `x - t`      | `choose(r - y, x - t)` |
+| `S2 ∩ T2`   | `T2` (size `m - y`)      | `(m-k) - t`  | `choose(m - y, (m-k) - t)` |
+| `S2 \ T2`   | `plain \ T2` (`N-r-m+y`) | `k - x + t`  | `choose(N-r-m+y, k-x+t)` |
+
+So for each `t` the `t`-slice count is the 4-way product above, and summing
+over `t` gives exactly `overlap_count (N m r k) x y`. The `(S1, S2) ↔
+(S1∩T1, S1\T1, S2∩T2, S2\T2)` map is a bijection (inverse
+`((A,B,C,D)) ↦ (A ⊔ B, C ⊔ D)`), with bin cardinalities from
+`Finset.card_powersetCard`, `Finset.card_sdiff`, and `Finset.card_inter`.
+This is the one lemma left to write in Lean (the 4-tuple product is a
+`Finset.prod` of four `Finset.powersetCard`s); the small-deck instances
+already verify the final numeric equality.
+
 `tests/test_exchange_overlap_identity.py` independently verifies the overlap
 formula against actual membership enumeration on three small decks and
 all **2,500** Commander `(x,y)` pairs using exact `int` arithmetic. Run:
