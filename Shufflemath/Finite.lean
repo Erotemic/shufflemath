@@ -155,6 +155,31 @@ theorem apply_mass [Fintype alpha] [Fintype beta] [DecidableEq alpha] [Decidable
   refine Finset.sum_congr rfl fun i _ => ?_
   exact Finsupp.sum_single_index (h_zero := by ring)
 
+/-- The same row-mass formula as `apply_mass`, but without the (unused) `Fintype`/`DecidableEq`
+  instances on the codomain `beta`. The sum is only over the domain `alpha`, so the codomain can
+  be any type (e.g. `List (Fin n)`, which is not `Fintype`). This is what lets the joint-
+distribution bridge apply to the deck level. -/
+theorem apply_mass_dom [Fintype alpha] [DecidableEq alpha]
+    (mu : Dist alpha) (K : FiniteKernel alpha beta) (x : beta) :
+    Dist.mass (apply mu K) x = Finset.sum Finset.univ (fun j => Dist.mass mu j * Dist.mass (K j) x) := by
+  unfold apply
+  unfold Dist.mass
+  simp only [Convexity.StdSimplex.weights_join, Convexity.StdSimplex.weights_map]
+  rw [Finsupp.sum_apply]
+  simp [Finsupp.mapDomain, Finsupp.sum_fintype, Finsupp.smul_apply]
+  have h1 : ((Finset.sum Finset.univ fun i => Finsupp.single (K i) (mu.weights i)).sum
+      (fun a₁ b => b * a₁.weights x)) =
+      Finset.sum Finset.univ fun i => (Finsupp.single (K i) (mu.weights i)).sum
+        (fun a₁ b => b * a₁.weights x) := by
+    rw [Finsupp.sum_finsetSum]
+    · intro a
+      ring
+    · intro a m₁ m₂
+      ring
+  rw [h1]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  exact Finsupp.sum_single_index (h_zero := by ring)
+
 @[simp]
 theorem deterministic_apply_pointMass (x : alpha) (f : alpha -> beta) :
     apply (Dist.pointMass x) (deterministic f) = Dist.pointMass (f x) := by

@@ -526,7 +526,7 @@ theorem mass_uniformDist {β : Type*} [Fintype β] [Nonempty β] (x : β) :
 /-- Pushing the uniform law through a function `f` gives mass at `z` equal to
 the average (over the uniform domain) of the indicator that `f w = z`.  This
 is the single-source half of the joint-distribution bridge for F4.1. -/
-theorem map_uniform_mass {Y α : Type*} [Fintype Y] [Fintype α]
+theorem map_uniform_mass {Y α : Type*} [Fintype Y]
     [DecidableEq Y] [DecidableEq α] [Nonempty Y]
     (f : Y → α) (z : α) :
     Dist.mass ((uniformDist Y).map f) z =
@@ -534,7 +534,7 @@ theorem map_uniform_mass {Y α : Type*} [Fintype Y] [Fintype α]
   have hmap : (uniformDist Y).map f =
       FiniteKernel.apply (uniformDist Y) (FiniteKernel.deterministic f) := by
     rw [← apply_deterministic]
-  rw [hmap, FiniteKernel.apply_mass]
+  rw [hmap, FiniteKernel.apply_mass_dom]
   apply Finset.sum_congr rfl
   intro y _
   rw [mass_uniformDist, FiniteKernel.deterministic, Dist.mass_pointMass]
@@ -561,11 +561,13 @@ theorem sum_univ_prod_eq_nested {A B : Type*} [Fintype A] [Fintype B] [AddCommMo
   have h : (Finset.univ : Finset (A × B)) = (Finset.univ : Finset A) ×ˢ (Finset.univ : Finset B) := rfl
   rw [h, nested_sum_eq_product_sum]
 
-variable {X Y α : Type*} [Fintype X] [Fintype Y] [Fintype α]
+variable {X Y α : Type*} [Fintype X] [Fintype Y]
     [DecidableEq X] [DecidableEq Y] [DecidableEq α] [Nonempty X] [Nonempty Y]
 
 /-- The joint-distribution bridge: applying the independent uniform law `Y` at each
-    `x` of a uniform `X` equals mapping the uniform law on the product `X × Y`. -/
+    `x` of a uniform `X` equals mapping the uniform law on the product `X × Y`. The
+    codomain `α` only needs `DecidableEq` (the mass indicator), not `Fintype`, so this
+    applies at the deck level where `α = List (Fin n)`. -/
 theorem apply_uniform_uniform_eq_product (gx : X → Y → α) :
     FiniteKernel.apply (uniformDist X) (fun x => (uniformDist Y).map (fun y => gx x y)) =
       (uniformDist (X × Y)).map (fun p => gx p.1 p.2) := by
@@ -579,7 +581,7 @@ theorem apply_uniform_uniform_eq_product (gx : X → Y → α) :
   calc
     Dist.mass (FiniteKernel.apply (uniformDist X) (fun x => (uniformDist Y).map (fun y => gx x y))) z
       = ∑ x : X, (Fintype.card X : Rat)⁻¹ * ∑ y : Y, (Fintype.card Y : Rat)⁻¹ * if z = gx x y then 1 else 0 := by
-        rw [FiniteKernel.apply_mass]
+        rw [FiniteKernel.apply_mass_dom]
         apply Finset.sum_congr rfl
         intro x _
         rw [mass_uniformDist, map_uniform_mass]
@@ -647,6 +649,38 @@ theorem idealShuffle_comp (n a b : Nat) (ha : 0 < a) (hb : 0 < b) :
       productLabelShuffle a b (uniformLabels n a ha) (uniformLabels n b hb) :=
   labelShuffle_comp a b (uniformLabels n a ha) (uniformLabels n b hb)
 
+
+/-- **F4.1 capstone.** Running an independent uniform `a`-label shuffle followed by an
+independent uniform `b`-label shuffle (the product-label shuffle, alphabet `a*b`) has
+exactly the law of a single uniform `(a*b)`-alphabet inverse riffle (the ideal shuffle).
+Built from the joint-distribution bridge (the iterated uniform `apply` equals the uniform
+product law), the `labelReparam` pushforward of the product-uniform law, and the
+sorting-compatibility identity between product-`stableBuckets` and lex-`stableBuckets`. -/
+theorem productLabelShuffle_uniform_eq_ideal {n a b : Nat} (ha : 0 < a) (hb : 0 < b) :
+    productLabelShuffle a b (uniformLabels n a ha) (uniformLabels n b hb) =
+      idealShuffle n (a*b) (mul_pos ha hb) := by
+  funext deck
+  letI : Nonempty (Fin n → Fin a) := ⟨fun _ => ⟨0, ha⟩⟩
+  letI : Nonempty (Fin n → Fin b) := ⟨fun _ => ⟨0, hb⟩⟩
+  let U := (productUniformLabels (n := n) (a := a) (b := b) ha hb)
+  -- LHS: two-stage uniform (minor then major) = joint product uniform (the bridge)
+  have hLHS : productLabelShuffle a b (uniformLabels n a ha) (uniformLabels n b hb) deck =
+      U.map (fun p => lexBuckets a b p.1 p.2 deck) := by
+    unfold productLabelShuffle
+    simp only [uniformLabels]
+    exact apply_uniform_uniform_eq_product (fun minor major => lexBuckets a b minor major deck)
+  -- RHS: product uniform, reparametrized to (a*b) labels, stable-sorted
+  have hRHS : idealShuffle n (a*b) (mul_pos ha hb) deck =
+      (U.map (labelReparam (n := n) (a := a) (b := b) ha hb)).map (fun labels => stableBuckets (a*b) labels deck) := by
+    dsimp only [idealShuffle, labelShuffle]
+    rw [← productLabels_pushforward_uniform]
+  rw [hLHS, hRHS]
+  -- U.map (lexBuckets ∘ proj) = (U.map reparam).map (stableBuckets ∘ ·) = U.map (stableBuckets ∘ reparam)
+  rw [Convexity.StdSimplex.map_map]
+  congr 1
+  funext p
+  simp only [labelReparam]
+  exact (stableBuckets_combine_eq_lex ha hb p.1 p.2 deck).symm
 
 end GSR
 end Shufflemath
