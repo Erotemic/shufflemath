@@ -89,6 +89,27 @@ theorem costed_terminalTV_le
   exact terminalTV_le_reference_add_budget
     (ops.map CostedKernel.step) ideal hlen' start target
 
+/-- F5 certificate: a costed protocol's total cost is the additive
+`protocolCost` (hence nonnegative), and its terminal TV against a target is
+bounded by the ideal-reference error plus the weighted perturbation budget of
+its step kernels.  This is the "cost + sufficient TV bound" pair in the F5
+acceptance, with the model, action schedule, initial law, and target explicit.
+It holds for any costed schedule; a specific finite-GSR instance and any
+minimum-cost claim are separate. -/
+theorem costedProtocol_certificate
+    [Fintype α] [DecidableEq α] [Nonempty α]
+    (ops : List (CostedKernel α))
+    (ideal : List (FiniteKernel α α))
+    (hlen : ops.length = ideal.length)
+    (start target : Dist α) :
+    0 <= CostedKernel.protocolCost ops ∧
+    Dist.tv (FiniteKernel.apply start (kernelOfCosted ops)) target ≤
+      errorBudget (ops.map CostedKernel.step) ideal +
+        Dist.tv (FiniteKernel.apply start (compList ideal)) target := by
+  refine ⟨?_, ?_⟩
+  · exact CostedKernel.protocolCost_nonneg ops
+  · exact costed_terminalTV_le ops ideal hlen start target
+
 end ProtocolCertificate
 end Shufflemath
 end
