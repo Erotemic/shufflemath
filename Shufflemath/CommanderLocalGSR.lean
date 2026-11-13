@@ -3,6 +3,7 @@ module
 public import Shufflemath.CommanderPermutation
 public import Shufflemath.CommanderFiberCount
 public import Shufflemath.CommanderMembershipKernels
+public import Shufflemath.GSR
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Tactic
@@ -173,6 +174,29 @@ theorem reorderedDeck_leftCards (d : Deck) (pl : Equiv.Perm (Fin 50))
     simp only [reorderedDeck, Equiv.trans_apply, pileRelabelEquiv_left]
   rw [hfun]
   exact univImage_reindex (fun i => d (leftPosition i)) pl
+
+/-!
+## The within-pile GSR product (F4.2)
+
+The deterministic `pileRelabelEquiv` above reorders each pile by a *fixed*
+permutation.  The genuine finite local-GSR step randomizes that relabel: each
+pile is shuffled by an independent GSR riffle (the F4.1 `GSR.idealShuffle`),
+whose support is the whole within-pile permutation group.  Because a GSR only
+reorders within a pile, the membership state is preserved.
+-/
+
+noncomputable def gsrProductKernel (nL nR a b : Nat) (ha : 0 < a) (hb : 0 < b) :
+    FiniteKernel (List (Fin nL) × List (Fin nR)) (List (Fin nL) × List (Fin nR)) :=
+  fun pr => ((GSR.idealShuffle nL a ha pr.1).map (fun L' =>
+      (GSR.idealShuffle nR b hb pr.2).map (fun R' => (L', R')))).join
+
+/-- A within-pile GSR can never move a card out of its pile: the output
+arrangement holds exactly the pile's original cards.  The deterministic
+`reorderedDeck_leftCards` is the fixed-relabel instance of this. -/
+theorem gsrLocal_preserves_pile (n a : Nat)
+    (deck : List (Fin n)) (labels : Fin n → Fin a) (x : Fin n) :
+    x ∈ GSR.stableBuckets a labels deck ↔ x ∈ deck := by
+  exact GSR.stableBuckets_set a labels deck x
 
 end CommanderLocalGSR
 end Shufflemath
