@@ -67,6 +67,28 @@ theorem kernelOfCosted_cons (op : CostedKernel α) (ops : List (CostedKernel α)
       FiniteKernel.comp op.step (kernelOfCosted ops) := by
   simp [kernelOfCosted]
 
+/-- F5: a costed schedule's terminal TV is bounded by the ideal-reference error
+plus the exact weighted perturbation budget of its step kernels.  The additive
+`protocolCost ops` supplies the cost half of the acceptance; this theorem
+supplies the sufficient TV upper bound.  No F4 protocol instance is assumed --
+the bound holds for any list of costed kernels of the right length. -/
+theorem costed_terminalTV_le
+    [Fintype α] [DecidableEq α] [Nonempty α]
+    (ops : List (CostedKernel α))
+    (ideal : List (FiniteKernel α α))
+    (hlen : ops.length = ideal.length)
+    (start target : Dist α) :
+    Dist.tv (FiniteKernel.apply start (kernelOfCosted ops)) target ≤
+      errorBudget (ops.map CostedKernel.step) ideal +
+        Dist.tv (FiniteKernel.apply start (compList ideal)) target := by
+  have hk : kernelOfCosted ops = compList (ops.map CostedKernel.step) := by
+    dsimp only [kernelOfCosted]
+  rw [hk]
+  have hlen' : (ops.map CostedKernel.step).length = ideal.length := by
+    rw [List.length_map, hlen]
+  exact terminalTV_le_reference_add_budget
+    (ops.map CostedKernel.step) ideal hlen' start target
+
 end ProtocolCertificate
 end Shufflemath
 end
