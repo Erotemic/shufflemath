@@ -138,6 +138,48 @@ attempts, but is no longer the recommended route.
 
 All 37 tests pass. **F4.1 is now a finished theorem in the library.**
 
+### Nov 12 (4th) session status — resume here first
+
+This session (post-F4.1) made two committed results and a precise
+analysis of the two remaining hard walls:
+
+- **F4.2 set-preservation — `stableBuckets_set`** (`GSR.lean`,
+  `fa13f57`): `x ∈ stableBuckets a labels deck ↔ x ∈ deck`. A GSR stable
+  sort of a pile keeps exactly the pile's cards (every card lands in the
+  unique bucket matching its label), so the *set* — and hence the
+  membership state — is preserved by a GSR step. Proved by expanding
+  `List.flatMap`/`List.filter`/`List.range` and bridging `==` with
+  `beq_iff_eq`.
+- **F4.2 remaining (wall):** the *multiset* permutation
+  (`stableBuckets` preserves the deck up to `Multiset`/`List.Perm`) is the
+  linchpin for building the GSR product as a `Deck` (`Equiv.Perm`). In
+  this Mathlib/Lean build the direct routes are blocked:
+  `List.mem_bind`, `List.length_filter`, `List.toMultiset`, and
+  `Multiset.count_ofList` do not exist; the `List.sum`→`Finset.sum`
+  conversion and the `flatMap`-with-conditional-insert → `insertIdx`
+  rewrite each resist repeated attempts. `stableBuckets_set` (above) is
+  the essential *set* content; the multiset/permutation fact is the
+  remaining sub-wall for the F4.2 GSR product.
+- **F3 item 3 general identity — precise wall.** The identity
+  `overlap_count (n m r k) x y = transitionNumerator (n m r k) y x`
+  (small decks + Commander spot checks proved by `native_decide`; see
+  `ExchangeOverlap.lean`) is a genuine hypergeometric convolution. Under
+  the index substitution `a = y - t` (matching the shared-mapped-card
+  count `t = x - (y - a)`), **three of the four `choose` factors match
+  exactly**: `choose(y, a) = choose(y, t)` (by `choose (y) (y-t) =
+  choose y t`), `choose(r-y, x-y+a) = choose(r-y, x-t)`, and
+  `choose(n-m-(r-y), k-x+y-a) = choose(n-m-(r-y), k-x+t)`. The **fourth**
+  factor differs: the overlap side has `choose(m-y, (m-k)-t)` (unmarked
+  of the target kept) while the transition side gives
+  `choose(m-y, k-y+t)` (unmarked of the source leaving). Closing the
+  remaining Vandermonde-type gap between these two sums is the open
+  combinatorial argument (the "uniform given the new count" half the
+  plan flags as the harder half). This is the single remaining blocker
+  for F3 item 4 and F4.5.
+
+**All 37 tests pass; working tree clean.**
+
+
 ### Nov 12 (2nd) session status — prior session (reference)
 
 This session (after GPT-6.5's unblock doc `docs/qwen_unblock_nov12.md`) made
