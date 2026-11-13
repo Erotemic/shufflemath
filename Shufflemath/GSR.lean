@@ -539,6 +539,68 @@ theorem map_uniform_mass {Y α : Type*} [Fintype Y] [Fintype α]
   intro y _
   rw [mass_uniformDist, FiniteKernel.deterministic, Dist.mass_pointMass]
 
+theorem nested_sum_eq_product_sum {A B : Type*} [DecidableEq A] [DecidableEq B] [AddCommMonoid M]
+    (s : Finset A) (t : Finset B) (f : A × B → M) :
+    ∑ p ∈ s ×ˢ t, f p = ∑ a ∈ s, ∑ b ∈ t, f (a, b) := by
+  calc
+    _ = ((s ×ˢ t).val.map f).sum := by simp only [Finset.sum, Multiset.sum]
+    _ = ((s.val ×ˢ t.val).map f).sum := by simp only [Finset.product_val]
+    _ = ((s.val.bind (fun a => t.val.map (fun b => (a, b)))).map f).sum := by simp only [SProd.sprod, Multiset.product]
+    _ = (s.val.bind (fun a => (t.val.map (fun b => (a, b))).map f)).sum := by rw [Multiset.map_bind]
+    _ = (s.val.bind (fun a => t.val.map (fun b => f (a, b)))).sum := by
+        congr 1
+        exact Multiset.bind_congr (fun a _ => by
+          rw [Multiset.map_map]
+          rfl)
+    _ = (s.val.map (fun a => (t.val.map (fun b => f (a, b))).sum)).sum := by rw [Multiset.sum_bind]
+    _ = ∑ a ∈ s, ∑ b ∈ t, f (a, b) := by simp only [Finset.sum, Multiset.sum]
+
+theorem sum_univ_prod_eq_nested {A B : Type*} [Fintype A] [Fintype B] [AddCommMonoid M]
+    [DecidableEq A] [DecidableEq B] (f : A × B → M) :
+    (∑ p : A × B, f p) = ∑ a : A, ∑ b : B, f (a, b) := by
+  have h : (Finset.univ : Finset (A × B)) = (Finset.univ : Finset A) ×ˢ (Finset.univ : Finset B) := rfl
+  rw [h, nested_sum_eq_product_sum]
+
+variable {X Y α : Type*} [Fintype X] [Fintype Y] [Fintype α]
+    [DecidableEq X] [DecidableEq Y] [DecidableEq α] [Nonempty X] [Nonempty Y]
+
+/-- The joint-distribution bridge: applying the independent uniform law `Y` at each
+    `x` of a uniform `X` equals mapping the uniform law on the product `X × Y`. -/
+theorem apply_uniform_uniform_eq_product (gx : X → Y → α) :
+    FiniteKernel.apply (uniformDist X) (fun x => (uniformDist Y).map (fun y => gx x y)) =
+      (uniformDist (X × Y)).map (fun p => gx p.1 p.2) := by
+  ext z
+  change Dist.mass (FiniteKernel.apply (uniformDist X) (fun x => (uniformDist Y).map (fun y => gx x y))) z =
+        Dist.mass ((uniformDist (X × Y)).map (fun p => gx p.1 p.2)) z
+  have hcard : (Fintype.card (X × Y) : Rat) = (Fintype.card X : Rat) * (Fintype.card Y : Rat) := by
+    simp only [Fintype.card_prod, Nat.cast_mul]
+  have hinv : (Fintype.card X : Rat)⁻¹ * (Fintype.card Y : Rat)⁻¹ = (Fintype.card (X × Y) : Rat)⁻¹ := by
+    rw [hcard, ← mul_inv_rev, mul_comm]
+  calc
+    Dist.mass (FiniteKernel.apply (uniformDist X) (fun x => (uniformDist Y).map (fun y => gx x y))) z
+      = ∑ x : X, (Fintype.card X : Rat)⁻¹ * ∑ y : Y, (Fintype.card Y : Rat)⁻¹ * if z = gx x y then 1 else 0 := by
+        rw [FiniteKernel.apply_mass]
+        apply Finset.sum_congr rfl
+        intro x _
+        rw [mass_uniformDist, map_uniform_mass]
+    _ = ∑ x : X, ∑ y : Y, (Fintype.card X : Rat)⁻¹ * (Fintype.card Y : Rat)⁻¹ * if z = gx x y then 1 else 0 := by
+        apply Finset.sum_congr rfl
+        intro x _
+        rw [Finset.mul_sum]
+        apply Finset.sum_congr rfl
+        intro y _
+        rw [mul_assoc]
+    _ = ∑ p : X × Y, (Fintype.card X : Rat)⁻¹ * (Fintype.card Y : Rat)⁻¹ * if z = gx p.1 p.2 then 1 else 0 := by
+        exact (sum_univ_prod_eq_nested (fun p : X × Y =>
+            (Fintype.card X : Rat)⁻¹ * (Fintype.card Y : Rat)⁻¹ * if z = gx p.1 p.2 then 1 else 0)).symm
+    _ = ∑ p : X × Y, (Fintype.card (X × Y) : Rat)⁻¹ * if z = gx p.1 p.2 then 1 else 0 := by
+        apply Finset.sum_congr rfl
+        intro p _
+        rw [hinv]
+    _ = Dist.mass ((uniformDist (X × Y)).map (fun p => gx p.1 p.2)) z := by
+        rw [map_uniform_mass]
+
+
 /-- **Product-alphabet composition law for inverse riffles.** Running an
 `a`-label stable shuffle and then a `b`-label stable shuffle has *exactly*
 the same probability law as independently sampling both labels and sorting
