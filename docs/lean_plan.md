@@ -227,6 +227,15 @@ route, not a theorem already in the tree.
 > count, the new membership is *uniform* over that count's fiber (a symmetry/group-action
 > statement). Part (ii) is the harder half. This is on the critical path for item 4 and
 > F4.5.
+> **4th-session reduction (2026-11-12):** the underlying counting identity
+> `overlap_count (n m r k) x y = transitionNumerator (n m r k) y x` now reduces to a
+> single new **fiber-counting lemma (CL)** —
+> `fiberSum p x y = choose(r, y) * choose(N - r, m - y) * overlap_count (N m r k) x y`
+> — plus the already-proved `fiberSum_swap` and `fiberSum_eq` (the stationary `choose`
+> factors cancel by pure algebra). **CL is verified on all three small decks**
+> (`ExchangeOverlap.fiberCounting_{6321,7442,8431}`); the single remaining piece is the
+> general (symbolic) proof of CL (reindex the 7-way `fiberSum` sum to the `(S, T)`
+> double count). See `docs/qwen_unblock_nov12.md` §3.
 > **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
 > which depends on item 3 core.
 
