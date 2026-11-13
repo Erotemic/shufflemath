@@ -14,12 +14,17 @@ Laplace transition numerator (the content of F3 item 3):
 
 `tests/test_exchange_overlap_identity.py` verifies the identity by exact
 integer arithmetic on three small decks and all 2,500 Commander `(x, y)`
-pairs.  The `Nat` subtraction below is intentional: it matches the
-saturation in the counting formula (a bin with a negative requested size
-contributes a factor of `Nat.choose _ 0 = 1` times an empty `choose`,
-which `Nat.choose` saturates to `0` for an impossible size, so impossible
-terms vanish).
+pairs.
+
+**Signed `choose`.** The reference `choose(n, k)` returns `0` unless
+`0 <= k <= n`.  A naive `Nat.choose (r - y) (x - t)` with `Nat`-saturated
+subtraction is wrong when `x - t` is negative: the saturation turns it into
+`Nat.choose _ 0 = 1`, inserting spurious terms (e.g. `(n,m,r,k,x,y) =
+(99,50,50,25,10,40)`).  We therefore compute the bin sizes in `Int` and use
+`chooseSigned`, which reproduces the reference exactly for every `(x, y)`.
 -/
+public import Shufflemath.BernoulliLaplaceGeneral
+public meta import Shufflemath.BernoulliLaplaceGeneral
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Tactic
 
@@ -27,13 +32,92 @@ public import Mathlib.Tactic
 
 namespace Shufflemath
 
+open BernoulliLaplaceGeneral
+
+/-- Reference binomial coefficient: `0` unless `0 <= k <= n` (mirrors the
+Python `choose` in `tests/test_exchange_overlap_identity.py`). -/
+def chooseSigned (n k : Int) : Nat :=
+  if 0 <= k ∧ k <= n then Nat.choose n.toNat k.toNat else 0
+
 /-- The four-bin overlap count: the number of `m`-subsets `S` of an `n`-set,
 with `x` marked cards and `|S ∩ T| = m - k`, where `T` is a fixed `m`-subset
 holding `y` of the `r` marked identities.  The sum runs over `t`, the number
 of marked cards of `T` that land in `S`; the four bins are
-(marked/unmarked) × (inside/outside `T`), giving the four `choose` factors. -/
+(marked/unmarked) × (inside/outside `T`), giving the four `choose` factors.
+Bin sizes are computed in `Int` so that impossible (negative) sizes vanish
+exactly as in the reference. -/
 def overlap_count (n m r k x y : Nat) : Nat :=
-  Finset.sum (Finset.range (m - k + 1)) fun t =>
-    Nat.choose y t * Nat.choose (r - y) (x - t) *
-      Nat.choose (m - y) ((m - k) - t) *
-      Nat.choose ((n - r) - (m - y)) ((m - x) - ((m - k) - t))
+  let nI := (n : Int)
+  let mI := (m : Int)
+  let rI := (r : Int)
+  let kI := (k : Int)
+  let xI := (x : Int)
+  let yI := (y : Int)
+  let plain_outside_target := nI - rI - (mI - yI)
+  (Finset.range (m - k + 1)).sum fun (t : Nat) =>
+    let tI := (t : Int)
+    let plain_overlap := (mI - kI) - tI
+    chooseSigned yI tI *
+      chooseSigned (rI - yI) (xI - tI) *
+      chooseSigned (mI - yI) plain_overlap *
+      chooseSigned plain_outside_target ((mI - xI) - plain_overlap)
+
+/-!
+## The overlap = reversed-transition-numerator identity
+
+Sub-lemma 3 of the F3 item 3 route (`docs/qwen_unblock_nov12.md` §3): the
+four-bin overlap count for a fixed target `T` with macro count `y` equals the
+*reversed* Bernoulli--Laplace transition numerator.  Proved here by exact
+kernel computation (`native_decide`) on the three small decks from
+`tests/test_exchange_overlap_identity.py`; each side is a computable
+`Finset.sum` of (signed) `Nat.choose` products, so the equality reduces to a
+closed `Bool` the kernel decides.  (The general structural form is the open
+part of F3 item 3.)
+-/
+
+/- The identity for **every** `(x, y)` in the *valid* macro-state space of the
+three small decks.  The valid marked-count range for a deck `(N m r)` is
+`Icc (max (r - (N - m)) 0) (min m r)` (the codebase's `stateFinset`); Lean's
+`transitionNumerator` uses `Nat`-saturated subtraction and matches the
+reference numerator only on valid states, so we quantify exactly over that
+finite range using an explicit `Fin` (with an offset where the range does not
+start at `0`).  Each side is a computable sum, so the whole finite statement
+is decided by the kernel.  These are genuine theorems (quantified over the
+valid state space), not spot checks. -/
+
+/-- `(6,3,2,1)`: valid marked counts `x, y ∈ {0,1,2}`. -/
+theorem overlap_eq_revTransitionNumerator_valid_6321 :
+    ∀ (x y : Fin 3),
+      overlap_count 6 3 2 1 x.val y.val = transitionNumerator 6 3 2 1 y.val x.val := by
+  native_decide
+
+/-- `(7,4,4,2)`: valid marked counts `x, y ∈ {1,2,3,4}` (offset by `1`). -/
+theorem overlap_eq_revTransitionNumerator_valid_7442 :
+    ∀ (x y : Fin 4),
+      overlap_count 7 4 4 2 (1 + x.val) (1 + y.val) =
+        transitionNumerator 7 4 4 2 (1 + y.val) (1 + x.val) := by
+  native_decide
+
+/-- `(8,4,3,1)`: valid marked counts `x, y ∈ {0,1,2,3}`. -/
+theorem overlap_eq_revTransitionNumerator_valid_8431 :
+    ∀ (x y : Fin 4),
+      overlap_count 8 4 3 1 x.val y.val = transitionNumerator 8 4 3 1 y.val x.val := by
+  native_decide
+
+/-- Commander instance `(99,50,50,25)`, `x=25, y=25` (the symmetric center). -/
+theorem overlap_eq_revTransitionNumerator_cmdr_2525 :
+    overlap_count 99 50 50 25 25 25 = transitionNumerator 99 50 50 25 25 25 := by
+  native_decide
+
+/-- Commander instance `(99,50,50,25)`, `x=25, y=1` (asymmetric, marked-heavy
+target). -/
+theorem overlap_eq_revTransitionNumerator_cmdr_251 :
+    overlap_count 99 50 50 25 25 1 = transitionNumerator 99 50 50 25 1 25 := by
+  native_decide
+
+/-- Commander instance `(99,50,50,25)`, `x=10, y=40`: the case where the
+`Nat`-saturated version inserts spurious `t > x` terms.  The signed version
+matches the reference. -/
+theorem overlap_eq_revTransitionNumerator_cmdr_1040 :
+    overlap_count 99 50 50 25 10 40 = transitionNumerator 99 50 50 25 40 10 := by
+  native_decide
