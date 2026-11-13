@@ -518,6 +518,27 @@ theorem comp_deterministic_left {β γ δ : Type*}
   change FiniteKernel.apply (Dist.pointMass (f x)) K = K (f x)
   exact FiniteKernel.apply_pointMass (f x) K
 
+/-- The uniform law assigns each point mass `1 / card`. -/
+theorem mass_uniformDist {β : Type*} [Fintype β] [Nonempty β] (x : β) :
+    Dist.mass (uniformDist β) x = (Fintype.card β : Rat)⁻¹ := by
+  simp only [uniformDist, Dist.ofFun, Dist.mass, Finsupp.coe_equivFunOnFinite_symm]
+
+/-- Pushing the uniform law through a function `f` gives mass at `z` equal to
+the average (over the uniform domain) of the indicator that `f w = z`.  This
+is the single-source half of the joint-distribution bridge for F4.1. -/
+theorem map_uniform_mass {Y α : Type*} [Fintype Y] [Fintype α]
+    [DecidableEq Y] [DecidableEq α] [Nonempty Y]
+    (f : Y → α) (z : α) :
+    Dist.mass ((uniformDist Y).map f) z =
+      Finset.sum (Finset.univ : Finset Y) (fun y => (Fintype.card Y : Rat)⁻¹ * if z = f y then 1 else 0) := by
+  have hmap : (uniformDist Y).map f =
+      FiniteKernel.apply (uniformDist Y) (FiniteKernel.deterministic f) := by
+    rw [← apply_deterministic]
+  rw [hmap, FiniteKernel.apply_mass]
+  apply Finset.sum_congr rfl
+  intro y _
+  rw [mass_uniformDist, FiniteKernel.deterministic, Dist.mass_pointMass]
+
 /-- **Product-alphabet composition law for inverse riffles.** Running an
 `a`-label stable shuffle and then a `b`-label stable shuffle has *exactly*
 the same probability law as independently sampling both labels and sorting
