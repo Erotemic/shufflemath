@@ -187,26 +187,32 @@ index substitution `a = y - t` three of the four `choose` factors match
 exactly; the fourth, `choose(m-y,(m-k)-t)` vs `choose(m-y,k-y+t)`, is the
 gap). Instead it follows from three pieces:
 
-- (i)  `fiberSum p x y = F(y) * overlap_count (n m r k) x y`, where
-  `F(z) = choose(r,z) * choose(n-m, m-z)`. **This is the one new lemma.**
-  Combinatorially: `fiberSum p x y` counts the pairs `(S, T)` with
-  `marked(S)=x`, `marked(T)=y`, `|S \ T|=m-k`; for each such pair the
-  exchange is *unique* (`A = S \ T`, `B = T \ S`), so the 7-way
-  `fiberSum` sum reorganizes into the `(S, T)` double count, which equals
-  "(number of `y`-targets) times (sources per fixed target)" =
-  `F(y) * overlap_count (n m r k) x y`.
+- (i)  **the fiber-counting lemma (CL):** `fiberSum p x y =
+  choose(r, y) * choose(N - r, m - y) * overlap_count (N m r k) x y`,
+  where `choose(r, y) * choose(N - r, m - y)` is the number of `m`-subsets
+  carrying `y` marked cards (the stationary-weight numerator — note the
+  plain factor is `N - r`, **not** `N - m`; they coincide only when `r = m`,
+  as for the Commander `99/50/50`).  **This is the one new lemma; it is
+  verified on the three small decks** (`fiberCounting_{6321,7442,8431}` in
+  `ExchangeOverlap.lean`, `native_decide`).  Combinatorially: `fiberSum p x y`
+  counts the `(S, A, B)` triples with `|S|=m`, `x` marked, `|A|=k ⊆ S`,
+  `|B|=k ⊆ Sᶜ`, target `(S\A) ∪ B` carrying `y` marked; the target
+  `T = (S\A) ∪ B` has `|S ∩ T| = m-k` and is recovered uniquely, so the
+  7-way sum reorganizes to the `(S, T)` double count = "(number of `y`-targets)
+  × (sources per fixed target)".
 - (ii) `fiberSum p x y = fiberSum p y x` — already proved
   (`BernoulliLaplaceFiber.fiberSum_swap`).
-- (iii) `transitionNumerator (n m r k) x y = fiberSum p x y / F(x)` —
-  already proved (`fiberSum_eq`).
+- (iii) `fiberSum p x y = choose(r, x) * choose(N - r, m - x) *
+  transitionNumerator (N m r k) x y` — already proved (`fiberSum_eq`).
 
-From (i)+(ii)+(iii): `transitionNumerator (n m r k) y x =
-F(x) * overlap_count (n m r k) x y / F(y)`, and since
-`fiberSum p x y = fiberSum p y x` gives
-`overlap_count (n m r k) x y * F(y) = overlap_count (n m r k) y x * F(x)`,
-the target identity is `overlap_count (n m r k) x y =
-transitionNumerator (n m r k) y x`. The remaining work is to prove (i)
-in Lean (the unique-exchange reindexing of the `fiberSum` sum).
+From (CL) at `(x, y)` and `(y, x)` plus `fiberSum_swap`, the stationary factors
+satisfy `choose(r, y) * choose(N-r, m-y) * overlap_count (N m r k) x y =
+choose(r, x) * choose(N-r, m-x) * overlap_count (N m r k) y x`; combined with
+(iii) the `choose` factors cancel and the target identity
+`overlap_count (N m r k) x y = transitionNumerator (N m r k) y x` follows by
+pure algebra. **The single remaining piece is the general (symbolic) proof of
+(CL)** — reindexing the 7-way `fiberSum` sum to the `(S, T)` double count —
+which the small-deck `native_decide` instances confirm pointwise.
 
 `tests/test_exchange_overlap_identity.py` independently verifies the overlap
 formula against actual membership enumeration on three small decks and
