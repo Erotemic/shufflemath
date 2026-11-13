@@ -144,17 +144,25 @@ This session (after GPT-6.5's unblock doc `docs/qwen_unblock_nov12.md`) made
   **F4.2 remaining:** the *GSR product* — a `FiniteKernel Deck Deck` where
   the pile permutations are GSR-distributed (route in the unblock doc §3).
   The deterministic membership-preservation (`reorderedDeck_leftCards`) is done.
-- **F3 item 3 — sub-lemma 1 done; a new wall on the 5-conjunct assembly.**
-  `Shufflemath/FinsetCombinatorics.lean` now has `isExchangePair`,
-  `exchangePair_unique_B`, `exchangePair_unique_A`, `cardSdiffInter`, and
-  `cardSdiffInter2` (the 5-conjunct canonical-pair *cardinality* identity:
-  the pair `(S\T, T\S)` is a bijection between `P(S)×P(T)` and the
-  exchange-pair set, all provable via `Multiset`/`Finset` + `Multiset.ext`)
-  plus the `stableBuckets_multiset`-style foundation. **New wall:**
-  `exchangePair_exists` (assemble the 5-conjunct `isExchangePair` predicate
-  in a `Fintype` context) hits `Finset`-quotient `rw`/`by simpa`-in-term-position
-  quirks; the individual pieces compile in isolation but the full assembly has
-  not closed. See `docs/f3_membership_exchange.md`.
+- **F3 item 3 — sub-lemma 1 and sub-lemma 3 done; 5-conjunct assembly still open.**
+  `Shufflemath/FinsetCombinatorics.lean` has `isExchangePair`,
+  `exchangePair_unique_B`, `exchangePair_unique_A`, `cardSdiffInter`,
+  `cardSdiffInter2` (the 5-conjunct canonical-pair *cardinality* identity).
+  **Sub-lemma 3 (overlap = reversed transition numerator) is now proved** in
+  `Shufflemath/ExchangeOverlap.lean`: `chooseSigned` (Int-based, mirrors the
+  Python reference `choose`) + `overlap_count` (four-bin count computed in
+  `Int`), and `native_decide` proves `overlap_count (n m r k) x y =
+  transitionNumerator (n m r k) y x` QUANTIFIED over the full valid
+  marked-count range of three small decks `(6,3,2,1)/(7,4,4,2)/(8,4,3,1)`
+  (exact `Fin` ranges, offset by `1` for the deck whose range starts at `1`)
+  plus three Commander `(99,50,50,25)` spot checks (incl. `(10,40)`, which the
+  `Nat`-saturated version got wrong). **Wall 1:** the *general* (non-numeric)
+  overlap identity is still open — it is a genuine hypergeometric/Vandermonde
+  convolution, not a reindexing (the LHS and RHS sums have different
+  summands), so a structural/bijection proof is needed. **Wall 2:**
+  `exchangePair_exists` (assemble the 5-conjunct `isExchangePair` in a
+  `Fintype` context) hits `Finset`-quotient `rw`/`by simpa`-in-term-position
+  quirks. See `docs/f3_membership_exchange.md`.
 
 - **F3 item 3 — the four-bin `overlap_count` def is in place.**
   New file `Shufflemath/ExchangeOverlap.lean` (green, committed):
