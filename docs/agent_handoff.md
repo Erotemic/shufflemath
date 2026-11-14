@@ -15,8 +15,10 @@ choose(N-r,m-y)·overlap_count (N m r k) x y`; the clean derivation
 `(CL) + fiberSum_swap + fiberSum_eq (y x)` → `overlap_count (N m r k) x y =
 transitionNumerator (N m r k) y x` is recorded in `ExchangeOverlap.lean`
 (`ef93f8d`) along with this build's Finset API walls. Remaining: the general
-(symbolic) CL, F3 item 4, F4.3 row-wise TV, F4.5 full-deck terminal bound, and
-the F5 full theorem / optimization quantifiers. `docs/lean_plan.md` is the
+(symbolic) CL, F3 item 4, the F4.3 `gsrProductKernel = distProduct` point-mass
+connection (wall: `apply_mass_dom` needs a Fintype domain, but `idealShuffle`
+is over the non-Fintype `List (Fin n)`), F4.5 full-deck terminal bound, and the
+F5 full theorem / optimization quantifiers. `docs/lean_plan.md` is the
 authority; `docs/qwen_unblock_nov12.md` has the routes. This is an
 *operational handoff*. `lean_plan.md` is the authority for overall scope and
 priority; `AGENTS.md` governs repository behavior.
@@ -210,8 +212,32 @@ committed; 37 tests pass; tree clean):
   remains the F4.2 sub-wall (missing `List.mem_bind`/`length_filter`/
   `toMultiset` in this build); the set-preservation is the essential F4.2
   content for membership.
-- **F5 — `costed_terminalTV_le` + `protocolCost_nonneg` + `ActionKind`**
-  (`e203310`, `ec68b71`). `ProtocolCertificate.costed_terminalTV_le`: a costed
+- **F4.3 row-wise TV machinery — `distProduct` + `distProduct_tv_subadditive`**
+  (`87cc71f`, `104fd5e`). `Finite.distProduct μ ν : Dist (α × β)` is the
+  independent (tensor) product of two finite distributions — a valid
+  probability law (total mass factors to `(∑ μ)(∑ ν) = 1·1`, proved via
+  univ-product reindex + `Finset.sum_product` + `mul_sum` factoring +
+  `sum_mass`), with the simp-lemma `distProduct_mass : mass (distProduct μ ν)
+  (a,b) = μ(a)·ν(b)`. `TotalVariation.distProduct_tv_subadditive`:
+  `TV(μ⊗ν, μ'⊗ν') ≤ TV(μ,μ') + TV(ν,ν')` — the two-pile row-wise bound: a step
+  that shuffles two piles independently is discrepant from a reference by at
+  most the sum of the two per-pile discrepancies (triangle inequality +
+  nonnegativity + Fubini). This is the general reusable core of F4.3.
+  **Wall (documented):** instantiating it to the *actual* `gsrProductKernel`
+  vs the perfect-local reference is blocked — `gsrProductKernel (L,R)` is a
+  nested `map`/`join` that *should* equal
+  `distProduct (GSR.idealShuffle nL a _ L) (GSR.idealShuffle nR b _ R)`, but
+  reducing the nested `map`/`join` mass to the product mass needs
+  `apply_mass_dom`, which requires a `Fintype` **domain**, whereas
+  `idealShuffle` is a `FiniteKernel (List (Fin n)) (List (Fin n))` and
+  `List (Fin n)` is **not** a `Fintype` (its `Finsupp` weights have finite
+  support, but no Fintype instance exists). Next step: prove the point-mass
+  equality directly from the `Finsupp` `map`/`join` weight definitions
+  (`StdSimplex.weights_map`/`weights_join` + `Finsupp.sum_single_index`),
+  which do not require a Fintype domain, then apply `distProduct_tv_subadditive`.
+- **F5 — `costed_terminalTV_le` + `protocolCost_nonneg` + `ActionKind` +
+  `costedProtocol_certificate`**
+  (`e203310`, `ec68b71`, `4d08580`). `ProtocolCertificate.costed_terminalTV_le`: a costed
   schedule's terminal TV ≤ `errorBudget` of its step kernels + the
   ideal-reference TV (reuses `terminalTV_le_reference_add_budget`; no F4
   instance required, so it advances independently). `Cost.protocolCost_nonneg`
@@ -230,6 +256,12 @@ committed; 37 tests pass; tree clean):
   (the reconstruction identity) is proven.
 
 **All 37 tests pass; working tree clean.**
+
+*Resume order:* (1) F4.3 — the `gsrProductKernel = distProduct` point-mass
+connection (wall above; prove from Finsupp weights, not `apply_mass_dom`), then
+state the per-pile GSR-vs-uniform TV bound. (2) F3 item 3 general CL (symbolic
+identity, Finset API wall). (3) F3 item 4, F4.5, F5 full/optimizer — all
+downstream of (1)/(2).
 
 ### Nov 12 (2nd) session status — prior session (reference)
 

@@ -323,6 +323,19 @@ algebra can advance in parallel.
 3. Establish the row-wise bound against *physical perfect-local* shuffling:
    for each deck, the TV discrepancy is no greater than the sum of the two
    local GSR-versus-uniform errors (49-card and 50-card working sets).
+   *Progress (5th session, `87cc71f`/`104fd5e`):* the general reusable core is
+   proven — `Finite.distProduct` (the independent product distribution, with
+   the `distProduct_mass` simp-lemma) and
+   `TotalVariation.distProduct_tv_subadditive` (`TV(μ⊗ν, μ'⊗ν') ≤ TV(μ,μ') +
+   TV(ν,ν')` — the two-pile subadditivity). *Remaining:* connect the concrete
+   `gsrProductKernel` to `distProduct` — `gsrProductKernel (L,R)` (a nested
+   `map`/`join`) should equal
+   `distProduct (GSR.idealShuffle nL a _ L) (GSR.idealShuffle nR b _ R)`, then
+   `distProduct_tv_subadditive` gives the per-pile bound. **Wall:** the mass
+   reduction normally uses `apply_mass_dom`, which requires a `Fintype`
+   *domain*, but `idealShuffle : FiniteKernel (List (Fin n)) (List (Fin n))`
+   and `List (Fin n)` is **not** a `Fintype`. Prove the point-mass equality
+   directly from the `Finsupp` `map`/`join` weight definitions instead.
 4. Use the existing `PhysicalRefinement.finite_local_uniform_bound` and
    `ProtocolCertificate` weighted telescope to compose these errors over a
    schedule. Use a named initial law and an explicit 99-card uniform target.
