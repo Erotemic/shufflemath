@@ -1,6 +1,7 @@
 module
 
 public import Shufflemath.Matrix
+public import Shufflemath.Finite
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Sub.Basic
@@ -497,5 +498,95 @@ theorem dobrushinCoeff_le_one
   · exact Matrix.sum_row_of_mem_rowStochastic hP ij.2
 
 end MatrixTV
+theorem distProduct_tv_subadditive
+    {α β : Type*} [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
+    [Nonempty α] [Nonempty β]
+    (μ μ' : Dist α) (ν ν' : Dist β) :
+    Dist.tv (distProduct μ ν) (distProduct μ' ν') ≤
+      Dist.tv μ μ' + Dist.tv ν ν' := by
+  classical
+  haveI : DecidableEq (α × β) := inferInstance
+  have hν : (∑ b ∈ (Finset.univ : Finset β), Dist.mass ν b) = 1 := by simp [Dist.sum_mass]
+  have hν' : (∑ b ∈ (Finset.univ : Finset β), Dist.mass ν' b) = 1 := by simp [Dist.sum_mass]
+  have hμ' : (∑ a ∈ (Finset.univ : Finset α), Dist.mass μ' a) = 1 := by simp [Dist.sum_mass]
+  have hμnn : ∀ a, 0 ≤ Dist.mass μ a := fun _ => Dist.mass_nonneg μ _
+  have hμ'n : ∀ a, 0 ≤ Dist.mass μ' a := fun _ => Dist.mass_nonneg μ' _
+  have hνnn : ∀ b, 0 ≤ Dist.mass ν b := fun _ => Dist.mass_nonneg ν _
+  have hUniv : (Finset.univ : Finset (α × β)) =
+      (Finset.univ : Finset α) ×ˢ (Finset.univ : Finset β) := by
+    ext p
+    simp [Finset.mem_univ]
+  have hterm : ∀ (a : α) (b : β),
+      |Dist.mass μ a * Dist.mass ν b - Dist.mass μ' a * Dist.mass ν' b| ≤
+        |Dist.mass μ a - Dist.mass μ' a| * Dist.mass ν b +
+          Dist.mass μ' a * |Dist.mass ν b - Dist.mass ν' b| := by
+    intro a b
+    have hsplit : Dist.mass μ a * Dist.mass ν b - Dist.mass μ' a * Dist.mass ν' b =
+        (Dist.mass μ a - Dist.mass μ' a) * Dist.mass ν b +
+          Dist.mass μ' a * (Dist.mass ν b - Dist.mass ν' b) := by ring
+    calc
+      |Dist.mass μ a * Dist.mass ν b - Dist.mass μ' a * Dist.mass ν' b| =
+          |(Dist.mass μ a - Dist.mass μ' a) * Dist.mass ν b +
+             Dist.mass μ' a * (Dist.mass ν b - Dist.mass ν' b)| := by rw [hsplit]
+      _ ≤ |(Dist.mass μ a - Dist.mass μ' a) * Dist.mass ν b| +
+            |Dist.mass μ' a * (Dist.mass ν b - Dist.mass ν' b)| := by exact abs_add_le _ _
+      _ = |Dist.mass μ a - Dist.mass μ' a| * Dist.mass ν b +
+            Dist.mass μ' a * |Dist.mass ν b - Dist.mass ν' b| := by
+        rw [abs_mul, abs_mul, abs_of_nonneg (hνnn b), abs_of_nonneg (hμ'n a)]
+  -- S1 = ∑_p |Δμ p.1| · ν p.2  =  ∑_a |Δμ a|
+  have S1 : (∑ p ∈ (Finset.univ : Finset (α × β)), |Dist.mass μ p.1 - Dist.mass μ' p.1| * Dist.mass ν p.2) =
+      (∑ a ∈ (Finset.univ : Finset α), |Dist.mass μ a - Dist.mass μ' a|) := by
+    calc
+      (∑ p ∈ (Finset.univ : Finset (α × β)), |Dist.mass μ p.1 - Dist.mass μ' p.1| * Dist.mass ν p.2) =
+        (∑ p ∈ (Finset.univ : Finset α) ×ˢ (Finset.univ : Finset β), |Dist.mass μ p.1 - Dist.mass μ' p.1| * Dist.mass ν p.2) := by rw [hUniv]
+      _ = (∑ a ∈ (Finset.univ : Finset α), ∑ b ∈ (Finset.univ : Finset β), |Dist.mass μ a - Dist.mass μ' a| * Dist.mass ν b) := by rw [Finset.sum_product]
+      _ = (∑ a ∈ (Finset.univ : Finset α), |Dist.mass μ a - Dist.mass μ' a| * (∑ b ∈ (Finset.univ : Finset β), Dist.mass ν b)) := by
+        rw [Finset.sum_congr rfl (fun a _ => (Finset.mul_sum (Finset.univ) (fun b => Dist.mass ν b) (|Dist.mass μ a - Dist.mass μ' a|)).symm)]
+      _ = (∑ a ∈ (Finset.univ : Finset α), |Dist.mass μ a - Dist.mass μ' a| * 1) := by rw [hν]
+      _ = (∑ a ∈ (Finset.univ : Finset α), |Dist.mass μ a - Dist.mass μ' a|) := by
+        rw [Finset.sum_congr rfl (fun a _ => mul_one (|Dist.mass μ a - Dist.mass μ' a|))]
+  -- S2 = ∑_p μ' p.1 · |Δν p.2|  =  ∑_b |Δν b|
+  have S2 : (∑ p ∈ (Finset.univ : Finset (α × β)), Dist.mass μ' p.1 * |Dist.mass ν p.2 - Dist.mass ν' p.2|) =
+      (∑ b ∈ (Finset.univ : Finset β), |Dist.mass ν b - Dist.mass ν' b|) := by
+    let C : Rat := (∑ b ∈ (Finset.univ : Finset β), |Dist.mass ν b - Dist.mass ν' b|)
+    calc
+      (∑ p ∈ (Finset.univ : Finset (α × β)), Dist.mass μ' p.1 * |Dist.mass ν p.2 - Dist.mass ν' p.2|) =
+        (∑ p ∈ (Finset.univ : Finset α) ×ˢ (Finset.univ : Finset β), Dist.mass μ' p.1 * |Dist.mass ν p.2 - Dist.mass ν' p.2|) := by rw [hUniv]
+      _ = (∑ a ∈ (Finset.univ : Finset α), ∑ b ∈ (Finset.univ : Finset β), Dist.mass μ' a * |Dist.mass ν b - Dist.mass ν' b|) := by rw [Finset.sum_product]
+      _ = (∑ a ∈ (Finset.univ : Finset α), Dist.mass μ' a * C) := by
+        rw [Finset.sum_congr rfl (fun a _ => (Finset.mul_sum (Finset.univ) (fun b => |Dist.mass ν b - Dist.mass ν' b|) (Dist.mass μ' a)).symm)]
+      _ = (∑ a ∈ (Finset.univ : Finset α), C * Dist.mass μ' a) := by
+        rw [Finset.sum_congr rfl (fun a _ => by rw [mul_comm])]
+      _ = C * (∑ a ∈ (Finset.univ : Finset α), Dist.mass μ' a) := by
+        rw [Finset.mul_sum]
+      _ = C * 1 := by rw [hμ']
+      _ = C := by rw [mul_one]
+  -- main:  (1/2)∑_p |..|  ≤  (1/2)(∑_a |Δμ a| + ∑_b |Δν b|)  =  TV μ μ' + TV ν ν'
+  have hA : (Finset.sum (Finset.univ : Finset (α × β)) (fun p =>
+          |Dist.mass μ p.1 - Dist.mass μ' p.1| * Dist.mass ν p.2 +
+            Dist.mass μ' p.1 * |Dist.mass ν p.2 - Dist.mass ν' p.2|)) =
+      (∑ a ∈ (Finset.univ : Finset α), |Dist.mass μ a - Dist.mass μ' a|) +
+        (∑ b ∈ (Finset.univ : Finset β), |Dist.mass ν b - Dist.mass ν' b|) := by
+    rw [Finset.sum_add_distrib, S1, S2]
+  unfold Dist.tv
+  simp only [vectorTV, distProduct_mass]
+  calc
+    (1 / 2 : Rat) * Finset.sum (Finset.univ : Finset (α × β))
+        (fun p => |Dist.mass μ p.1 * Dist.mass ν p.2 - Dist.mass μ' p.1 * Dist.mass ν' p.2|) ≤
+      (1 / 2 : Rat) * Finset.sum (Finset.univ : Finset (α × β))
+        (fun p => |Dist.mass μ p.1 - Dist.mass μ' p.1| * Dist.mass ν p.2 +
+          Dist.mass μ' p.1 * |Dist.mass ν p.2 - Dist.mass ν' p.2|) := by
+      apply mul_le_mul_of_nonneg_left (Finset.sum_le_sum (fun p _ => hterm p.1 p.2))
+      norm_num
+    _ = (1 / 2 : Rat) *
+        ((∑ a ∈ (Finset.univ : Finset α), |Dist.mass μ a - Dist.mass μ' a|) +
+          (∑ b ∈ (Finset.univ : Finset β), |Dist.mass ν b - Dist.mass ν' b|)) := by
+      rw [hA]
+    _ = (1 / 2 : Rat) * (Finset.sum (Finset.univ : Finset α) (fun a => |Dist.mass μ a - Dist.mass μ' a|)) +
+        (1 / 2 : Rat) * (Finset.sum (Finset.univ : Finset β) (fun b => |Dist.mass ν b - Dist.mass ν' b|)) := by
+      ring
+    _ = Dist.tv μ μ' + Dist.tv ν ν' := by
+      simp [Dist.tv, vectorTV]
+
 end Shufflemath
 end
