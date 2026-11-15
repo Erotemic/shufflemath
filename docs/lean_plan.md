@@ -329,7 +329,19 @@ route, not a theorem already in the tree.
 > proves the well-typed range `1 ≤ membershipCount m ≤ 50` for every membership
 > (`membershipCount_pos` + `membershipCount_le_50`), plus the `leftOrigSet`/
 > `rightOrigSet` disjoint-cover identities the orbit construction (Spec A1) needs.
-> The transitivity proof itself (Spec A1 proper) remains open.
+> **17th–18th-session progress (orbit primitive):** the building block
+> `equiCardFinsets_bij` (`{x//x∈s} ≃ {x//x∈t}` when `#s = #t`, via
+> `Fintype.card_ofFinset` + `Fintype.equivFinOfCardEq`) is committed. The core
+> lemma `finsetType_perm` (a `s ≃ s` sending `A ↦ A'` and `s \ A ↦ s \ A'`, for
+> `#A = #A'`) is **~90% built**: the **injective half is complete** (all four
+> cases: same-piece via `Subtype.ext` + `eAB/eCD.injective`; cross-piece via the
+> `A' ∩ (univ \ A') = ∅` disjointness contradiction), and the **surjective half
+> has three tiny mechanical walls** documented with one-line fixes
+> (`docs/agent_handoff.md`, 18th-session section: final `rfl` blocked by a `have`
+> abbreviation; a `rw`-at-hypothesis motive; `rename_i` grabbing a `DecidableEq`
+> typeclass). Once `finsetType_perm` closes, `membershipFiber_transitive` (two
+> calls on the left/right pieces, agreeing on the disjoint cover `leftOrigSet ⊎
+> rightOrigSet = univ`) is bookkeeping, and Specs A2/A3 follow.
 > **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
 > which depends on item 3 core.
 
