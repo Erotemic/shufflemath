@@ -762,6 +762,15 @@ theorem tterm_eq_oterm (N m r k x y a : Nat)
   rw [hb]
   ring_nf
 
+/-- The `a`-summand of `transitionNumerator (N m r k) y x` (with the 4th/5th
+    arguments swapped, so the transition's source is `y` and target is `x`) is
+    definitionally the `tterm` at `(N m r k) x y a`; hence the transition is
+    the sum of the `tterm` summands over `a` in `[0, k]`. -/
+theorem transitionNumerator_eq_sum_tterm (N m r k x y : Nat) :
+    transitionNumerator N m r k y x =
+        (Finset.range (k + 1)).sum (fun a => tterm N m r k x y a) := by
+  rfl
+
 
 /-! F3 item 3 — **summand match `tterm_eq_oterm` is PROVEN** (above); all four
     factor matches (F1–F4) are proven.  The general CL
