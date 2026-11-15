@@ -1079,7 +1079,7 @@ injective); surjectivity by target-pile case-split; the pile and marked-set
 image equalities (`orbitMap_imageLeft`/`orbitMap_imageM1`) close it.  **A2 is
 now the next concrete step.**
 
-**Step A2 (the invariance, the real work):** show the physical-exchange
+**Step A2 (core DONE, commit `6ccae33` — distributional form next):** show the physical-exchange
 distribution — averaged over a uniform `d` in the `project`-fiber of a
 source count `x` and a uniform `(L, R)` 25-25 choice — is invariant under the
 `leftOrigSet`-stabilizer group (the action of A1's `f`'s on the *source* deck
@@ -1090,6 +1090,13 @@ the deck).  Because A1 shows the stabilizer acts **transitively** on the
 target membership fiber of any fixed count `m`, and the distribution is
 stabilizer-invariant, it is **uniform over that fiber** — this is part (ii).
 
+**A2 core proven** (`newLeftCards_conjugate`): for any permutation `f` and deck
+`d`, `newLeftCards (d.trans f) L R = (newLeftCards d L R).image f` — the exchange
+commutes with card relabeling.  The **distributional** form (averaging `newLeftCards`
+over a uniform `project`-fiber `d` and a uniform 25-25 `(L,R)` gives a law invariant
+under the `leftOrigSet`-stabilizer, hence uniform over the fiber by A1's
+transitivity) is the next step, and it is what `hMembershipExchange` (A3) needs.
+
 **Step A3 (assemble):** with A2, the LHS of
 `comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25
 membershipLift` is, at a target membership `μ` of count `m`,
@@ -1097,6 +1104,19 @@ membershipLift` is, at a target membership `μ` of count `m`,
 is uniform over the fiber by construction).  Then `interweaving_of_membership_exchange`
 + `run_tv_eq_macro_of_membership_exchange` (already proven general theorems)
 yield the 2-exchange TV (= the macro/BL TV).
+
+### Spec C — A3: the concrete `hMembershipExchange` kernel equality + 2-exchange TV
+
+**Target.** Prove the concrete premise of
+`two_physical_perfect_exchanges_uniform_of_counts`:
+`comp (comp (comp membershipLift localLift) rawExchange) (deterministic membership)
+ = comp commanderExchange25 membershipLift`, for the physical-exchange `rawExchange`
+and the `membership`/`membershipLift`/`localLift` of the Commander fiber.
+Counting (part (i)) is done (general CL / `fiberSum_eq_overlap_ns` /
+`commanderExchange25`); member-uniformity (part (ii)) rests on A1
+(`membershipFiber_transitive`) + A2 (distributional invariance). Instantiating
+`two_physical_perfect_exchanges_uniform_of_counts` with this proved premise yields the
+**unconditional 2-exchange TV** `= commander_tv_after_two_semantic`.
 
 ### Spec B — F4.2: Deck-level GSR lift to `Equiv.Perm (Fin 99)`
 
