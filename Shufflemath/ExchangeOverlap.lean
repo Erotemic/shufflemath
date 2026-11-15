@@ -24,6 +24,7 @@ subtraction is wrong when `x - t` is negative: the saturation turns it into
 `chooseSigned`, which reproduces the reference exactly for every `(x, y)`.
 -/
 public import Shufflemath.BernoulliLaplaceGeneral
+public import Shufflemath.BernoulliLaplaceFiber
 public meta import Shufflemath.BernoulliLaplaceGeneral
 public import Shufflemath.BernoulliLaplaceFiber
 public meta import Shufflemath.BernoulliLaplaceFiber
@@ -243,3 +244,47 @@ theorem inter_sdiff_union {r : Nat} (T1 S1 : Finset (Fin r)) :
 -- `Finset.image` targets (never bare `Finset.product`), bounding
 -- `(S1∩T1).card ≤ S1.card` via `sumOnes` + `Finset.sum_le_sum`.
 
+
+/-! The 2-bin fiber decomposition (F3 item 3, 5th-session `s1_bij` wall, now broken).
+
+The `S1` fiber (the `x`-subsets of the specials with `|S1 ∩ T1| = t`) is the
+disjoint union, over the `t`-subsets `A` of `T1`, of the fibers over a fixed
+`T1`-part `A`.  Counting then reduces to counting the outside part.  The next
+step (not yet in this file) is `fiberA_card`, the `S1 ↦ S1 \ T1` bijection
+via `Finset.card_bij`, which together with `Finset.card_biUnion` and
+`Finset.card_powersetCard` yields the `choose` formula.  -/
+
+def s1Fiber (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x t : Nat)
+    (T1 : Finset (Fin p.r)) : Finset (Finset (Fin p.r)) :=
+  ((starsUniv p).powersetCard x).filter (fun S1 => (S1 ∩ T1).card = t)
+
+def fiberA (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x t : Nat)
+    (T1 : Finset (Fin p.r)) (A : Finset (Fin p.r)) :
+    Finset (Finset (Fin p.r)) :=
+  ((starsUniv p).powersetCard x).filter (fun S1 => S1 ∩ T1 = A)
+
+theorem s1Fiber_biUnion (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (x t : Nat) (T1 : Finset (Fin p.r)) (htx : t ≤ x) :
+    s1Fiber p x t T1 = (T1.powersetCard t).biUnion (fiberA p x t T1) := by
+  set st := starsUniv p
+  ext S1
+  dsimp only [s1Fiber, fiberA]
+  rw [Finset.mem_filter, Finset.mem_biUnion]
+  constructor
+  · intro h
+    rcases h with ⟨hS1mem, hI⟩
+    set A := S1 ∩ T1 with hAdef
+    have hAmem : A ∈ T1.powersetCard t := by
+      simp only [hAdef, Finset.inter_subset_right, hI, Finset.mem_powersetCard]
+      <;> aesop
+    refine ⟨A, hAmem, ?_⟩
+    dsimp only [fiberA]
+    rw [Finset.mem_filter]
+    exact ⟨hS1mem, hAdef.symm⟩
+  · rintro ⟨A, hAmem, hmemA⟩
+    have hmemA2 : S1 ∈ (starsUniv p).powersetCard x ∧ S1 ∩ T1 = A := by
+      simpa [fiberA, Finset.mem_filter] using hmemA
+    rcases hmemA2 with ⟨hS1mem, hI⟩
+    refine ⟨hS1mem, ?_⟩
+    rw [hI]
+    exact (Finset.mem_powersetCard.1 hAmem).2
