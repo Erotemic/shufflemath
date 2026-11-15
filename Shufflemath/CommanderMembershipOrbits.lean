@@ -122,5 +122,95 @@ noncomputable def equiCardFinsets_bij {α : Type*} [Fintype α] [DecidableEq α]
   have et : {x : α // x ∈ t} ≃ Fin n := Fintype.equivFinOfCardEq ct
   exact es.trans et.symm
 
+
+/-! ## F3 item 4 (part ii): orbit transitivity of the membership fibers. -/
+
+/-- A bijection between the orbit of a membership state under the two-pile
+    exchange and itself: when the two 50-subsets `A`/`A'` (the marked-card sets
+    of two membership states) have equal cardinality, there is a permutation of
+    the 99-card universe carrying `A` to `A'` (and its complement to its
+    complement).  This is the algebraic skeleton of the orbit-transitivity claim:
+    it exhibits an element of the deck permutation group sending one fiber point
+    to another.  Built `Fintype`-free (no `List.mem_bind`/`toMultiset`): a
+    `Fin 99`-sized `Finset` is bridged through `equiCardFinsets_bij`.  The map
+    sends `A → A'` by the equi-cardinal bijection `eAB` and the complement
+    `C = univ \ A → D = univ \ A'` by `eCD`, and is bijective. -/
+noncomputable def finsetType_perm {s : Type*} [Fintype s] [DecidableEq s]
+    (A A' : Finset s) (h : A.card = A'.card) : s ≃ s := by
+  classical
+  set C := (Finset.univ : Finset s) \ A with hC
+  set D := (Finset.univ : Finset s) \ A' with hD
+  have hc : C.card = (Finset.univ : Finset s).card - A.card := by
+    rw [hC, Finset.card_sdiff_of_subset (fun _ _ => Finset.mem_univ _)]
+  have hd : D.card = (Finset.univ : Finset s).card - A'.card := by
+    rw [hD, Finset.card_sdiff_of_subset (fun _ _ => Finset.mem_univ _)]
+  have hCA : C.card = D.card := by rw [hc, hd, h]
+  have eAB : {x : s // x ∈ A} ≃ {x : s // x ∈ A'} := equiCardFinsets_bij h
+  have eCD : {x : s // x ∈ C} ≃ {x : s // x ∈ D} := equiCardFinsets_bij hCA
+  let hmemC (x : s) (hx : x ∉ A) : x ∈ C := by
+    rw [hC, Finset.mem_sdiff]
+    exact ⟨Finset.mem_univ x, hx⟩
+  let f (x : s) : s :=
+      if hx : x ∈ A then (eAB ⟨x, hx⟩).val else (eCD ⟨x, hmemC x hx⟩).val
+  refine Equiv.ofBijective f ?_
+  constructor
+  · -- injective: unfold f then split on both ites
+    intro x y hxy
+    dsimp only [f] at hxy
+    split_ifs at hxy <;> rename_i hx hy
+    · -- hx : x ∈ A, hy : y ∈ A
+      simpa using (eAB.injective (Subtype.ext hxy))
+    · -- hx : x ∈ A, hy : ¬y ∈ A
+      have hv : (eAB ⟨x, hx⟩).val = (eCD ⟨y, hmemC y hy⟩).val := by simpa only [f] using hxy
+      have hmem : (eAB ⟨x, hx⟩).val ∈ A' ∩ D := by
+        rw [Finset.mem_inter]
+        exact ⟨(eAB ⟨x, hx⟩).2, by rw [hv]; exact (eCD ⟨y, hmemC y hy⟩).2⟩
+      have hdisj : Disjoint A' D := by
+        rw [Finset.disjoint_iff_inter_eq_empty, hD]
+        exact Finset.inter_sdiff_self A' (Finset.univ : Finset s)
+      exact (False.elim ((Finset.not_disjoint_iff_nonempty_inter.mpr ⟨(eAB ⟨x, hx⟩).val, hmem⟩) hdisj))
+    · -- hx : ¬x ∈ A, hy : y ∈ A
+      have hv : (eCD ⟨x, hmemC x hx⟩).val = (eAB ⟨y, hy⟩).val := by simpa only [f] using hxy
+      have hmem : (eCD ⟨x, hmemC x hx⟩).val ∈ A' ∩ D := by
+        rw [Finset.mem_inter]
+        exact ⟨by rw [hv]; exact (eAB ⟨y, hy⟩).2, (eCD ⟨x, hmemC x hx⟩).2⟩
+      have hdisj : Disjoint A' D := by
+        rw [Finset.disjoint_iff_inter_eq_empty, hD]
+        exact Finset.inter_sdiff_self A' (Finset.univ : Finset s)
+      exact (False.elim ((Finset.not_disjoint_iff_nonempty_inter.mpr ⟨(eCD ⟨x, hmemC x hx⟩).val, hmem⟩) hdisj))
+    · -- hx : ¬x ∈ A, hy : ¬y ∈ A
+      simpa using (eCD.injective (Subtype.ext hxy))
+  -- surjective: every z ∈ univ lies in A' (lift through eAB) or in D (through eCD)
+  · intro z
+    by_cases hzA' : z ∈ A'
+    · -- z ∈ A'
+      let pre : {x : s // x ∈ A} := eAB.symm ⟨z, hzA'⟩
+      use pre.val
+      dsimp only [f]
+      split_ifs with hx2
+      · -- hx2 : pre.val ∈ A, the then-branch of f
+        have hsub : ⟨pre.val, hx2⟩ = pre := Subtype.ext (by rfl)
+        rw [hsub]
+        dsimp only [pre]
+        rw [Equiv.apply_symm_apply]
+      · -- hx2 : ¬pre.val ∈ A, contradicts pre.2 (pre : {x // x ∈ A})
+        exfalso
+        exact hx2 pre.2
+    · -- z ∉ A'
+      have hzD : z ∈ D := by rw [hD, Finset.mem_sdiff]; exact ⟨Finset.mem_univ z, hzA'⟩
+      let pre : {x : s // x ∈ C} := eCD.symm ⟨z, hzD⟩
+      use pre.val
+      dsimp only [f]
+      split_ifs with hx2
+      · -- hx2 : pre.val ∈ A contradicts pre.2 (pre.val ∈ C = univ \ A)
+        exfalso
+        have hmem' : pre.val ∈ (Finset.univ : Finset s) \ A := hC ▸ pre.2
+        exact (Finset.mem_sdiff.mp hmem').2 hx2
+      · -- hx2 : ¬pre.val ∈ A, the else-branch of f
+        have hsub : ⟨pre.val, hmemC pre.val hx2⟩ = pre := Subtype.ext (by rfl)
+        rw [hsub]
+        dsimp only [pre]
+        rw [Equiv.apply_symm_apply]
+
 end Shufflemath
 end
