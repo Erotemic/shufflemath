@@ -676,60 +676,79 @@ theorem F3match (m k y a : Nat) (ha : a ≤ y) (hak : a ≤ k) (hky : k ≤ y) (
       have h0 : Nat.choose (m - y) (k - a) = 0 := by simpa [Nat.choose_eq_zero_iff] using (Nat.not_le.mp hk)
       simpa using h0.symm
 
-/-!
-### General CL summand match: `tterm_eq_oterm` (F3 item 3, 9th-session progress)
 
-The general CL is a **sum** equality:
-```
-  transitionNumerator (N m r k) y x = overlap_count (N m r k) x y
-```
-After reindexing the transition index `a` to the overlap index `t = y - a`, the
-summands must match pointwise:
-```
-  tterm (N m r k) x y a = oterm (N m r k) x y (y - a)
-```
-where `tterm`'s four factors are `choose y a`, `choose (m-y)(k-a)`,
-`choose (r-y)(x-t)`, `choose (N-m-r+y)(k-x+t)` and `oterm`'s are the
-corresponding `chooseSigned` terms.
+/-- For `b ≤ a`, `(a:ℤ)-(b:ℤ)` (difference of `Nat` casts) equals the single
+    `Nat`-cast `↑(a-b)`: both denote the exact nonnegative value.  Proven via
+    the `.toNat` bridge (`intSub_toNat`). -/
+theorem intSub_eqCast (a b : Nat) (h : b ≤ a) : (a : Int) - (b : Int) = (Nat.cast (a - b) : Int) := by
+  have h0 : 0 ≤ (a : Int) - (b : Int) := by simp only [Int.sub_nonneg]; omega
+  have ht : ((a : Int) - (b : Int)).toNat = a - b := intSub_toNat h
+  rw [← Int.toNat_of_nonneg h0]
+  rw [ht]
 
-Factors 1, 2, and 3 are **now proven** (`F1match`, `F2match`, `F3match` above).
-The third factor was the last hard wall.  The breakthrough was to work in
-`Int`: the `chooseSigned` argument `(↑m-↑y) - ↑(y-a)` equals `(m-y) - (k-a)`
-as an *exact* Int (`He`, via `Nat.cast_sub ha` + `ring_nf`), so its sign is
-directly `k-a ≤ m-y` (no saturating-`Nat` exactness sub-lemma needed).  Then
-`cs_eq_chooseNatI` (which takes the `base` as an arbitrary `Int`, avoiding the
-single-`Nat`-cast inference problem of `cs_eq_chooseNat`) gives
-`choose (base.toNat) (e.toNat)`; `intSub_toNat` recovers the `Nat` values
-(`base.toNat = m-y`, `e.toNat = (m-y)-(k-a)`), and `Nat.choose_symm` gives the
-complementary `choose (m-y)(k-a)`.  The guard-fail case (`k-a > m-y`) is the
-usual both-sides-zero split.
+/-- Under `m + r ≤ N`, the target-`Int` form of `N-m-r+y` equals its single
+    `Nat`-cast, so the `.toNat` recovers the exact `Nat`. -/
+theorem intSubSubAdd_eqCast (N m r y : Nat) (hN : m + r ≤ N) :
+    (N - m - r + y : Int) = (Nat.cast (N - m - r + y) : Int) := by
+  have hN2 : m + r ≤ N + y := by omega
+  have h1 : (N - m - r + y) = (N + y) - (m + r) := by omega
+  rw [h1, Nat.cast_sub hN2, Nat.cast_add, Nat.cast_add]
+  ring_nf
 
-`-- TODO(proof): tterm_eq_oterm — F4 summand match + assembly + reindexing.
-  The ONLY remaining summand match is F4, the four-level-nested argument:
+/-- F3 item 3, **4th summand factor (F4) — RESOLVED.**
+    The 4th `chooseSigned` factor (difference-form base `N-r-(m-y)` and
+    difference-of-differences argument) equals the 4th transition `Nat.choose`
+    factor `choose (N-m-r+y) (k-(x-(y-a)))`, in the admissible regime
+    (`t = y-a`; 1st guard `y-a ≤ x`, 2nd guard `x-(y-a) ≤ k`, plus the fiber
+    regime `y ≤ m`, `m+r ≤ N`).  Both the base and argument reduce to exact
+    `Int` equal to the single `Nat`-casts via `intSub_eqCast` /
+    `intSubSubAdd_eqCast`, so `cs_eq_chooseNatI` + `Int.toNat_natCast` finish. -/
+theorem F4match (N m r k x y a : Nat)
+    (h1g : y - a ≤ x) (h2g : x - (y - a) ≤ k)
+    (ha : a ≤ y) (hmy : y ≤ m) (hN : m + r ≤ N) :
+    chooseSigned ((N : Int) - (r : Int) - ((m : Int) - (y : Int)))
+        (((m : Int) - (x : Int)) - (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int))) =
+      Nat.choose (N - m - r + y) (k - (x - (y - a))) := by
+  have hR : (Nat.cast (k - (x - (y - a))) : Int) = (Nat.cast k - Nat.cast x + Nat.cast (y - a) : Int) := by
+    rw [← intSub_eqCast k (x - (y - a)) h2g]
+    rw [← intSub_eqCast x (y - a) h1g]
+    ring_nf
+  have he : ((m : Int) - (x : Int)) - (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int)) =
+            (Nat.cast (k - (x - (y - a))) : Int) := by
+    rw [hR]
+    ring_nf
+  have he0 : 0 ≤ ((m : Int) - (x : Int)) - (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int)) := by
+    rw [he]
+    simp only [Nat.cast_nonneg]
+  have hbase : (N : Int) - (r : Int) - ((m : Int) - (y : Int)) = (Nat.cast (N - m - r + y) : Int) := by
+    have hL : (N : Int) - (r : Int) - ((m : Int) - (y : Int)) = (N - m - r + y : Int) := by ring_nf
+    rw [hL, intSubSubAdd_eqCast N m r y hN]
+  have hbase0 : 0 ≤ (N : Int) - (r : Int) - ((m : Int) - (y : Int)) := by
+    rw [hbase]
+    simp only [Nat.cast_nonneg]
+  rw [cs_eq_chooseNatI
+        ((N : Int) - (r : Int) - ((m : Int) - (y : Int)))
+        (((m : Int) - (x : Int)) - (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int)))
+        hbase0 he0]
+  have hbt : ((N : Int) - (r : Int) - ((m : Int) - (y : Int))).toNat = N - m - r + y := by
+    rw [hbase, Int.toNat_natCast]
+  have het : (((m : Int) - (x : Int)) - (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int))).toNat =
+             k - (x - (y - a)) := by
+    rw [he, Int.toNat_natCast]
+  rw [hbt, het]
 
-  F4:  `chooseSigned ((N-r-(m-y) : Int)) (((m-x) : Int) - ((m:Int)-(k:Int)) - (t:Int))
-       = choose (N-m-r+y)(k-x+t)`   (t = y-a).
 
-  Strategy (mirror F3match, one level deeper):  introduce
-      base4 := (N-r-(m-y) : Int)   [exact ≥ 0, = (N-m-r+y)]
-      e4   := ((m-x) : Int) - ((m:Int)-(k:Int)) - (t:Int)
-  and an identity `He4 : e4 = (N-m-r+y : Int) - (x-t : Int)`  (three-level
-  `Nat.cast_sub` + `ring_nf`), so `e4`'s sign is directly `x-t ≤ N-m-r+y` and
-  `e4` equals `(N-m-r+y) - (x-t)` exactly.  Then `cs_eq_chooseNatI` +
-  `intSub_toNat` + `Nat.choose_symm` give `choose (N-m-r+y)(x-t)`, and the
-  target is `choose (N-m-r+y)(k-x+t) = choose (N-m-r+y)(k-(x-t))` (the
-  transition's `k-b` with `b = x-t`).  The base: `(N-r-(m-y) : Int) =
-  (N-m-r+y : Int)` by two `Nat.cast_sub` + `ring_nf` (needs `y≤m`, `y≤r`,
-  `m+r≤N`).  Guard-fail case: both sides 0 via `Nat.choose_eq_zero_iff`.
-
-  Then:  (3) assemble `tterm_eq_oterm` from F1–F4 (`ring` on the four matched
-  factors in the both-hold regime `a≤y, k≤y, a≤k, y≤m, y≤r, m+r≤N`);
-  (4) reindex the transition sum over `a` to the overlap sum over `t = y-a`
-  (`Finset.sum_bij`/`Finset.sum_image`) to close
-  `transitionNumerator (N m r k) y x = overlap_count (N m r k) x y` — the
-  general CL, and with it F3 item 3 and item 4.
-
-  Next attempt: prove `He4` (the three-level identity) and `base4`
-  (the base reduction), then apply the F3match pattern.  Do NOT use bare
-  `simp`/`field_simp` (this module is adjacent to `Equiv.Perm (Fin 99)`
-  consumers). -/
+/-! F3 item 3 — **all four summand matches (F1–F4) are now PROVEN.**
+    The general CL `transitionNumerator (N m r k) y x = overlap_count (N m r k) x y`
+    remains two assembly steps away:
+    1. **`tterm_eq_oterm`**: in the admissible regime (1st/2nd guards + fiber
+       regime), `tterm (N m r k) x y a = oterm (N m r k) x y (y - a)`, by
+       `F1match`/`F2match`/`F3match`/`F4match` and `oterm_eq_summand` — the
+       four factors match pairwise, so the products are equal.
+    2. **Sum reindexing**: `transitionNumerator` is a sum over `a` in `[0,k]`
+       of `tterm`; `overlap_count` is a sum over `t` in `[0, m-k]` of `oterm`.
+       Reindex via `t = y - a` (bijection between the admissible indices,
+       given the guards + regime) to identify the two sums.
+    Then F3 item 4 (2-exchange TV) follows from the CL + `fiberSum_eq`.
+    Do NOT use bare `simp`/`field_simp` (this module is adjacent to
+    `Equiv.Perm (Fin 99)` consumers). -/
