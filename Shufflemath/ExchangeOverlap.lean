@@ -158,6 +158,21 @@ is a reindex of the `t`-sum to the `a`-sum: both are `∑` of a product of four
 `Nat.choose` factors with `if`-guards, so no `Finset` API is involved — only
 the `choose n k = 0` convention (for `k > n`) replaces the guards, and the two
 sum ranges can be unified.
+
+**The reindexing (5th-session advance).**  Set `t := y - a` (the marked overlap
+equals the source's `y` marked minus the `a` marked moved out).  Under this
+substitution the four transition factors match the four overlap factors:
+* `choose y a = choose y (y - t) = choose y t`            (`Nat.choose_sub`/symmetry)
+* `choose (r - y) b = choose (r - y) (x - (y - t)) = choose (r - y) (x - t)`
+* `choose (m - y) (k - a) = choose (m - y) (m - k - t)`   (symmetry: `(m-y)-(k-a) = m-k-t`)
+* `choose (N - m - (r - y)) (k - b) = choose (N - r - (m - y)) (k - x + t)`
+  (the base `N - m - (r - y) = N - r - (m - y)`).
+The one remaining difficulty is the **boundary**: the transition sum runs over
+`a ∈ range (k + 1)` with `if`-guards (and `Nat`-saturated `y - a`), whereas the
+overlap sum runs over `t ∈ range ((m - k) + 1)` with `chooseSigned` returning `0`
+out of range.  A unified proof rewrites both as `∑` over a common `t`-range with
+out-of-range terms `0`, using the guards' failure to force the relevant factor to
+`0`.  This is a pure `Nat`/`choose` reindexing (no `Finset` API).
 -/
 /-- Commander instance `(99,50,50,25)`, `x=10, y=40`: the case where the
 `Nat`-saturated version inserts spurious `t > x` terms.  The signed version
