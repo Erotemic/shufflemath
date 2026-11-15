@@ -672,6 +672,148 @@ theorem productMassBound (a b : Rat) (a' b' : Rat) (hbn : 0 ≤ b) (hann' : 0 �
     _ = |a - a'| * b + a' * |b - b'| := by
       rw [abs_mul, abs_mul, abs_of_nonneg hbn, abs_of_nonneg hann']
 
+/-- Fintype-free total-variation subadditivity for the two-pile product.
+This is the Fintype-free analog of `distProduct_tv_subadditive`: the total
+variation between two `distProductFinsupp` products is bounded by the sum of
+the total variations of the two factor pairs.  It is the GSR two-pile
+analogue of the Fintype F4.3 contraction, needed because the GSR state space
+`List (Fin n)` is not a `Fintype`. -/
+theorem distProductFinsupp_tv_subadditive (μ μ' : Dist α) (ν ν' : Dist β) :
+    tvFinsupp (distProductFinsupp μ ν) (distProductFinsupp μ' ν') ≤
+      tvFinsupp μ μ' + tvFinsupp ν ν' := by
+  let A := μ.weights.support ∪ μ'.weights.support
+  let B := ν.weights.support ∪ ν'.weights.support
+  let f (z : α × β) := |μ.weights z.1 * ν.weights z.2 - μ'.weights z.1 * ν'.weights z.2|
+  let pP := (μ.weights.support ×ˢ ν.weights.support) ∪ (μ'.weights.support ×ˢ ν'.weights.support)
+  have hzero : ∀ z ∈ A ×ˢ B, z ∉ pP → f z = 0 := by
+    intro z _ hnot
+    dsimp only [pP] at hnot
+    have hnL : z.1 ∈ μ.weights.support ∧ z.2 ∈ ν.weights.support → False := by
+      intro h
+      have hmem : z ∈ μ.weights.support ×ˢ ν.weights.support := by simpa [Finset.mem_product] using h
+      exact hnot (Finset.mem_union.mpr (Or.inl hmem))
+    have hnR : z.1 ∈ μ'.weights.support ∧ z.2 ∈ ν'.weights.support → False := by
+      intro h
+      have hmem : z ∈ μ'.weights.support ×ˢ ν'.weights.support := by simpa [Finset.mem_product] using h
+      exact hnot (Finset.mem_union.mpr (Or.inr hmem))
+    have hL0 : μ.weights z.1 * ν.weights z.2 = 0 := by
+      by_cases h1 : z.1 ∈ μ.weights.support
+      · have h2 : z.2 ∉ ν.weights.support := by by_contra h2; exact hnL ⟨h1, h2⟩
+        rw [not_mem_support_zero ν z.2 h2, mul_zero]
+      · rw [not_mem_support_zero μ z.1 (by simpa [not_not] using h1), zero_mul]
+    have hR0 : μ'.weights z.1 * ν'.weights z.2 = 0 := by
+      by_cases h1 : z.1 ∈ μ'.weights.support
+      · have h2 : z.2 ∉ ν'.weights.support := by by_contra h2; exact hnR ⟨h1, h2⟩
+        rw [not_mem_support_zero ν' z.2 h2, mul_zero]
+      · rw [not_mem_support_zero μ' z.1 (by simpa [not_not] using h1), zero_mul]
+    dsimp only [f]
+    simp only [hL0, hR0, mul_zero, zero_mul, sub_self, abs_zero]
+  have hunion : (2 : Rat) * tvFinsupp (distProductFinsupp μ ν) (distProductFinsupp μ' ν') = pP.sum f := by
+    rw [twoTv_eq_unionSum, suppDistProductFinsupp, suppDistProductFinsupp]
+    dsimp only [pP]
+    apply Finset.sum_congr rfl
+    intro z _
+    rw [distProductFinsupp_mass μ ν z.1 z.2, distProductFinsupp_mass μ' ν' z.1 z.2]
+  have hsub : pP ⊆ A ×ˢ B := by
+    intro z hz
+    simp only [pP, A, B, Finset.mem_union, Finset.mem_product] at hz ⊢
+    rcases hz with hL | hR
+    · constructor
+      · left; exact hL.1
+      · left; exact hL.2
+    · constructor
+      · right; exact hR.1
+      · right; exact hR.2
+  have hAB : pP.sum f = (A ×ˢ B).sum f := by
+    have hf : (A ×ˢ B).filter (fun z => z ∈ pP) = pP := by
+      ext z
+      constructor
+      · intro h; simp only [Finset.mem_filter] at h; exact h.2
+      · intro h; simp only [Finset.mem_filter]; exact ⟨hsub h, h⟩
+    have h1 : (A ×ˢ B).sum f = (A ×ˢ B).sum (fun z => if z ∈ pP then f z else 0) := by
+      apply Finset.sum_congr rfl
+      intro z hzAB
+      by_cases hz : z ∈ pP
+      · simp [hz]
+      · rw [hzero z hzAB hz]; simp
+    have hcalc : (A ×ˢ B).sum f = pP.sum f := by
+      calc
+        (A ×ˢ B).sum f = (A ×ˢ B).sum (fun z => if z ∈ pP then f z else 0) := h1
+        _ = ((A ×ˢ B).filter (fun z => z ∈ pP)).sum f +
+            ((A ×ˢ B).filter (fun z => z ∉ pP)).sum (fun _ => 0) := by
+          rw [Finset.sum_ite]
+        _ = ((A ×ˢ B).filter (fun z => z ∈ pP)).sum f := by
+          rw [Finset.sum_const_zero, add_zero]
+        _ = pP.sum f := by rw [hf]
+    exact hcalc.symm
+  have hbound : (A ×ˢ B).sum f ≤
+      (A ×ˢ B).sum (fun z => |μ.weights z.1 - μ'.weights z.1| * ν.weights z.2 +
+        μ'.weights z.1 * |ν.weights z.2 - ν'.weights z.2|) := by
+    apply Finset.sum_le_sum
+    intro z _
+    have h0 : 0 ≤ ν.weights z.2 := Dist.mass_nonneg ν z.2
+    have h1 : 0 ≤ μ'.weights z.1 := Dist.mass_nonneg μ' z.1
+    exact productMassBound (μ.weights z.1) (ν.weights z.2) (μ'.weights z.1) (ν'.weights z.2) h0 h1
+  have hsplit : (A ×ˢ B).sum (fun z => |μ.weights z.1 - μ'.weights z.1| * ν.weights z.2 +
+        μ'.weights z.1 * |ν.weights z.2 - ν'.weights z.2|) =
+      (A ×ˢ B).sum (fun z => |μ.weights z.1 - μ'.weights z.1| * ν.weights z.2) +
+      (A ×ˢ B).sum (fun z => μ'.weights z.1 * |ν.weights z.2 - ν'.weights z.2|) := by
+    rw [Finset.sum_add_distrib]
+  have hA_tv : A.sum (fun a => |μ.weights a - μ'.weights a|) = (2 : Rat) * tvFinsupp μ μ' := by
+    rw [← twoTv_eq_unionSum]
+  have hB_tv : B.sum (fun b => |ν.weights b - ν'.weights b|) = (2 : Rat) * tvFinsupp ν ν' := by
+    rw [← twoTv_eq_unionSum]
+  have hA1 : B.sum (fun b => ν.weights b) = 1 := by
+    have hBsup : ν.weights.support ⊆ B := by simp [B, Finset.mem_union]
+    exact sumOverEnlarged_eq_one ν B hBsup
+  have hB1 : A.sum (fun a => μ'.weights a) = 1 := by
+    have hAsup : μ'.weights.support ⊆ A := by simp [A, Finset.mem_union]
+    exact sumOverEnlarged_eq_one μ' A hAsup
+  have hfactL : (A ×ˢ B).sum (fun z => |μ.weights z.1 - μ'.weights z.1| * ν.weights z.2) =
+      (A.sum (fun a => |μ.weights a - μ'.weights a|)) * (B.sum (fun b => ν.weights b)) := by
+    rw [Finset.sum_product]
+    simp only [Prod.fst, Prod.snd]
+    rw [← Finset.sum_mul_sum]
+    <;> simp
+  have hfactR : (A ×ˢ B).sum (fun z => μ'.weights z.1 * |ν.weights z.2 - ν'.weights z.2|) =
+      (A.sum (fun a => μ'.weights a)) * (B.sum (fun b => |ν.weights b - ν'.weights b|)) := by
+    rw [Finset.sum_product]
+    simp only [Prod.fst, Prod.snd]
+    rw [← Finset.sum_mul_sum]
+    <;> simp
+  have h6 : (A.sum (fun a => |μ.weights a - μ'.weights a|)) * (B.sum (fun b => ν.weights b)) +
+      (A.sum (fun a => μ'.weights a)) * (B.sum (fun b => |ν.weights b - ν'.weights b|)) =
+      (2 : Rat) * tvFinsupp μ μ' + (2 : Rat) * tvFinsupp ν ν' := by
+    rw [hA_tv, hB_tv, hA1, hB1]
+    ring
+  have h5 : (A ×ˢ B).sum (fun z => |μ.weights z.1 - μ'.weights z.1| * ν.weights z.2 +
+        μ'.weights z.1 * |ν.weights z.2 - ν'.weights z.2|) =
+      (2 : Rat) * tvFinsupp μ μ' + (2 : Rat) * tvFinsupp ν ν' := by
+    rw [hsplit, hfactL, hfactR, h6]
+  have h7 : (2 : Rat) * tvFinsupp (distProductFinsupp μ ν) (distProductFinsupp μ' ν') ≤
+      (2 : Rat) * tvFinsupp μ μ' + (2 : Rat) * tvFinsupp ν ν' := by
+    calc
+      _ = (A ×ˢ B).sum f := by rw [hunion, hAB]
+      _ ≤ (A ×ˢ B).sum (fun z => |μ.weights z.1 - μ'.weights z.1| * ν.weights z.2 +
+          μ'.weights z.1 * |ν.weights z.2 - ν'.weights z.2|) := hbound
+      _ = (2 : Rat) * tvFinsupp μ μ' + (2 : Rat) * tvFinsupp ν ν' := h5
+  have h8 : (2 : Rat) * tvFinsupp (distProductFinsupp μ ν) (distProductFinsupp μ' ν') ≤
+      (2 : Rat) * (tvFinsupp μ μ' + tvFinsupp ν ν') := by
+    rw [← mul_add] at h7
+    exact h7
+  have h9 : tvFinsupp (distProductFinsupp μ ν) (distProductFinsupp μ' ν') ≤
+      tvFinsupp μ μ' + tvFinsupp ν ν' := by
+    have h13 : (1 / 2 : Rat) * (2 * tvFinsupp (distProductFinsupp μ ν) (distProductFinsupp μ' ν')) ≤
+        (1 / 2 : Rat) * (2 * (tvFinsupp μ μ' + tvFinsupp ν ν')) :=
+      mul_le_mul_of_nonneg_left h8 (by norm_num)
+    have h14 : (1 / 2 : Rat) * (2 * tvFinsupp (distProductFinsupp μ ν) (distProductFinsupp μ' ν')) =
+        tvFinsupp (distProductFinsupp μ ν) (distProductFinsupp μ' ν') := by ring
+    have h15 : (1 / 2 : Rat) * (2 * (tvFinsupp μ μ' + tvFinsupp ν ν')) =
+        tvFinsupp μ μ' + tvFinsupp ν ν' := by ring
+    simpa [h14, h15] using h13
+  exact h9
+
 end Shufflemath
+
 
 end
