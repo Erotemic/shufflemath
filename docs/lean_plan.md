@@ -300,8 +300,25 @@ route, not a theorem already in the tree.
 > `oterm_zero_below`/`above_mk`/`above_y` — the F3 factor `choose (m-y) (m-k-t)` and
 > the F1 factor `choose y t` are off-range), so they are equal.  **`generalCL`**
 > assembles these into `transitionNumerator N m r k y x = overlap_count N m r k x y`
-> for the admissible regime (`k ≤ y ≤ m`, `y ≤ r`, `m+r ≤ N`, `r-y ≤ N-m`).  This
-> completes F3 item 3.
+> for the admissible regime (`k ≤ y ≤ m`, `y ≤ r`, `m+r ≤ N`, `r-y ≤ N-m`).  Also
+> proved: **`fiberSum_eq_overlap`** — the fiber-level CL
+> `fiberSum p x y = choose r y * choose (N-r) (m-y) * overlap_count (N m r k) x y`
+> (compose `fiberSum_swap` + `fiberSum_eq` + `generalCL`).
+>
+> **Regime limitation (important).**  The `m + r ≤ N` hypothesis is used by the
+> 4th-factor base identity `intSubSubAdd_eqCast` (the base `(N-m) - (r-y)` equals
+> the single `Nat`-cast `↑(N-m-r+y)` only when it is non-saturating).  This covers
+> the decks **6321** (`5 ≤ 6`) and **8431** (`7 ≤ 8`) but **not 7442** (`8 > 7`)
+> or the **Commander** (`100 > 99`).  For `m + r > N` (the Commander, the actual
+> target), the two base forms diverge: `N - m - r + y` (left-saturated `Nat`) = `y`
+> while `(N-m) - (r-y)` = `y - 1` for `y ≥ 1`; `F4match`'s target currently uses
+> the saturated form, so it does **not** directly match `tterm`'s 4th factor
+> `choose ((N-m) - (r-y)) (k - b)`.  **Next (m + r > N extension):** re-prove
+> `F4match` (and hence `tterm_eq_oterm`/`tterm_eq_oterm_all`/`generalCL`) with the
+> non-saturating base `(N-m) - (r-y) = (N-r) - (m-y)` (equal, both = `N-m-r+y` as
+> an `Int`, nonnegative for `y ≥ blLo = max (r-(N-m)) 0`), dropping `m + r ≤ N`
+> in favor of `y ≥ blLo` (which holds for every valid state).  Then the fiber-level
+> CL and the item-4 kernel equality hold for the Commander.
 > **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
 > which depends on item 3 core.
 
