@@ -135,6 +135,52 @@ attempts, but is no longer the recommended route.
 
 ## Exactly where to resume
 
+### Nov 14 (6th) session status — resume here first
+
+This session completed the **F4.3 Fintype-free TV subadditivity** — the
+last blocker in the `distProductFinsupp` route the 5th session documented.
+All committed; 37 tests pass; tree clean.
+
+- **F4.3 core — GSR two-pile product mass from Finsupp weights**
+  (`CommanderLocalGSR.lean`, `472efa8`): `gsrMapDelta_mass` (the one-coordinate
+  `StdSimplex.map` image of a fixed first coordinate contributes the second
+  law's mass exactly when the coordinates match), `gsrProductKernel_mass`
+  (`(gsrProductKernel nL nR a b _ _ (L,R)).weights (L',R') =
+  (idealShuffle nL _ _ L).weights L' * (idealShuffle nR _ _ R).weights R'`,
+  via the `map`/`join` `AddMonoidHom` structure, not `apply_mass_dom`), and
+  `gsrProductKernel_pointMass` (the same when the input is a point mass).
+- **F4.3 Fintype-free product — `Finite.distProductFinsupp`** (`d3e010f`):
+  `distProductFinsupp p q = (p.map (fun a => q.map (fun b => (a,b)))).join`,
+  built from `StdSimplex.map`/`join` (no `Fintype`), with the simp-lemma
+  `distProductFinsupp_mass : (distProductFinsupp μ ν).weights (a,b) =
+  μ a · ν b`. This is the exact construction `gsrProductKernel` uses, so the
+  two are structurally identical.
+- **F4.3 Fintype-free TV — `TotalVariation`** (`1de7d21`, `a0444a9`):
+  `tvFinsupp p q = (1/2) * (p.support ∪ q.support).sum |p-q|` (Fintype-free TV,
+  coincides with `Dist.tv` on Fintype spaces); `suppDistProductFinsupp`
+  (product support = Cartesian product of supports); `twoTv_eq_unionSum`;
+  `not_mem_support_zero`; `sumOverEnlarged_eq_one` (mass 1 over any
+  support-enlarging set); `productMassBound` (the scalar
+  `|ab-a'b'| ≤ |a-a'| b + a' |b-b'|`); and the capstone
+  **`distProductFinsupp_tv_subadditive :
+  tv (prod μ ν) (prod μ' ν') ≤ tv μ μ' + tv ν ν'`** — the Fintype-free analog
+  of `distProduct_tv_subadditive`, proved by moving the `L1` sum to
+  `(supp μ ∪ supp μ') × (supp ν ∪ supp ν')`, pointwise `productMassBound`,
+  and factoring both pile-sums to mass 1.
+
+*Resume order:* (1) **F4.3 payoff** — the two clean steps left:
+  (a) `gsrProductKernel nL nR a b _ _ pr = distProductFinsupp
+  (GSR.idealShuffle nL a _ pr.1) (GSR.idealShuffle nR b _ pr.2)` (an
+  `dsimp`-level structural identity, since both unfold to the same
+  nested `.map`/`.join`), then (b) the per-pile GSR-vs-uniform row-TV bound
+  `tvFinsupp (gsrProductKernel _ _ _ _ _ _ pr) (two-pile uniform reference)
+  ≤ tvFinsupp (idealShuffle nL _ _ pr.1) (uniform nL) +
+     tvFinsupp (idealShuffle nR _ _ pr.2) (uniform nR)`, which is `0` once
+  the F4.1 fact `idealShuffle n a _ _ = uniform n a` (uniform for every
+  input) is used. Check `GSR.lean` for the exact F4.1 uniformity statement.
+  (2) F3 item 3 general CL (symbolic identity, Finset API wall — see 5th
+  session). (3) F3 item 4, F4.5, F5 full/optimizer — downstream.
+
 ### Nov 12 (3rd) session status — resume here first
 
 **F4.1 is COMPLETE.** The capstone theorem is proved and committed
