@@ -203,47 +203,17 @@ theorem inter_sdiff_union {r : Nat} (T1 S1 : Finset (Fin r)) :
   rw [Finset.mem_union, Finset.mem_inter, Finset.mem_sdiff]
   by_cases hz : z ∈ T1 <;> simp [hz]
 
--- TODO(proof): the 2-part bin bijection `s1_bij` — the inner enumeration bridge
--- for the general fiber-counting lemma (CL).  The `S1`-slice
--- `(stars.powersetCard x).filter (S1 => (S1 ∩ T1).card = t)` is in bijection
--- with the 2-bin choice (t from T1, then x-t from stars \ T1) via
--- `S1 ↦ (S1 ∩ T1, S1 \ T1)`, inverse `(A, B) ↦ A ∪ B`.
--- `Finset.card_bij` with that map yields three routine subgoals (mem/inj/surj)
--- using `Finset.mem_powersetCard`, `Finset.card_sdiff`,
--- `Finset.card_union_add_card_inter`, and `inter_sdiff_union`.  The single wall:
--- the 2-bin target finset.  `Finset.product a b` (the Cartesian product) does
--- not `rw [Finset.card_product]` / `Finset.mem_product` in this build, and the
--- `×˘` token does not parse.  Resume by building the target as an explicit
--- `Finset.image` (or `sProd`) whose membership AND cardinality reductions fire,
--- or prove the two bin cardinalities separately and close with a sigma Fubini.
--- Once `s1_bij` and the analogous `s2_bij` land, the general CL is their
--- product plus a sum over `t`; `fiberSum_swap` + `fiberSum_eq` finish F3 item 3.
---
--- **Clean derivation (5th session):** the general identity needs only the
--- symbolic (CL) `fiberSum p x y = choose(r,y)*choose(N-r,m-y)*overlap_count
--- (N m r k) x y`, because
--- `(CL x y) + fiberSum_swap + fiberSum_eq (y x)` gives
--- `choose(r,y)*choose(N-r,m-y)*overlap_count (N m r k) x y =
---  fiberSum p x y = fiberSum p y x =
---  choose(r,y)*choose(N-r,m-y)*transitionNumerator (N m r k) y x`, and the
--- nonzero `choose` factor cancels to `overlap_count (N m r k) x y =
--- transitionNumerator (N m r k) y x`.  Equivalently, reindexing the 7-tuple
--- fiber to the `(S,T)` pair (with `A = S\\T`, `B = T\\S` uniquely
--- determined, `|S∩T| = m-k`) gives `fiberSum = F(y)*overlap_count` directly.
---
--- **This build's Finset API walls (verified):** `Finset.card_le`,
--- `Finset.card_le_of_subset`, `Finset.card_lt`, `Finset.not_mem_empty`,
--- `Finset.mem_empty` all **do not exist**; `Finset.product`/`×˘` do not reduce
--- under `rw [Finset.card_product]`/`Finset.mem_product` in isolation; and
--- `rw [Finset.mem_powersetCard] at h` hits a `simp` recursion loop at the
--- 4-tuple stage.  `Finset.sum_le_sum`, `Finset.card_powersetCard`,
--- `Finset.mem_powersetCard`, `Finset.card_bij`, `Finset.card_sdiff`, and
--- `Finset.inter_comm` all work.  `inter_sdiff_union` (the reconstruction
--- identity) is proven above.  Resume the (CL) by proving the 7-tuple
--- `fiber7Set` → `(S,T)` bijection with `Finset.card_bij` on explicit
--- `Finset.image` targets (never bare `Finset.product`), bounding
--- `(S1∩T1).card ≤ S1.card` via `sumOnes` + `Finset.sum_le_sum`.
-
+-- RESOLVED (6th session): the `s1_bij` wall is broken by `s1Fiber_biUnion`
+-- below (the S1 fiber is the pairwise-disjoint biUnion of the per-`A` fibers
+-- `fiberA`), `fiberA_card` (each fiber's cardinality = the outside part),
+-- `s1Fiber_card` (the biUnion count), and `s1Fiber_choose` (the closed
+-- binomial form `choose |T1| t * choose (|stars|-|T1|) (x - t)`).  The
+-- general CL follows by applying the same construction on the T-side and
+-- combining with `fiberSum_swap` / `fiberSum_eq` (see F3 item 4).  The
+-- 5th-session wall (`Finset.product`/`×˘` not reducing under
+-- `rw [card_product]`/`mem_product`) is bypassed entirely: we never build a
+-- 2-bin product finset — we decompose by the intermediate `A = S1 ∩ T1` and
+-- use `Finset.card_bij` + `Finset.card_biUnion` instead.
 
 /-! The 2-bin fiber decomposition (F3 item 3, 5th-session `s1_bij` wall, now broken).
 
@@ -288,47 +258,12 @@ theorem s1Fiber_biUnion (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
     refine ⟨hS1mem, ?_⟩
     rw [hI]
     exact (Finset.mem_powersetCard.1 hAmem).2
--- TODO(proof): `fiberA_card` — the last 2-bin piece of the general CL (F3 item 3).
--- `s1Fiber_biUnion` above breaks the 5th-session `s1_bij` wall: the S1 fiber is
--- the disjoint union over `A ∈ T1.powersetCard t` of `fiberA p x t T1 A`.
--- The remaining step is the cardinality of a single fiber:
---
---     (fiberA p x t T1 A).card = ((starsUniv p \ T1).powersetCard (x - t)).card
---
--- proven with `Finset.card_bij (fun S1 _ => S1 \ T1)` (the *dependent* form —
--- the Set-based `card_nbij` does NOT work here because the InjOn/SurjOn
--- goals are Set memberships where `rw [Finset.mem_filter]` fails).  Three
--- subgoals, all routine:
---   1. MapsTo:  `S1 \ T1 ⊆ st \ T1` via `Finset.sdiff_subset_sdiff`;
---     `#(S1 \ T1) = x - t` via `Finset.card_sdiff` + `Finset.inter_comm`.
---   2. InjOn:   `S1 = A ∪ (S1 \ T1)` and `S1' = A ∪ (S1' \ T1)`
---     (from `S1 ∩ T1 = A = S1' ∩ T1`), then `S1 \ T1 = S1' \ T1 → S1 = S1'`.
---   3. SurjOn:  `R ↦ A ∪ R`; `(A ∪ R) ∈ st.powersetCard x` (card via
---     `Finset.card_union_add_card_inter` + `Finset.card_empty`); and
---     `(A ∪ R) ∩ T1 = A` (proven by subset-antisymmetry, NOT by a
---     distributivity lemma — `Finset.inter_distrib_right` does not exist).
---
--- **Verified wall-gotchas for this build (6th session):**
---  * Finset membership `z ∈ s` is an opaque `Quot.lift`; `rcases`/`.1`/`.2`
---    only work AFTER `rw [Finset.mem_inter | Finset.mem_sdiff | Finset.mem_union]`.
---  * `Finset.mem_empty` and `Finset.mem_union` do NOT exist as names; prove
---    `A ∩ R = ∅` by `ext z; rw [Finset.mem_inter]; intro hz; absurd` (the
---    "empty" direction is `intro hz; exact hz.elim` on the `List.Mem z []`).
---  * The lemma is spelled `Finset.sdiff_subset_sdiff` (NOT `sddsubset_sdiff`)
---    and `Finset.card_sdiff` (NOT `card_sddsubset`); `Nat.add_sub_cancel_left`
---    exists for the `t + (x - t) = x` closure (needs `t ≤ x`).
---  * `dsimp only [fiberA]` (on a goal) works; `dsimp ... at h` on a hypothesis
---    does NOT unfold the `filter` — use `simpa [fiberA, Finset.mem_filter] using h`
---    to make a fresh `have` of the conjunction type instead.
---
--- After `fiberA_card`: `s1Fiber_card` by `Finset.card_biUnion` (needs
--- `(T1.powersetCard t : Set).PairwiseDisjoint (fiberA p x t T1)` — the fibers
--- are disjoint since the `T1`-part is unique) + "sum of a constant" =
--- `|(T1.powersetCard t)| * |(st \ T1).powersetCard (x - t)|` =
--- `choose(|T1|, t) * choose(|st \ T1|, x - t)` via `Finset.card_powersetCard`
--- and `Finset.card_sdiff_of_subset` (`|st \ T1| = r - |T1|`).  That is the
--- S1-side of the general CL; the S2-side is the mirror image and
--- `fiberSum_swap` + `fiberSum_eq` finish F3 item 3.
+-- RESOLVED (6th session): `fiberA_card` (below), `s1Fiber_card`, and
+-- `s1Fiber_choose` break this — see their doc comments for the exact
+-- `Finset.card_bij` / `card_biUnion` / `card_powersetCard` recipe and the
+-- build-specific gotchas (opaque `Quot.lift` membership, the `∃ a ha, …`
+-- form needing `refine ⟨…, ?_, ?_⟩`, nested `(P ∧ Q) ∧ R` conjunctions,
+-- and the empty-set direction closing by `cases` on `List.Mem z []`).
 
 /-! The 2-bin fiber count, second half (F3 item 3).  Together with
 `s1Fiber_biUnion`, this gives the S1-side of the general combinatorial lemma:
@@ -427,3 +362,51 @@ theorem fiberA_card (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x t : Nat)
       · intro hzR
         exact ⟨Or.inr hzR, (Finset.mem_sdiff.1 (hRsub hzR)).2⟩
 
+/-! The S1-side of the general combinatorial lemma (F3 item 3, third piece).
+The S1 fiber is a pairwise-disjoint union of the per-`A` fibers (s1Fiber_biUnion),
+each counted by the outside part (fiberA_card); the sum of the constant collapses
+to a product of two powerset-card counts.  -/
+
+theorem s1Fiber_card (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (x t : Nat) (T1 : Finset (Fin p.r)) (htx : t ≤ x) (hT1 : T1 ⊆ starsUniv p) :
+    (s1Fiber p x t T1).card =
+      (T1.powersetCard t).card * ((starsUniv p \ T1).powersetCard (x - t)).card := by
+  rw [s1Fiber_biUnion p x t T1 htx]
+  have hdis : (T1.powersetCard t : Set (Finset (Fin p.r))).PairwiseDisjoint
+      (fun A => fiberA p x t T1 A) := by
+    intro A hA B hB hne
+    apply Finset.disjoint_iff_inter_eq_empty.mpr
+    ext S1
+    dsimp only [fiberA]
+    rw [Finset.mem_inter, Finset.mem_filter, Finset.mem_filter]
+    constructor
+    · intro hz
+      rcases hz with ⟨hleft, hright⟩
+      rcases hleft with ⟨hS1in, hAeq1⟩
+      rcases hright with ⟨hS2in, hAeq2⟩
+      have hAeq : A = B := hAeq1.symm.trans hAeq2
+      exact False.elim (hne hAeq)
+    · intro hz
+      cases hz
+  rw [Finset.card_biUnion hdis]
+  have hc : ∀ A ∈ T1.powersetCard t,
+      (fiberA p x t T1 A).card = ((starsUniv p \ T1).powersetCard (x - t)).card := by
+    intro A hA
+    exact fiberA_card p x t T1 A htx hT1 hA
+  rw [Finset.sum_congr rfl (fun A hA => hc A hA)]
+  simp [Finset.sum_const]
+
+/-! The general combinatorial lemma, S1-side, in binomial-coefficient form
+(F3 item 3).  The S1 fiber over `T1` with `t` marked cards is counted by
+`choose |T1| t` (pick the `T1`-part) times `choose (|stars| - |T1|) (x - t)`
+(pick the outside part).  This is the symbolic form of the small-deck
+`overlap_count` identity; it holds for any `ExchangeAdmissible` parameter.  -/
+theorem s1Fiber_choose (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (x t : ℕ) (T1 : Finset (Fin p.r)) (htx : t ≤ x) (hT1 : T1 ⊆ starsUniv p) :
+    (s1Fiber p x t T1).card =
+      Nat.choose T1.card t * Nat.choose ((starsUniv p).card - T1.card) (x - t) := by
+  set st := starsUniv p
+  rw [s1Fiber_card p x t T1 htx hT1]
+  rw [Finset.card_powersetCard t T1]
+  rw [Finset.card_powersetCard (x - t) (st \ T1)]
+  rw [Finset.card_sdiff_of_subset hT1]
