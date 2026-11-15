@@ -212,5 +212,113 @@ noncomputable def finsetType_perm {s : Type*} [Fintype s] [DecidableEq s]
         dsimp only [pre]
         rw [Equiv.apply_symm_apply]
 
+
+/-! ## Spec A1: the marked-card fiber is a single orbit under the pile-preserving deck group. -/
+
+/-- The marked / unmarked split of a membership's 50-subset inside the two original piles. -/
+abbrev partA (m : Membership) := m.1 ∩ leftOrigSet
+abbrev partB (m : Membership) := m.1 ∩ rightOrigSet
+abbrev partC (m : Membership) := leftOrigSet \ partA m
+abbrev partD (m : Membership) := rightOrigSet \ partB m
+
+/-- `m.1` (a 50-subset of the 99-card universe) decomposes as the disjoint union of its
+    left-pile part and its right-pile part, so its cardinality splits additively. -/
+theorem m1_decomp (m : Membership) :
+    (m.1).card = (m.1 ∩ leftOrigSet).card + (m.1 ∩ rightOrigSet).card := by
+  have hLRE : leftOrigSet ∩ rightOrigSet = ∅ := by
+    rw [← Finset.disjoint_iff_inter_eq_empty]
+    exact leftRightOrig_disjoint
+  have hI : (m.1 ∩ leftOrigSet) ∩ (m.1 ∩ rightOrigSet) = ∅ := by
+    apply Finset.ext
+    intro c
+    repeat rw [Finset.mem_inter]
+    constructor
+    · intro h
+      rw [← hLRE, Finset.mem_inter]
+      exact ⟨h.1.2, h.2.2⟩
+    · intro hc
+      cases hc
+  have hU : (m.1 ∩ leftOrigSet) ∪ (m.1 ∩ rightOrigSet) = m.1 := by
+    rw [← Finset.inter_union_distrib_left, leftRightOrig_cover, Finset.inter_univ]
+  have hUcard : ((m.1 ∩ leftOrigSet) ∪ (m.1 ∩ rightOrigSet)).card = (m.1).card :=
+    congrArg (fun s : Finset (Fin 99) => s.card) hU
+  calc
+    (m.1).card = ((m.1 ∩ leftOrigSet) ∪ (m.1 ∩ rightOrigSet)).card := hUcard.symm
+    _ = (m.1 ∩ leftOrigSet).card + (m.1 ∩ rightOrigSet).card -
+        ((m.1 ∩ leftOrigSet) ∩ (m.1 ∩ rightOrigSet)).card :=
+      Finset.card_union (m.1 ∩ leftOrigSet) (m.1 ∩ rightOrigSet)
+    _ = (m.1 ∩ leftOrigSet).card + (m.1 ∩ rightOrigSet).card := by
+      rw [hI, Finset.card_empty]
+      omega
+
+/-- A 50-subset `S` splits as `(S ∩ left).card + (S ∩ right).card = 50`. -/
+theorem m1_sum50 (m : Membership) :
+    (m.1 ∩ leftOrigSet).card + (m.1 ∩ rightOrigSet).card = 50 :=
+  (m1_decomp m).symm.trans m.2
+
+/-- `S ∩ left` has at most 50 elements. -/
+theorem m1_left_le (m : Membership) : (m.1 ∩ leftOrigSet).card ≤ 50 := by
+  have hcard : (m.1 ∩ leftOrigSet).card ≤ (leftOrigSet).card :=
+    Finset.card_le_card (Finset.inter_subset_right)
+  rw [leftOrigSet_card] at hcard
+  exact hcard
+
+/-- **Spec A1 equi-cardinality (marked, left pile).**  `partA m` and `partA m'` have the
+    same cardinality (both `= membershipCount`). -/
+theorem partCard_eqA (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    (partA m).card = (partA m').card := by
+  simpa [partA, membershipCount] using h
+
+/-- **Spec A1 equi-cardinality (marked, right pile).**  `partB m` and `partB m'` have the
+    same cardinality (both `= 50 - membershipCount`). -/
+theorem partCard_eqB (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    (partB m).card = (partB m').card := by
+  dsimp only [partB]
+  have hb1 : (m.1 ∩ rightOrigSet).card = 50 - (m.1 ∩ leftOrigSet).card := by
+    have hsum := m1_sum50 m
+    have hle := m1_left_le m
+    omega
+  have hb2 : (m'.1 ∩ rightOrigSet).card = 50 - (m'.1 ∩ leftOrigSet).card := by
+    have hsum := m1_sum50 m'
+    have hle := m1_left_le m'
+    omega
+  rw [hb1, hb2]
+  apply congrArg (fun x => 50 - x)
+  simpa [membershipCount] using h
+
+/-- **Spec A1 equi-cardinality (unmarked, left pile).**  `partC m` and `partC m'` have the
+    same cardinality (both `= 50 - membershipCount`). -/
+theorem partCard_eqC (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    (partC m).card = (partC m').card := by
+  dsimp only [partC, partA]
+  have hc1 : (leftOrigSet \ (m.1 ∩ leftOrigSet)).card = 50 - (m.1 ∩ leftOrigSet).card := by
+    rw [Finset.card_sdiff_of_subset (Finset.inter_subset_right), leftOrigSet_card]
+  have hc2 : (leftOrigSet \ (m'.1 ∩ leftOrigSet)).card = 50 - (m'.1 ∩ leftOrigSet).card := by
+    rw [Finset.card_sdiff_of_subset (Finset.inter_subset_right), leftOrigSet_card]
+  rw [hc1, hc2]
+  apply congrArg (fun x => 50 - x)
+  simpa [membershipCount] using h
+
+/-- **Spec A1 equi-cardinality (unmarked, right pile).**  `partD m` and `partD m'` have the
+    same cardinality (both `= membershipCount - 1`). -/
+theorem partCard_eqD (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    (partD m).card = (partD m').card := by
+  dsimp only [partD, partB]
+  have hd1 : (rightOrigSet \ (m.1 ∩ rightOrigSet)).card = 49 - (m.1 ∩ rightOrigSet).card := by
+    rw [Finset.card_sdiff_of_subset (Finset.inter_subset_right), rightOrigSet_card]
+  have hd2 : (rightOrigSet \ (m'.1 ∩ rightOrigSet)).card = 49 - (m'.1 ∩ rightOrigSet).card := by
+    rw [Finset.card_sdiff_of_subset (Finset.inter_subset_right), rightOrigSet_card]
+  have hb1 : (m.1 ∩ rightOrigSet).card = 50 - (m.1 ∩ leftOrigSet).card := by
+    have hsum := m1_sum50 m
+    have hle := m1_left_le m
+    omega
+  have hb2 : (m'.1 ∩ rightOrigSet).card = 50 - (m'.1 ∩ leftOrigSet).card := by
+    have hsum := m1_sum50 m'
+    have hle := m1_left_le m'
+    omega
+  rw [hd1, hd2, hb1, hb2]
+  apply congrArg (fun x => 49 - (50 - x))
+  simpa [membershipCount] using h
+
 end Shufflemath
 end
