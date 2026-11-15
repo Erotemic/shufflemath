@@ -199,3 +199,31 @@ theorem preservesPiles_iff_pileRelabel (σ : Deck) :
     exact pileRelabelEquiv_image σ h.1 h.2
   · rintro ⟨⟨pl, pr⟩, rfl⟩
     exact pileRelabelEquiv_preservesPiles pl pr
+
+/-! ## The within-pile relabels form a subgroup of `Deck`. -/
+
+/-- `pileRelabelEquiv` is a **monoid homomorphism** from the product of the two
+    within-pile permutation groups into the deck permutation group: composing two
+    within-pile relabels (first `pl'`/`pr'`, then `pl`/`pr`) equals the within-pile
+    relabel of the componentwise composition.  Hence the within-pile relabels are
+    a *subgroup* of `Deck`, closed under composition -- the structural fact the
+    deck-level GSR (a product of independent per-pile riffles) needs.  Verified on
+    a left position (both sides give `leftPosition (pl (pl' i))`) and a right
+    position (`rightPosition (pr (pr' j))`). -/
+theorem pileRelabelEquiv_mul (pl pl' : Equiv.Perm (Fin 50)) (pr pr' : Equiv.Perm (Fin 49)) :
+    pileRelabelEquiv (pl * pl') (pr * pr') =
+      pileRelabelEquiv pl pr * pileRelabelEquiv pl' pr' := by
+  ext pos
+  by_cases hpos : pos.val < 50
+  · let i : Fin 50 := leftIndex pos hpos
+    have hposL : pos = leftPosition i := (leftPosition_leftIndex pos hpos).symm
+    rw [hposL]
+    simp only [Equiv.Perm.mul_apply, Equiv.trans_apply]
+    -- LHS: leftPosition ((pl * pl') i) = leftPosition (pl (pl' i))
+    -- RHS: pileRelabelEquiv pl pr (leftPosition (pl' i)) = leftPosition (pl (pl' i))
+    simp only [pileRelabelEquiv_left, Equiv.Perm.mul_apply]
+  · let j : Fin 49 := rightIndex pos hpos
+    have hposR : pos = rightPosition j := (rightPosition_rightIndex pos hpos).symm
+    rw [hposR]
+    simp only [Equiv.Perm.mul_apply, Equiv.trans_apply]
+    simp only [pileRelabelEquiv_right, Equiv.Perm.mul_apply]
