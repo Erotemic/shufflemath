@@ -288,3 +288,44 @@ theorem s1Fiber_biUnion (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
     refine ⟨hS1mem, ?_⟩
     rw [hI]
     exact (Finset.mem_powersetCard.1 hAmem).2
+-- TODO(proof): `fiberA_card` — the last 2-bin piece of the general CL (F3 item 3).
+-- `s1Fiber_biUnion` above breaks the 5th-session `s1_bij` wall: the S1 fiber is
+-- the disjoint union over `A ∈ T1.powersetCard t` of `fiberA p x t T1 A`.
+-- The remaining step is the cardinality of a single fiber:
+--
+--     (fiberA p x t T1 A).card = ((starsUniv p \ T1).powersetCard (x - t)).card
+--
+-- proven with `Finset.card_bij (fun S1 _ => S1 \ T1)` (the *dependent* form —
+-- the Set-based `card_nbij` does NOT work here because the InjOn/SurjOn
+-- goals are Set memberships where `rw [Finset.mem_filter]` fails).  Three
+-- subgoals, all routine:
+--   1. MapsTo:  `S1 \ T1 ⊆ st \ T1` via `Finset.sdiff_subset_sdiff`;
+--     `#(S1 \ T1) = x - t` via `Finset.card_sdiff` + `Finset.inter_comm`.
+--   2. InjOn:   `S1 = A ∪ (S1 \ T1)` and `S1' = A ∪ (S1' \ T1)`
+--     (from `S1 ∩ T1 = A = S1' ∩ T1`), then `S1 \ T1 = S1' \ T1 → S1 = S1'`.
+--   3. SurjOn:  `R ↦ A ∪ R`; `(A ∪ R) ∈ st.powersetCard x` (card via
+--     `Finset.card_union_add_card_inter` + `Finset.card_empty`); and
+--     `(A ∪ R) ∩ T1 = A` (proven by subset-antisymmetry, NOT by a
+--     distributivity lemma — `Finset.inter_distrib_right` does not exist).
+--
+-- **Verified wall-gotchas for this build (6th session):**
+--  * Finset membership `z ∈ s` is an opaque `Quot.lift`; `rcases`/`.1`/`.2`
+--    only work AFTER `rw [Finset.mem_inter | Finset.mem_sdiff | Finset.mem_union]`.
+--  * `Finset.mem_empty` and `Finset.mem_union` do NOT exist as names; prove
+--    `A ∩ R = ∅` by `ext z; rw [Finset.mem_inter]; intro hz; absurd` (the
+--    "empty" direction is `intro hz; exact hz.elim` on the `List.Mem z []`).
+--  * The lemma is spelled `Finset.sdiff_subset_sdiff` (NOT `sddsubset_sdiff`)
+--    and `Finset.card_sdiff` (NOT `card_sddsubset`); `Nat.add_sub_cancel_left`
+--    exists for the `t + (x - t) = x` closure (needs `t ≤ x`).
+--  * `dsimp only [fiberA]` (on a goal) works; `dsimp ... at h` on a hypothesis
+--    does NOT unfold the `filter` — use `simpa [fiberA, Finset.mem_filter] using h`
+--    to make a fresh `have` of the conjunction type instead.
+--
+-- After `fiberA_card`: `s1Fiber_card` by `Finset.card_biUnion` (needs
+-- `(T1.powersetCard t : Set).PairwiseDisjoint (fiberA p x t T1)` — the fibers
+-- are disjoint since the `T1`-part is unique) + "sum of a constant" =
+-- `|(T1.powersetCard t)| * |(st \ T1).powersetCard (x - t)|` =
+-- `choose(|T1|, t) * choose(|st \ T1|, x - t)` via `Finset.card_powersetCard`
+-- and `Finset.card_sdiff_of_subset` (`|st \ T1| = r - |T1|`).  That is the
+-- S1-side of the general CL; the S2-side is the mirror image and
+-- `fiberSum_swap` + `fiberSum_eq` finish F3 item 3.
