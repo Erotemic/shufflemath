@@ -613,6 +613,22 @@ theorem cs_eq_chooseNatNat (n k : Nat) : chooseSigned (n : Int) (k : Int) = Nat.
     · have h0 : Nat.choose n k = 0 := by simpa [Nat.choose_eq_zero_iff] using hk
       simpa using h0.symm
 
+/-- `chooseSigned n k = 0` when the signed index `k < 0` (the in-range
+    binomial guard `0 ≤ k ∧ k ≤ n` fails). -/
+theorem chooseSigned_zero_neg (n k : Int) (hk : k < 0) : chooseSigned n k = 0 := by
+  dsimp only [chooseSigned]
+  by_cases h : 0 ≤ k ∧ k ≤ n
+  · exfalso; exact lt_irrefl 0 (lt_of_le_of_lt h.1 hk)
+  · rw [if_neg h]
+
+/-- `chooseSigned n k = 0` when the signed index `k > n` (the in-range
+    binomial guard `0 ≤ k ∧ k ≤ n` fails). -/
+theorem chooseSigned_zero_toobig (n k : Int) (hk : n < k) : chooseSigned n k = 0 := by
+  dsimp only [chooseSigned]
+  by_cases h : 0 ≤ k ∧ k ≤ n
+  · exfalso; exact lt_irrefl k (lt_of_le_of_lt h.2 hk)
+  · rw [if_neg h]
+
 /-- First factor of the general CL: the marked-in-S part `choose y a`
     (`chooseSigned (y) (y-a)` via complementary symmetry). -/
 theorem F1match (y a : Nat) (ha : a ≤ y) :
