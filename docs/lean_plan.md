@@ -271,6 +271,21 @@ route, not a theorem already in the tree.
 > proven from scratch — a combinatorial double-counting or an iterated
 > Vandermonde manipulation). The S1-side counting (`FinsetFiberCount`) is
 > complete; the remaining step is this one hypergeometric sum identity.
+> **11th-session progress (2026-11-15, `2f93a91`/`135968c`/`b95f389`):** all
+> **four** summand factor matches are now proven — `F1match`/`F2match` (9th),
+> `F3match` (10th), and **`F4match`** (this session, via the new
+> `intSub_eqCast`/`intSubSubAdd_eqCast` `Int`-no-saturation bridges) — plus the
+> **summand assembly `tterm_eq_oterm`** (`tterm (N m r k) x y a = oterm (N m r k)
+> x y (y-a)` in the admissible regime, by `rw [F1match, F2match, F3match,
+> F4match]` + one `omega` base identity + `ring`) and the **definitional
+> decomposition `transitionNumerator_eq_sum_tterm`** (the transition is the sum
+> of `tterm` over `a ∈ [0,k]`, by `rfl`).  Combined with
+> `overlap_eq_sum_oterm` (overlap = sum of `oterm` over `t ∈ [0,m-k]`), the
+> general CL is reduced to the **final step: the `t = y-a` `Finset` sum
+> reindexing** between the `a`-sum and the `t`-sum, aligning the supports on
+> `[max (0, y-k), min y (m-k)]` where `oterm = 0` outside.  No `Finset`-API
+> 2-bin products are involved.  Then (item 4) the 2-exchange TV follows from the
+> CL + `fiberSum_eq`.
 > **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
 > which depends on item 3 core.
 

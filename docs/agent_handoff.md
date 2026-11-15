@@ -177,7 +177,75 @@ last blocker in the `distProductFinsupp` route the 5th session documented —
   finite `a`; the "reference" in the row bound is a *parameter* `perfectL`/
   `perfectR`, not a fixed uniform — that generality is what makes it usable.)
 
+### Nov 13 (11th) session status — resume here first
+
+**F3 item 3 — all four summand matches and the summand-level assembly are
+PROVEN; the general CL is the final (sum-reindexing) step.** This session
+completed the remaining factor matches and the summand assembly:
+
+- **`F4match`** (commit `2f93a91`): the 4th-factor bridge
+  `chooseSigned (N-r-(m-y)) ((m-x)-((m-k)-(y-a))) = Nat.choose (N-m-r+y)
+  (k-(x-(y-a)))`, via `intSub_eqCast` (new: `(a-b:Int) = ↑(a-b)` for `b≤a`)
+  + `intSubSubAdd_eqCast` (new: `(N-m-r+y:Int) = ↑(N-m-r+y)` under
+  `m+r≤N`). Together with the 9th/10th-session `F1match`/`F2match`/`F3match`,
+  **all four factor matches are now proven.**
+- **`tterm_eq_oterm`** (commit `135968c`): the *summand assembly* — in the
+  admissible regime, `tterm (N m r k) x y a = oterm (N m r k) x y (y-a)`.
+  The two 4-factor products differ only by the order of the middle (m/r)
+  factors (`ring`) and the 4th-factor base `(N-m)-(r-y) = N-m-r+y`
+  (`omega` under the regime). The two guards collapse via
+  `rw [if_pos h1g, if_pos h2g]` (NOT `split_ifs`, which is a parse error).
+- **`transitionNumerator_eq_sum_tterm`** (commit `b95f389`): the `a`-term of
+  `transitionNumerator (N m r k) y x` (source `y`, target `x`) is
+  definitionally `tterm (N m r k) x y a`, so the transition is the sum of the
+  `tterm` summands over `a ∈ [0,k]` (by `rfl`).
+
+With `overlap_eq_sum_oterm` (overlap = sum of `oterm` over `t ∈ [0, m-k]`),
+`transitionNumerator_eq_sum_tterm`, and `tterm_eq_oterm`, the general CL
+`transitionNumerator N m r k y x = overlap_count N m r k x y` is reduced to
+the **final step: the `t = y - a` sum reindexing** between the `a`-sum
+(`∑_{a∈[0,k]}`) and the `t`-sum (`∑_{t∈[0,m-k]}`).  The reindexing aligns the
+supports: `oterm t = 0` outside `[max (0, y-k), min y (m-k)]` (from the
+`(m-y, m-k-t)` factor), so both sums equal the sum over that common support.
+Plan: (i) pointwise `tterm a = oterm (y-a)` for *all* `a` (generalize
+`tterm_eq_oterm` to the guard-fail cases, both sides 0); (ii) `Finset.sum_bij`/
+`sum_image` on the `a ↦ y-a` map; (iii) clip both `Finset.range` sums to the
+common support using the `oterm = 0`-outside lemma.  Then F3 item 4
+(2-exchange TV) follows from the CL + `fiberSum_eq`.  **No** `Finset`-API
+2-bin products are involved.
+
+11th-session gotchas (for the reindexing and future `Int`/`choose` work):
+  - The CL is `overlap_count (N m r k) x y = transitionNumerator (N m r k) y
+    x` — the **4th/5th arguments are swapped** (transition source `y`, target
+    `x`); `tterm` uses `y` as its "source" (matching the overlap's `y`), so the
+    reindexing is `t = y - a`.
+  - `transitionNumerator`/`tterm` take **six flat args** (`N m r k x y a`), not
+    a grouped `(N m r k)` triple — `transitionNumerator (N m r k) y x` is a
+    parse error ("Function expected").
+  - `Int.toNat_natCast (n : Nat) : (n : Int).toNat = n` is the correct
+    `(↑n).toNat = n` lemma (NOT `Int.toNat_of_nonneg`, which gives an `Int`
+    equality, not `Nat` equality).
+  - `let`-bound variables inside a `def` (e.g. `nI`/`mI` in `oterm`) are NOT
+    accessible in the proof — mirror them with explicit `let` in the proof, and
+    make the key `have` (e.g. `hR : ↑(k-b) = …`) the *first* statement before
+    any `dsimp` of `e`/`base`, or downstream `rw` pattern-matching fails.
+  - `rw [if_pos h1g, if_pos h2g]` selects the nonzero branch of nested
+    `ite`s; `split_ifs with h, h2` is a parse error in Lean 4.34.
+  - `ring_nf` reorders/normalizes a product of atoms but reports "made no
+    progress" when the only remaining difference is a `Nat`-subtraction base
+    identity (e.g. `(N-m)-(r-y) = N-m-r+y`); prove that base identity
+    separately (`omega` handles it in the regime) and `rw` it in, then a
+    single `ring_nf` closes.
+
+*Resume order:* Next concrete step is the **F3 item 3 general CL — sum
+reindexing** (the `t = y-a` `Finset` reindex between the `a`-sum and the
+`t`-sum, per the plan above); then **F3 item 4** (2-exchange TV) and **F5
+full/optimizer**.  **F4.5 full-deck decay** (contractive) remains blocked on
+finiteness (the non-finite pile-list space admits the non-expansive bound but
+not the Dobrushin contraction); defer.
+
 ### Nov 12 (8th) session status — resume here first
+
 
 **F3 item 3 general CL fully scoped (the last deep step).** This session
 extracted the **parameter-free** module `Shufflemath.FinsetFiberCount`
