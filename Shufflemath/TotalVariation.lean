@@ -932,6 +932,131 @@ theorem kernel_apply_lipschitz {α β : Type*} [DecidableEq α] [DecidableEq β]
       _ = (2 : Rat) * tvFinsupp mu nu := hF
   simpa [mul_assoc, mul_one] using hcalc
 
+/-- The un-halved L1 distance of two laws, summed over any finite set that
+contains the union of their supports, equals twice their TV (the extra terms
+vanish because both laws carry zero mass outside their supports). -/
+theorem l1OverEnlarged_eq_twoTv {γ : Type*} [DecidableEq γ] (p q : Dist γ) (T : Finset γ)
+    (hT : p.weights.support ∪ q.weights.support ⊆ T) :
+    T.sum (fun x => |p.weights x - q.weights x|) = (2 : Rat) * tvFinsupp p q := by
+  let U := p.weights.support ∪ q.weights.support
+  have hzero : (T \ U).sum (fun x => |p.weights x - q.weights x|) = 0 := by
+    apply Finset.sum_eq_zero
+    intro x hx
+    have hnotp : x ∉ p.weights.support := by
+      intro hp; exact (Finset.mem_sdiff.mp hx).2 (Finset.mem_union.mpr (Or.inl hp))
+    have hnotq : x ∉ q.weights.support := by
+      intro hq; exact (Finset.mem_sdiff.mp hx).2 (Finset.mem_union.mpr (Or.inr hq))
+    rw [not_mem_support_zero p x hnotp, not_mem_support_zero q x hnotq, sub_zero, abs_zero]
+  have hsd : (T \ U).sum (fun x => |p.weights x - q.weights x|) + U.sum (fun x => |p.weights x - q.weights x|) =
+      T.sum (fun x => |p.weights x - q.weights x|) := Finset.sum_sdiff hT
+  have hmid : U.sum (fun x => |p.weights x - q.weights x|) = T.sum (fun x => |p.weights x - q.weights x|) := by
+    simpa [hzero, add_zero] using hsd
+  have hU : U.sum (fun x => |p.weights x - q.weights x|) = (2 : Rat) * tvFinsupp p q := by
+    dsimp only [U]
+    exact (twoTv_eq_unionSum p q).symm
+  simpa [hmid] using hU
+
+/-- A mixture (convex combination) of laws is no further from a reference than
+the mixture-weighted average of the component distances.  In particular, pushing
+a law through a kernel is 1-Lipschitz (take the reference to be another push).
+Fintype-free. -/
+theorem mixtureTV_le {σ β : Type*} [DecidableEq σ] [DecidableEq β] (μ : Dist σ)
+    (K : σ → Dist β) (ref : Dist β) (S : Finset σ) (hS : μ.weights.support ⊆ S) :
+    tvFinsupp (FiniteKernel.apply μ K) ref ≤ S.sum (fun s => Dist.mass μ s * tvFinsupp (K s) ref) := by
+  set P := FiniteKernel.apply μ K with hP
+  let X := S.biUnion (fun j => (K j).weights.support)
+  let Y := P.weights.support ∪ ref.weights.support ∪ X
+  have hsum1 : S.sum (fun j => Dist.mass μ j) = 1 := sumOverEnlarged_eq_one μ S hS
+  have hPmass (y : β) : Dist.mass P y = S.sum (fun j => Dist.mass μ j * Dist.mass (K j) y) := by
+    rw [FiniteKernel.apply_mass_finsupp]
+    rw [← sumOverLargerSupport μ S hS K y]
+  have hPsub (y : β) : Dist.mass P y - Dist.mass ref y =
+      S.sum (fun j => Dist.mass μ j * (Dist.mass (K j) y - Dist.mass ref y)) := by
+    rw [hPmass]
+    apply Eq.symm
+    have hd : S.sum (fun j => Dist.mass μ j * (Dist.mass (K j) y - Dist.mass ref y)) =
+        S.sum (fun j => Dist.mass μ j * Dist.mass (K j) y - Dist.mass μ j * Dist.mass ref y) := by
+      apply Finset.sum_congr rfl
+      intro j _
+      ring
+    have h1e : (S.sum (fun j => Dist.mass μ j)) * Dist.mass ref y = Dist.mass ref y := by
+      rw [hsum1, one_mul]
+    rw [hd, Finset.sum_sub_distrib, ← Finset.sum_mul, h1e]
+  have hpoint (y : β) : |Dist.mass P y - Dist.mass ref y| ≤
+      S.sum (fun j => Dist.mass μ j * |Dist.mass (K j) y - Dist.mass ref y|) := by
+    rw [hPsub]
+    have h1 := Finset.abs_sum_le_sum_abs (fun j => Dist.mass μ j * (Dist.mass (K j) y - Dist.mass ref y)) S
+    have h2 : S.sum (fun j => |Dist.mass μ j * (Dist.mass (K j) y - Dist.mass ref y)|) =
+        S.sum (fun j => Dist.mass μ j * |Dist.mass (K j) y - Dist.mass ref y|) := by
+      apply Finset.sum_congr rfl
+      intro j _
+      rw [abs_mul, abs_of_nonneg (Dist.mass_nonneg μ j)]
+    exact le_trans h1 (le_of_eq h2)
+  have hA : (2 : Rat) * tvFinsupp P ref = Y.sum (fun y => |Dist.mass P y - Dist.mass ref y|) := by
+    dsimp only [Y, X]
+    unfold Dist.mass
+    exact (l1OverEnlarged_eq_twoTv P ref Y Finset.subset_union_left).symm
+  have hB : Y.sum (fun y => |Dist.mass P y - Dist.mass ref y|) ≤
+      Y.sum (fun y => S.sum (fun j => Dist.mass μ j * |Dist.mass (K j) y - Dist.mass ref y|)) := by
+    apply Finset.sum_le_sum; intro y _; exact hpoint y
+  have hC : Y.sum (fun y => S.sum (fun j => Dist.mass μ j * |Dist.mass (K j) y - Dist.mass ref y|)) =
+      S.sum (fun j => Dist.mass μ j * Y.sum (fun y => |Dist.mass (K j) y - Dist.mass ref y|)) := by
+    rw [Finset.sum_comm]
+    apply Finset.sum_congr rfl
+    intro j _
+    rw [← Finset.mul_sum]
+  have hD : S.sum (fun j => Dist.mass μ j * Y.sum (fun y => |Dist.mass (K j) y - Dist.mass ref y|)) ≤
+      S.sum (fun j => Dist.mass μ j * ((2 : Rat) * tvFinsupp (K j) ref)) := by
+    apply Finset.sum_le_sum
+    intro j hjS
+    apply mul_le_mul_of_nonneg_left
+    · have hKsup : (K j).weights.support ⊆ X := by
+        intro x hx
+        apply Finset.mem_biUnion.mpr
+        exact ⟨j, hjS, hx⟩
+      have hUj : (K j).weights.support ∪ ref.weights.support ⊆ Y := by
+        intro x hx
+        rw [Finset.mem_union] at hx
+        rcases hx with hA | hB
+        · dsimp only [Y, X]
+          apply Finset.mem_union.mpr
+          right
+          apply Finset.mem_biUnion.mpr
+          exact ⟨j, hjS, hA⟩
+        · dsimp only [Y, X]
+          apply Finset.mem_union.mpr
+          left
+          apply Finset.mem_union.mpr
+          right
+          exact hB
+      have hle : Y.sum (fun y => |Dist.mass (K j) y - Dist.mass ref y|) = (2 : Rat) * tvFinsupp (K j) ref := by
+        dsimp only [Y, X]
+        unfold Dist.mass
+        exact l1OverEnlarged_eq_twoTv (K j) ref Y hUj
+      exact le_of_eq hle
+    · exact Dist.mass_nonneg μ j
+  have hE : (2 : Rat) * tvFinsupp P ref ≤
+      S.sum (fun j => Dist.mass μ j * ((2 : Rat) * tvFinsupp (K j) ref)) := by
+    calc
+      _ = Y.sum (fun y => |Dist.mass P y - Dist.mass ref y|) := hA
+      _ ≤ Y.sum (fun y => S.sum (fun j => Dist.mass μ j * |Dist.mass (K j) y - Dist.mass ref y|)) := hB
+      _ = S.sum (fun j => Dist.mass μ j * Y.sum (fun y => |Dist.mass (K j) y - Dist.mass ref y|)) := hC
+      _ ≤ S.sum (fun j => Dist.mass μ j * ((2 : Rat) * tvFinsupp (K j) ref)) := hD
+  have hF : S.sum (fun j => Dist.mass μ j * ((2 : Rat) * tvFinsupp (K j) ref)) =
+      (2 : Rat) * S.sum (fun j => Dist.mass μ j * tvFinsupp (K j) ref) := by
+    rw [show S.sum (fun j => Dist.mass μ j * ((2 : Rat) * tvFinsupp (K j) ref)) =
+          S.sum (fun j => (2 : Rat) * (Dist.mass μ j * tvFinsupp (K j) ref)) from
+      by apply Finset.sum_congr rfl; intro j _; ring,
+      ← Finset.mul_sum]
+  have hcalc : (2 : Rat) * tvFinsupp P ref ≤ (2 : Rat) * S.sum (fun j => Dist.mass μ j * tvFinsupp (K j) ref) := by
+    rw [hF] at hE
+    exact hE
+  have hG : tvFinsupp P ref ≤ S.sum (fun j => Dist.mass μ j * tvFinsupp (K j) ref) := by
+    have h13 : (1 / 2 : Rat) * (2 * tvFinsupp P ref) ≤ (1 / 2 : Rat) * (2 * S.sum (fun j => Dist.mass μ j * tvFinsupp (K j) ref)) :=
+      mul_le_mul_of_nonneg_left hcalc (by norm_num)
+    simpa [mul_assoc, mul_one] using h13
+  simpa [hP] using hG
+
 end Shufflemath
 
 

@@ -325,6 +325,43 @@ theorem gsrProductKernel_rowTV_bound (nL nR a b : Nat) (ha : 0 < a) (hb : 0 < b)
   rw [gsrProductKernel_eq_distProductFinsupp]
   exact distProductFinsupp_tv_subadditive _ _ _ _
 
+/-- F4.5 one-step two-pile riffle terminal bound: pushing any starting
+distribution through one GSR two-pile shuffle, its TV distance from the two-pile
+product reference is at most the starting-distribution-weighted average of the
+per-pile GSR-versus-reference errors.  Composes the F4.3 row bound with the
+Fintype-free mixture contraction.  The state space `List (Fin n) × List (Fin n)`
+is not a `Fintype`, so the bound is `tvFinsupp`-based. -/
+theorem gsrOneStep_terminalTV_bound (nL nR a b : Nat) (ha : 0 < a) (hb : 0 < b)
+    (mu0 : Dist (List (Fin nL) × List (Fin nR)))
+    (perfectL : Dist (List (Fin nL))) (perfectR : Dist (List (Fin nR))) :
+    tvFinsupp (FiniteKernel.apply mu0 (gsrProductKernel nL nR a b ha hb))
+        (distProductFinsupp perfectL perfectR) ≤
+      (mu0.weights.support).sum (fun pr => Dist.mass mu0 pr *
+        (tvFinsupp (GSR.idealShuffle nL a ha pr.1) perfectL +
+         tvFinsupp (GSR.idealShuffle nR b hb pr.2) perfectR)) := by
+  let K := gsrProductKernel nL nR a b ha hb
+  have hmix : tvFinsupp (FiniteKernel.apply mu0 K) (distProductFinsupp perfectL perfectR) ≤
+      (mu0.weights.support).sum (fun pr => Dist.mass mu0 pr *
+        tvFinsupp (K pr) (distProductFinsupp perfectL perfectR)) :=
+    mixtureTV_le mu0 K (distProductFinsupp perfectL perfectR) (mu0.weights.support)
+      (by simp)
+  have hrow (pr : List (Fin nL) × List (Fin nR)) :
+      tvFinsupp (K pr) (distProductFinsupp perfectL perfectR) ≤
+        tvFinsupp (GSR.idealShuffle nL a ha pr.1) perfectL +
+        tvFinsupp (GSR.idealShuffle nR b hb pr.2) perfectR :=
+    gsrProductKernel_rowTV_bound nL nR a b ha hb pr perfectL perfectR
+  calc
+    _ ≤ (mu0.weights.support).sum (fun pr => Dist.mass mu0 pr *
+        tvFinsupp (K pr) (distProductFinsupp perfectL perfectR)) := hmix
+    _ ≤ (mu0.weights.support).sum (fun pr => Dist.mass mu0 pr *
+        (tvFinsupp (GSR.idealShuffle nL a ha pr.1) perfectL +
+         tvFinsupp (GSR.idealShuffle nR b hb pr.2) perfectR)) := by
+      apply Finset.sum_le_sum
+      intro pr _
+      apply mul_le_mul_of_nonneg_left
+      · exact hrow pr
+      · exact Dist.mass_nonneg mu0 pr
+
 end CommanderLocalGSR
 end Shufflemath
 end
