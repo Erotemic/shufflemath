@@ -320,5 +320,39 @@ theorem partCard_eqD (m m' : Membership) (h : membershipCount m = membershipCoun
   apply congrArg (fun x => 49 - (50 - x))
   simpa [membershipCount] using h
 
+
+
+/-! ## Spec A1 groundwork: the marked / unmarked pieces cover each original pile. -/
+
+/-- The left pile splits as `marked-in-left ∪ unmarked-in-left` (the two left pieces). -/
+theorem leftCoverPieces (m : Membership) : leftOrigSet = partA m ∪ partC m := by
+  ext c
+  dsimp only [partA, partC]
+  rw [Finset.mem_union, Finset.mem_inter, Finset.mem_sdiff]
+  constructor
+  · intro hcl
+    by_cases hcm1 : c ∈ m.1
+    · left; exact ⟨hcm1, hcl⟩
+    · right; exact ⟨hcl, fun hc => hcm1 (Finset.mem_inter.mp hc).1⟩
+  · intro h
+    rcases h with h1 | h2
+    · exact h1.2
+    · exact h2.1
+
+/-- The right pile splits as `marked-in-right ∪ unmarked-in-right` (the two right pieces). -/
+theorem rightCoverPieces (m : Membership) : rightOrigSet = partB m ∪ partD m := by
+  ext c
+  dsimp only [partB, partD]
+  rw [Finset.mem_union, Finset.mem_inter, Finset.mem_sdiff]
+  constructor
+  · intro hcr
+    by_cases hcm1 : c ∈ m.1
+    · left; exact ⟨hcm1, hcr⟩
+    · right; exact ⟨hcr, fun hc => hcm1 (Finset.mem_inter.mp hc).1⟩
+  · intro h
+    rcases h with h1 | h2
+    · exact h1.2
+    · exact h2.1
+
 end Shufflemath
 end
