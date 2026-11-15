@@ -788,15 +788,28 @@ theorem transitionNumerator_eq_sum_tterm (N m r k x y : Nat) :
   rfl
 
 
-/-! F3 item 3 — **summand match `tterm_eq_oterm` is PROVEN** (above); all four
-    factor matches (F1–F4) are proven.  The general CL
-    `transitionNumerator (N m r k) y x = overlap_count (N m r k) x y` now
-    remains ONE step away: the **sum reindexing**.
-    - `transitionNumerator` is a sum over `a` in `[0, k]` of `tterm`.
-    - `overlap_count` is a sum over `t` in `[0, m-k]` of `oterm`.
-    Reindex via `t = y - a` (a bijection between the admissible `a` and
-    admissible `t`, given the guards + regime) to identify the two sums via
-    `Finset.sum_bij`/`Finset.sum_image`.  Then F3 item 4 (2-exchange TV)
-    follows from the CL + `fiberSum_eq`.
-    Do NOT use bare `simp`/`field_simp` (this module is adjacent to
-    `Equiv.Perm (Fin 99)` consumers). -/
+/-! F3 item 3 — **general CL: sum reindexing — the single remaining step (STUCK on a Lean term-matching wall).**
+    All of the following are PROVEN (above):
+    - all four factor matches:  `F1match`, `F2match`, `F3match`, `F4match`;
+    - the summand assembly:  `tterm_eq_oterm`  (guard-hold regime:  `tterm a = oterm (y-a)`);
+    - the decomposition:  `transitionNumerator_eq_sum_tterm`;
+    - `chooseSigned_zero_neg` / `chooseSigned_zero_toobig`;
+    - in the guard-FAIL cases the oterm's vanishing factor is provably 0  in ISOLATION:
+      * F4 (h1g holds, h2g fails):  index  `(m-x)-(m-k-(y-a))  (Int)`  is  `< 0`  from  `k < x-(y-a)`;
+        proven  by  `ring_nf`  +  `nlinarith [ (k:Int)+(y-a:Int) < (x:Int) ]`  (the  Int  inequality  is
+        itself  by  `omega`  from  `k < x-(y-a)`  and  `y-a ≤ x`).
+      * F2 (h1g fails):  index  `(x:Int)-(y-a:Int)  <  0`  from  `x < y-a`;  `rw [sub_neg]`  +  `omega`.
+    **The wall:**  to close  `oterm N m r k x y (y-a) = 0`  I must fold the 4th factor  (=  0)  into the
+    4-way product  `F1*F2*F3*F4`.  After  `dsimp only [oterm]`,  `rw`/`simp`/`conv`/`change` all FAIL to
+    locate the 4th factor as a subterm of the product (the let-inlined AST does not match fresh
+    `chooseSigned (↑N-↑r-(↑m-↑y)) (↑m-↑x-(↑m-↑k-↑(y-a)))`  notation,  though the 4th factor  MATCHES  that
+    notation  when  stated  STANDALONE  —  caseB6  succeeds,  caseB5/B7/B8  fail  only  in  the  product
+    context).  This is a  Lean  term-representation  issue,  not  a  math  one  (the  math  is  complete).
+    **Next angle:**  prove  `oterm ... (y-a) = 0`  WITHOUT  dsimp-ing  into  the  product  —  e.g.  keep  the
+    oterm let-binders  (`plain_outside_target`,  `plain_overlap`)  and  show  the  let-based  product  =  0  by
+    `rw [chooseSigned_zero_neg _ _ hF4neg]`  on  the  4th  let-applied  factor  directly,  or  build  the
+    equality  by  `refine`/`calc`  through  `mul_zero`.  Then  the  reindexing  `∑ tterm = ∑ oterm`  is
+    `Finset.sum_bij`/`sum_image`  on  `a ↦ y-a`  over  the  common  support  `[max (0, y-k), min y (m-k)]`
+    (outside  it  both  sums  are  0).  Then  F3  item  4  (2-exchange  TV)  follows  from  the  CL  +
+    `fiberSum_eq`.  Do  NOT  use  bare  `simp`/`field_simp`  (this  module  is  adjacent  to  `Equiv.Perm (Fin 99)`
+    consumers).  Working  scratch:  see  the  11th-session  handoff  note  (docs/agent_handoff.md). -/
