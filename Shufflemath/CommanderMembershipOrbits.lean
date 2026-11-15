@@ -620,5 +620,45 @@ theorem m1p_subset_fimageM1 (m m' : Membership) (h : membershipCount m = members
     · have hsub : (⟨a.1, a.2⟩ : {z : Fin 99 // z ∈ partB m}) = a := Subtype.ext rfl
       rw [orbitMap_apply_partB m m' h a.1 a.2, hsub, hae]
 
+
+
+/-- Every card of the right pile of `m'` is hit by `orbitMap` from the right pile of `m`. -/
+theorem right_subset_fimageRight (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (c : Fin 99) (hc : c ∈ rightOrigSet) : c ∈ (orbitMap m m' h) '' rightOrigSet := by
+  rw [rightCoverPieces m'] at hc
+  simp only [Finset.mem_union, Finset.mem_image] at hc ⊢
+  rcases hc with hcB | hcD
+  · let yc : {x : Fin 99 // x ∈ partB m'} := Subtype.mk c hcB
+    rcases (orbitEquivB m m' h).surjective yc with ⟨a, hae⟩
+    refine ⟨a.1, ?_, ?_⟩
+    · exact (Finset.mem_inter.mp a.2).2
+    · have hsub : (⟨a.1, a.2⟩ : {z : Fin 99 // z ∈ partB m}) = a := Subtype.ext rfl
+      rw [orbitMap_apply_partB m m' h a.1 a.2, hsub, hae]
+  · let yc : {x : Fin 99 // x ∈ partD m'} := Subtype.mk c hcD
+    rcases (orbitEquivD m m' h).surjective yc with ⟨a, hae⟩
+    refine ⟨a.1, ?_, ?_⟩
+    · exact (Finset.mem_sdiff.mp a.2).1
+    · have hsub : (⟨a.1, a.2⟩ : {z : Fin 99 // z ∈ partD m}) = a := Subtype.ext rfl
+      rw [orbitMap_apply_partD m m' h a.1 a.2, hsub, hae]
+
+/-- `orbitMap` is surjective: every card of `m'` is the image of some card of `m`. -/
+theorem orbitMap_surjective (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    Function.Surjective (orbitMap m m' h) := by
+  intro d
+  by_cases hdL : d ∈ leftOrigSet
+  · rcases left_subset_fimageLeft m m' h d hdL with ⟨a, _, ha⟩
+    exact ⟨a, ha⟩
+  · have hdR : d ∈ rightOrigSet := by
+      by_contra hnr
+      have hcover : d ∈ leftOrigSet ∪ rightOrigSet := by
+        rw [leftRightOrig_cover]
+        simp only [Finset.mem_univ]
+      simp only [Finset.mem_union] at hcover
+      rcases hcover with hL | hR
+      · exact hdL hL
+      · exact hnr hR
+    rcases right_subset_fimageRight m m' h d hdR with ⟨a, _, ha⟩
+    exact ⟨a, ha⟩
+
 end Shufflemath
 end
