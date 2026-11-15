@@ -533,6 +533,18 @@ def oterm (N m r k x y t : Nat) : Nat :=
     chooseSigned plain_outside_target ((mI - xI) - plain_overlap)
 
 /-- `overlap_count` is the sum of its `oterm` summands (definitional). -/
+-- The transition-side summand: the product of the four `choose` factors of
+-- `transitionNumerator`'s 4-bin expansion, at a starting overlap `a`.
+def tterm (N m r k x y a : Nat) : Nat :=
+  let remaining := y - a
+  if remaining ≤ x then
+    let b := x - remaining
+    if b ≤ k then
+      Nat.choose y a * Nat.choose (m - y) (k - a) *
+        Nat.choose (r - y) b * Nat.choose ((N - m) - (r - y)) (k - b)
+    else 0
+  else 0
+
 theorem overlap_eq_sum_oterm (N m r k x y : Nat) :
     overlap_count N m r k x y = (Finset.range (m - k + 1)).sum (fun t => oterm N m r k x y t) := by
   rfl
@@ -574,3 +586,47 @@ theorem intDiffDiff_toNat {a b c d : Nat} (hb : b ≤ a) (hd : d ≤ c) (hle : c
   rw [← Nat.cast_sub hb, ← Nat.cast_sub hd]
   rw [← Nat.cast_sub hle]
   simp
+
+/-- The `.toNat` of `(a-b)` (a difference of casts) minus a single cast `c`,
+    when nonnegative, is the nested `Nat` difference.  This matches the `oterm`
+    factor whose argument is built as `(mI - kI) - tI` with `tI` a single `Nat`. -/
+theorem intDiffSingleCast_toNat {a b c : Nat} (hb : b ≤ a) (hc : c ≤ a - b) :
+    (((a : Int) - (b : Int)) - (c : Int)).toNat = (a - b) - c := by
+  rw [← Nat.cast_sub hb]
+  rw [← Nat.cast_sub hc]
+  simp
+
+/-! The `chooseSigned` to `Nat.choose` bridge for single `Nat`-cast arguments, and
+the first two summand matches of the general CL (F3 item 3, 9th session). -/
+
+/-- When both arguments are single `Nat`-casts, `chooseSigned` is exactly
+    `Nat.choose`.  This is the cleanest form of the bridge, used once the
+    `oterm` arguments are put into single-cast shape in the admissible regime. -/
+theorem cs_eq_chooseNatNat (n k : Nat) : chooseSigned (n : Int) (k : Int) = Nat.choose n k := by
+  dsimp only [chooseSigned]
+  split_ifs
+  · simp
+  · by_cases hk : k ≤ n
+    · exfalso
+      simp only [Int.natCast_nonneg, Nat.cast_le, true_and, hk] at *
+      tauto
+    · have h0 : Nat.choose n k = 0 := by simpa [Nat.choose_eq_zero_iff] using hk
+      simpa using h0.symm
+
+/-- First factor of the general CL: the marked-in-S part `choose y a`
+    (`chooseSigned (y) (y-a)` via complementary symmetry). -/
+theorem F1match (y a : Nat) (ha : a ≤ y) :
+    chooseSigned (y : Int) (Nat.cast (y - a)) = Nat.choose y a := by
+  rw [cs_eq_chooseNatNat y (y - a)]
+  rw [Nat.choose_symm ha]
+
+/-- Second factor of the general CL: the marked-outside part `choose (r-y) (x-t)`.
+    In the admissible regime (`y ≤ r`, `t ≤ x`) the difference-of-casts arguments
+    are single casts, so the bridge applies directly. -/
+theorem F2match (r y x t : Nat) (hy : y ≤ r) (ht : t ≤ x) :
+    chooseSigned ((r : Int) - (y : Int)) ((x : Int) - (t : Int)) =
+      Nat.choose (r - y) (x - t) := by
+  have h1 : (r : Int) - (y : Int) = Nat.cast (r - y) := by rw [← Nat.cast_sub hy]
+  have h2 : (x : Int) - (t : Int) = Nat.cast (x - t) := by rw [← Nat.cast_sub ht]
+  rw [h1, h2]
+  rw [cs_eq_chooseNatNat (r - y) (x - t)]
