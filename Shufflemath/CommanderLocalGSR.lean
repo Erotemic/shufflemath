@@ -190,6 +190,30 @@ noncomputable def gsrProductKernel (nL nR a b : Nat) (ha : 0 < a) (hb : 0 < b) :
   fun pr => ((GSR.idealShuffle nL a ha pr.1).map (fun L' =>
       (GSR.idealShuffle nR b hb pr.2).map (fun R' => (L', R')))).join
 
+-- TODO(proof) [F4.3 core, deep]: the point-mass formula
+--   `gsrProductKernel_mass : Dist.mass (gsrProductKernel nL nR a b ha hb (L,R)) (L',R')
+--      = Dist.mass (GSR.idealShuffle nL a ha L) L' * Dist.mass (GSR.idealShuffle nR b hb R) R'`
+-- is the key F4.3 lemma and lets one instantiate the `distProduct_tv_subadditive`
+-- machinery to the two-pile GSR kernel. After `dsimp [gsrProductKernel, Dist.mass]` +
+-- `simp [StdSimplex.weights_map, StdSimplex.weights_join, Finsupp.sum_apply]` the goal
+-- reduces EXACTLY to:
+--   ((mapDomain (fun L' => StdSimplex.map (fun R' => (L',R')) (GSR_R R).weights-implicit)
+--        (GSR_L L).weights).sum (fun d w => (w • d.weights) (L',R'))) =
+--     (GSR_L L).weights L' * (GSR_R R).weights R'.
+-- Strategy: (1) show the outer `mapDomain` is over DISTINCT distributions —
+-- `g L'' = (GSR_R R).map (fun R' => (L'',R'))` is injective on `(GSR_L L).weights.support`
+-- because two such distributions with different first-coordinate support points are
+-- unequal (StdSimplex ext on the disjoint supports) — so `mapDomain` reindexes a
+-- bijection and the sum = `∑_{L'' in (GSR_L L).weights.support} (GSR_L L).weights L'' •
+--   mass (g L'') (L',R')`; (2) `mass (g L'') (L',R') = ((GSR_R R).weights.mapDomain
+--   (fun R' => (L'',R'))) (L',R') = ∑_{R' : (L'',R') = (L',R')} (GSR_R R).weights R' =
+--   (if L'' = L' then (GSR_R R).weights R' else 0)` via `Finsupp.mapDomain_apply`;
+-- (3) the `if` collapses the outer sum to the single `L'' = L'` term
+-- `= (GSR_L L).weights L' * (GSR_R R).weights R'`. Needs the injectivity sub-lemma
+-- (StdSimplex.ext) and `Finsupp.sum_mapDomain`/sum over the image. Blocked on
+-- `[DecidableEq (List (Fin n))]` giving DecidableEq to the `StdSimplex` keys and on
+-- proving distribution-inequality of `g L''` vs `g L'''` (L'' ≠ L''').
+
 /-- A within-pile GSR can never move a card out of its pile: the output
 arrangement holds exactly the pile's original cards.  The deterministic
 `reorderedDeck_leftCards` is the fixed-relabel instance of this. -/

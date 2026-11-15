@@ -224,17 +224,21 @@ committed; 37 tests pass; tree clean):
   most the sum of the two per-pile discrepancies (triangle inequality +
   nonnegativity + Fubini). This is the general reusable core of F4.3.
   **Wall (documented):** instantiating it to the *actual* `gsrProductKernel`
-  vs the perfect-local reference is blocked — `gsrProductKernel (L,R)` is a
-  nested `map`/`join` that *should* equal
-  `distProduct (GSR.idealShuffle nL a _ L) (GSR.idealShuffle nR b _ R)`, but
-  reducing the nested `map`/`join` mass to the product mass needs
-  `apply_mass_dom`, which requires a `Fintype` **domain**, whereas
-  `idealShuffle` is a `FiniteKernel (List (Fin n)) (List (Fin n))` and
-  `List (Fin n)` is **not** a `Fintype` (its `Finsupp` weights have finite
-  support, but no Fintype instance exists). Next step: prove the point-mass
-  equality directly from the `Finsupp` `map`/`join` weight definitions
-  (`StdSimplex.weights_map`/`weights_join` + `Finsupp.sum_single_index`),
-  which do not require a Fintype domain, then apply `distProduct_tv_subadditive`.
+  vs the perfect-local reference is blocked on a **Fintype** requirement, two
+  ways over: (a) `Finite.distProduct` is defined via `Dist.ofFun`, which needs
+  `[Fintype α] [Fintype β]`, so `distProduct (GSR.idealShuffle nL a _ L)
+  (GSR.idealShuffle nR b _ R)` cannot even be *constructed* — `idealShuffle`
+  is a `FiniteKernel (List (Fin n)) (List (Fin n))` and `List (Fin n)` has no
+  `Fintype` instance; (b) the `gsrProductKernel` nested `map`/`join` mass
+  reduction normally goes through `apply_mass_dom`, which also needs a
+  `Fintype` domain. Both walls share the same root (non-Fintype `List (Fin n)`
+  domain). **Route:** a *Fintype-free* product distribution — construct
+  `StdSimplex (α × β)` directly with `weights = ∑_{a∈μ.support} ∑_{b∈ν.support}
+  single (a,b) (μ a · ν b)` (a finite double Finsupp sum, no `Fintype`), prove
+  its total mass `(∑ μ)(∑ ν) = 1` by summing over the finite Finsupp support,
+  and the mass formula `weights (a,b) = μ a · ν b`; then `gsrProductKernel (L,R)`
+  equals that product and `distProduct_tv_subadditive` (re-stated over Finsupp
+  sums, not `Finset.univ`) gives the per-pile bound.
 - **F5 — `costed_terminalTV_le` + `protocolCost_nonneg` + `ActionKind` +
   `costedProtocol_certificate`**
   (`e203310`, `ec68b71`, `4d08580`). `ProtocolCertificate.costed_terminalTV_le`: a costed
