@@ -317,8 +317,11 @@ route, not a theorem already in the tree.
 > counting identity `transitionNumerator N m r k y x = overlap_count N m r k x y`
 > now holds for **every valid deck**, including the Commander (99 50 50 25) and
 > 7442.  **The F3 item 3 counting core is COMPLETE in both regimes.**
-> **(item 4 / item 3 core, OPEN — part (ii) only):** with the counting (part (i))
-> now done, the remaining half of the kernel equality
+> **(item 4 / item 3 core — part (ii) COMPLETE, commit `43f845f`):** the
+> member-level uniformity (part (ii)) is now proved: `membershipFiber_transitive`
+> shows any two same-count memberships are related by a deck bijection `orbitMap`
+> preserving the left pile and carrying `m.1` onto `m'.1`.  The counting (part (i))
+> was already done, so the remaining half of the kernel equality
 > `comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25
 > membershipLift` is **part (ii): given the new count `m`, the new membership is
 > uniform over `{μ : membershipCount μ = m}`** — a symmetry/group-action statement
@@ -342,23 +345,29 @@ route, not a theorem already in the tree.
 > typeclass). Once `finsetType_perm` closes, `membershipFiber_transitive` (two
 > calls on the left/right pieces, agreeing on the disjoint cover `leftOrigSet ⊎
 > rightOrigSet = univ`) is bookkeeping, and Specs A2/A3 follow.
-> **21st-session progress (construction complete):** `finsetType_perm` is now
-> **COMPLETE** (injective + surjective, commit `a637cee`), and the constructive
-> witness `orbitMap : Fin 99 → Fin 99` is **built** (commit `55c07b5`): four
-> `equiCardFinsets_bij` piece-equivs (`orbitEquivA/B/C/D`) composed piecewise over
-> the four-part partition (matched/unmarked × left/right pile), on top of the
-> equi-card lemmas (`partCard_eqA/B/C/D`) and pile-cover lemmas
-> (`leftCoverPieces`/`rightCoverPieces`). The remaining step is proving the three
-> conjuncts (bijective + `f''left = left` + `f''m.1 = m'.1`). The direct route hits a
-> named-if reduction wall (`by_cases`-def + `split_ifs with h` does not expose the
-> decided binder in this Lean 4.34 build). **Next route (avoids `orbitMap`):** apply
-> `finsetType_perm` on the two **pile-subtype** types `{c // c ∈ leftOrigSet}` /
-> `{c // c ∈ rightOrigSet}` (with subtype `Fintype`/`DecidableEq` instances), then
-> bridge `Fin 99 ≃ sL ⊕ sR` (disjoint piles cover `univ`) and compose the two
-> pile-Perms into one `Fin 99 ≃ Fin 99` that preserves each pile and carries `m.1`
-> onto `m'.1`. See `docs/agent_handoff.md` 21st-session section for the full spec.
-> **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
-> which depends on item 3 core.
+> **21st–22nd-session progress (COMPLETE):** `finsetType_perm` is **COMPLETE**
+> (commit `a637cee`); the constructive witness `orbitMap : Fin 99 → Fin 99` is
+> **built** (commit `55c07b5`): four `equiCardFinsets_bij` piece-equivs
+> (`orbitEquivA/B/C/D`) composed piecewise over the four-part partition (marked /
+> unmarked × left/right pile), on top of the equi-card lemmas
+> (`partCard_eqA/B/C/D`), pile-cover lemmas (`leftCoverPieces`/`rightCoverPieces`),
+> and the apply-lemmas (`orbitMap_apply_partA/B/C/D`). The three conjuncts are all
+> now proved: the `⊆` image directions (`orbitMap_preservesLeft`,
+> `orbitMap_mapsM1`), the `⊇` image directions (`left_subset_fimageLeft`,
+> `right_subset_fimageRight`, `m1p_subset_fimageM1`), surjectivity
+> (`orbitMap_surjective`), and — the hard piece — **injectivity**
+> (`orbitMap_injective`, via the 4 image lemmas, the 12 pairwise-disjointness
+> lemmas, and the 4 preimage lemmas `orbitMap_preimagePartX`: equal images force the
+> two sources into the same piece, and the piece-equiv is injective). The image
+> equalities `orbitMap_imageLeft`/`orbitMap_imageM1` and the capstone
+> `membershipFiber_transitive` close it (commit `43f845f`).
+> **F3 item 3 is now COMPLETE in both halves** (counting part (i) + member-
+> uniformity part (ii)).  The named-if reduction wall was bypassed: instead of an
+> explicit inverse, injectivity was proved by target-piece exclusion
+> **(item 4, remaining): Specs A2/A3** — the physical-exchange-distribution
+> stabilizer invariance (A2) and the assembled kernel equality + 2-exchange TV
+> theorem (A3).  Item 3 (counting + member-uniformity, part i + ii) is now
+> COMPLETE, so A2/A3 no longer depend on it; they rest on A2's invariance itself.
 
 **Dependency:** F2 (satisfied: `membershipLift_localLift_eq_fiberLaw`, commit `19d417c`).
 

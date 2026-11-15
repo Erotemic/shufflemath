@@ -1046,7 +1046,7 @@ is done; these are part (ii) and F4.2.
 
 ### Spec A — part (ii): membership-fiber orbit transitivity, then exchange invariance
 
-**Step A1 (crackable, no measure theory): orbit transitivity.**  Prove
+**Step A1 (COMPLETE, commit `43f845f`): orbit transitivity.**  Prove
 `membershipFiber_transitive`: for memberships `m m' : Membership`
 (`Membership = {S : Finset (Fin 99) // S.card = 50}`) with
 `membershipCount m = membershipCount m'` (`membershipCount m = (m.1 ∩
@@ -1070,6 +1070,14 @@ cases + the four Equivs' injectivity/surjectivity.  Then `f` preserves
 `leftOrigSet` (maps `A ∪ C` to `A' ∪ C'`) and sends `m.1 = A ∪ B` to
 `A' ∪ B' = m'.1`.  Put this in a new module
 `Shufflemath/CommanderMembershipOrbits.lean`.
+
+**22nd-session: A1 PROVEN.**  The witness `orbitMap` (the 4 piece-equivs
+`orbitEquivA/B/C/D` composed over the 4-part partition) is shown bijective:
+injectivity via the 12 pairwise-disjointness lemmas + the 4 preimage lemmas
+(equal images force both sources into the same piece, then that piece-equiv is
+injective); surjectivity by target-pile case-split; the pile and marked-set
+image equalities (`orbitMap_imageLeft`/`orbitMap_imageM1`) close it.  **A2 is
+now the next concrete step.**
 
 **Step A2 (the invariance, the real work):** show the physical-exchange
 distribution — averaged over a uniform `d` in the `project`-fiber of a
