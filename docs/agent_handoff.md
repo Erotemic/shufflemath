@@ -168,18 +168,29 @@ All committed; 37 tests pass; tree clean.
   `(supp μ ∪ supp μ') × (supp ν ∪ supp ν')`, pointwise `productMassBound`,
   and factoring both pile-sums to mass 1.
 
-*Resume order:* (1) **F4.3 payoff** — the two clean steps left:
-  (a) `gsrProductKernel nL nR a b _ _ pr = distProductFinsupp
-  (GSR.idealShuffle nL a _ pr.1) (GSR.idealShuffle nR b _ pr.2)` (an
-  `dsimp`-level structural identity, since both unfold to the same
-  nested `.map`/`.join`), then (b) the per-pile GSR-vs-uniform row-TV bound
-  `tvFinsupp (gsrProductKernel _ _ _ _ _ _ pr) (two-pile uniform reference)
-  ≤ tvFinsupp (idealShuffle nL _ _ pr.1) (uniform nL) +
-     tvFinsupp (idealShuffle nR _ _ pr.2) (uniform nR)`, which is `0` once
-  the F4.1 fact `idealShuffle n a _ _ = uniform n a` (uniform for every
-  input) is used. Check `GSR.lean` for the exact F4.1 uniformity statement.
-  (2) F3 item 3 general CL (symbolic identity, Finset API wall — see 5th
-  session). (3) F3 item 4, F4.5, F5 full/optimizer — downstream.
+**F4.3 is COMPLETE.** Both payoff steps are done and committed:
+  (a) `gsrProductKernel_eq_distProductFinsupp` (definitional bridge, `6a9eb6f`)
+  and (b) `gsrProductKernel_rowTV_bound` (`6a9eb6f`) — for any two-pile product
+  reference, the two-pile GSR kernel's TV is at most the sum of the per-pile
+  GSR-vs-reference errors. (Note: `idealShuffle n a _ x` is NOT uniform for
+  finite `a`; the "reference" in the row bound is a *parameter* `perfectL`/
+  `perfectR`, not a fixed uniform — that generality is what makes it usable.)
+
+*Resume order:* (1) **F4.5** — the tractable Fintype-free route (the
+  `List (Fin n)` space is infinite, so the `Finset.univ`-sup `kernelDiscrepancy`
+  / Dobrushin telescope has no direct Finsupp analog; instead use that a
+  stochastic kernel is 1-Lipschitz on TV, which needs no finiteness):
+  (a) prove `tvFinsupp (FiniteKernel.apply mu K) (FiniteKernel.apply nu K) ≤
+  tvFinsupp mu nu` (Fintype-free kernel contraction), then
+  (b) a 1-step two-pile riffle terminal bound:
+  `tvFinsupp (apply start (gsrProductKernel nL nR a b _ _))
+     (distProductFinsupp perfectL perfectR) ≤ E_L + E_R`, where `E_L`/`E_R` are
+  the (parameter) per-pile GSR-vs-perfect discrepancy constants, via the
+  F4.3 row bound + the 1-Lipschitz contraction. A multi-step (telescoped) or
+  full `Equiv.Perm (Fin 99)` version needs the F4.2 Deck-level GSR lift
+  (the `List.mem_bind`/`toMultiset` sub-wall) — defer.
+  (2) F3 item 3 general CL (Finset API wall — see 5th session).
+  (3) F3 item 4, F5 full/optimizer — downstream of (1)/(2).
 
 ### Nov 12 (3rd) session status — resume here first
 
