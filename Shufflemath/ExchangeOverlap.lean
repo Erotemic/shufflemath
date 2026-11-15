@@ -851,55 +851,11 @@ theorem tterm_eq_oterm_all (N m r k x y a : Nat)
       simp only [mul_zero, zero_mul]
     rw [hL, hR]
 
-/-! F3 item 3 — **general CL, final step: the sum reindexing (NEXT).**
-    With  `tterm_eq_oterm_all`,  `transitionNumerator N m r k y x = ∑_{a∈[0,k]} oterm (y-a)`
-    and  `overlap_count N m r k x y = ∑_{t∈[0,m-k]} oterm t`.  Since  `a ↦ y-a`  is  injective  on  [0,k]
-    (image  [y-k, y]),  it  remains  to  show
-        ∑_{t∈[y-k,y]} oterm t  =  ∑_{t∈[0,m-k]} oterm t
-    i.e.  oterm  is  0  outside  the  common  range  `[max (0, x-k, y-k), min (x, y, m-k)]`
-    (upper bounds  `t > m-k  ⇒  F3 = 0`  and  `t > y  ⇒  F1 = 0`  are  immediate;  the  lower-bound
-    vanishing  `t < y-k  ⇒  oterm = 0`  is  the  part  to  verify  under  the  CL  regime). -/
-
---  Support-vanishing  facts  for  `oterm`,  used  to  clip  the  overlap  sum  to
---  the  common  range  `[y-k, min (y, m-k)]`  in  the  general  CL  reindexing:
---    F3  factor  `choose (m-y) (m-k-t)`  forces  `oterm t = 0`  when  `t < y-k`
---  (index  `>  base`)  or  `t > m-k`  (index  `<  0`);
---    F1  factor  `choose y t`  forces  `oterm t = 0`  when  `t > y`.
-theorem oterm_zero_below (N m r k x y t : Nat) (ht : t < y - k) :
-    oterm N m r k x y t = 0 := by
-  dsimp only [oterm]
-  --  F3  index  `(m-k-t)`  vs  base  `(m-y)`:  `t < y-k  →  m-k-t  >  m-y`  (index  >  base)
-  have hidx : (m : Int) - (k : Int) - (t : Int) > (m : Int) - (y : Int) := by
-    ring_nf
-    omega
-  have hF3zero : chooseSigned ((m : Int) - (y : Int)) ((m : Int) - (k : Int) - (t : Int)) = 0 :=
-    chooseSigned_zero_toobig _ _ hidx
-  rw [hF3zero]
-  simp only [mul_zero, zero_mul]
-
-theorem oterm_zero_above_mk (N m r k x y t : Nat) (ht : t > m - k) :
-    oterm N m r k x y t = 0 := by
-  dsimp only [oterm]
-  --  F3  index  `(m-k-t)`  is  `<  0`  when  `t  >  m-k`
-  have hF3neg : (m : Int) - (k : Int) - (t : Int) < 0 := by
-    ring_nf
-    omega
-  have hF3zero : chooseSigned ((m : Int) - (y : Int)) ((m : Int) - (k : Int) - (t : Int)) = 0 :=
-    chooseSigned_zero_neg _ _ hF3neg
-  rw [hF3zero]
-  simp only [mul_zero, zero_mul]
-
-theorem oterm_zero_above_y (N m r k x y t : Nat) (ht : t > y) :
-    oterm N m r k x y t = 0 := by
-  dsimp only [oterm]
-  --  F1  index  `t`  >  base  `y`  (index  >  base)
-  have hF1zero : chooseSigned (y : Int) (t : Int) = 0 :=
-    chooseSigned_zero_toobig _ _ (by omega)
-  rw [hF1zero]
-  simp only [zero_mul]
-
---  Step  1  of  the  reindexing:  the  transition  a-sum  over  [0, k]  reindexes  to  a  t-sum
---  over  [y-k, y]  via  the  injective  map  `a ↦ y-a`  (valid  when  `k ≤ y`). -/
+/-! **F3 item 3 — the general CL — RESOLVED.**  `generalCL`  below  proves
+    `transitionNumerator N m r k y x = overlap_count N m r k x y`  for  the  admissible  regime
+    (`k ≤ y ≤ m`,  `y ≤ r`,  `m+r ≤ N`,  `r-y ≤ N-m`)  by  reindexing  the  transition  `a`-sum  to
+    the  overlap  `t`-sum  (`t = y-a`)  and  clipping  both  to  the  common  support  range
+    `[y-k, min (y, m-k)]`  (where  `oterm`  is  0  outside,  by  the  F1/F3  factor  vanishing). -/
 lemma rangeImage_ySuba_eq_Icc (y k : Nat) (hk : k ≤ y) :
     (Finset.range (k + 1)).image (fun a => y - a) = Finset.Icc (y - k) y := by
   apply Finset.ext
@@ -944,3 +900,126 @@ theorem transition_eq_sum_oterm_ySuba (N m r k x y : Nat)
       (Finset.range (k + 1)).sum (fun a => oterm N m r k x y (y - a)) := by
     rw [← rangeImage_ySuba_eq_Icc y k hky, Finset.sum_image hinj]
   rw [h1, h2]
+
+
+--  Support-vanishing  facts  for  `oterm`,  used  to  clip  the  overlap  sum  to
+--  the  common  range  `[y-k, min (y, m-k)]`  in  the  general  CL  reindexing:
+--    F3  factor  `choose (m-y) (m-k-t)`  forces  `oterm t = 0`  when  `t < y-k`
+--  (index  `>  base`)  or  `t > m-k`  (index  `<  0`);
+--    F1  factor  `choose y t`  forces  `oterm t = 0`  when  `t > y`.
+theorem oterm_zero_below (N m r k x y t : Nat) (ht : t < y - k) :
+    oterm N m r k x y t = 0 := by
+  dsimp only [oterm]
+  --  F3  index  `(m-k-t)`  vs  base  `(m-y)`:  `t < y-k  →  m-k-t  >  m-y`  (index  >  base)
+  have hidx : (m : Int) - (k : Int) - (t : Int) > (m : Int) - (y : Int) := by
+    ring_nf
+    omega
+  have hF3zero : chooseSigned ((m : Int) - (y : Int)) ((m : Int) - (k : Int) - (t : Int)) = 0 :=
+    chooseSigned_zero_toobig _ _ hidx
+  rw [hF3zero]
+  simp only [mul_zero, zero_mul]
+
+theorem oterm_zero_above_mk (N m r k x y t : Nat) (ht : t > m - k) :
+    oterm N m r k x y t = 0 := by
+  dsimp only [oterm]
+  --  F3  index  `(m-k-t)`  is  `<  0`  when  `t  >  m-k`
+  have hF3neg : (m : Int) - (k : Int) - (t : Int) < 0 := by
+    ring_nf
+    omega
+  have hF3zero : chooseSigned ((m : Int) - (y : Int)) ((m : Int) - (k : Int) - (t : Int)) = 0 :=
+    chooseSigned_zero_neg _ _ hF3neg
+  rw [hF3zero]
+  simp only [mul_zero, zero_mul]
+
+theorem oterm_zero_above_y (N m r k x y t : Nat) (ht : t > y) :
+    oterm N m r k x y t = 0 := by
+  dsimp only [oterm]
+  --  F1  index  `t`  >  base  `y`  (index  >  base)
+  have hF1zero : chooseSigned (y : Int) (t : Int) = 0 :=
+    chooseSigned_zero_toobig _ _ (by omega)
+  rw [hF1zero]
+  simp only [zero_mul]
+--  Step  2  of  the  reindexing  +  the  general  CL  itself.  The  overlap  and  transition
+--  oterm-sums  both  clip  to  the  common  range  `[y-k, min (y, m-k)]`  (oterm  is  0  outside),
+--  so  they  are  equal  —  closing  the  general  CL. -/
+lemma finsetSum_zero_on {α} {f : α → Nat} {s : Finset α} (h : ∀ x ∈ s, f x = 0) : s.sum f = 0 := by
+  simpa using Finset.sum_eq_zero (fun x hx => h x hx)
+
+--  clip  both  sums  to  the  common  range  C  =  [y-k, min (y, m-k)]
+theorem oterm_sum_clip_eq (N m r k x y : Nat)
+    (hky : k ≤ y) (hmy : y ≤ m) :
+    (Finset.Icc (y - k) y).sum (fun t => oterm N m r k x y t) =
+        (Finset.Icc 0 (m - k)).sum (fun t => oterm N m r k x y t) := by
+  let f := fun t => oterm N m r k x y t
+  let S1 := Finset.Icc (y - k) y
+  let S2 := Finset.Icc 0 (m - k)
+  let C  := Finset.Icc (y - k) (min y (m - k))
+  have hC1 : C ⊆ S1 := by
+    intro t ht
+    rw [Finset.mem_Icc] at ht ⊢
+    exact ⟨ht.1, by omega⟩
+  have hC2 : C ⊆ S2 := by
+    intro t ht
+    rw [Finset.mem_Icc] at ht ⊢
+    exact ⟨by omega, by omega⟩
+  --  on  S1 \ C  (t  >  min (y, m-k),  t  ≤  y)  the  term  vanishes
+  have hZ1 : ∀ t ∈ S1 \ C, f t = 0 := by
+    intro t ht
+    have hnotC : t ∉ C := (Finset.mem_sdiff.mp ht).2
+    have hS1 : t ∈ S1 := (Finset.mem_sdiff.mp ht).1
+    have hS1y : t ≤ y := by rw [Finset.mem_Icc] at hS1; exact hS1.2
+    have hS1lo : y - k ≤ t := by rw [Finset.mem_Icc] at hS1; exact hS1.1
+    have htmin : t > min y (m - k) := by
+      by_contra h; push Not at h
+      have hC : t ∈ C := by
+        rw [Finset.mem_Icc]; exact ⟨hS1lo, h⟩
+      exact hnotC hC
+    cases le_total y (m - k) with
+    | inl _ =>  --  min  =  y,  t  >  y  contradicts  t ≤ y  (empty  case)
+      exfalso
+      exact Nat.lt_irrefl t (by omega)
+    | inr _ =>  --  min  =  m-k,  t  >  m-k
+      exact oterm_zero_above_mk N m r k x y t (by omega)
+  --  on  S2 \ C  (t  <  y-k  or  t  >  min (y, m-k))  the  term  vanishes
+  have hZ2 : ∀ t ∈ S2 \ C, f t = 0 := by
+    intro t ht
+    have hnotC : t ∉ C := (Finset.mem_sdiff.mp ht).2
+    have hS2 : t ∈ S2 := (Finset.mem_sdiff.mp ht).1
+    have hS2mk : t ≤ m - k := by rw [Finset.mem_Icc] at hS2; exact hS2.2
+    have hS2lo : 0 ≤ t := by rw [Finset.mem_Icc] at hS2; exact hS2.1
+    by_cases hlow : t < y - k
+    · exact oterm_zero_below N m r k x y t hlow
+    · --  t  ≥  y-k  and  t  ∉  C  ⟹  t  >  min (y, m-k)
+      have htmin : t > min y (m - k) := by
+        by_contra h; push Not at h
+        have hC : t ∈ C := by
+          rw [Finset.mem_Icc]
+          exact ⟨by omega, h⟩
+        exact hnotC hC
+      cases le_total y (m - k) with
+      | inl _ =>  --  min  =  y,  t  >  y
+        exact oterm_zero_above_y N m r k x y t (by omega)
+      | inr _ =>  --  min  =  m-k,  t  >  m-k  contradicts  t ≤ m-k  (empty  case)
+        exfalso
+        omega
+  have hsum1 : S1.sum f = C.sum f := by
+    have hsd : (S1 \ C).sum f + C.sum f = S1.sum f := Finset.sum_sdiff hC1
+    have hzero : (S1 \ C).sum f = 0 := finsetSum_zero_on hZ1
+    rw [hzero, zero_add] at hsd
+    exact hsd.symm
+  have hsum2 : C.sum f = S2.sum f := by
+    have hsd : (S2 \ C).sum f + C.sum f = S2.sum f := Finset.sum_sdiff hC2
+    have hzero : (S2 \ C).sum f = 0 := finsetSum_zero_on hZ2
+    rw [hzero, zero_add] at hsd
+    exact hsd
+  exact hsum1.trans hsum2
+
+--  THE  GENERAL  CHOINT-LOOPS  (CL)  IDENTITY  (F3  item  3):
+--  `transitionNumerator N m r k y x  =  overlap_count N m r k x y`.
+theorem generalCL (N m r k x y : Nat)
+    (hky : k ≤ y) (hmy : y ≤ m) (hry : y ≤ r) (hN : m + r ≤ N) (h4g : r - y ≤ N - m) :
+    transitionNumerator N m r k y x = overlap_count N m r k x y := by
+  rw [transition_eq_sum_oterm_ySuba N m r k x y hky hmy hry hN h4g]
+  rw [oterm_sum_clip_eq N m r k x y hky hmy]
+  rw [overlap_eq_sum_oterm N m r k x y]
+  rw [Nat.range_succ_eq_Icc_zero (m - k)]
