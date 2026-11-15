@@ -738,17 +738,40 @@ theorem F4match (N m r k x y a : Nat)
   rw [hbt, het]
 
 
-/-! F3 item 3 — **all four summand matches (F1–F4) are now PROVEN.**
-    The general CL `transitionNumerator (N m r k) y x = overlap_count (N m r k) x y`
-    remains two assembly steps away:
-    1. **`tterm_eq_oterm`**: in the admissible regime (1st/2nd guards + fiber
-       regime), `tterm (N m r k) x y a = oterm (N m r k) x y (y - a)`, by
-       `F1match`/`F2match`/`F3match`/`F4match` and `oterm_eq_summand` — the
-       four factors match pairwise, so the products are equal.
-    2. **Sum reindexing**: `transitionNumerator` is a sum over `a` in `[0,k]`
-       of `tterm`; `overlap_count` is a sum over `t` in `[0, m-k]` of `oterm`.
-       Reindex via `t = y - a` (bijection between the admissible indices,
-       given the guards + regime) to identify the two sums.
-    Then F3 item 4 (2-exchange TV) follows from the CL + `fiberSum_eq`.
+
+/-- F3 item 3 — **summand match `tterm_eq_oterm` — RESOLVED.**
+    In the admissible regime, the transition summand `tterm` at overlap `a`
+    equals the overlap summand `oterm` at `t = y - a`.  The four `Nat.choose`
+    factors of `tterm` (with the two guard-ites collapsed) match the four
+    `chooseSigned` factors of `oterm` via `F1match`/`F2match`/`F3match`/
+    `F4match`; the two are the same 4-factor product up to the order of the
+    middle (m/r) factors (`ring`) and the 4th-factor base
+    `(N-m)-(r-y) = N-m-r+y` (`omega` under the regime). -/
+theorem tterm_eq_oterm (N m r k x y a : Nat)
+    (h1g : y - a ≤ x) (h2g : x - (y - a) ≤ k)
+    (ha : a ≤ y) (hak : a ≤ k) (hky : k ≤ y) (hmy : y ≤ m) (hry : y ≤ r)
+    (hN : m + r ≤ N) (h4g : r - y ≤ N - m) :
+    tterm N m r k x y a = oterm N m r k x y (y - a) := by
+  dsimp only [tterm, oterm]
+  rw [if_pos h1g, if_pos h2g]
+  rw [F1match y a ha,
+      F2match r y x (y - a) hry h1g,
+      F3match m k y a ha hak hky hmy,
+      F4match N m r k x y a h1g h2g ha hmy hN]
+  have hb : (N - m) - (r - y) = N - m - r + y := by omega
+  rw [hb]
+  ring_nf
+
+
+/-! F3 item 3 — **summand match `tterm_eq_oterm` is PROVEN** (above); all four
+    factor matches (F1–F4) are proven.  The general CL
+    `transitionNumerator (N m r k) y x = overlap_count (N m r k) x y` now
+    remains ONE step away: the **sum reindexing**.
+    - `transitionNumerator` is a sum over `a` in `[0, k]` of `tterm`.
+    - `overlap_count` is a sum over `t` in `[0, m-k]` of `oterm`.
+    Reindex via `t = y - a` (a bijection between the admissible `a` and
+    admissible `t`, given the guards + regime) to identify the two sums via
+    `Finset.sum_bij`/`Finset.sum_image`.  Then F3 item 4 (2-exchange TV)
+    follows from the CL + `fiberSum_eq`.
     Do NOT use bare `simp`/`field_simp` (this module is adjacent to
     `Equiv.Perm (Fin 99)` consumers). -/
