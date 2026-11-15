@@ -660,5 +660,163 @@ theorem orbitMap_surjective (m m' : Membership) (h : membershipCount m = members
     rcases right_subset_fimageRight m m' h d hdR with ⟨a, _, ha⟩
     exact ⟨a, ha⟩
 
+
+
+/-- `a` in source part A maps into target part A (the A-equiv's codomain). -/
+theorem orbitMap_imagePartA (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (a : Fin 99) (haA : a ∈ partA m) : orbitMap m m' h a ∈ partA m' := by
+  rw [orbitMap_apply_partA m m' h a haA]
+  exact ((orbitEquivA m m' h) ⟨a, haA⟩).2
+
+/-- `a` in source part B maps into target part B. -/
+theorem orbitMap_imagePartB (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (a : Fin 99) (haB : a ∈ partB m) : orbitMap m m' h a ∈ partB m' := by
+  rw [orbitMap_apply_partB m m' h a haB]
+  exact ((orbitEquivB m m' h) ⟨a, haB⟩).2
+
+/-- `a` in source part C maps into target part C. -/
+theorem orbitMap_imagePartC (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (a : Fin 99) (haC : a ∈ partC m) : orbitMap m m' h a ∈ partC m' := by
+  rw [orbitMap_apply_partC m m' h a haC]
+  exact ((orbitEquivC m m' h) ⟨a, haC⟩).2
+
+/-- `a` in source part D maps into target part D. -/
+theorem orbitMap_imagePartD (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (a : Fin 99) (haD : a ∈ partD m) : orbitMap m m' h a ∈ partD m' := by
+  rw [orbitMap_apply_partD m m' h a haD]
+  exact ((orbitEquivD m m' h) ⟨a, haD⟩).2
+
+
+
+/-- Every card lies in one of the four orbit pieces of `m` (left-associated
+    disjunction matching the Finset-union nesting). -/
+theorem inSomePart (m : Membership) (a : Fin 99) :
+    ((a ∈ partA m ∨ a ∈ partB m) ∨ a ∈ partC m) ∨ a ∈ partD m := by
+  have hcover : a ∈ partA m ∪ partB m ∪ partC m ∪ partD m :=
+    (piecesCover m).symm ▸ Finset.mem_univ a
+  simp only [Finset.mem_union] at hcover
+  exact hcover
+
+
+
+/-- Part A (marked, left) is disjoint from part B (marked, right). -/
+theorem partA_not_partB (m : Membership) (c : Fin 99) (hc : c ∈ partA m) : c ∉ partB m := by
+  have hL : c ∈ leftOrigSet := by rw [partA] at hc; exact (Finset.mem_inter.mp hc).2
+  intro h
+  have hR : c ∈ rightOrigSet := by rw [partB] at h; exact (Finset.mem_inter.mp h).2
+  have hI : c ∈ leftOrigSet ∩ rightOrigSet := Finset.mem_inter.mpr ⟨hL, hR⟩
+  rw [Finset.disjoint_iff_inter_eq_empty.mp leftRightOrig_disjoint] at hI
+  cases hI
+
+/-- Part A (marked, left) is disjoint from part C (unmarked, left). -/
+theorem partA_not_partC (m : Membership) (c : Fin 99) (hc : c ∈ partA m) : c ∉ partC m := by
+  intro h
+  rw [partC] at h
+  exact (Finset.mem_sdiff.mp h).2 hc
+
+/-- Part A (marked, left) is disjoint from part D (unmarked, right). -/
+theorem partA_not_partD (m : Membership) (c : Fin 99) (hc : c ∈ partA m) : c ∉ partD m := by
+  have hL : c ∈ leftOrigSet := by rw [partA] at hc; exact (Finset.mem_inter.mp hc).2
+  intro h
+  have hR : c ∈ rightOrigSet := by rw [partD] at h; exact (Finset.mem_sdiff.mp h).1
+  have hI : c ∈ leftOrigSet ∩ rightOrigSet := Finset.mem_inter.mpr ⟨hL, hR⟩
+  rw [Finset.disjoint_iff_inter_eq_empty.mp leftRightOrig_disjoint] at hI
+  cases hI
+
+/-- Part B (marked, right) is disjoint from part C (unmarked, left). -/
+theorem partB_not_partC (m : Membership) (c : Fin 99) (hc : c ∈ partB m) : c ∉ partC m := by
+  have hR : c ∈ rightOrigSet := by rw [partB] at hc; exact (Finset.mem_inter.mp hc).2
+  intro h
+  have hL : c ∈ leftOrigSet := by rw [partC] at h; exact (Finset.mem_sdiff.mp h).1
+  have hI : c ∈ leftOrigSet ∩ rightOrigSet := Finset.mem_inter.mpr ⟨hL, hR⟩
+  rw [Finset.disjoint_iff_inter_eq_empty.mp leftRightOrig_disjoint] at hI
+  cases hI
+
+/-- Part B (marked, right) is disjoint from part D (unmarked, right). -/
+theorem partB_not_partD (m : Membership) (c : Fin 99) (hc : c ∈ partB m) : c ∉ partD m := by
+  intro h
+  rw [partD] at h
+  exact (Finset.mem_sdiff.mp h).2 hc
+
+/-- Part C (unmarked, left) is disjoint from part D (unmarked, right). -/
+theorem partC_not_partD (m : Membership) (c : Fin 99) (hc : c ∈ partC m) : c ∉ partD m := by
+  have hL : c ∈ leftOrigSet := by rw [partC] at hc; exact (Finset.mem_sdiff.mp hc).1
+  intro h
+  have hR : c ∈ rightOrigSet := by rw [partD] at h; exact (Finset.mem_sdiff.mp h).1
+  have hI : c ∈ leftOrigSet ∩ rightOrigSet := Finset.mem_inter.mpr ⟨hL, hR⟩
+  rw [Finset.disjoint_iff_inter_eq_empty.mp leftRightOrig_disjoint] at hI
+  cases hI
+
+/-- If `orbitMap` sends `a` into target part A, then `a` was in source part A. -/
+theorem orbitMap_preimagePartA (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (a : Fin 99) (hfa : orbitMap m m' h a ∈ partA m') : a ∈ partA m := by
+  by_contra hna
+  by_cases hb : a ∈ partB m
+  · exact (partB_not_partA m' (orbitMap m m' h a) (orbitMap_imagePartB m m' h a hb)) hfa
+  by_cases hc : a ∈ partC m
+  · exact (partC_not_partA m' (orbitMap m m' h a) (orbitMap_imagePartC m m' h a hc)) hfa
+  by_cases hd : a ∈ partD m
+  · exact (partD_not_partA m' (orbitMap m m' h a) (orbitMap_imagePartD m m' h a hd)) hfa
+  · cases inSomePart m a with
+      | inl h123 => cases h123 with
+        | inl h12 => cases h12 with
+          | inl hA => exact hna hA
+          | inr hB => exact hb hB
+        | inr hC => exact hc hC
+      | inr hD => exact hd hD
+
+/-- If `orbitMap` sends `a` into target part B, then `a` was in source part B. -/
+theorem orbitMap_preimagePartB (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (a : Fin 99) (hfa : orbitMap m m' h a ∈ partB m') : a ∈ partB m := by
+  by_contra hna
+  by_cases ha : a ∈ partA m
+  · exact (partA_not_partB m' (orbitMap m m' h a) (orbitMap_imagePartA m m' h a ha)) hfa
+  by_cases hc : a ∈ partC m
+  · exact (partC_not_partB m' (orbitMap m m' h a) (orbitMap_imagePartC m m' h a hc)) hfa
+  by_cases hd : a ∈ partD m
+  · exact (partD_not_partB m' (orbitMap m m' h a) (orbitMap_imagePartD m m' h a hd)) hfa
+  · cases inSomePart m a with
+      | inl h123 => cases h123 with
+        | inl h12 => cases h12 with
+          | inl hA => exact ha hA
+          | inr hB => exact hna hB
+        | inr hC => exact hc hC
+      | inr hD => exact hd hD
+
+/-- If `orbitMap` sends `a` into target part C, then `a` was in source part C. -/
+theorem orbitMap_preimagePartC (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (a : Fin 99) (hfa : orbitMap m m' h a ∈ partC m') : a ∈ partC m := by
+  by_contra hna
+  by_cases ha : a ∈ partA m
+  · exact (partA_not_partC m' (orbitMap m m' h a) (orbitMap_imagePartA m m' h a ha)) hfa
+  by_cases hb : a ∈ partB m
+  · exact (partB_not_partC m' (orbitMap m m' h a) (orbitMap_imagePartB m m' h a hb)) hfa
+  by_cases hd : a ∈ partD m
+  · exact (partD_not_partC m' (orbitMap m m' h a) (orbitMap_imagePartD m m' h a hd)) hfa
+  · cases inSomePart m a with
+      | inl h123 => cases h123 with
+        | inl h12 => cases h12 with
+          | inl hA => exact ha hA
+          | inr hB => exact hb hB
+        | inr hC => exact hna hC
+      | inr hD => exact hd hD
+
+/-- If `orbitMap` sends `a` into target part D, then `a` was in source part D. -/
+theorem orbitMap_preimagePartD (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (a : Fin 99) (hfa : orbitMap m m' h a ∈ partD m') : a ∈ partD m := by
+  by_contra hna
+  by_cases ha : a ∈ partA m
+  · exact (partA_not_partD m' (orbitMap m m' h a) (orbitMap_imagePartA m m' h a ha)) hfa
+  by_cases hb : a ∈ partB m
+  · exact (partB_not_partD m' (orbitMap m m' h a) (orbitMap_imagePartB m m' h a hb)) hfa
+  by_cases hc : a ∈ partC m
+  · exact (partC_not_partD m' (orbitMap m m' h a) (orbitMap_imagePartC m m' h a hc)) hfa
+  · cases inSomePart m a with
+      | inl h123 => cases h123 with
+        | inl h12 => cases h12 with
+          | inl hA => exact ha hA
+          | inr hB => exact hb hB
+        | inr hC => exact hc hC
+      | inr hD => exact hna hD
 end Shufflemath
 end
