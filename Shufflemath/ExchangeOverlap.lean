@@ -173,6 +173,54 @@ overlap sum runs over `t ∈ range ((m - k) + 1)` with `chooseSigned` returning 
 out of range.  A unified proof rewrites both as `∑` over a common `t`-range with
 out-of-range terms `0`, using the guards' failure to force the relevant factor to
 `0`.  This is a pure `Nat`/`choose` reindexing (no `Finset` API).
+
+**Complete proof plan (7th session).**  Write the transition summand as `g(a)`
+over `a ∈ range (k+1)` and the overlap summand as `h(t)` over
+`t ∈ range ((m-k)+1)`, each a product of four `Nat.choose`/`chooseSigned`
+factors.  Four facts close
+`transitionNumerator (N m r k) y x = overlap_count (N m r k) x y`:
+
+1. **Pointwise match.**  With `t := y - a`, `g(a) = h(t)`: `choose y a =
+   choose y (y-t) = choose y t` (`Nat.choose_sub`/symmetry); `choose (r-y)
+   (x-t)` (direct, since `b = x - (y-a) = x - t`); `choose (m-y) (k-a) =
+   choose (m-y) (m-k-t)` (symmetry: `(k-a) + ((m-k)-t) = m-y`); and
+   `choose (N-m-(r-y)) (k-x+t) = choose (N-r-(m-y)) (k-x+t)` (base
+   `N-m-(r-y) = N-r-(m-y)`).  The two `if`-guards in `g(a)` are exactly the
+   non-negativity conditions the overlap's `chooseSigned` factors enforce
+   (`t ≤ x` ⟺ `x-t ≥ 0`; `x-t ≤ k` ⟺ `k-x+t ≥ 0`), so `g(a) = 0` exactly when
+   `h(y-a) = 0` (the `Nat`-saturated `y-a` is harmless: the outer guard fails
+   first).
+
+2. **Support of `h`.**  `h(t) = 0` for `t > y` (factor `S1 = chooseSigned y t`)
+   and for `t < y - k` (factor `S3 = chooseSigned (m-y) ((m-k)-t)`, whose
+   argument `(m-k)-t > m-y` exactly when `t < y-k`).  So the overlap sum is
+   supported exactly on `[y-k, y]` (clipped to its `range`).
+
+3. **Support alignment.**  Substituting `u := y - a` into the transition sum
+   gives `∑_{u = y-k}^{y} h(u)` — the same support as (2).
+
+4. **Sum-reindex (NOT pointwise).**  The *pointwise* identity `g(a) = h(y-a)`
+   is **false** for `a > y`: `Nat`-saturating `t := y - a` to `0` makes
+   `h(0)` potentially nonzero while `g(a) = 0` (factor `choose y a`).  The
+   correct statement is the **sum** equality
+   `∑_{a ∈ range (k+1)} g(a) = ∑_{t ∈ range ((m-k)+1)} h(t)`, proved by the
+   affine reindex `t := y - a` as a `Finset.sum_bij` between the two
+   *supports*.
+
+5. **Supports align exactly.**  `g(a) = 0` outside
+   `[max (0, k-m+y), min y (k)]` and `h(t) = 0` outside
+   `[max (0, y-k), min y (m-k)]` (factors `S1 = chooseSigned y t` and
+   `S3 = chooseSigned (m-y) ((m-k)-t)`); under `t := y - a` these two
+   intervals coincide (`[max (0, y-k), min y (m-k)]`).  On that common support
+   all four factors are in range, so step 1's factor-match (choose symmetry)
+   gives `g(a) = h(y-a)`, and off the support both sides are `0`.  The affine
+   reindex (a `Finset.sum_bij` / `Finset.sum_image` on `Finset.range`) then
+   identifies the two sums.
+
+Only steps 4–5 touch `Finset` (via `Finset.sum_bij`/`sum_image`); steps 1–3 are
+pure `Nat`/`choose` (`Nat.choose_sub`, `Nat.choose_symm`) plus the guard
+case-analysis.  This is the single remaining step of F3 item 3 core and it
+directly unblocks item 4 (2-exchange TV) and F4.5.
 -/
 /-- Commander instance `(99,50,50,25)`, `x=10, y=40`: the case where the
 `Nat`-saturated version inserts spurious `t > x` terms.  The signed version
