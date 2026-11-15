@@ -580,5 +580,45 @@ theorem orbitMap_mapsM1 (m m' : Membership) (h : membershipCount m = membershipC
   · rw [orbitMap_apply_partB m m' h a haB]
     exact (Finset.mem_inter.mp ((orbitEquivB m m' h) ⟨a, haB⟩).2).1
 
+
+
+/-- Every card of the left pile of `m'` is hit by `orbitMap` from the left pile of `m`. -/
+theorem left_subset_fimageLeft (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (c : Fin 99) (hc : c ∈ leftOrigSet) : c ∈ (orbitMap m m' h) '' leftOrigSet := by
+  rw [leftCoverPieces m'] at hc
+  simp only [Finset.mem_union, Finset.mem_image] at hc ⊢
+  rcases hc with hcA | hcC
+  · let yc : {x : Fin 99 // x ∈ partA m'} := Subtype.mk c hcA
+    rcases (orbitEquivA m m' h).surjective yc with ⟨a, hae⟩
+    refine ⟨a.1, ?_, ?_⟩
+    · exact (Finset.mem_inter.mp a.2).2
+    · have hsub : (⟨a.1, a.2⟩ : {z : Fin 99 // z ∈ partA m}) = a := Subtype.ext rfl
+      rw [orbitMap_apply_partA m m' h a.1 a.2, hsub, hae]
+  · let yc : {x : Fin 99 // x ∈ partC m'} := Subtype.mk c hcC
+    rcases (orbitEquivC m m' h).surjective yc with ⟨a, hae⟩
+    refine ⟨a.1, ?_, ?_⟩
+    · exact (Finset.mem_sdiff.mp a.2).1
+    · have hsub : (⟨a.1, a.2⟩ : {z : Fin 99 // z ∈ partC m}) = a := Subtype.ext rfl
+      rw [orbitMap_apply_partC m m' h a.1 a.2, hsub, hae]
+
+/-- Every marked card of `m'` is hit by `orbitMap` from a marked card of `m`. -/
+theorem m1p_subset_fimageM1 (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (c : Fin 99) (hc : c ∈ m'.1) : c ∈ (orbitMap m m' h) '' m.1 := by
+  rw [← markedPieces_cover m'] at hc
+  simp only [Finset.mem_union, Finset.mem_image] at hc ⊢
+  rcases hc with hcA | hcB
+  · let yc : {x : Fin 99 // x ∈ partA m'} := Subtype.mk c hcA
+    rcases (orbitEquivA m m' h).surjective yc with ⟨a, hae⟩
+    refine ⟨a.1, ?_, ?_⟩
+    · exact (Finset.mem_inter.mp a.2).1
+    · have hsub : (⟨a.1, a.2⟩ : {z : Fin 99 // z ∈ partA m}) = a := Subtype.ext rfl
+      rw [orbitMap_apply_partA m m' h a.1 a.2, hsub, hae]
+  · let yc : {x : Fin 99 // x ∈ partB m'} := Subtype.mk c hcB
+    rcases (orbitEquivB m m' h).surjective yc with ⟨a, hae⟩
+    refine ⟨a.1, ?_, ?_⟩
+    · exact (Finset.mem_inter.mp a.2).1
+    · have hsub : (⟨a.1, a.2⟩ : {z : Fin 99 // z ∈ partB m}) = a := Subtype.ext rfl
+      rw [orbitMap_apply_partB m m' h a.1 a.2, hsub, hae]
+
 end Shufflemath
 end
