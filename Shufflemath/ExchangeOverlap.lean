@@ -631,8 +631,53 @@ theorem F2match (r y x t : Nat) (hy : y ≤ r) (ht : t ≤ x) :
   rw [h1, h2]
   rw [cs_eq_chooseNatNat (r - y) (x - t)]
 
+theorem F3match (m k y a : Nat) (ha : a ≤ y) (hak : a ≤ k) (hky : k ≤ y) (hmy : y ≤ m) :
+    chooseSigned ((m : Int) - (y : Int)) (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int)) =
+      Nat.choose (m - y) (k - a) := by
+  have He : ((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int) = (m - y : Int) - (k - a : Int) := by
+    have hya : (Nat.cast (y - a) : Int) = (y : Int) - (a : Int) := by rw [Nat.cast_sub ha]
+    rw [hya]
+    have hmy' : (m - y : Int) = (m : Int) - (y : Int) := by rfl
+    have hka : (k - a : Int) = (k : Int) - (a : Int) := by rfl
+    rw [← hmy', ← hka]
+    ring_nf
+  by_cases hk : k - a ≤ m - y
+  · -- e ≥ 0
+    have he0 : 0 ≤ ((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int) := by
+      rw [He]
+      have hka : (k - a : Int) = (Nat.cast (k - a) : Int) := by rw [Nat.cast_sub hak]
+      have hmy' : (m - y : Int) = (Nat.cast (m - y) : Int) := by rw [Nat.cast_sub hmy]
+      rw [hmy', hka]
+      simp only [Int.sub_nonneg, Nat.cast_le]
+      exact hk
+    have hbase0 : 0 ≤ (m : Int) - (y : Int) := by simp only [Int.sub_nonneg, Nat.cast_le]; exact hmy
+    rw [cs_eq_chooseNatI ((m : Int) - (y : Int)) (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int)) hbase0 he0]
+    have hbase_toNat : ((m : Int) - (y : Int)).toNat = (m - y) := by exact intSub_toNat hmy
+    have he_toNat : (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int)).toNat = (m - y) - (k - a) := by
+      rw [He]
+      have hka : (k - a : Int) = (Nat.cast (k - a) : Int) := by rw [Nat.cast_sub hak]
+      have hmy' : (m - y : Int) = (Nat.cast (m - y) : Int) := by rw [Nat.cast_sub hmy]
+      rw [hmy', hka]
+      rw [intSub_toNat hk]
+    rw [hbase_toNat, he_toNat]
+    rw [Nat.choose_symm hk]
+  · -- e < 0  ⟺  k - a > m - y
+    have hnot : ¬(0 ≤ ((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int)) := by
+      rw [He]
+      have hka : (k - a : Int) = (Nat.cast (k - a) : Int) := by rw [Nat.cast_sub hak]
+      have hmy' : (m - y : Int) = (Nat.cast (m - y) : Int) := by rw [Nat.cast_sub hmy]
+      rw [hmy', hka]
+      simp only [Int.sub_nonneg, Nat.cast_le]
+      exact hk
+    unfold chooseSigned
+    by_cases hge : 0 ≤ ((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int)
+    · exfalso; exact hnot hge
+    · simp only [hge]
+      have h0 : Nat.choose (m - y) (k - a) = 0 := by simpa [Nat.choose_eq_zero_iff] using (Nat.not_le.mp hk)
+      simpa using h0.symm
+
 /-!
-### General CL summand match: `tterm_eq_oterm` (F3 item 3, 9th-session status)
+### General CL summand match: `tterm_eq_oterm` (F3 item 3, 9th-session progress)
 
 The general CL is a **sum** equality:
 ```
@@ -640,41 +685,51 @@ The general CL is a **sum** equality:
 ```
 After reindexing the transition index `a` to the overlap index `t = y - a`, the
 summands must match pointwise:
-
 ```
   tterm (N m r k) x y a = oterm (N m r k) x y (y - a)
 ```
 where `tterm`'s four factors are `choose y a`, `choose (m-y)(k-a)`,
-`choose (r-y)(x-t)`, `choose (N-m-r+y)(k-x+t)` and `oterm`'s are the corresponding
-`chooseSigned` terms.  Factors 1 and 2 are **done** above (`F1match`, `F2match`).
+`choose (r-y)(x-t)`, `choose (N-m-r+y)(k-x+t)` and `oterm`'s are the
+corresponding `chooseSigned` terms.
 
-`-- TODO(proof): tterm_eq_oterm — F3 and F4 summand matches + assembly.
-  Remaining sub-steps (all verified to fail in this Lean 4.34/Mathlib build):
+Factors 1, 2, and 3 are **now proven** (`F1match`, `F2match`, `F3match` above).
+The third factor was the last hard wall.  The breakthrough was to work in
+`Int`: the `chooseSigned` argument `(↑m-↑y) - ↑(y-a)` equals `(m-y) - (k-a)`
+as an *exact* Int (`He`, via `Nat.cast_sub ha` + `ring_nf`), so its sign is
+directly `k-a ≤ m-y` (no saturating-`Nat` exactness sub-lemma needed).  Then
+`cs_eq_chooseNatI` (which takes the `base` as an arbitrary `Int`, avoiding the
+single-`Nat`-cast inference problem of `cs_eq_chooseNat`) gives
+`choose (base.toNat) (e.toNat)`; `intSub_toNat` recovers the `Nat` values
+(`base.toNat = m-y`, `e.toNat = (m-y)-(k-a)`), and `Nat.choose_symm` gives the
+complementary `choose (m-y)(k-a)`.  The guard-fail case (`k-a > m-y`) is the
+usual both-sides-zero split.
 
-  1. F3:  `chooseSigned (↑m-↑y) ((↑m-↑k)-↑t) = choose (m-y)(k-a)`  (t = y-a).
-          Reduces to the nested-saturating-`Nat` identity
-              h3 : (m-k)-(y-a) = (m-y)-(k-a)      (regime a≤k≤y≤m).
-          BOTH sides cast to the same `Int` ring-normal form (proven via the fact
-          `(c-d : Int) = (c : Int)-(d : Int)` + `ring_nf`), but the final bridge
-          back to the `Nat` equality is blocked on proving the *exactness*
-          inequality `y-a ≤ m-k` (and `k-a ≤ m-y`).  `omega`/`ring_nf`/`simp`/
-          `nlinarith`/`decide` all fail on these nested-subtraction inequalities,
-          and the manual decomposition (`m-k = (m-y)+(y-k)`) has its own
-          sub-wall (the `add_sub`/`sub_add` Nat lemmas are not in this build under
-          the expected names; only the group versions exist).
+`-- TODO(proof): tterm_eq_oterm — F4 summand match + assembly + reindexing.
+  The ONLY remaining summand match is F4, the four-level-nested argument:
 
-  2. F4:  `chooseSigned (N-r-(m-y) : Int) ((m-x) : Int)-((m:Int)-(k:Int))-(t:Int))
-          = choose (N-m-r+y)(k-(x-t))`.  Three-level nested argument; same wall.
+  F4:  `chooseSigned ((N-r-(m-y) : Int)) (((m-x) : Int) - ((m:Int)-(k:Int)) - (t:Int))
+       = choose (N-m-r+y)(k-x+t)`   (t = y-a).
 
-  3. Assemble `tterm_eq_oterm` from F1–F4 (all four in the both-hold regime
-     `a≤y`, `k≤y`, `a≤k`, `y≤m`, `y≤r`, `m+r≤N`): the four factors then match
-     pairwise, so the products are equal by `ring`.
+  Strategy (mirror F3match, one level deeper):  introduce
+      base4 := (N-r-(m-y) : Int)   [exact ≥ 0, = (N-m-r+y)]
+      e4   := ((m-x) : Int) - ((m:Int)-(k:Int)) - (t:Int)
+  and an identity `He4 : e4 = (N-m-r+y : Int) - (x-t : Int)`  (three-level
+  `Nat.cast_sub` + `ring_nf`), so `e4`'s sign is directly `x-t ≤ N-m-r+y` and
+  `e4` equals `(N-m-r+y) - (x-t)` exactly.  Then `cs_eq_chooseNatI` +
+  `intSub_toNat` + `Nat.choose_symm` give `choose (N-m-r+y)(x-t)`, and the
+  target is `choose (N-m-r+y)(k-x+t) = choose (N-m-r+y)(k-(x-t))` (the
+  transition's `k-b` with `b = x-t`).  The base: `(N-r-(m-y) : Int) =
+  (N-m-r+y : Int)` by two `Nat.cast_sub` + `ring_nf` (needs `y≤m`, `y≤r`,
+  `m+r≤N`).  Guard-fail case: both sides 0 via `Nat.choose_eq_zero_iff`.
 
-  4. Sum reindexing: `Finset.sum_bij`/`Finset.sum_image` to turn the transition
-     sum over `a` into the overlap sum over `t = y-a`, closing the general CL.
+  Then:  (3) assemble `tterm_eq_oterm` from F1–F4 (`ring` on the four matched
+  factors in the both-hold regime `a≤y, k≤y, a≤k, y≤m, y≤r, m+r≤N`);
+  (4) reindex the transition sum over `a` to the overlap sum over `t = y-a`
+  (`Finset.sum_bij`/`Finset.sum_image`) to close
+  `transitionNumerator (N m r k) y x = overlap_count (N m r k) x y` — the
+  general CL, and with it F3 item 3 and item 4.
 
-  Next attempt: prove the exactness `y-a ≤ m-k` (regime a≤k≤y≤m) by a `calc`
-  chain of *simple* (single-difference) inequalities that `omega` accepts, e.g.
-  via the intermediate variable, then recover `h3` by casting to `Int`
-  (`ring_nf`) and injecting (`Int.natCast_injective`).  Do NOT use bare `simp`/
-  `field_simp` (this module is adjacent to `Equiv.Perm (Fin 99)` consumers). -/
+  Next attempt: prove `He4` (the three-level identity) and `base4`
+  (the base reduction), then apply the F3match pattern.  Do NOT use bare
+  `simp`/`field_simp` (this module is adjacent to `Equiv.Perm (Fin 99)`
+  consumers). -/
