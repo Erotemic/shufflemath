@@ -286,6 +286,22 @@ route, not a theorem already in the tree.
 > `[max (0, y-k), min y (m-k)]` where `oterm = 0` outside.  No `Finset`-API
 > 2-bin products are involved.  Then (item 4) the 2-exchange TV follows from the
 > CL + `fiberSum_eq`.
+> **12th-session — COMPLETE (2026-11-15, `tterm_eq_oterm_all` / `oterm_sum_clip_eq`
+> / `generalCL` commits):** the general CL is **proven symbolically**.
+> `tterm_eq_oterm_all` gives the pointwise all-`a` equality `tterm (N m r k) x y a
+> = oterm (N m r k) x y (y-a)` (three cases: both guards hold → `tterm_eq_oterm`;
+> the F4 guard fails / the F2 guard fails → the corresponding `oterm` factor has a
+> negative index and the product is `0`, via `chooseSigned_zero_neg` + the
+> single-cast `let t := y-a` representation trick).  `transition_eq_sum_oterm_ySuba`
+> reindexes the `a`-sum over `[0,k]` to the `t`-sum over `[y-k,y]` (`a ↦ y-a` is a
+> bijection for `k ≤ y`, via `Finset.sum_image` + `rangeImage_ySuba_eq_Icc`).
+> `oterm_sum_clip_eq` then clips *both* the transition and overlap `oterm`-sums to
+> the common range `[y-k, min (y, m-k)]` (oterm is `0` outside, via
+> `oterm_zero_below`/`above_mk`/`above_y` — the F3 factor `choose (m-y) (m-k-t)` and
+> the F1 factor `choose y t` are off-range), so they are equal.  **`generalCL`**
+> assembles these into `transitionNumerator N m r k y x = overlap_count N m r k x y`
+> for the admissible regime (`k ≤ y ≤ m`, `y ≤ r`, `m+r ≤ N`, `r-y ≤ N-m`).  This
+> completes F3 item 3.
 > **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
 > which depends on item 3 core.
 

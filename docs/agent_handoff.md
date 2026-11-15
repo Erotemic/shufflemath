@@ -237,54 +237,60 @@ common support using the `oterm = 0`-outside lemma.  Then F3 item 4
     separately (`omega` handles it in the regime) and `rw` it in, then a
     single `ring_nf` closes.
 
-*Resume order:* The **F3 item 3 general CL — sum reindexing** is the last
-deep step but is **STUCK on a Lean term-representation wall** (see the
-12th-session note below and the `-- TODO(proof)` at the bottom of
-`ExchangeOverlap.lean`); then **F3 item 4** (2-exchange TV) and **F5
-full/optimizer**.  **F4.5 full-deck decay** (contractive) remains blocked on
-finiteness (the non-finite pile-list space admits the non-expansive bound but
-not the Dobrushin contraction); defer.
+*Resume order:* **F3 item 3 (the general CL) is now COMPLETE** — `generalCL`
+proves `transitionNumerator N m r k y x = overlap_count N m r k x y` (see the
+12th-session note below).  The next deep step is **F3 item 4** (the unconditional
+physical-perfect-local 2-exchange TV theorem), which follows from the CL +
+`fiberSum_eq`/`fiberSum_swap`; then **F5 full/optimizer**.  **F4.5 full-deck
+decay** (contractive) remains blocked on finiteness (the non-finite pile-list
+space admits the non-expansive bound but not the Dobrushin contraction); defer.
 
-### 12th-session status — resume here first
+### 12th-session status — F3 item 3 COMPLETE
 
-**F3 item 3 general CL: 95% proven; the last step is stuck on a term-
-representation wall, not a math gap.**
+**The general CL is proven symbolically** (three commits this session:
+`tterm_eq_oterm_all`, `oterm_sum_clip_eq`/`finsetSum_zero_on`/zero-ness lemmas,
+and `generalCL` — all in `ExchangeOverlap.lean`, all committed).
 
-What is PROVEN (committed, `ExchangeOverlap.lean`):
-  - all four factor matches `F1match`/`F2match`/`F3match`/`F4match`;
-  - the summand assembly `tterm_eq_oterm` (guard-hold regime);
-  - the decomposition `transitionNumerator_eq_sum_tterm`;
-  - `chooseSigned_zero_neg` / `chooseSigned_zero_toobig`;
-  - in each guard-FAIL case the oterm's vanishing factor is provably `0` **in
-    isolation**:  F4 (h1g holds, h2g fails) via `hF4neg : (m-x)-(m-k-(y-a)) < 0`
-    (`ring_nf` + `nlinarith [(k:Int)+(y-a:Int) < (x:Int)]`, the `Int` inequality
-    itself by `omega` from `k < x-(y-a)` and `y-a ≤ x`);  F2 (h1g fails) via
-    `(x:Int)-(y-a:Int) < 0` from `x < y-a` (`rw [sub_neg]` + `omega`).
+The proof closes the last step the 11th session had identified as stuck:
+  1. `tterm_eq_oterm_all` — the **pointwise all-`a`** equality
+     `tterm (N m r k) x y a = oterm (N m r k) x y (y-a)`.  Three cases: both
+     guards hold (the 11th-session `tterm_eq_oterm`); the F4 guard fails
+     (h1g holds, h2g fails) → `tterm = 0` and oterm's 4th factor has a negative
+     index; the F2 guard fails (h1g fails) → `tterm = 0` and oterm's 2nd factor
+     has a negative index.  The vanishing-factor closures use the **`let
+     t := y-a` representation trick** (below) so `rw` locates the factor inside
+     the 4-way product, then `chooseSigned_zero_neg` + `mul_zero`/`zero_mul`.
+  2. `transition_eq_sum_oterm_ySuba` + `rangeImage_ySuba_eq_Icc` — reindex the
+     transition `a`-sum over `[0,k]` to the `t`-sum over `[y-k,y]` via the
+     injective map `a ↦ y-a` (a bijection for `k ≤ y`, by `Finset.sum_image`).
+  3. `oterm_sum_clip_eq` — clip **both** the transition and the overlap `oterm`
+     sums to the common range `[y-k, min (y, m-k)]`: `oterm t = 0` for `t < y-k`
+     and `t > m-k` (F3 factor `choose (m-y) (m-k-t)` off-range) and for `t > y`
+     (F1 factor `choose y t`), via `oterm_zero_below`/`above_mk`/`above_y` +
+     `Finset.sum_sdiff` + `finsetSum_zero_on`.
+  4. `generalCL` — assemble (1)–(3) + `overlap_eq_sum_oterm` +
+     `Nat.range_succ_eq_Icc_zero` into
+     `transitionNumerator N m r k y x = overlap_count N m r k x y` for the
+     admissible regime (`k ≤ y ≤ m`, `y ≤ r`, `m+r ≤ N`, `r-y ≤ N-m`).
 
-**The wall (exact):**  to close `oterm N m r k x y (y-a) = 0` in a guard-fail
-  case I must fold the `= 0` 4th factor into the 4-way product `F1*F2*F3*F4`.
-  After `dsimp only [oterm]`, `rw`/`simp`/`conv`/`change` ALL fail to locate
-  the 4th factor as a subterm.  Root cause (diagnosed via the regrouped goal):
-  oterm's 4th-factor index is `(mI-xI) - plain_overlap` with `plain_overlap :=
-  (mI-kI) - tI` and `tI := t = y-a`, so the innermost cast is the SINGLE cast
-  `↑(y-a)`.  But writing the same term fresh in a `have` (as `(y-a : Int)`)
-  normalizes to the DIFFERENCE OF CASTS `↑y - ↑a`, which is definitionally equal
-  but a different AST — so the fresh `chooseSigned (… ) (…)` LHS does not match
-  the product's 4th factor.  Standalone (caseB6) it matches; inside the product
-  (caseB5/B7/B8) it does not.
+**The term-representation wall (11th session) is broken.**  The fix: inside the
+guard-fail `have`, bind `let t := y-a` so the index is written as the **single
+cast** `↑t` — exactly matching oterm's inlined `tI := t`.  Writing `(y-a : Int)`
+fresh normalizes to the **difference of casts** `↑y - ↑a` (definitionally equal,
+different AST), which is why `rw`/`simp`/`conv`/`change` all failed to locate the
+factor inside the `dsimp`-ed 4-way product before.  `omega` proves the needed
+`Int` cast inequalities (e.g. `(k:Int)+(t:Int) < (x:Int)`) directly from the
+`Nat` guard hypotheses.
 
-**Next angle (untried):**  keep the oterm **let-binders** (do NOT `dsimp` into
-  the product) — `unfold oterm` and target the 4th let-factor
-  `chooseSigned plain_outside_target ((mI-xI) - plain_overlap)` directly with
-  `chooseSigned_zero_neg _ _ hF4neg`, where `hF4neg` is proven about the
-  let-named index `(mI-xI) - plain_overlap` (which retains the single-cast
-  `tI` form and should match).  Alternatively introduce `let t := y-a` in the
-  proof so the `have` uses the same single-cast `t`-based index as oterm.  Then
-  the reindexing `∑ tterm = ∑ oterm` is a `Finset.sum_bij`/`sum_image` on
-  `a ↦ y-a` over the common support `[max (0, y-k), min y (m-k)]` (both sums
-  are 0 outside it).
+**Next (F3 item 4):** the unconditional physical-perfect-local 2-exchange TV
+theorem.  It follows from the CL (`transitionNumerator = overlap_count`) plus
+the already-proven `fiberSum_eq`/`fiberSum_swap` (which give the
+`choose(r,y)*choose(N-r,m-y)` target factor) — i.e. lift the CL to the kernel
+mass statement `comp (fiberLaw project) rawExchangeMembership =
+comp commanderExchange25 membershipLift`, then the 2-exchange TV.  See
+`lean_plan.md` F3 item 4.
 
-### Nov 12 (8th) session status (historical — superseded by the 12th-session note above)
+### Nov 12 (8th) session status### Nov 12 (8th) session status (historical — superseded by the 12th-session note above)
 
 
 **F3 item 3 general CL fully scoped (the last deep step).** This session
