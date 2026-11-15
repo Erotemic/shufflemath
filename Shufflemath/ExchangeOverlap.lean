@@ -119,6 +119,46 @@ theorem overlap_eq_revTransitionNumerator_cmdr_251 :
     overlap_count 99 50 50 25 25 1 = transitionNumerator 99 50 50 25 1 25 := by
   native_decide
 
+
+/-!
+## The general combinatorial lemma reduces to one pure-bijection identity
+
+With `fiberSum_eq` (the `fiberSum = choose r x * choose (N-r) (m-x) *
+transitionNumerator x y` closed form) and `fiberSum_swap` (`fiberSum p x y =
+fiberSum p y x`) both proven, the general CL
+
+    fiberSum p x y = choose (p.r) y * choose (p.N - p.r) (p.m - y) *
+                     overlap_count (p.N p.m p.r p.k) x y
+
+reduces, for a valid macro state, to the **single** pure-bijection identity
+(below): `transitionNumerator (N m r k) y x = overlap_count (N m r k) x y`.
+The only existing versions are the three small-deck `native_decide` checks
+(`overlap_eq_revTransitionNumerator_valid_*`) and the Commander center
+(`..._cmdr_2525`).
+
+**Why they are equal (combinatorial interpretation).**  Both count the same
+set of ordered pairs `(S_y, S_x)` of `m`-subsets with `y` / `x` marked cards
+and `|S_y ∩ S_x| = m - k`, decomposed into the same four bins
+(marked/plain × in/out):
+
+* `transitionNumerator (N m r k) y x` (summed over `a`, the number of marked
+  cards moved *out* of the `y`-marked source) has the four factors
+  `choose y a`, `choose (m-y) (k-a)`, `choose (r-y) b`,
+  `choose ((N-m)-(r-y)) (k-b)` with `b = x - (y - a)`.
+
+* `overlap_count (N m r k) x y` (summed over `t`, the marked overlap
+  `|S_x ∩ T|`, for a fixed `y`-marked target `T`) has the four factors
+  `choose y t`, `choose (r-y) (x-t)`, `choose (m-y) ((m-k)-t)`,
+  `choose (N-r-(m-y)) ((m-x)-((m-k)-t))` (via `chooseSigned`).
+
+A transition from `S_y` to `S_x` (move `k` out, `k` in) exists iff
+`|S_y ∩ S_x| = m - k`; the number of such transitions for a fixed pair is
+exactly the four-bin overlap count, so the two sums agree.  The symbolic proof
+is a reindex of the `t`-sum to the `a`-sum: both are `∑` of a product of four
+`Nat.choose` factors with `if`-guards, so no `Finset` API is involved — only
+the `choose n k = 0` convention (for `k > n`) replaces the guards, and the two
+sum ranges can be unified.
+-/
 /-- Commander instance `(99,50,50,25)`, `x=10, y=40`: the case where the
 `Nat`-saturated version inserts spurious `t > x` terms.  The signed version
 matches the reference. -/
