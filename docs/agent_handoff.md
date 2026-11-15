@@ -177,6 +177,32 @@ last blocker in the `distProductFinsupp` route the 5th session documented —
   finite `a`; the "reference" in the row bound is a *parameter* `perfectL`/
   `perfectR`, not a fixed uniform — that generality is what makes it usable.)
 
+### Nov 12 (8th) session status — resume here first
+
+**F3 item 3 general CL fully scoped (the last deep step).** This session
+extracted the **parameter-free** module `Shufflemath.FinsetFiberCount`
+(commit `6ae278f`) and reduced the general CL to a *sum* equality.
+CRUCIAL correction (commit `0811eb6`): the pointwise identity
+`g(a) = h(y-a)` is **false** for `a > y` (Nat-saturating `t := y-a` to `0`
+makes `h(0)` potentially nonzero while `g(a)=0`). The correct target is
+`transitionNumerator (N m r k) y x = overlap_count (N m r k) x y` as a
+**finite-sum** identity. The `ExchangeOverlap.lean` section comment records
+the exact factor structures and the support alignment:
+  - transition summand `tg(a) = choose x a · choose (m-x)(k-a) · choose
+    (r-x)(y-x+a) · choose (N-m-r+x)(k-y+x-a)`, summed over `a ∈ [0,k]`;
+  - overlap summand `oh(t) = choose (r-y)(x-t) · choose (N-r-m+y)(k-x+t) ·
+    choose r x · choose (N-m)(x-k)`, summed over `t ∈ [0, m-k]`.
+This is a **generalized Vandermonde / hypergeometric convolution** between
+the two 4-factor decompositions (NOT a simple 1-factor Vandermonde). On the
+common support (after `t := y-a`, both reduce to `[max (0, y-k), min y
+(m-k)]`) the factors match by `Nat.choose_symm`/`choose_sub`; off support
+both sides vanish. Remaining difficulty: (i) the exact `Finset.sum_bij`/
+`sum_image` reindex of the two `Finset.range` sums, and (ii) aligning the
+*different* pulled-out constants (`choose (N-m)(x-k)·choose r x` on the
+overlap side vs `choose (m-x)(k-a)·choose (N-m-r+x)(k-y+x-a)` structure on
+the transition side). Small-deck versions (`…_cmdr_251`, `overlap_count_symmetry`)
+already confirm the identity; the general proof is the final F3 item 3 step.
+
 *Resume order:* The **F4.5 Fintype-free foundation is COMPLETE** (this
   session): `apply_mass_finsupp`, `kernel_apply_lipschitz` (the Fintype-free
   1-Lipschitz kernel contraction), `mixtureTV_le`, `gsrOneStep_terminalTV_bound`
