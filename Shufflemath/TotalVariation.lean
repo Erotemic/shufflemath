@@ -813,6 +813,125 @@ theorem distProductFinsupp_tv_subadditive (μ μ' : Dist α) (ν ν' : Dist β) 
     simpa [h14, h15] using h13
   exact h9
 
+/-- If `A ⊆ B` and `f ≥ 0` on `B`, then `A.sum f ≤ B.sum f`. -/
+theorem subsetSum_le {ι : Type*} [DecidableEq ι] {A B : Finset ι} (f : ι → Rat)
+    (hsub : A ⊆ B) (hnneg : ∀ x ∈ B, 0 ≤ f x) : A.sum f ≤ B.sum f := by
+  have h : (B \ A).sum f + A.sum f = B.sum f := Finset.sum_sdiff hsub
+  have h0 : 0 ≤ (B \ A).sum f := by
+    apply Finset.sum_nonneg
+    intro x hx
+    exact hnneg x (Finset.mem_sdiff.mp hx).1
+  linarith [h, h0]
+
+/-- Extending a Finsupp mass-weighted sum from the support to a larger finite
+set: the extra terms vanish when the weight `μ x = 0` off the support. -/
+theorem sumOverLargerSupport {γ β : Type*} [DecidableEq γ] (μ : Dist γ) (B : Finset γ)
+    (hB : μ.weights.support ⊆ B) (g : γ → Dist β) (y : β) :
+    B.sum (fun x => Dist.mass μ x * Dist.mass (g x) y) =
+      μ.weights.support.sum (fun x => Dist.mass μ x * Dist.mass (g x) y) := by
+  set f := fun (x : γ) => Dist.mass μ x * Dist.mass (g x) y with hf
+  have h : (B \ μ.weights.support).sum f + μ.weights.support.sum f = B.sum f := Finset.sum_sdiff hB
+  have hzero : (B \ μ.weights.support).sum f = 0 := by
+    apply Finset.sum_eq_zero
+    intro x hx
+    by_cases h2 : x ∈ μ.weights.support
+    · exfalso; exact (Finset.mem_sdiff.mp hx).2 h2
+    · unfold Dist.mass
+      rw [not_mem_support_zero μ x h2, zero_mul]
+  have h' : μ.weights.support.sum f = B.sum f := by simpa [hzero, add_zero] using h
+  simpa [hf] using h'.symm
+
+/-- Summing a probability law's mass over any finite set is at most 1. -/
+theorem supportSum_le_one {β : Type*} [DecidableEq β] (ν : Dist β) (T : Finset β) :
+    T.sum (fun b => Dist.mass ν b) ≤ 1 := by
+  let B := ν.weights.support ∪ T
+  have hB : ν.weights.support ⊆ B := Finset.subset_union_left
+  have hfull : B.sum (fun b => Dist.mass ν b) = 1 := sumOverEnlarged_eq_one ν B hB
+  have hsub : T ⊆ B := Finset.subset_union_right
+  calc
+    _ ≤ B.sum (fun b => Dist.mass ν b) :=
+      subsetSum_le (fun b => Dist.mass ν b) hsub fun b hb => Dist.mass_nonneg ν b
+    _ = 1 := hfull
+
+/-- A stochastic kernel is 1-Lipschitz in total variation: pushing two laws
+through the same kernel cannot increase their TV.  Fintype-free — it uses the
+finite `Finsupp` supports, so no `[Fintype α]` is required.  This is the
+F4.5 building block for telescoping finite-GSR schedules over non-Fintype
+deck state spaces. -/
+theorem kernel_apply_lipschitz {α β : Type*} [DecidableEq α] [DecidableEq β]
+    (mu nu : Dist α) (K : FiniteKernel α β) :
+    tvFinsupp (FiniteKernel.apply mu K) (FiniteKernel.apply nu K) ≤ tvFinsupp mu nu := by
+  set P := FiniteKernel.apply mu K with hP
+  set Q := FiniteKernel.apply nu K with hQ
+  let Smu := mu.weights.support
+  let Snu := nu.weights.support
+  let S := Smu ∪ Snu
+  have hSmu : Smu ⊆ S := Finset.subset_union_left
+  have hSnu : Snu ⊆ S := Finset.subset_union_right
+  have hPmass (y : β) : Dist.mass P y = S.sum (fun j => Dist.mass mu j * Dist.mass (K j) y) := by
+    rw [FiniteKernel.apply_mass_finsupp]
+    rw [← sumOverLargerSupport mu S hSmu K y]
+  have hQmass (y : β) : Dist.mass Q y = S.sum (fun j => Dist.mass nu j * Dist.mass (K j) y) := by
+    rw [FiniteKernel.apply_mass_finsupp]
+    rw [← sumOverLargerSupport nu S hSnu K y]
+  have hPsub (y : β) : Dist.mass P y - Dist.mass Q y =
+      S.sum (fun j => (Dist.mass mu j - Dist.mass nu j) * Dist.mass (K j) y) := by
+    rw [hPmass, hQmass, ← Finset.sum_sub_distrib]
+    apply Finset.sum_congr rfl
+    intro j _
+    ring
+  have hpoint (y : β) : |Dist.mass P y - Dist.mass Q y| ≤
+      S.sum (fun j => |Dist.mass mu j - Dist.mass nu j| * Dist.mass (K j) y) := by
+    rw [hPsub]
+    have h1 := Finset.abs_sum_le_sum_abs (fun j => (Dist.mass mu j - Dist.mass nu j) * Dist.mass (K j) y) S
+    have h2 : S.sum (fun j => |(Dist.mass mu j - Dist.mass nu j) * Dist.mass (K j) y|) =
+        S.sum (fun j => |Dist.mass mu j - Dist.mass nu j| * Dist.mass (K j) y) := by
+      apply Finset.sum_congr rfl
+      intro j _
+      rw [abs_mul, abs_of_nonneg (Dist.mass_nonneg (K j) y)]
+    exact le_trans h1 (le_of_eq h2)
+  let T := P.weights.support ∪ Q.weights.support
+  have hA : (2 : Rat) * tvFinsupp P Q = T.sum (fun y => |Dist.mass P y - Dist.mass Q y|) := by
+    dsimp only [T]
+    unfold Dist.mass
+    rw [twoTv_eq_unionSum]
+  have hB : T.sum (fun y => |Dist.mass P y - Dist.mass Q y|) ≤
+      T.sum (fun y => S.sum (fun j => |Dist.mass mu j - Dist.mass nu j| * Dist.mass (K j) y)) := by
+    apply Finset.sum_le_sum
+    intro y _
+    exact hpoint y
+  have hC : T.sum (fun y => S.sum (fun j => |Dist.mass mu j - Dist.mass nu j| * Dist.mass (K j) y)) =
+      S.sum (fun j => |Dist.mass mu j - Dist.mass nu j| * T.sum (fun y => Dist.mass (K j) y)) := by
+    rw [Finset.sum_comm]
+    apply Finset.sum_congr rfl
+    intro j _
+    rw [← Finset.mul_sum]
+  have hD : S.sum (fun j => |Dist.mass mu j - Dist.mass nu j| * T.sum (fun y => Dist.mass (K j) y)) ≤
+      S.sum (fun j => |Dist.mass mu j - Dist.mass nu j| * 1) := by
+    apply Finset.sum_le_sum
+    intro j _
+    apply mul_le_mul_of_nonneg_left
+    · exact supportSum_le_one (K j) T
+    · exact abs_nonneg _
+  have hE : S.sum (fun j => |Dist.mass mu j - Dist.mass nu j| * 1) =
+      S.sum (fun j => |Dist.mass mu j - Dist.mass nu j|) := by
+    apply Finset.sum_congr rfl
+    intro j _
+    simp
+  have hF : S.sum (fun j => |Dist.mass mu j - Dist.mass nu j|) = (2 : Rat) * tvFinsupp mu nu := by
+    dsimp only [S, Smu, Snu]
+    unfold Dist.mass
+    simpa using (twoTv_eq_unionSum mu nu).symm
+  have hcalc : (2 : Rat) * tvFinsupp P Q ≤ (2 : Rat) * tvFinsupp mu nu := by
+    calc
+      _ = T.sum (fun y => |Dist.mass P y - Dist.mass Q y|) := hA
+      _ ≤ T.sum (fun y => S.sum (fun j => |Dist.mass mu j - Dist.mass nu j| * Dist.mass (K j) y)) := hB
+      _ = S.sum (fun j => |Dist.mass mu j - Dist.mass nu j| * T.sum (fun y => Dist.mass (K j) y)) := hC
+      _ ≤ S.sum (fun j => |Dist.mass mu j - Dist.mass nu j| * 1) := hD
+      _ = S.sum (fun j => |Dist.mass mu j - Dist.mass nu j|) := hE
+      _ = (2 : Rat) * tvFinsupp mu nu := hF
+  simpa [mul_assoc, mul_one] using hcalc
+
 end Shufflemath
 
 

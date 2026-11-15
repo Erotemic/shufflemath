@@ -180,6 +180,31 @@ theorem apply_mass_dom [Fintype alpha] [DecidableEq alpha]
   refine Finset.sum_congr rfl fun i _ => ?_
   exact Finsupp.sum_single_index (h_zero := by ring)
 
+/-- Fintype-free row-mass formula for the Giry bind: the mass of the kernel
+pushforward `apply mu K` at `y` is the `mu`-weighted sum of the corresponding
+kernel-row masses, summed over `mu`'s **finite support** rather than over
+`Finset.univ`.  This is the same statement as `apply_mass`/`apply_mass_dom`
+but with no `[Fintype alpha]` hypothesis, so it applies to non-Fintype state
+spaces such as `List (Fin n)`.  It follows from the `StdSimplex` `map`/`join`
+`Finsupp` weight definitions (no `apply_mass_dom` detour).  The F4.5
+Fintype-free kernel-contraction argument rests on this. -/
+theorem apply_mass_finsupp (mu : Dist alpha) (K : FiniteKernel alpha beta) (y : beta) :
+    Dist.mass (apply mu K) y = (mu.weights.support).sum (fun j => Dist.mass mu j * Dist.mass (K j) y) := by
+  unfold apply
+  unfold Dist.mass
+  simp only [Convexity.StdSimplex.weights_join, Convexity.StdSimplex.weights_map,
+    Finsupp.sum_apply, Finsupp.smul_apply, smul_eq_mul]
+  let h (d : Convexity.StdSimplex Rat beta) : Rat →+ Rat :=
+    AddMonoidHom.mk (ZeroHom.mk (fun (b : Rat) => b * d.weights y) (by ring)) (by intro x x2; ring)
+  have hsum : (fun (d : Convexity.StdSimplex Rat beta) (b : Rat) => b * d.weights y) = fun d b => (h d) b := by
+    ext d b
+    dsimp only [h]
+    simp only [AddMonoidHom.coe_mk, ZeroHom.coe_mk]
+  rw [hsum, Finsupp.sum_mapDomain_index_addMonoidHom h]
+  simp only [Finsupp.sum]
+  dsimp only [h]
+  simp only [AddMonoidHom.coe_mk, ZeroHom.coe_mk]
+
 @[simp]
 theorem deterministic_apply_pointMass (x : alpha) (f : alpha -> beta) :
     apply (Dist.pointMass x) (deterministic f) = Dist.pointMass (f x) := by
