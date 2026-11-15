@@ -160,3 +160,42 @@ theorem pileRelabelEquiv_image
     rw [hLHS, hRHS]
     have hpr : pr j = rightPermOf σ hR j := by dsimp only [pr]; rfl
     rw [hpr]
+
+/-! ## Capstone: membership-preserving decks are exactly the within-pile relabelings. -/
+
+/-- A deck permutation *preserves the pile structure*: it sends every left-pile
+    position to a left card (value ` < 50`) and every right-pile position to a
+    right card (value ` ≥ 50`), so it never moves a card between the two piles. -/
+def preservesPiles (σ : Deck) : Prop :=
+  (∀ i : Fin 50, (σ (leftPosition i)).val < 50) ∧
+  (∀ j : Fin 49, ¬ (σ (rightPosition j)).val < 50)
+
+/-- A within-pile relabeling preserves the pile structure: `pileRelabelEquiv pl pr`
+    sends the `i`-th left position to `leftPosition (pl i)` (a left card) and the
+    `j`-th right position to `rightPosition (pr j)` (a right card). -/
+theorem pileRelabelEquiv_preservesPiles (pl : Equiv.Perm (Fin 50)) (pr : Equiv.Perm (Fin 49)) :
+    preservesPiles (pileRelabelEquiv pl pr) := by
+  refine ⟨fun i => ?_, fun j => ?_⟩
+  · rw [pileRelabelEquiv_left pl pr i]
+    dsimp only [leftPosition]
+    exact (pl i).isLt
+  · rw [pileRelabelEquiv_right pl pr j]
+    dsimp only [rightPosition]
+    intro h
+    omega
+
+/-- **F4.2 capstone:** the membership-preserving deck permutations are *exactly*
+    the within-pile relabelings.  `σ` preserves the pile structure iff it equals
+    `pileRelabelEquiv` of a within-pile pair.  The forward direction (a relabeling
+    preserves piles) is `pileRelabelEquiv_preservesPiles`; the reverse (any
+    pile-preserving `σ` is a relabeling) is `pileRelabelEquiv_image`.  Combined with
+    `pileRelabelEquiv_pairInjective`, this makes `pileRelabelEquiv` a bijection
+    between the within-pile pairs and the pile-preserving deck permutations. -/
+theorem preservesPiles_iff_pileRelabel (σ : Deck) :
+    preservesPiles σ ↔ ∃ p : Equiv.Perm (Fin 50) × Equiv.Perm (Fin 49),
+      pileRelabelEquiv p.1 p.2 = σ := by
+  constructor
+  · intro h
+    exact pileRelabelEquiv_image σ h.1 h.2
+  · rintro ⟨⟨pl, pr⟩, rfl⟩
+    exact pileRelabelEquiv_preservesPiles pl pr
