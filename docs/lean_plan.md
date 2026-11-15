@@ -236,6 +236,14 @@ route, not a theorem already in the tree.
 > (`ExchangeOverlap.fiberCounting_{6321,7442,8431}`); the single remaining piece is the
 > general (symbolic) proof of CL (reindex the 7-way `fiberSum` sum to the `(S, T)`
 > double count). See `docs/qwen_unblock_nov12.md` §3.
+> **6th-session progress (2026-11-14, `d55b69d`):** the **S1-side** of the CL is
+> proven symbolically: `s1Fiber_choose` gives `|s1Fiber x t T1| =
+> choose |T1| t * choose (|stars|-|T1|) (x-t)` for any `ExchangeAdmissible`, via
+> `s1Fiber_biUnion` + `fiberA_card` (dependent `Finset.card_bij`) + `s1Fiber_card`
+> (`card_biUnion` + sum-of-constant). This is the marked-side half of the 4-bin
+> count for a *fixed* `T`; the remaining assembly is the mirrored plain/target
+> (S2) side and the `choose(r,y)*choose(N-r,m-y)` target-choice factor, then
+> `fiberSum_swap`/`fiberSum_eq` to close the full `fiberSum` identity.
 > **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
 > which depends on item 3 core.
 

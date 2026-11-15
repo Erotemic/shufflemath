@@ -138,8 +138,9 @@ attempts, but is no longer the recommended route.
 ### Nov 14 (6th) session status — resume here first
 
 This session completed the **F4.3 Fintype-free TV subadditivity** — the
-last blocker in the `distProductFinsupp` route the 5th session documented.
-All committed; 37 tests pass; tree clean.
+last blocker in the `distProductFinsupp` route the 5th session documented —
+**and the S1-side of the F3 item 3 general CL** (the `s1_bij`/`fiberA_card`
+5th-session walls are broken). All committed; 37 tests pass; tree clean.
 
 - **F4.3 core — GSR two-pile product mass from Finsupp weights**
   (`CommanderLocalGSR.lean`, `472efa8`): `gsrMapDelta_mass` (the one-coordinate
@@ -181,11 +182,27 @@ All committed; 37 tests pass; tree clean.
   1-Lipschitz kernel contraction), `mixtureTV_le`, `gsrOneStep_terminalTV_bound`
   (the 49+50 two-pile 1-step terminal bound), `run_nonexpansive`, and
   `gsrRunNonexpansive` (multi-step non-expansiveness for GSR schedules).
-  Next: (1) **F3 item 3** general CL (symbolic combinatorial lemma) — return
-  with the 5th-session Finset API knowledge (`Finset.card_le`/`card_le_of_subset`/
-  `card_lt` do NOT exist; use `Finset.sum_le_sum`/`Finset.card_bij`); the 4-bin
-  identity is in `ExchangeOverlap.lean` (5th-session TODO). (2) F3 item 4 (2-
-  exchange TV) and F5 full/optimizer — downstream. (3) **F4.5 full-deck decay**
+  Next: (1) **F3 item 3 general CL — S1-side DONE this session** (`d55b69d`):
+  `s1Fiber_biUnion` (S1 fiber = pairwise-disjoint biUnion of per-`A` fibers),
+  `fiberA_card` (a single fiber's count = the outside part, via the *dependent*
+  `Finset.card_bij (fun S1 _ => S1 \ T1)`), `s1Fiber_card` (the `card_biUnion`
+  + sum-of-constant assembly), and **`s1Fiber_choose`** (closed form
+  `|s1Fiber x t T1| = choose |T1| t * choose (|stars|-|T1|) (x-t)` for any
+  `ExchangeAdmissible`).  The 5th-session wall is bypassed: **no 2-bin product
+  finset** is built — we decompose by the intermediate `A = S1 ∩ T1` and use
+  `Finset.card_bij` + `Finset.card_biUnion` + `Finset.card_powersetCard` instead
+  (`Finset.product`/`×˘` never reduced under `rw [card_product]`/`mem_product`).
+  6th-session gotchas recorded in `ExchangeOverlap.lean`: Finset membership is
+  an opaque `Quot.lift` (only `rw [mem_inter|mem_sdiff|mem_union]` then `rcases`);
+  the `∃ a ha, …` form needs `refine ⟨…, ?_, ?_⟩` (`use` fills only `a`);
+  conjunctions nest as `((P ∧ Q) ∧ R)` (use `And.intro (And.intro …)`);
+  the empty-set direction closes by `cases` on `List.Mem z []` (`mem_empty`
+  does not exist); `Nat.sub_add_cancel` (not `add_sub_cancel_left`) for
+  `t + (x - t) = x`.  **(2) Next concrete step:** assemble the full symbolic CL
+  `fiberSum p x y = choose(r,y) * choose(N-r, m-y) * overlap_count (N m r k) x y`
+  from the S1-side (this session) + the mirrored S2/plain-side count +
+  `fiberSum_swap`/`fiberSum_eq`; OR go straight to (3) F3 item 4 (2-exchange TV).
+  (4) F5 full/optimizer. (5) **F4.5 full-deck decay**
   (contractive, to uniform) — blocked on finiteness: the non-finite pile-list
   space admits the non-expansive bound but not the Dobrushin *contraction*; a
   decay result needs the F4.2 Deck-level GSR lift to `Equiv.Perm (Fin 99)`
