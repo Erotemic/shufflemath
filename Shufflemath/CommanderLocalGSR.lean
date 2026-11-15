@@ -26,7 +26,7 @@ each pile applied through this mechanism; the deterministic pile-permutation
 and its membership-preservation are established here.
 -/
 
-open CommanderPermutation
+open CommanderPermutation Finsupp
 
 /-- A function on the 99 deck positions that permutes the *left* pile by `pl`
   and the *right* pile by `pr`, and never moves a card between the piles. A
@@ -190,29 +190,87 @@ noncomputable def gsrProductKernel (nL nR a b : Nat) (ha : 0 < a) (hb : 0 < b) :
   fun pr => ((GSR.idealShuffle nL a ha pr.1).map (fun L' =>
       (GSR.idealShuffle nR b hb pr.2).map (fun R' => (L', R')))).join
 
--- TODO(proof) [F4.3 core, deep]: the point-mass formula
---   `gsrProductKernel_mass : Dist.mass (gsrProductKernel nL nR a b ha hb (L,R)) (L',R')
---      = Dist.mass (GSR.idealShuffle nL a ha L) L' * Dist.mass (GSR.idealShuffle nR b hb R) R'`
--- is the key F4.3 lemma and lets one instantiate the `distProduct_tv_subadditive`
--- machinery to the two-pile GSR kernel. After `dsimp [gsrProductKernel, Dist.mass]` +
--- `simp [StdSimplex.weights_map, StdSimplex.weights_join, Finsupp.sum_apply]` the goal
--- reduces EXACTLY to:
---   ((mapDomain (fun L' => StdSimplex.map (fun R' => (L',R')) (GSR_R R).weights-implicit)
---        (GSR_L L).weights).sum (fun d w => (w • d.weights) (L',R'))) =
---     (GSR_L L).weights L' * (GSR_R R).weights R'.
--- Strategy: (1) show the outer `mapDomain` is over DISTINCT distributions —
--- `g L'' = (GSR_R R).map (fun R' => (L'',R'))` is injective on `(GSR_L L).weights.support`
--- because two such distributions with different first-coordinate support points are
--- unequal (StdSimplex ext on the disjoint supports) — so `mapDomain` reindexes a
--- bijection and the sum = `∑_{L'' in (GSR_L L).weights.support} (GSR_L L).weights L'' •
---   mass (g L'') (L',R')`; (2) `mass (g L'') (L',R') = ((GSR_R R).weights.mapDomain
---   (fun R' => (L'',R'))) (L',R') = ∑_{R' : (L'',R') = (L',R')} (GSR_R R).weights R' =
---   (if L'' = L' then (GSR_R R).weights R' else 0)` via `Finsupp.mapDomain_apply`;
--- (3) the `if` collapses the outer sum to the single `L'' = L'` term
--- `= (GSR_L L).weights L' * (GSR_R R).weights R'`. Needs the injectivity sub-lemma
--- (StdSimplex.ext) and `Finsupp.sum_mapDomain`/sum over the image. Blocked on
--- `[DecidableEq (List (Fin n))]` giving DecidableEq to the `StdSimplex` keys and on
--- proving distribution-inequality of `g L''` vs `g L'''` (L'' ≠ L''').
+/-- The *delta* that the first-coordinate map applies: mapping the right-pile
+    distribution `muR` to pairs `(a, r)` and reading the mass at `(L', R')`
+    contributes `muR`'s mass at `R'` exactly when the fixed first coordinate
+    `a` equals the queried one `L'`; otherwise the image misses the query point
+    entirely and the mass is `0`. Building block of the two-pile point-mass
+    formula below. -/
+lemma gsrMapDelta_mass (nL nR : Nat) (L' : List (Fin nL)) (R' : List (Fin nR))
+    (a : List (Fin nL)) (muR : Convexity.StdSimplex Rat (List (Fin nR))) :
+    (muR.map (fun (r : List (Fin nR)) => (a, r))).weights (L', R') =
+      if a = L' then muR.weights R' else 0 := by
+  simp only [Convexity.StdSimplex.map, Finsupp.mapDomain, Finsupp.sum_apply, Finsupp.single_apply]
+  have hrew : (fun (a₁ : List (Fin nR)) (b : Rat) => if (a, a₁) = (L', R') then b else 0) =
+      (fun a₁ b => if a = L' then (if a₁ = R' then b else 0) else 0) := by
+    ext a₁ b
+    by_cases ha : a = L' <;> by_cases hr : a₁ = R' <;> simp [ha, hr]
+  rw [hrew]
+  by_cases ha : a = L'
+  · have hfun : (fun (a₁ : List (Fin nR)) (b : Rat) => if a = L' then (if a₁ = R' then b else 0) else 0) =
+        (fun a₁ b => if a₁ = R' then b else 0) := by
+      funext a₁ b; exact ite_eq_left ha
+    rw [hfun, Finsupp.sum_ite_self_eq', ite_eq_left ha]
+  · have hzero : (fun (a₁ : List (Fin nR)) (b : Rat) => if a = L' then (if a₁ = R' then b else 0) else 0) =
+        fun _ _ => 0 := by
+      funext a₁ b; exact ite_eq_right ha
+    rw [hzero, Finsupp.sum, Finset.sum_const_zero, ite_eq_right ha]
+
+/-- F4.3 core (Fintype-free): the point-mass of the two-pile GSR *product*
+    kernel, read at `(L', R')`, is the product of the two pile-masses.  The
+    kernel is a `map`/`join` of `StdSimplex` values over the Finsupp supports
+    (no `Fintype` on the deck-lists is required, unlike `Finite.distProduct`).
+    This is the lemma that lets `distProduct_tv_subadditive`-style TV
+    subadditivity be applied to the two-pile GSR kernel for the F4.3 bound. -/
+theorem gsrProductKernel_mass (nL nR : Nat) (L' : List (Fin nL)) (R' : List (Fin nR))
+    (muL : Convexity.StdSimplex Rat (List (Fin nL)))
+    (muR : Convexity.StdSimplex Rat (List (Fin nR))) :
+    ((muL.map (fun (x : List (Fin nL)) =>
+        muR.map (fun (r : List (Fin nR)) => (x, r)))).join).weights (L', R') =
+      muL.weights L' * muR.weights R' := by
+  let g (x : List (Fin nL)) : Convexity.StdSimplex Rat (List (Fin nL) × List (Fin nR)) :=
+    muR.map (fun (r : List (Fin nR)) => (x, r))
+  have hmg : muL.map (fun (x : List (Fin nL)) => muR.map (fun (r : List (Fin nR)) => (x, r))) =
+      muL.map g := rfl
+  rw [hmg]
+  simp only [Convexity.StdSimplex.map, Convexity.StdSimplex.join, Finsupp.mapDomain,
+    Finsupp.sum_apply, Finsupp.smul_apply, smul_eq_mul]
+  let h (a₁ : Convexity.StdSimplex Rat (List (Fin nL) × List (Fin nR))) : Rat →+ Rat :=
+    AddMonoidHom.mk (ZeroHom.mk (fun (b : Rat) => b * a₁.weights (L', R')) (by ring))
+      (by intro x y; ring)
+  have hsum : (fun (a₁ : Convexity.StdSimplex Rat (List (Fin nL) × List (Fin nR))) (b : Rat) =>
+      b * a₁.weights (L', R')) = fun a₁ b => (h a₁) b := by
+    ext a₁ b
+    dsimp only [h]
+    simp only [AddMonoidHom.coe_mk, ZeroHom.coe_mk, AddMonoidHom.mk, ZeroHom.mk]
+  rw [← Finsupp.mapDomain, hsum, Finsupp.sum_mapDomain_index_addMonoidHom h]
+  simp only [Finsupp.sum]
+  have hsum_eq : ∑ a ∈ muL.weights.support, (h (g a)) (muL.weights a) =
+      ∑ a ∈ muL.weights.support, (muL.weights a * (g a).weights (L', R')) := by
+    apply Finset.sum_congr rfl
+    intro a _
+    change (fun (c : Rat) => c * (g a).weights (L', R')) (muL.weights a) =
+      muL.weights a * (g a).weights (L', R')
+    ring
+  rw [hsum_eq]
+  dsimp only [g]
+  simp only [gsrMapDelta_mass, mul_zero, mul_comm]
+  rw [show ∑ a ∈ muL.weights.support, muL.weights a * (if a = L' then muR.weights R' else 0) =
+        ∑ a ∈ muL.weights.support, (if a = L' then muL.weights a else 0) * muR.weights R' from by
+    apply Finset.sum_congr rfl
+    intro a _; by_cases ha : a = L' <;> simp [ha, mul_zero, mul_comm]]
+  have hfactor : ∑ a ∈ muL.weights.support, (if a = L' then muL.weights a else 0) * muR.weights R' =
+      (∑ a ∈ muL.weights.support, (if a = L' then muL.weights a else 0)) * muR.weights R' := by
+    rw [show ∑ a ∈ muL.weights.support, (if a = L' then muL.weights a else 0) * muR.weights R' =
+          ∑ a ∈ muL.weights.support, muR.weights R' * (if a = L' then muL.weights a else 0) from by
+      apply Finset.sum_congr rfl; intro a _; ring]
+    rw [← Finset.mul_sum, mul_comm]
+  rw [hfactor]
+  have hsumL : ∑ a ∈ muL.weights.support, (if a = L' then muL.weights a else 0) = muL.weights L' := by
+    change muL.weights.sum (fun (a : List (Fin nL)) (v : Rat) => (if a = L' then v else 0)) =
+      muL.weights L'
+    exact Finsupp.sum_ite_self_eq' _ L'
+  rw [hsumL]
 
 /-- A within-pile GSR can never move a card out of its pile: the output
 arrangement holds exactly the pile's original cards.  The deterministic
