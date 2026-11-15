@@ -426,6 +426,85 @@ theorem distProduct_mass {α β : Type*} [Fintype α] [Fintype β]
 
 end
 
+
+/-- The Fintype-free independent (tensor) product distribution.  `distProduct`
+    above requires `[Fintype α] [Fintype β]` (built with `Dist.ofFun`); this
+    variant builds the same law directly from the `StdSimplex` `map`/`join`
+    machinery, whose total mass Mathlib preserves, so it works over types that
+    are *not* fintypes: in particular `List (Fin n)`, the state space of
+    `GSR.idealShuffle` and the two-pile `CommanderLocalGSR.gsrProductKernel`.
+    `Dist.map`/`Dist.join` are Finsupp-level and need no `Fintype`. -/
+noncomputable def distProductFinsupp (p : Dist α) (q : Dist β) : Dist (α × β) :=
+  (p.map (fun (a : α) => q.map (fun (b : β) => (a, b)))).join
+
+/-- The mass of `distProductFinsupp` at `(a, b)` is the product of the two
+    marginal masses `p a * q b`, the defining tensor property, proved directly
+    from the `Finsupp` `mapDomain`/`join` weight definitions (no `Fintype`, no
+    `apply_mass_dom`).  This is the F4.3 core: it lets the two-pile GSR product
+    kernel's point-mass be read as a product of per-pile masses. -/
+@[simp]
+theorem distProductFinsupp_mass [DecidableEq α] [DecidableEq β] (p : Dist α) (q : Dist β) (a : α) (b : β) :
+    ((distProductFinsupp p q)).weights (a, b) = p.weights a * q.weights b := by
+  dsimp only [distProductFinsupp]
+  -- (p.map (fun a => q.map (fun b => (a,b)))).join (a,b)
+  let g (x : α) : Dist (α × β) := q.map (fun (r : β) => (x, r))
+  have hmg : p.map (fun (x : α) => q.map (fun (r : β) => (x, r))) = p.map g := rfl
+  rw [hmg]
+  simp only [Convexity.StdSimplex.map, Convexity.StdSimplex.join, Finsupp.mapDomain,
+    Finsupp.sum_apply, Finsupp.smul_apply, smul_eq_mul]
+  let h (a₁ : Dist (α × β)) : Rat →+ Rat :=
+    AddMonoidHom.mk (ZeroHom.mk (fun (bb : Rat) => bb * a₁.weights (a, b)) (by ring))
+      (by intro x y; ring)
+  have hsum : (fun (a₁ : Dist (α × β)) (bb : Rat) => bb * a₁.weights (a, b)) = fun a₁ bb => (h a₁) bb := by
+    ext a₁ bb
+    dsimp only [h]
+    simp only [AddMonoidHom.coe_mk, ZeroHom.coe_mk]
+  rw [← Finsupp.mapDomain, hsum, Finsupp.sum_mapDomain_index_addMonoidHom h]
+  simp only [Finsupp.sum]
+  have hsum_eq : ∑ aa ∈ p.weights.support, (h (g aa)) (p.weights aa) =
+      ∑ aa ∈ p.weights.support, (p.weights aa * (g aa).weights (a, b)) := by
+    apply Finset.sum_congr rfl
+    intro aa _
+    change (fun (c : Rat) => c * (g aa).weights (a, b)) (p.weights aa) =
+      p.weights aa * (g aa).weights (a, b)
+    ring
+  rw [hsum_eq]
+  -- inner: (q.map (fun r => (aa, r))).weights (a,b) for an explicit first-coordinate aa
+  have hinner (aa : α) : (q.map (fun (r : β) => (aa, r))).weights (a, b) = if aa = a then q.weights b else 0 := by
+    simp only [Convexity.StdSimplex.map, Finsupp.mapDomain, Finsupp.sum_apply, Finsupp.single_apply]
+    have hrew : (fun (r₁ : β) (c : Rat) => if (aa, r₁) = (a, b) then c else 0) =
+        (fun r₁ c => if aa = a then (if r₁ = b then c else 0) else 0) := by
+      ext r₁ c; by_cases ha : aa = a <;> by_cases hb : r₁ = b <;> simp [ha, hb]
+    rw [hrew]
+    by_cases ha : aa = a
+    · have hfun : (fun (r₁ : β) (c : Rat) => if aa = a then (if r₁ = b then c else 0) else 0) =
+          (fun r₁ c => if r₁ = b then c else 0) := by funext r₁ c; exact ite_eq_left ha
+      rw [hfun, Finsupp.sum_ite_self_eq', ite_eq_left ha]
+    · have hzero : (fun (r₁ : β) (c : Rat) => if aa = a then (if r₁ = b then c else 0) else 0) =
+          fun _ _ => 0 := by funext r₁ c; exact ite_eq_right ha
+      rw [hzero, Finsupp.sum, Finset.sum_const_zero, ite_eq_right ha]
+  rw [show ∑ aa ∈ p.weights.support, p.weights aa * (g aa).weights (a, b) =
+        ∑ aa ∈ p.weights.support, p.weights aa * (if aa = a then q.weights b else 0) from by
+    apply Finset.sum_congr rfl
+    intro aa _
+    dsimp only [g]
+    rw [hinner aa]]
+  rw [show ∑ aa ∈ p.weights.support, p.weights aa * (if aa = a then q.weights b else 0) =
+        ∑ aa ∈ p.weights.support, (if aa = a then p.weights aa else 0) * q.weights b from by
+    apply Finset.sum_congr rfl
+    intro aa _; by_cases ha : aa = a <;> simp [ha, mul_zero, mul_comm]]
+  have hfactor : ∑ aa ∈ p.weights.support, (if aa = a then p.weights aa else 0) * q.weights b =
+      (∑ aa ∈ p.weights.support, (if aa = a then p.weights aa else 0)) * q.weights b := by
+    rw [show ∑ aa ∈ p.weights.support, (if aa = a then p.weights aa else 0) * q.weights b =
+          ∑ aa ∈ p.weights.support, q.weights b * (if aa = a then p.weights aa else 0) from by
+      apply Finset.sum_congr rfl; intro aa _; ring]
+    rw [← Finset.mul_sum, mul_comm]
+  rw [hfactor]
+  have hsumL : ∑ aa ∈ p.weights.support, (if aa = a then p.weights aa else 0) = p.weights a := by
+    change p.weights.sum (fun (aa : α) (v : Rat) => (if aa = a then v else 0)) = p.weights a
+    exact Finsupp.sum_ite_self_eq' _ a
+  rw [hsumL]
+
 end Shufflemath
 
 end
