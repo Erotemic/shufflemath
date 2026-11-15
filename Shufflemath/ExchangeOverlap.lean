@@ -859,3 +859,88 @@ theorem tterm_eq_oterm_all (N m r k x y a : Nat)
     i.e.  oterm  is  0  outside  the  common  range  `[max (0, x-k, y-k), min (x, y, m-k)]`
     (upper bounds  `t > m-k  ⇒  F3 = 0`  and  `t > y  ⇒  F1 = 0`  are  immediate;  the  lower-bound
     vanishing  `t < y-k  ⇒  oterm = 0`  is  the  part  to  verify  under  the  CL  regime). -/
+
+--  Support-vanishing  facts  for  `oterm`,  used  to  clip  the  overlap  sum  to
+--  the  common  range  `[y-k, min (y, m-k)]`  in  the  general  CL  reindexing:
+--    F3  factor  `choose (m-y) (m-k-t)`  forces  `oterm t = 0`  when  `t < y-k`
+--  (index  `>  base`)  or  `t > m-k`  (index  `<  0`);
+--    F1  factor  `choose y t`  forces  `oterm t = 0`  when  `t > y`.
+theorem oterm_zero_below (N m r k x y t : Nat) (ht : t < y - k) :
+    oterm N m r k x y t = 0 := by
+  dsimp only [oterm]
+  --  F3  index  `(m-k-t)`  vs  base  `(m-y)`:  `t < y-k  →  m-k-t  >  m-y`  (index  >  base)
+  have hidx : (m : Int) - (k : Int) - (t : Int) > (m : Int) - (y : Int) := by
+    ring_nf
+    omega
+  have hF3zero : chooseSigned ((m : Int) - (y : Int)) ((m : Int) - (k : Int) - (t : Int)) = 0 :=
+    chooseSigned_zero_toobig _ _ hidx
+  rw [hF3zero]
+  simp only [mul_zero, zero_mul]
+
+theorem oterm_zero_above_mk (N m r k x y t : Nat) (ht : t > m - k) :
+    oterm N m r k x y t = 0 := by
+  dsimp only [oterm]
+  --  F3  index  `(m-k-t)`  is  `<  0`  when  `t  >  m-k`
+  have hF3neg : (m : Int) - (k : Int) - (t : Int) < 0 := by
+    ring_nf
+    omega
+  have hF3zero : chooseSigned ((m : Int) - (y : Int)) ((m : Int) - (k : Int) - (t : Int)) = 0 :=
+    chooseSigned_zero_neg _ _ hF3neg
+  rw [hF3zero]
+  simp only [mul_zero, zero_mul]
+
+theorem oterm_zero_above_y (N m r k x y t : Nat) (ht : t > y) :
+    oterm N m r k x y t = 0 := by
+  dsimp only [oterm]
+  --  F1  index  `t`  >  base  `y`  (index  >  base)
+  have hF1zero : chooseSigned (y : Int) (t : Int) = 0 :=
+    chooseSigned_zero_toobig _ _ (by omega)
+  rw [hF1zero]
+  simp only [zero_mul]
+
+--  Step  1  of  the  reindexing:  the  transition  a-sum  over  [0, k]  reindexes  to  a  t-sum
+--  over  [y-k, y]  via  the  injective  map  `a ↦ y-a`  (valid  when  `k ≤ y`). -/
+lemma rangeImage_ySuba_eq_Icc (y k : Nat) (hk : k ≤ y) :
+    (Finset.range (k + 1)).image (fun a => y - a) = Finset.Icc (y - k) y := by
+  apply Finset.ext
+  intro t
+  rw [Finset.mem_image, Finset.mem_Icc]
+  constructor
+  · rintro ⟨a, ha, rfl⟩
+    have ha_k : a ≤ k := by simpa [Finset.mem_coe, Finset.mem_range] using ha
+    exact ⟨by omega, Nat.sub_le y a⟩
+  · rintro ⟨hle, hge⟩
+    use y - t
+    constructor
+    · rw [Finset.mem_range]
+      exact by omega
+    · exact by omega
+
+--  reindex  the  transition  a-sum  to  a  [y-k, y]  t-sum
+theorem transition_eq_sum_oterm_ySuba (N m r k x y : Nat)
+    (hky : k ≤ y) (hmy : y ≤ m) (hry : y ≤ r) (hN : m + r ≤ N) (h4g : r - y ≤ N - m) :
+    transitionNumerator N m r k y x = (Finset.Icc (y - k) y).sum (fun t => oterm N m r k x y t) := by
+  have h1 : transitionNumerator N m r k y x =
+      (Finset.range (k + 1)).sum (fun a => oterm N m r k x y (y - a)) := by
+    rw [transitionNumerator_eq_sum_tterm]
+    apply Finset.sum_congr rfl
+    intro a ha
+    have hak : a ≤ k := by simpa [Finset.mem_coe, Finset.mem_range] using ha
+    exact tterm_eq_oterm_all N m r k x y a (Nat.le_trans hak hky) hak hky hmy hry hN h4g
+  have hinj : Set.InjOn (fun a => y - a) (Finset.range (k + 1)) := by
+    intro a ha b hb h
+    have hak : a ≤ k := by simpa [Finset.mem_coe, Finset.mem_range] using ha
+    have hbk : b ≤ k := by simpa [Finset.mem_coe, Finset.mem_range] using hb
+    have haw : a ≤ y := Nat.le_trans hak hky
+    have hbw : b ≤ y := Nat.le_trans hbk hky
+    have h1 : y - (y - a) = a := Nat.sub_sub_self haw
+    have h2 : y - (y - b) = b := Nat.sub_sub_self hbw
+    have hsub : y - (y - a) = y - (y - b) := congrArg (fun u => y - u) h
+    exact calc
+      a = y - (y - a) := h1.symm
+      _ = y - (y - b) := hsub
+      _ = b := h2
+  have h2 : (Finset.Icc (y - k) y).sum (fun t => oterm N m r k x y t) =
+      (Finset.range (k + 1)).sum (fun a => oterm N m r k x y (y - a)) := by
+    rw [← rangeImage_ySuba_eq_Icc y k hky, Finset.sum_image hinj]
+  rw [h1, h2]
