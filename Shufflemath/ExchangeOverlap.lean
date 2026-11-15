@@ -30,6 +30,8 @@ public import Shufflemath.BernoulliLaplaceFiber
 public meta import Shufflemath.BernoulliLaplaceFiber
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Int.Basic
+public import Mathlib.Data.Nat.Cast.Order.Basic
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -513,3 +515,52 @@ theorem s1Fiber_choose (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
   rw [Finset.card_powersetCard t T1]
   rw [Finset.card_powersetCard (x - t) (st \ T1)]
   rw [Finset.card_sdiff_of_subset hT1]
+
+/-! `oterm`: the `t`-th summand of `overlap_count`, the `chooseSigned` to
+`Nat.choose` bridges, and the `overlap_count` = sum-of-`oterm` decomposition.
+These reduce the general combinatorial lemma (F3 item 3) to a per-term
+identity under the reindexing `t = y - a` (9th session). -/
+
+def oterm (N m r k x y t : Nat) : Nat :=
+  let nI := (N : Int); let mI := (m : Int); let rI := (r : Int)
+  let kI := (k : Int); let xI := (x : Int); let yI := (y : Int)
+  let tI := t
+  let plain_outside_target := nI - rI - (mI - yI)
+  let plain_overlap := (mI - kI) - tI
+  chooseSigned yI tI *
+    chooseSigned (rI - yI) (xI - tI) *
+    chooseSigned (mI - yI) plain_overlap *
+    chooseSigned plain_outside_target ((mI - xI) - plain_overlap)
+
+/-- `overlap_count` is the sum of its `oterm` summands (definitional). -/
+theorem overlap_eq_sum_oterm (N m r k x y : Nat) :
+    overlap_count N m r k x y = (Finset.range (m - k + 1)).sum (fun t => oterm N m r k x y t) := by
+  rfl
+
+/-- `chooseSigned (n : Int) e = Nat.choose n (e.toNat)` for a nonnegative
+    argument `e`: the in-range binomial coefficient, or `0` when `e > n`. -/
+theorem cs_eq_chooseNat {n : Nat} (e : Int) (he : 0 ≤ e) :
+    chooseSigned (n : Int) e = Nat.choose n e.toNat := by
+  dsimp only [chooseSigned]
+  by_cases hen : e ≤ (n : Int)
+  · split_ifs <;> simp_all [he, hen]
+  · have heI : (e.toNat : Int) = e := Int.toNat_of_nonneg he
+    have henI : (n : Int) < (e.toNat : Int) := by rw [← heI]; omega
+    have hgt : e.toNat > n := Nat.cast_lt.mp henI
+    split_ifs
+    · exfalso; omega
+    · have h0 : n.choose e.toNat = 0 := by rw [Nat.choose_eq_zero_iff]; exact hgt
+      simpa using h0.symm
+
+/-- `chooseSigned base e = Nat.choose (base.toNat) (e.toNat)` for a
+    nonnegative Int base and argument. -/
+theorem cs_eq_chooseNatI (base e : Int) (hbase : 0 ≤ base) (he : 0 ≤ e) :
+    chooseSigned base e = Nat.choose base.toNat e.toNat := by
+  have hbI : (base.toNat : Int) = base := Int.toNat_of_nonneg hbase
+  rw [← hbI]
+  exact cs_eq_chooseNat (n := base.toNat) (e := e) he
+
+/-- For `b ≤ a`, `((a : Int) - (b : Int)).toNat = a - b`. -/
+theorem intSub_toNat {a b : Nat} (h : b ≤ a) : ((a : Int) - (b : Int)).toNat = a - b := by
+  have hz : (a : Int) - (b : Int) = (a - b : Int) := by simp [Int.cast_sub, h]
+  rw [hz]; simp
