@@ -1079,6 +1079,16 @@ injective); surjectivity by target-pile case-split; the pile and marked-set
 image equalities (`orbitMap_imageLeft`/`orbitMap_imageM1`) close it.  **A2 is
 now the next concrete step.**
 
+**⚠️ 22nd-session PITFALL (file truncation):** a python splice `s[:start] + block + s[end:]`
+with `end = s.find("<anchor>")` where the anchor was NOT found made `end = -1`, so
+`s[end:]` = `s[-1:]` **silently truncated** CommanderPhysicalExchange.lean from ~line 125
+to EOF, dropping `rawExchange`, `rawExchangeMembership`, `hMembershipExchange_lhs_reduces`,
+`markedLeftPos`, `left25`, etc. (all still in git `958d5f5`). Restored + re-merged
+`newLeftCards_conjugate` (commit `dd221fd`). **Rule: ALWAYS `assert end != -1` (and
+`start != -1`) before any `s[:start] + ... + s[end:]` splice, or use
+`s.split(anchor)` with a length check.**
+
+
 **Step A2 (core DONE, commit `6ccae33` — distributional form next):** show the physical-exchange
 distribution — averaged over a uniform `d` in the `project`-fiber of a
 source count `x` and a uniform `(L, R)` 25-25 choice — is invariant under the
