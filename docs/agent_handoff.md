@@ -282,13 +282,27 @@ factor inside the `dsimp`-ed 4-way product before.  `omega` proves the needed
 `Int` cast inequalities (e.g. `(k:Int)+(t:Int) < (x:Int)`) directly from the
 `Nat` guard hypotheses.
 
-**Next (F3 item 4):** the unconditional physical-perfect-local 2-exchange TV
-theorem.  It follows from the CL (`transitionNumerator = overlap_count`) plus
-the already-proven `fiberSum_eq`/`fiberSum_swap` (which give the
-`choose(r,y)*choose(N-r,m-y)` target factor) — i.e. lift the CL to the kernel
-mass statement `comp (fiberLaw project) rawExchangeMembership =
-comp commanderExchange25 membershipLift`, then the 2-exchange TV.  See
-`lean_plan.md` F3 item 4.
+**m + r > N extension — RESOLVED this session.**  The 4th-factor base
+subtlety (the left-saturated `N - m - r + y` = `y` vs the non-saturating
+`(N-m) - (r-y)` = `y - 1` for the Commander) is fixed by using the
+**non-saturating** base.  The chain `baseInt_eqNatCast` → `F4match_ns` →
+`tterm_eq_oterm_ns` → `tterm_eq_oterm_all_ns` → `transition_eq_sum_oterm_ySuba_ns`
+→ **`generalCL_ns`** proves the counting identity **without** `m + r ≤ N`, and
+**`generalCL_cmdr_2525`** proves the 25-25 Commander transition **symbolically**
+(no `native_decide`).  With `generalCL` (`m + r ≤ N`) the counting core
+`transitionNumerator = overlap_count` now holds for **every valid deck**
+(Commander 99 50 50 25 and 7442 included).
+
+**Next (F3 item 3 core / item 4 — part (ii) only):** the counting (part (i)) is
+done.  The remaining half of the kernel equality
+`comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25
+membershipLift` is **part (ii): given the new count `m`, the new membership is
+uniform over `{μ : membershipCount μ = m}`** — a member-level symmetry
+(group-action) statement, distinct from the count-level CL.  Then the 2-exchange
+TV (`run_tv_eq_macro_of_membership_exchange`, already a proven general theorem)
+instantiates with this `hMembershipExchange`.  See `lean_plan.md` F3 item 4.
+The guard-FAIL cases and the reindexing are regime-independent (reused verbatim
+in the `_ns` chain); only the 4th-factor base changed.
 
 ### Nov 12 (8th) session status### Nov 12 (8th) session status (historical — superseded by the 12th-session note above)
 
