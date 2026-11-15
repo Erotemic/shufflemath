@@ -362,6 +362,21 @@ theorem gsrOneStep_terminalTV_bound (nL nR a b : Nat) (ha : 0 < a) (hb : 0 < b)
       · exact hrow pr
       · exact Dist.mass_nonneg mu0 pr
 
+  /-- The two-pile GSR shuffle, iterated any number of times, never increases the
+      total variation between two starting laws.  Every Giry kernel is 1-Lipschitz
+      on TV in one step (`kernel_apply_lipschitz`), and `run_nonexpansive`
+      composes that contraction along the `run` iteration; the two-pile GSR
+      kernel is just such a kernel on the pile-list state space.  Fintype-free.
+      (This is the non-expansive, no-contraction form; a full decay to the
+      uniform target would additionally require the Fintype Dobrushin
+      coefficient on a finite deck state space.) -/
+  theorem gsrRunNonexpansive (nL nR a b : ℕ) (ha : 0 < a) (hb : 0 < b) (k : ℕ)
+      (mu nu : Dist (List (Fin nL) × List (Fin nR))) :
+      tvFinsupp (FiniteKernel.run (gsrProductKernel nL nR a b ha hb) k mu)
+                (FiniteKernel.run (gsrProductKernel nL nR a b ha hb) k nu) ≤
+        tvFinsupp mu nu :=
+    run_nonexpansive (gsrProductKernel nL nR a b ha hb) k mu nu
+
 end CommanderLocalGSR
 end Shufflemath
 end

@@ -1057,6 +1057,28 @@ theorem mixtureTV_le {σ β : Type*} [DecidableEq σ] [DecidableEq β] (μ : Dis
     simpa [mul_assoc, mul_one] using h13
   simpa [hP] using hG
 
+  /-- A homogeneous kernel that is 1-Lipschitz in one step is non-expansive for
+      arbitrarily many steps: iterating it `n` times never increases the total
+      variation between two starting laws.  Fintype-free (no finiteness of the
+      state space), so it applies to infinite deck-list spaces.  This is the
+      Fintype-free substitute for the Dobrushin / weighted-telescope iteration:
+      it composes the one-step kernel contraction `kernel_apply_lipschitz` along
+      the `run` iteration, bounding the terminal TV of any schedule of
+      1-Lipschitz moves (in particular, a schedule of GSR shuffles) by the TV
+      of the two starting laws. -/
+  theorem run_nonexpansive {α : Type*} [DecidableEq α] (K : FiniteKernel α α)
+      (n : Nat) (mu nu : Dist α) :
+      tvFinsupp (FiniteKernel.run K n mu) (FiniteKernel.run K n nu) ≤ tvFinsupp mu nu := by
+    induction n generalizing mu nu with
+    | zero =>
+      simp [FiniteKernel.run]
+    | succ n ih =>
+      rw [FiniteKernel.run_succ_add, FiniteKernel.run_succ_add]
+      calc
+        _ ≤ tvFinsupp (FiniteKernel.run K n mu) (FiniteKernel.run K n nu) :=
+          kernel_apply_lipschitz (FiniteKernel.run K n mu) (FiniteKernel.run K n nu) K
+        _ ≤ tvFinsupp mu nu := ih mu nu
+
 end Shufflemath
 
 
