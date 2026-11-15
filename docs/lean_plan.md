@@ -244,6 +244,20 @@ route, not a theorem already in the tree.
 > count for a *fixed* `T`; the remaining assembly is the mirrored plain/target
 > (S2) side and the `choose(r,y)*choose(N-r,m-y)` target-choice factor, then
 > `fiberSum_swap`/`fiberSum_eq` to close the full `fiberSum` identity.
+> **7th-session progress (2026-11-14, `6ae278f`/`08a864b`/`19892fa`):** (a) the
+> parameter-free **`Shufflemath.FinsetFiberCount`** module was extracted from
+> `ExchangeOverlap.lean` (`sFiber`/`sFiberA`/`sFiber_biUnion`/`sFiberA_card`/
+> `sFiber_card`/`sFiber_choose`, only `[DecidableEq α]` needed), so the marked
+> and plain sides both instantiate one general lemma.  (b) Since `fiberSum_eq`
+> and `fiberSum_swap` are already proven, the general CL was **sharply reduced
+> to a single pure-`Nat`/`choose` identity** `transitionNumerator (N m r k) y x
+> = overlap_count (N m r k) x y` (only `native_decide` small-deck versions exist
+> today).  The `ExchangeOverlap.lean` section comment records the concrete
+> reindexing `t = y - a` under which the four transition factors match the four
+> overlap factors (two by `Nat.choose` symmetry), and characterizes the one
+> remaining difficulty as the **boundary** (`if`-guards / `Nat`-saturated
+> `y - a` vs `chooseSigned = 0` out of range) — a pure reindexing with no
+> `Finset` API.
 > **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
 > which depends on item 3 core.
 
