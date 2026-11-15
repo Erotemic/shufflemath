@@ -630,3 +630,51 @@ theorem F2match (r y x t : Nat) (hy : y ≤ r) (ht : t ≤ x) :
   have h2 : (x : Int) - (t : Int) = Nat.cast (x - t) := by rw [← Nat.cast_sub ht]
   rw [h1, h2]
   rw [cs_eq_chooseNatNat (r - y) (x - t)]
+
+/-!
+### General CL summand match: `tterm_eq_oterm` (F3 item 3, 9th-session status)
+
+The general CL is a **sum** equality:
+```
+  transitionNumerator (N m r k) y x = overlap_count (N m r k) x y
+```
+After reindexing the transition index `a` to the overlap index `t = y - a`, the
+summands must match pointwise:
+
+```
+  tterm (N m r k) x y a = oterm (N m r k) x y (y - a)
+```
+where `tterm`'s four factors are `choose y a`, `choose (m-y)(k-a)`,
+`choose (r-y)(x-t)`, `choose (N-m-r+y)(k-x+t)` and `oterm`'s are the corresponding
+`chooseSigned` terms.  Factors 1 and 2 are **done** above (`F1match`, `F2match`).
+
+`-- TODO(proof): tterm_eq_oterm — F3 and F4 summand matches + assembly.
+  Remaining sub-steps (all verified to fail in this Lean 4.34/Mathlib build):
+
+  1. F3:  `chooseSigned (↑m-↑y) ((↑m-↑k)-↑t) = choose (m-y)(k-a)`  (t = y-a).
+          Reduces to the nested-saturating-`Nat` identity
+              h3 : (m-k)-(y-a) = (m-y)-(k-a)      (regime a≤k≤y≤m).
+          BOTH sides cast to the same `Int` ring-normal form (proven via the fact
+          `(c-d : Int) = (c : Int)-(d : Int)` + `ring_nf`), but the final bridge
+          back to the `Nat` equality is blocked on proving the *exactness*
+          inequality `y-a ≤ m-k` (and `k-a ≤ m-y`).  `omega`/`ring_nf`/`simp`/
+          `nlinarith`/`decide` all fail on these nested-subtraction inequalities,
+          and the manual decomposition (`m-k = (m-y)+(y-k)`) has its own
+          sub-wall (the `add_sub`/`sub_add` Nat lemmas are not in this build under
+          the expected names; only the group versions exist).
+
+  2. F4:  `chooseSigned (N-r-(m-y) : Int) ((m-x) : Int)-((m:Int)-(k:Int))-(t:Int))
+          = choose (N-m-r+y)(k-(x-t))`.  Three-level nested argument; same wall.
+
+  3. Assemble `tterm_eq_oterm` from F1–F4 (all four in the both-hold regime
+     `a≤y`, `k≤y`, `a≤k`, `y≤m`, `y≤r`, `m+r≤N`): the four factors then match
+     pairwise, so the products are equal by `ring`.
+
+  4. Sum reindexing: `Finset.sum_bij`/`Finset.sum_image` to turn the transition
+     sum over `a` into the overlap sum over `t = y-a`, closing the general CL.
+
+  Next attempt: prove the exactness `y-a ≤ m-k` (regime a≤k≤y≤m) by a `calc`
+  chain of *simple* (single-difference) inequalities that `omega` accepts, e.g.
+  via the intermediate variable, then recover `h3` by casting to `Int`
+  (`ring_nf`) and injecting (`Int.natCast_injective`).  Do NOT use bare `simp`/
+  `field_simp` (this module is adjacent to `Equiv.Perm (Fin 99)` consumers). -/
