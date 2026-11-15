@@ -506,5 +506,35 @@ theorem orbitMap_apply_partD (m m' : Membership) (h : membershipCount m = member
     apply Subtype.ext
     rfl
 
+
+
+/-- The four orbit pieces of a membership cover the whole deck. -/
+theorem piecesCover (m : Membership) :
+    partA m ∪ partB m ∪ partC m ∪ partD m = Finset.univ := by
+  ext c
+  constructor
+  · -- c in the four-piece union is trivially in the whole deck
+    intro _
+    simp only [Finset.mem_univ]
+  · -- every card is in some piece
+    intro _
+    simp only [Finset.mem_union]
+    -- goal: (((c ∈ partA ∨ c ∈ partB) ∨ c ∈ partC) ∨ c ∈ partD)
+    have hcover : c ∈ leftOrigSet ∪ rightOrigSet := by
+      rw [leftRightOrig_cover]
+      simp only [Finset.mem_univ]
+    simp only [Finset.mem_union] at hcover
+    rcases hcover with hlc | hrc
+    · rw [leftCoverPieces m] at hlc
+      simp only [Finset.mem_union] at hlc
+      rcases hlc with hcA | hcC
+      · exact Or.inl (Or.inl (Or.inl hcA))
+      · exact Or.inl (Or.inr hcC)
+    · rw [rightCoverPieces m] at hrc
+      simp only [Finset.mem_union] at hrc
+      rcases hrc with hcB | hcD
+      · exact Or.inl (Or.inl (Or.inr hcB))
+      · exact Or.inr hcD
+
 end Shufflemath
 end
