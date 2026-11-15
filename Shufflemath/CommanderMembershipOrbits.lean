@@ -408,5 +408,103 @@ noncomputable def orbitMap (m m' : Membership) (h : membershipCount m = membersh
         intro hc; exact hB hc
     ⟩).val
 
+
+
+/-- `c` in part A (marked, left pile): `orbitMap` is exactly the A-equiv. -/
+theorem orbitMap_apply_partA (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (c : Fin 99) (hc : c ∈ partA m) :
+    orbitMap m m' h c = ((orbitEquivA m m' h) ⟨c, hc⟩).val := by
+  dsimp only [orbitMap]
+  split_ifs
+  · apply congrArg (fun x : {z : Fin 99 // z ∈ partA m} => ((orbitEquivA m m' h) x).val)
+    apply Subtype.ext
+    rfl
+
+/-- part B (marked, right) is disjoint from part A (marked, left). -/
+theorem partB_not_partA (m : Membership) (c : Fin 99) (hc : c ∈ partB m) : c ∉ partA m := by
+  have hcR : c ∈ rightOrigSet := by rw [partB] at hc; exact (Finset.mem_inter.mp hc).2
+  intro h
+  have hL : c ∈ leftOrigSet := by rw [partA] at h; exact (Finset.mem_inter.mp h).2
+  have hI : c ∈ leftOrigSet ∩ rightOrigSet := Finset.mem_inter.mpr ⟨hL, hcR⟩
+  have hIe : leftOrigSet ∩ rightOrigSet = ∅ := Finset.disjoint_iff_inter_eq_empty.mp leftRightOrig_disjoint
+  rw [hIe] at hI
+  cases hI
+
+/-- `c` in part B (marked, right pile): `orbitMap` is the B-equiv. -/
+theorem orbitMap_apply_partB (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (c : Fin 99) (hc : c ∈ partB m) :
+    orbitMap m m' h c = ((orbitEquivB m m' h) ⟨c, hc⟩).val := by
+  have hcA : c ∉ partA m := partB_not_partA m c hc
+  dsimp only [orbitMap]
+  split_ifs
+  · apply congrArg (fun x : {z : Fin 99 // z ∈ partB m} => ((orbitEquivB m m' h) x).val)
+    apply Subtype.ext
+    rfl
+
+/-- part C (left pile) is disjoint from part A. -/
+theorem partC_not_partA (m : Membership) (c : Fin 99) (hc : c ∈ partC m) : c ∉ partA m := by
+  rw [partC] at hc
+  exact (Finset.mem_sdiff.mp hc).2
+
+/-- part C (left pile) is disjoint from part B (right pile). -/
+theorem partC_not_partB (m : Membership) (c : Fin 99) (hc : c ∈ partC m) : c ∉ partB m := by
+  have hcL : c ∈ leftOrigSet := by rw [partC] at hc; exact (Finset.mem_sdiff.mp hc).1
+  intro h
+  have hR : c ∈ rightOrigSet := by rw [partB] at h; exact (Finset.mem_inter.mp h).2
+  have hI : c ∈ leftOrigSet ∩ rightOrigSet := Finset.mem_inter.mpr ⟨hcL, hR⟩
+  have hIe : leftOrigSet ∩ rightOrigSet = ∅ := Finset.disjoint_iff_inter_eq_empty.mp leftRightOrig_disjoint
+  rw [hIe] at hI
+  cases hI
+
+/-- `c` in part C (unmarked, left pile): `orbitMap` is the C-equiv. -/
+theorem orbitMap_apply_partC (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (c : Fin 99) (hc : c ∈ partC m) :
+    orbitMap m m' h c = ((orbitEquivC m m' h) ⟨c, hc⟩).val := by
+  have hcA : c ∉ partA m := partC_not_partA m c hc
+  have hcB : c ∉ partB m := partC_not_partB m c hc
+  dsimp only [orbitMap]
+  split_ifs
+  · apply congrArg (fun x : {z : Fin 99 // z ∈ partC m} => ((orbitEquivC m m' h) x).val)
+    apply Subtype.ext
+    rfl
+
+/-- part D (right pile) is disjoint from part A (left pile). -/
+theorem partD_not_partA (m : Membership) (c : Fin 99) (hc : c ∈ partD m) : c ∉ partA m := by
+  have hcR : c ∈ rightOrigSet := by rw [partD] at hc; exact (Finset.mem_sdiff.mp hc).1
+  intro h
+  have hL : c ∈ leftOrigSet := by rw [partA] at h; exact (Finset.mem_inter.mp h).2
+  have hI : c ∈ leftOrigSet ∩ rightOrigSet := Finset.mem_inter.mpr ⟨hL, hcR⟩
+  have hIe : leftOrigSet ∩ rightOrigSet = ∅ := Finset.disjoint_iff_inter_eq_empty.mp leftRightOrig_disjoint
+  rw [hIe] at hI
+  cases hI
+
+/-- part D (right pile) is disjoint from part B. -/
+theorem partD_not_partB (m : Membership) (c : Fin 99) (hc : c ∈ partD m) : c ∉ partB m := by
+  rw [partD] at hc
+  exact (Finset.mem_sdiff.mp hc).2
+
+/-- part D (right pile) is disjoint from part C (left pile). -/
+theorem partD_not_partC (m : Membership) (c : Fin 99) (hc : c ∈ partD m) : c ∉ partC m := by
+  have hcR : c ∈ rightOrigSet := by rw [partD] at hc; exact (Finset.mem_sdiff.mp hc).1
+  intro h
+  have hL : c ∈ leftOrigSet := by rw [partC] at h; exact (Finset.mem_sdiff.mp h).1
+  have hI : c ∈ leftOrigSet ∩ rightOrigSet := Finset.mem_inter.mpr ⟨hL, hcR⟩
+  have hIe : leftOrigSet ∩ rightOrigSet = ∅ := Finset.disjoint_iff_inter_eq_empty.mp leftRightOrig_disjoint
+  rw [hIe] at hI
+  cases hI
+
+/-- `c` in part D (unmarked, right pile): `orbitMap` is the D-equiv. -/
+theorem orbitMap_apply_partD (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (c : Fin 99) (hc : c ∈ partD m) :
+    orbitMap m m' h c = ((orbitEquivD m m' h) ⟨c, hc⟩).val := by
+  have hcA : c ∉ partA m := partD_not_partA m c hc
+  have hcB : c ∉ partB m := partD_not_partB m c hc
+  have hcC : c ∉ partC m := partD_not_partC m c hc
+  dsimp only [orbitMap]
+  split_ifs
+  · apply congrArg (fun x : {z : Fin 99 // z ∈ partD m} => ((orbitEquivD m m' h) x).val)
+    apply Subtype.ext
+    rfl
+
 end Shufflemath
 end
