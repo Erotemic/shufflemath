@@ -1148,3 +1148,68 @@ Shufflemath`); `leftOrigSet`/`rightOrigSet`/`leftOrigSet_card`/`rightOrigSet_car
 IS in the AGENTS.md verified build list.
 
 Full verification green (37 tests, 0 failures) after this commit.
+### F3 part (ii), step A1 — `finsetType_perm` (core orbit-transitivity primitive)
+
+**Status: constructed and fully specified, 3 specific Finset-mechanics walls remain
+(documented below). Building block `equiCardFinsets_bij` is committed.**
+
+The target: for `m, m'` with `membershipCount m = membershipCount m' = k`, a
+permutation `f : Fin 99 ≃ Fin 99` with `f '' leftOrigSet = leftOrigSet` and
+`f '' m.1 = m'.1`.  This decomposes into two independent primitive calls
+(`f|_L` and `f|_R`), each an instance of the following **core lemma**:
+
+> **`finsetType_perm {s : Type} [Fintype s] [DecidableEq s] (A A' : Finset s)
+> (h : A.card = A'.card) : s ≃ s`** — a permutation of `s` sending `A` onto
+> `A'`.  Applied with `s = leftOrigSet`, `A = m.1 ∩ leftOrigSet`,
+> `A' = m'.1 ∩ leftOrigSet` (both size `k`) gives `f|_L`; with
+> `s = rightOrigSet`, `A = m.1 ∩ rightOrigSet`, `A' = m'.1 ∩ rightOrigSet`
+> (both size `50 - k`) gives `f|_R`.  Composing the two (they agree on the
+> disjoint cover `leftOrigSet ⊎ rightOrigSet = univ`) yields `f`.
+
+**Exact construction** (verified to type-check except the 3 walls): define
+`C := univ \ A`, `D := univ \ A'`, `eAB : {x // x ∈ A} ≃ {x // x ∈ A'}` and
+`eCD : {x // x ∈ C} ≃ {x // x ∈ D}` via `equiCardFinsets_bij` (`C.card = D.card`
+by `Finset.card_sdiff_of_subset` twice + `h`).  Then
+
+```
+let f (x : s) : s :=
+  if hx : x ∈ A then (eAB ⟨x, hx⟩).val else (eCD ⟨x, ⟨Finset.mem_univ x, hx⟩⟩).val
+refine Equiv.ofBijective f ?_
+```
+
+- **Injectivity**: 4 cases on `x ∈ A` / `y ∈ A`.  Same-piece cases reduce via
+  `eAB`/`eCD` injectivity to `x = y`.  Cross-piece cases: `(eAB ·).val ∈ A'`
+  vs `(eCD ·).val ∈ D`, and `Disjoint A' D` (from
+  `Finset.inter_sdiff_self A' univ`), so the images are disjoint.
+- **Surjectivity**: for `z`, case `z ∈ A'` (then `z = eAB (eAB.symm z)`) or
+  `z ∈ D` (then `z = eCD (eCD.symm z)`, and the preimage `eCD.symm z ∈ C` not
+  `A`, so the `else` branch is taken).
+
+**The 3 remaining walls** (all opaque-Finset-membership / val-vs-subtype):
+1. **`card_sdiff` rewrite ambiguity**: `rw [card_sdiff_of_subset h,
+   card_sdiff_of_subset h]` matches both `(univ \ A).card` and
+   `(univ \ A').card` unpredictably.  Fix: prove `C.card` and `D.card` in
+   SEPARATE `have` blocks, each with a single `rw [hC, card_sdiff_of_subset
+   (fun _ _ => trivial)]`, then combine.
+2. **`x ∈ Finset.univ` is NOT definitionally `True`** (opaque Finset membership):
+   `⟨trivial, hx⟩` fails where `x ∈ univ ∧ x ∉ A` is expected.  Fix: use
+   `⟨Finset.mem_univ x, hx⟩` (the lemma `Finset.mem_univ x : x ∈ univ` exists).
+3. **val-vs-subtype equality in the injective same-piece case**: after
+   `simpa [f, ite_eq_left ...] using hxy` the goal is
+   `(eAB ⟨x,·⟩).val = (eAB ⟨y,·⟩).val` but the target is `x = y`.  Fix: first
+   lift to subtype equality `eAB ⟨x,·⟩ = eAB ⟨y,·⟩` (two elements of the SAME
+   subtype with equal `.val` are equal — `Subtype.ext`/`Subtype.val`), then
+   apply `eAB.injective` to get `⟨x,·⟩ = ⟨y,·⟩`, hence `x = y`.  Same for the
+   `eCD` piece.  (The cross-piece disjointness step also needs
+   `Finset.mem_inter` to assemble `value ∈ A' ∩ D`, then the
+   `A' ∩ D = ∅` contradiction.)
+
+A future session should fix these 3 mechanical points in the skeleton above,
+add `finsetType_perm` to `CommanderMembershipOrbits.lean`, then build the
+commander `f` from the two halves and state
+`membershipFiber_transitive` (Spec A1).  **No `sorry`/`admit` — this is the one
+remaining deep group-action lemma of the whole F3 part (ii) reduction; Specs
+A2 (stabilizer invariance of the physical-exchange distribution) and A3
+(kernel assembly via `interweaving_of_membership_exchange`) follow directly once
+A1 lands.**
+
