@@ -1271,3 +1271,74 @@ documented one-line fixes (W1: `have pre` opaque → use `let`/inline; W2: `rw [
 `Finset.mem_sdiff` → apply `Finset.mem_sdiff.mp` as a term; W3: `split_ifs <;> rename_i` grabs
 the `DecidableEq s` typeclass → reference the ite condition by proposition). Near-complete
 proof at `/tmp/finsetType_perm_nearcomplete.lean`.
+
+---
+
+## 21st session (2026-11-14): F3 item 4 (part ii) — orbit transitivity: construction complete, proof route set
+
+**State of F3 item 4 (part ii) — the last open F3 item** (`CommanderMembershipOrbits.lean`):
+
+- `finsetType_perm {s} [Fintype s] [DecidableEq s] (A A' : Finset s) (h : A.card = A'.card) :
+  s ≃ s` — **COMPLETE** (commit `a637cee`): a permutation of `s` sending `A ↦ A'` and
+  `s \ A ↦ s \ A'`. Both the injective and surjective halves are proven (no `sorry`).
+- `equiCardFinsets_bij {α} [Fintype α] [DecidableEq α] {s t} (h : s.card = t.card) :
+  {x // x ∈ s} ≃ {x // x ∈ t}` — COMPLETE (commit `64a6c29`).
+- Four equi-cardinality lemmas (commit `ccc30d9`): `partCard_eqA/B/C/D` — for `m, m'` with
+  equal `membershipCount`, the four pieces (matched/unmarked × left/right pile) satisfy
+  `(partX m).card = (partX m').card`. Built on `m1_decomp` (a 50-subset splits additively
+  left/right), `m1_sum50`, `m1_left_le`.
+- Two pile-cover lemmas (commit `aed2442`): `leftCoverPieces` (`left = partA ∪ partC`),
+  `rightCoverPieces` (`right = partB ∪ partD`).
+- **`orbitMap` construction (commit `55c07b5`)**: four noncomputable piece-equivs
+  `orbitEquivA/B/C/D : {c // c ∈ partX m} ≃ {c // c ∈ partX m'}` (via
+  `equiCardFinsets_bij`) plus `orbitMap : Fin 99 → Fin 99`, the piecewise permutation that
+  transports each of `m`'s four pieces to the corresponding piece of `m'`. The four pieces
+  partition the 99-card universe, so it is well-defined. **This is the constructive witness
+  for the target theorem.**
+
+**Target theorem (still open):**
+```
+membershipFiber_transitive (m m' : Membership) (h : membershipCount m = membershipCount m') :
+  ∃ (f : Fin 99 → Fin 99), Function.Bijective f ∧ f '' leftOrigSet = leftOrigSet ∧
+    f '' m.1 = m'.1
+```
+
+**The wall (named-if reduction of a `by_cases` def):** proving
+`orbitMap m m' h c = ((orbitEquivX m m' h) ⟨c, hc⟩).val` for `hc : c ∈ partX m` requires
+reducing `orbitMap`'s body (a `by_cases`-def) to its then-branch. In this Lean 4.34 build,
+`dsimp only [orbitMap]` / `unfold orbitMap` followed by `split_ifs with hA` does **not**
+expose the decided binder `hA` in any branch (confirmed with a minimal
+`by_cases`-def probe: `split_ifs with hp` prunes to the single then-goal but the binder name
+is not `hp`). `split_ifs with hA` then references `hA` → "Unknown identifier". This blocks
+the three conjunct proofs, each of which needs the apply-equality for the relevant piece.
+
+**Clean next route (avoids `orbitMap` entirely):** apply the already-proven
+`finsetType_perm` on the two **pile-subtype** types and bridge via the disjoint union:
+1. `sL : Type := {c : Fin 99 // c ∈ leftOrigSet}` with `[Fintype sL] [DecidableEq sL]`
+   (subtype of a `Fintype`); similarly `sR` for `rightOrigSet`.
+2. Realize `partA m`/`partA m'` as `Finset sL` (subtype-restriction of the `Fin 99` pieces)
+   and use `finsetType_perm (partA sL) (partA sL') hAcard : sL ≃ sL` — a pile-preserving
+   permutation of the left pile sending the marked-left piece onto the marked-left piece of
+   `m'`. Similarly `sR ≃ sR` for the right pile (using `partB`/`partD`, noting the unmarked
+   pieces also have equal card by `partCard_eqB/D`).
+3. Bridge `Fin 99 ≃ (sL ⊕ sR)` (the two piles are disjoint and cover `univ`) and compose
+   the two pile-Perms into a single `Fin 99 ≃ Fin 99`. This Perm preserves each pile and
+   carries `m.1 = partA ∪ partB` onto `m'.1 = partA' ∪ partB'`, closing all three conjuncts
+   without any named-if reduction (it only uses `finsetType_perm`, `leftCoverPieces`,
+   `rightCoverPieces`, and the disjoint-cover `leftRightOrig_cover`/`leftRightOrig_disjoint`).
+
+The pile-subtype `Fintype`/`DecidableEq` instances and the `Fin 99 ≃ sL ⊕ sR` bridge are the
+two new building blocks; both are standard subtype/sum machinery (no `native_decide`).
+
+**Acceptance (F3 item 4 / part ii):** `membershipFiber_transitive` closes with no `sorry`
+and no new abstract exchange hypothesis; `lake build Shufflemath.CommanderMembershipOrbits`
+green; `./dev/verify_next_phase.sh` green. With it, the F3 item 4 kernel equality (part (ii)
+membership uniformity) and the unconditional 2-exchange TV theorem are bookkeeping on top.
+
+**F4.2 (deck-level GSR kernel)** — next after F3 part (ii): `CommanderDeckGSR.lean` has the
+full structural identification (`pileRelabelEquiv`, `preservesPiles_iff_pileRelabel`,
+`pileRelabelEquiv_mul`, `leftPermOf`/`rightPermOf`). The open sub-wall is the distributional
+bridge `List (Fin n) ↔ Equiv.Perm (Fin n)` (via `Equiv.ofPermList`, not `toMultiset`) to
+lift the two per-pile `idealShuffle` riffles into a `Deck`-level kernel. See the
+"Next F4.2" note above.
+

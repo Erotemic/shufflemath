@@ -342,6 +342,21 @@ route, not a theorem already in the tree.
 > typeclass). Once `finsetType_perm` closes, `membershipFiber_transitive` (two
 > calls on the left/right pieces, agreeing on the disjoint cover `leftOrigSet ⊎
 > rightOrigSet = univ`) is bookkeeping, and Specs A2/A3 follow.
+> **21st-session progress (construction complete):** `finsetType_perm` is now
+> **COMPLETE** (injective + surjective, commit `a637cee`), and the constructive
+> witness `orbitMap : Fin 99 → Fin 99` is **built** (commit `55c07b5`): four
+> `equiCardFinsets_bij` piece-equivs (`orbitEquivA/B/C/D`) composed piecewise over
+> the four-part partition (matched/unmarked × left/right pile), on top of the
+> equi-card lemmas (`partCard_eqA/B/C/D`) and pile-cover lemmas
+> (`leftCoverPieces`/`rightCoverPieces`). The remaining step is proving the three
+> conjuncts (bijective + `f''left = left` + `f''m.1 = m'.1`). The direct route hits a
+> named-if reduction wall (`by_cases`-def + `split_ifs with h` does not expose the
+> decided binder in this Lean 4.34 build). **Next route (avoids `orbitMap`):** apply
+> `finsetType_perm` on the two **pile-subtype** types `{c // c ∈ leftOrigSet}` /
+> `{c // c ∈ rightOrigSet}` (with subtype `Fintype`/`DecidableEq` instances), then
+> bridge `Fin 99 ≃ sL ⊕ sR` (disjoint piles cover `univ`) and compose the two
+> pile-Perms into one `Fin 99 ≃ Fin 99` that preserves each pile and carries `m.1`
+> onto `m'.1`. See `docs/agent_handoff.md` 21st-session section for the full spec.
 > **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
 > which depends on item 3 core.
 
