@@ -564,3 +564,13 @@ theorem cs_eq_chooseNatI (base e : Int) (hbase : 0 ≤ base) (he : 0 ≤ e) :
 theorem intSub_toNat {a b : Nat} (h : b ≤ a) : ((a : Int) - (b : Int)).toNat = a - b := by
   have hz : (a : Int) - (b : Int) = (a - b : Int) := by simp [Int.cast_sub, h]
   rw [hz]; simp
+
+/-- The `.toNat` of a difference of two (nonnegative) Int differences, when it is
+    itself nonnegative, is the corresponding nested `Nat` difference.  Used to
+    convert the `chooseSigned` arguments in the general-CL summand match
+    (`F3`, `F4`) into `Nat.choose` arguments. -/
+theorem intDiffDiff_toNat {a b c d : Nat} (hb : b ≤ a) (hd : d ≤ c) (hle : c - d ≤ a - b) :
+    (((a : Int) - (b : Int)) - ((c : Int) - (d : Int))).toNat = (a - b) - (c - d) := by
+  rw [← Nat.cast_sub hb, ← Nat.cast_sub hd]
+  rw [← Nat.cast_sub hle]
+  simp
