@@ -354,5 +354,59 @@ theorem rightCoverPieces (m : Membership) : rightOrigSet = partB m ∪ partD m :
     · exact h1.2
     · exact h2.1
 
+
+
+/-- The four piece-equivs transporting the four pieces of `m` to the corresponding pieces
+    of `m'` (each a bijection between equal-cardinality subtypes). -/
+noncomputable def orbitEquivA (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    {c : Fin 99 // c ∈ partA m} ≃ {c : Fin 99 // c ∈ partA m'} :=
+  equiCardFinsets_bij (partCard_eqA m m' h)
+noncomputable def orbitEquivB (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    {c : Fin 99 // c ∈ partB m} ≃ {c : Fin 99 // c ∈ partB m'} :=
+  equiCardFinsets_bij (partCard_eqB m m' h)
+noncomputable def orbitEquivC (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    {c : Fin 99 // c ∈ partC m} ≃ {c : Fin 99 // c ∈ partC m'} :=
+  equiCardFinsets_bij (partCard_eqC m m' h)
+noncomputable def orbitEquivD (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    {c : Fin 99 // c ∈ partD m} ≃ {c : Fin 99 // c ∈ partD m'} :=
+  equiCardFinsets_bij (partCard_eqD m m' h)
+
+/-- A card not in the left pieces (A, C) lies in the right pile. -/
+theorem notLeftPieces_impliesRight (m : Membership) (c : Fin 99)
+    (hA : c ∉ partA m) (hC : c ∉ partC m) : c ∈ rightOrigSet := by
+  have hnotleft : c ∉ leftOrigSet := by
+    have hnl : c ∉ (partA m ∪ partC m) := by
+      rw [Finset.mem_union]
+      exact not_or_intro hA hC
+    rwa [← leftCoverPieces] at hnl
+  by_contra hnr
+  have hcover : c ∈ leftOrigSet ∪ rightOrigSet := by
+    rw [leftRightOrig_cover]
+    exact Finset.mem_univ c
+  cases (Finset.mem_union.mp hcover) with
+  | inl hcl => exact hnotleft hcl
+  | inr hcr => exact hnr hcr
+
+/-- The piecewise deck permutation: it transports each of the four pieces of `m` to the
+    corresponding piece of `m'`.  The four pieces partition the 99-card universe, so this is
+    a well-defined function on all cards. -/
+noncomputable def orbitMap (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (c : Fin 99) : Fin 99 := by
+  by_cases hA : c ∈ partA m
+  · exact ((orbitEquivA m m' h) ⟨c, hA⟩).val
+  by_cases hB : c ∈ partB m
+  · exact ((orbitEquivB m m' h) ⟨c, hB⟩).val
+  by_cases hC : c ∈ partC m
+  · exact ((orbitEquivC m m' h) ⟨c, hC⟩).val
+  · -- not in parts A, B, C, hence in part D = right \ (m.1 ∩ right)
+    exact ((orbitEquivD m m' h) ⟨c, by
+      dsimp only [partD, partB]
+      rw [Finset.mem_sdiff]
+      constructor
+      · exact notLeftPieces_impliesRight m c hA hC
+      · -- partB m = m.1 ∩ right, already excluded
+        intro hc; exact hB hc
+    ⟩).val
+
 end Shufflemath
 end
