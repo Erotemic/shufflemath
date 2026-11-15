@@ -818,5 +818,52 @@ theorem orbitMap_preimagePartD (m m' : Membership) (h : membershipCount m = memb
           | inr hB => exact hb hB
         | inr hC => exact hc hC
       | inr hD => exact hna hD
+
+/-- `orbitMap` is injective: the four source pieces map into four disjoint target
+    pieces, and each piece-equiv is injective, so equal images force equal sources. -/
+theorem orbitMap_injective (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    Function.Injective (orbitMap m m' h) := by
+  intro a b hf
+  cases inSomePart m' (orbitMap m m' h a) with
+  | inl h123 => cases h123 with
+    | inl h12 => cases h12 with
+      | inl hfA =>
+        have haA := orbitMap_preimagePartA m m' h a hfA
+        have hfbA : orbitMap m m' h b ∈ partA m' := by rw [← hf]; exact hfA
+        have hbA := orbitMap_preimagePartA m m' h b hfbA
+        have hval : ((orbitEquivA m m' h) ⟨a, haA⟩).val = ((orbitEquivA m m' h) ⟨b, hbA⟩).val := by
+          rw [← orbitMap_apply_partA m m' h a haA, ← orbitMap_apply_partA m m' h b hbA]
+          exact hf
+        have hsub : (orbitEquivA m m' h) ⟨a, haA⟩ = (orbitEquivA m m' h) ⟨b, hbA⟩ := Subtype.ext hval
+        exact congrArg (fun x : {z : Fin 99 // z ∈ partA m} => x.val) ((orbitEquivA m m' h).injective hsub)
+      | inr hfB =>
+        have haB := orbitMap_preimagePartB m m' h a hfB
+        have hfbB : orbitMap m m' h b ∈ partB m' := by rw [← hf]; exact hfB
+        have hbB := orbitMap_preimagePartB m m' h b hfbB
+        have hval : ((orbitEquivB m m' h) ⟨a, haB⟩).val = ((orbitEquivB m m' h) ⟨b, hbB⟩).val := by
+          rw [← orbitMap_apply_partB m m' h a haB, ← orbitMap_apply_partB m m' h b hbB]
+          exact hf
+        have hsub : (orbitEquivB m m' h) ⟨a, haB⟩ = (orbitEquivB m m' h) ⟨b, hbB⟩ := Subtype.ext hval
+        exact congrArg (fun x : {z : Fin 99 // z ∈ partB m} => x.val) ((orbitEquivB m m' h).injective hsub)
+    | inr hfC =>
+      have haC := orbitMap_preimagePartC m m' h a hfC
+      have hfbC : orbitMap m m' h b ∈ partC m' := by rw [← hf]; exact hfC
+      have hbC := orbitMap_preimagePartC m m' h b hfbC
+      have hval : ((orbitEquivC m m' h) ⟨a, haC⟩).val = ((orbitEquivC m m' h) ⟨b, hbC⟩).val := by
+        rw [← orbitMap_apply_partC m m' h a haC, ← orbitMap_apply_partC m m' h b hbC]
+        exact hf
+      have hsub : (orbitEquivC m m' h) ⟨a, haC⟩ = (orbitEquivC m m' h) ⟨b, hbC⟩ := Subtype.ext hval
+      exact congrArg (fun x : {z : Fin 99 // z ∈ partC m} => x.val) ((orbitEquivC m m' h).injective hsub)
+  | inr hfD =>
+    have haD := orbitMap_preimagePartD m m' h a hfD
+    have hfbD : orbitMap m m' h b ∈ partD m' := by rw [← hf]; exact hfD
+    have hbD := orbitMap_preimagePartD m m' h b hfbD
+    have hval : ((orbitEquivD m m' h) ⟨a, haD⟩).val = ((orbitEquivD m m' h) ⟨b, hbD⟩).val := by
+      rw [← orbitMap_apply_partD m m' h a haD, ← orbitMap_apply_partD m m' h b hbD]
+      exact hf
+    have hsub : (orbitEquivD m m' h) ⟨a, haD⟩ = (orbitEquivD m m' h) ⟨b, hbD⟩ := Subtype.ext hval
+    exact congrArg (fun x : {z : Fin 99 // z ∈ partD m} => x.val) ((orbitEquivD m m' h).injective hsub)
+
+
 end Shufflemath
 end
