@@ -1185,12 +1185,13 @@ refine Equiv.ofBijective f ?_
   `z ∈ D` (then `z = eCD (eCD.symm z)`, and the preimage `eCD.symm z ∈ C` not
   `A`, so the `else` branch is taken).
 
-**The 3 remaining walls** (all opaque-Finset-membership / val-vs-subtype):
+**The remaining walls** (all opaque-Finset-membership / val-vs-subtype /
+  ite-reduction):
 1. **`card_sdiff` rewrite ambiguity**: `rw [card_sdiff_of_subset h,
    card_sdiff_of_subset h]` matches both `(univ \ A).card` and
    `(univ \ A').card` unpredictably.  Fix: prove `C.card` and `D.card` in
    SEPARATE `have` blocks, each with a single `rw [hC, card_sdiff_of_subset
-   (fun _ _ => trivial)]`, then combine.
+   (fun _ _ => Finset.mem_univ _)]`, then combine.
 2. **`x ∈ Finset.univ` is NOT definitionally `True`** (opaque Finset membership):
    `⟨trivial, hx⟩` fails where `x ∈ univ ∧ x ∉ A` is expected.  Fix: use
    `⟨Finset.mem_univ x, hx⟩` (the lemma `Finset.mem_univ x : x ∈ univ` exists).
@@ -1204,7 +1205,12 @@ refine Equiv.ofBijective f ?_
    `Finset.mem_inter` to assemble `value ∈ A' ∩ D`, then the
    `A' ∩ D = ∅` contradiction.)
 
-A future session should fix these 3 mechanical points in the skeleton above,
+  4. **Named-binder `if` does not reduce by `rw [ite_eq_left h]`** (only the
+     *unnamed* `if p then` form does).  **Fix found**: `split_ifs at hxy` DOES
+     reduce a named-binder `if hx : p then … else …`.  So in each injective case
+     use `split_ifs at hxy` (it also supplies the branch hypotheses) instead of
+     `rw [ite_eq_left …]`.
+A future session should fix these 4 mechanical points in the skeleton above,
 add `finsetType_perm` to `CommanderMembershipOrbits.lean`, then build the
 commander `f` from the two halves and state
 `membershipFiber_transitive` (Spec A1).  **No `sorry`/`admit` — this is the one
