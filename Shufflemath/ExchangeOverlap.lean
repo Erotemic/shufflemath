@@ -329,3 +329,101 @@ theorem s1Fiber_biUnion (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
 -- and `Finset.card_sdiff_of_subset` (`|st \ T1| = r - |T1|`).  That is the
 -- S1-side of the general CL; the S2-side is the mirror image and
 -- `fiberSum_swap` + `fiberSum_eq` finish F3 item 3.
+
+/-! The 2-bin fiber count, second half (F3 item 3).  Together with
+`s1Fiber_biUnion`, this gives the S1-side of the general combinatorial lemma:
+a single fiber over the `T1`-part `A` is counted by the outside part, via the
+`S1 ↦ S1 \\ T1` bijection.  -/
+
+theorem fiberA_card (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x t : Nat)
+    (T1 A : Finset (Fin p.r)) (htx : t ≤ x)
+    (hT1 : T1 ⊆ starsUniv p) (hA : A ∈ T1.powersetCard t) :
+    (fiberA p x t T1 A).card = ((starsUniv p \ T1).powersetCard (x - t)).card := by
+  set st := starsUniv p
+  have hAsub : A ⊆ T1 := (Finset.mem_powersetCard.1 hA).1
+  have hAcard : A.card = t := (Finset.mem_powersetCard.1 hA).2
+  refine Finset.card_bij (fun S1 _ => S1 \ T1) ?_ ?_ ?_
+  · -- MapsTo
+    intro S1 hS1
+    have hS1c : S1 ∈ st.powersetCard x ∧ S1 ∩ T1 = A := by
+      simpa [fiberA, Finset.mem_filter] using hS1
+    rcases hS1c with ⟨hS1mem, hI⟩
+    have hS1sub : S1 ⊆ st := (Finset.mem_powersetCard.1 hS1mem).1
+    have hS1card : S1.card = x := (Finset.mem_powersetCard.1 hS1mem).2
+    have hRestsub : S1 \ T1 ⊆ st \ T1 := Finset.sdiff_subset_sdiff hS1sub (by rfl)
+    have hRestcard : (S1 \ T1).card = x - t := by
+      rw [Finset.card_sdiff, Finset.inter_comm, hI, hAcard, hS1card]
+    simpa [hRestsub, hRestcard, Finset.mem_powersetCard]
+  · -- InjOn
+    intro S1 hS1 S1' hS1' h
+    have hS1c : S1 ∈ st.powersetCard x ∧ S1 ∩ T1 = A := by
+      simpa [fiberA, Finset.mem_filter] using hS1
+    have hS1c' : S1' ∈ st.powersetCard x ∧ S1' ∩ T1 = A := by
+      simpa [fiberA, Finset.mem_filter] using hS1'
+    let hI1 := hS1c.2
+    let hI2 := hS1c'.2
+    have hUn1 : S1 = A ∪ (S1 \ T1) := by
+      ext z
+      rw [Finset.mem_union, hI1.symm, Finset.mem_inter, Finset.mem_sdiff]
+      tauto
+    have hUn2 : S1' = A ∪ (S1' \ T1) := by
+      ext z
+      rw [Finset.mem_union, hI2.symm, Finset.mem_inter, Finset.mem_sdiff]
+      tauto
+    rw [hUn1, hUn2, h]
+  · -- SurjOn
+    intro R hR
+    rcases Finset.mem_powersetCard.1 hR with ⟨hRsub, hRcard⟩
+    refine ⟨A ∪ R, ?_, ?_⟩
+    · -- ha : A ∪ R ∈ fiberA
+      dsimp only [fiberA]
+      have hsub : A ∪ R ⊆ st := by
+        intro z hz
+        rw [Finset.mem_union] at hz
+        rcases hz with hzA | hzR
+        · exact hT1 (hAsub hzA)
+        · exact (Finset.mem_sdiff.1 (hRsub hzR)).1
+      have hARdis : A ∩ R = ∅ := by
+        ext z
+        rw [Finset.mem_inter]
+        constructor
+        · intro hz
+          have hzT1 := hAsub hz.1
+          have hznot := (Finset.mem_sdiff.1 (hRsub hz.2)).2
+          exfalso
+          exact absurd hzT1 hznot
+        · intro hz; cases hz
+      have hcard : (A ∪ R).card = x := by
+        have h0 : (A ∩ R).card = 0 := by simpa only [hARdis, Finset.card_empty]
+        have hsum : (A ∪ R).card + (A ∩ R).card = A.card + R.card :=
+          Finset.card_union_add_card_inter _ _
+        rw [h0, add_zero, hAcard, hRcard] at hsum
+        have hadd : t + (x - t) = x := by rw [Nat.add_comm, Nat.sub_add_cancel htx]
+        exact hsum.trans hadd
+      have hInt : (A ∪ R) ∩ T1 = A := by
+        ext z
+        rw [Finset.mem_inter]
+        constructor
+        · intro hz
+          rcases hz with ⟨hzAR, hzT1⟩
+          rw [Finset.mem_union] at hzAR
+          rcases hzAR with hzA | hzR
+          · exact hzA
+          · exact absurd hzT1 (Finset.mem_sdiff.1 (hRsub hzR)).2
+        · intro hzA
+          exact ⟨Finset.mem_union.2 (Or.inl hzA), hAsub hzA⟩
+      simp only [Finset.mem_filter, Finset.mem_powersetCard]
+      exact And.intro (And.intro hsub hcard) hInt
+    · -- i (A ∪ R) = R, i.e. (A ∪ R) \ T1 = R
+      ext z
+      rw [Finset.mem_sdiff, Finset.mem_union]
+      constructor
+      · intro hz
+        rcases hz with ⟨hzAR, hznotT1⟩
+        rcases hzAR with hzA | hzR
+        · exfalso
+          exact absurd (hAsub hzA) hznotT1
+        · exact hzR
+      · intro hzR
+        exact ⟨Or.inr hzR, (Finset.mem_sdiff.1 (hRsub hzR)).2⟩
+
