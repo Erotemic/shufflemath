@@ -198,10 +198,25 @@ last blocker in the `distProductFinsupp` route the 5th session documented —
   conjunctions nest as `((P ∧ Q) ∧ R)` (use `And.intro (And.intro …)`);
   the empty-set direction closes by `cases` on `List.Mem z []` (`mem_empty`
   does not exist); `Nat.sub_add_cancel` (not `add_sub_cancel_left`) for
-  `t + (x - t) = x`.  **(2) Next concrete step:** assemble the full symbolic CL
-  `fiberSum p x y = choose(r,y) * choose(N-r, m-y) * overlap_count (N m r k) x y`
-  from the S1-side (this session) + the mirrored S2/plain-side count +
-  `fiberSum_swap`/`fiberSum_eq`; OR go straight to (3) F3 item 4 (2-exchange TV).
+  `t + (x - t) = x`.  A new **parameter-free** module `Shufflemath.FinsetFiberCount`
+  (commit `6ae278f`) factors the S1/S2 fiber machinery out of
+  `ExchangeOverlap.lean` (defs `sFiber`/`sFiberA` + theorems `sFiber_biUnion`,
+  `sFiberA_card`, `sFiber_card`, `sFiber_choose`, requiring only `[DecidableEq α]`)
+  so both the marked and plain sides instantiate the same general lemma.
+  **(2) Next concrete step — the general CL, now sharply narrowed (commits
+  `08a864b`, `19892fa`):** since `fiberSum_eq` and `fiberSum_swap` are both
+  already proven, the full symbolic CL
+  `fiberSum p x y = choose(p.r,y)*choose(p.N-p.r,(p.m-y))*overlap_count (…)`
+  reduces, for a valid macro state, to the **single** pure-`Nat`/`choose`
+  identity `transitionNumerator (N m r k) y x = overlap_count (N m r k) x y`
+  (only `native_decide` small-deck versions exist).  The `ExchangeOverlap.lean`
+  section comment records the full analysis: the reindexing `t = y - a` (marked
+  overlap = source marked − marked moved out) makes the four transition factors
+  match the four overlap factors (two by `Nat.choose` symmetry), and the only
+  remaining difficulty is the **boundary** (the transition sum's `if`-guards /
+  `Nat`-saturated `y - a` vs the overlap sum's `chooseSigned = 0` out of range).
+  The proof is a pure `Nat`/`choose` reindexing with **no** `Finset` API.  OR go
+  straight to (3) F3 item 4 (2-exchange TV, downstream of this CL).
   (4) F5 full/optimizer. (5) **F4.5 full-deck decay**
   (contractive, to uniform) — blocked on finiteness: the non-finite pile-list
   space admits the non-expansive bound but not the Dobrushin *contraction*; a
