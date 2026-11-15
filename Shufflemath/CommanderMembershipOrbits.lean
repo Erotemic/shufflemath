@@ -2,6 +2,7 @@ module
 
 public import Shufflemath.CommanderMembershipKernels
 public import Shufflemath.CommanderFiberCount
+public import Mathlib.Data.Fintype.EquivFin
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -19,7 +20,8 @@ intended proof is a group-action one (the `leftOrigSet`-stabilizer acts
 transitively on each fiber — see `docs/agent_handoff.md`, Spec A).  This module
 records the clean, standalone groundwork: every valid membership has marked
 count `k` in the well-typed range `1 ≤ k ≤ 50` (so all the fiber part-counts in
-the orbit construction are valid).
+the orbit construction are valid), and the atomic bijection the orbit
+construction is built from.
 
 `Membership = {S : Finset (Fin 99) // S.card = 50}`,
 `membershipCount m = (m.1 ∩ leftOrigSet).card`,
@@ -96,6 +98,29 @@ theorem membershipCount_le_50 (m : Membership) : membershipCount m ≤ 50 := by
   calc
     A.card ≤ leftOrigSet.card := Finset.card_le_card hsub
     _ = 50 := leftOrigSet_card
+
+/-! **Equi-cardinal finite subsets of a finite type are bijective.**  If two
+    finite sets have the same cardinality, their subtypes are in bijection
+    (noncomputable, via the `Fintype` instances and `Fintype.equivFinOfCardEq`).
+    This is the atomic step in the orbit-transitivity construction (Spec A1). -/
+noncomputable def equiCardFinsets_bij {α : Type*} [Fintype α] [DecidableEq α]
+    {s t : Finset α} (h : s.card = t.card) : {x : α // x ∈ s} ≃ {x : α // x ∈ t} := by
+  classical
+  let n := s.card
+  have cs : Fintype.card {x : α // x ∈ s} = n := by
+    calc
+      Fintype.card {x : α // x ∈ s} = Fintype.card {x : α // x ∈ (↑s : Set α)} := rfl
+      _ = s.card := Fintype.card_ofFinset _ (fun _ => Iff.rfl)
+      _ = n := rfl
+  have ct : Fintype.card {x : α // x ∈ t} = n := by
+    calc
+      Fintype.card {x : α // x ∈ t} = Fintype.card {x : α // x ∈ (↑t : Set α)} := rfl
+      _ = t.card := Fintype.card_ofFinset _ (fun _ => Iff.rfl)
+      _ = s.card := by rw [← h]
+      _ = n := rfl
+  have es : {x : α // x ∈ s} ≃ Fin n := Fintype.equivFinOfCardEq cs
+  have et : {x : α // x ∈ t} ≃ Fin n := Fintype.equivFinOfCardEq ct
+  exact es.trans et.symm
 
 end Shufflemath
 end
