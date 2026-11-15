@@ -1219,3 +1219,55 @@ A2 (stabilizer invariance of the physical-exchange distribution) and A3
 (kernel assembly via `interweaving_of_membership_exchange`) follow directly once
 A1 lands.**
 
+
+## 19th-session progress (F4.2 deck-level GSR, Fintype-free) — NEW module `Shufflemath/CommanderDeckGSR.lean`
+
+The F4.2 *structural identification* is done (Fintype-free, no `List.mem_bind`/
+`toMultiset`): a **membership-preserving** deck permutation (one sending the 50 left
+positions to left cards `val < 50` and the 49 right positions to right cards `val ≥
+50`, `preservesPiles σ`) is **exactly** a within-pile relabeling.
+
+Committed (newest first):
+- `f0d42b3` `pileRelabelEquiv_mul`: `pileRelabelEquiv (pl*pl') (pr*pr') =
+  pileRelabelEquiv pl pr * pileRelabelEquiv pl' pr'` — the within-pile relabels form a
+  *subgroup* of `Deck`, closed under composition.
+- `f097fec` `preservesPiles` predicate + capstone `preservesPiles_iff_pileRelabel :
+  preservesPiles σ ↔ ∃ p, pileRelabelEquiv p.1 p.2 = σ`.
+- `0b7460a` `pileRelabelEquiv_image`: a `preservesPiles` `σ` equals `pileRelabelEquiv`
+  of its components (`leftPermOf`/`rightPermOf` + `Equiv.ofBijective` +
+  `Finite.surjective_of_injective`).
+- `a4eb2d8` `leftPermOf`/`rightPermOf` helpers + `leftPos_leftPermOf`/
+  `rightPos_rightPermOf` + `leftPermOf_injective`/`rightPermOf_injective`.
+- `f14c083` new `CommanderDeckGSR.lean` + `pileRelabelEquiv_pairInjective` (a within-pile
+  pair is recovered from its `Deck` action).
+
+**19th-session gotchas:**
+- `Fintype.surjective_of_injective` does not exist; it is **`Finite.surjective_of_injective`**
+  (`Mathlib/Data/Fintype/Card.lean`, `namespace Finite`, needs `[Finite α]` — `Fin n` qualifies).
+- `Equiv.ofBijective f hf : α ≃ β` has **`toFun := f`**, but a `have` binding it is opaque to
+  `dsimp`/`rfl`. Use **`let`** (not `have`) for the equiv, then `dsimp only [pl]; rfl` gives
+  `pl i = f i`. (`Equiv.coe_ofBijective : ⇑(ofBijective f hf) = f` is a simp lemma but did not
+  fire through the let in `simp` here; the `dsimp [pl]; rfl` route worked.)
+- `leftPosition_leftIndex`/`rightPosition_rightIndex` give `leftPosition (leftIndex p h) = p`
+  (wrong direction for `p = leftPosition i`) — use **`.symm`**.
+- `leftPos_leftPermOf`/`rightPos_rightPermOf` give `leftPosition (leftPermOf σ hL i) = σ
+  (leftPosition i)`; when you need `σ (leftPosition i) = leftPosition (...)` use **`.symm`**.
+- In a pointwise `ext pos` case split, after `simp only [pileRelabelEquiv_left/right,
+  Equiv.Perm.mul_apply]` the goal is reflexive and closes — a trailing `congr 1`/`rfl` gives
+  "No goals to be solved".
+
+**Next F4.2 (deck-level GSR kernel)**: a `FiniteKernel Deck Deck` (or a one-step `Dist Deck`)
+for a riffle = apply an independent per-pile GSR riffle. The remaining sub-wall is bridging
+`GSR.idealShuffle : FiniteKernel (List (Fin n)) (List (Fin n))` (a permuted *list*) to a
+`Equiv.Perm (Fin n)` (a *permutation*) so the two per-pile permutations compose into a
+`Deck`. This is the "distributional multiset/permutation fact" noted in `docs/lean_plan.md`
+F4 item 2 — the `List.mem_bind`/`toMultiset` absence. Explore a `Equiv` from a perm-list
+(`Equiv.ofPermList` / `List.Perm` bridges) to avoid `toMultiset`.
+
+**F3 item 4 part (ii)** (`finsetType_perm`, `docs/agent_handoff.md` 17th/18th-session block):
+the last F3 item — membership uniformity. Injective half is DONE (4 cases via
+`dsimp only [f] at hxy; split_ifs at hxy <;> rename_i hx hy`). Surjective half is 90% with 3
+documented one-line fixes (W1: `have pre` opaque → use `let`/inline; W2: `rw [hmem] at hR` on
+`Finset.mem_sdiff` → apply `Finset.mem_sdiff.mp` as a term; W3: `split_ifs <;> rename_i` grabs
+the `DecidableEq s` typeclass → reference the ite condition by proposition). Near-complete
+proof at `/tmp/finsetType_perm_nearcomplete.lean`.
