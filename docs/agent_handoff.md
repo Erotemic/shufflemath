@@ -1035,3 +1035,71 @@ The active mathematical specification is in [lean_plan.md](lean_plan.md).
 The detailed model distinction is in
 [full_deck_oracle_bridge.md](full_deck_oracle_bridge.md) and
 [commander_fiber_disintegration.md](commander_fiber_disintegration.md).
+
+---
+
+## Executable specs for the two remaining fundamental blockers
+
+These gate F3 item 4 (the 2-exchange TV) and F5. Both are specified precisely
+so the next session can execute without re-diagnosis. The counting (part (i))
+is done; these are part (ii) and F4.2.
+
+### Spec A — part (ii): membership-fiber orbit transitivity, then exchange invariance
+
+**Step A1 (crackable, no measure theory): orbit transitivity.**  Prove
+`membershipFiber_transitive`: for memberships `m m' : Membership`
+(`Membership = {S : Finset (Fin 99) // S.card = 50}`) with
+`membershipCount m = membershipCount m'` (`membershipCount m = (m.1 ∩
+leftOrigSet).card`, `leftOrigSet = {c : Fin 99 : c.val < 50}`), there exists a
+bijection `f : Fin 99 → Fin 99` such that `f '' (leftOrigSet : Set) =
+(leftOrigSet : Set)` and `f '' (m.1 : Set) = (m'.1 : Set)`.  **Every valid
+membership has marked count `k ≥ 1`** (a 50-subset with `k` in the 50-card
+`leftOrigSet` and `50 - k` in the 49-card `rightOrigSet` needs `50 - k ≤ 49`,
+i.e. `k ≥ 1`), so the four parts are all well-typed.  **Construction** (4-part
+permutation): set `A := m.1 ∩ leftOrigSet`, `A' := m'.1 ∩ leftOrigSet` (both
+`k`), `C := leftOrigSet \ A`, `C' := leftOrigSet \ A'` (both `50 - k`),
+`B := m.1 ∩ rightOrigSet`, `B' := m'.1 ∩ rightOrigSet` (both `50 - k`),
+`D := rightOrigSet \ B`, `D' := rightOrigSet \ B'` (both `k - 1 ≥ 0`).  Build
+four bijections `eA : A ≃ A'`, `eC : C ≃ C'`, `eB : B ≃ B'`, `eD : D ≃ D'` via
+`Fintype.equivFinOfCardEq` (`Fintype.card A = k` etc., each obtained from
+`Finset.card_inter`/`Finset.card_sdiff` + `h`), each as
+`(Fintype.equivFinOfCardEq hT').symm ∘ Fintype.equivFinOfCardEq hS`.  Define
+`f` piecewise on the disjoint 4-part partition `{A, C} ∪ {B, D} = Fin 99`
+(mapping each part to the primed part) and prove `Function.Bijective` by
+cases + the four Equivs' injectivity/surjectivity.  Then `f` preserves
+`leftOrigSet` (maps `A ∪ C` to `A' ∪ C'`) and sends `m.1 = A ∪ B` to
+`A' ∪ B' = m'.1`.  Put this in a new module
+`Shufflemath/CommanderMembershipOrbits.lean`.
+
+**Step A2 (the invariance, the real work):** show the physical-exchange
+distribution — averaged over a uniform `d` in the `project`-fiber of a
+source count `x` and a uniform `(L, R)` 25-25 choice — is invariant under the
+`leftOrigSet`-stabilizer group (the action of A1's `f`'s on the *source* deck
+and the target membership commute with `newLeftCards`).  Concretely: for any
+such `f`, `newLeftCards (f ∘ d) L R = f '' (newLeftCards d L R)` (up to the
+`L`/`R` being position-sets, not card-sets — so `f` acts on the *values* of
+the deck).  Because A1 shows the stabilizer acts **transitively** on the
+target membership fiber of any fixed count `m`, and the distribution is
+stabilizer-invariant, it is **uniform over that fiber** — this is part (ii).
+
+**Step A3 (assemble):** with A2, the LHS of
+`comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25
+membershipLift` is, at a target membership `μ` of count `m`,
+`(mass to count m) / membershipFiberCount m` = the RHS (whose `membershipLift`
+is uniform over the fiber by construction).  Then `interweaving_of_membership_exchange`
++ `run_tv_eq_macro_of_membership_exchange` (already proven general theorems)
+yield the 2-exchange TV (= the macro/BL TV).
+
+### Spec B — F4.2: Deck-level GSR lift to `Equiv.Perm (Fin 99)`
+
+The `List.mem_bind`/`toMultiset` sub-wall blocks lifting the GSR product
+kernel to `Equiv.Perm (Fin 99)`.  **Fintype-free alternative (this session's
+machinery is ready):** the F4.5 Finsupp machinery (`gsrProductKernel`,
+`distProductFinsupp`, `kernel_apply_lipschitz`) works over any `[Fintype]`
+target *without* the multiset encoding.  To lift to the deck level, model the
+GSR shuffle as an `Equiv.Perm (Fin 99)` directly (a riffle is a specific
+interleaving permutation; the GSR is the uniform mixture over riffle counts),
+and use `Finsupp`/`Dist` over `Equiv.Perm (Fin 99)` (a Fintype) instead of the
+pile-list `List` space.  This sidesteps `List.mem_bind`.  Check whether
+`Equiv.Perm (Fin 99)` has a usable `Fintype` instance (it does, via
+`Fintype` on `Equiv` for Fintype base) and build the riffle kernel there.
