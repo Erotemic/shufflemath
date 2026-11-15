@@ -1055,3 +1055,170 @@ theorem fiberSum_eq_overlap (p : ExchangeAdmissible) (x y : Nat)
   rw [fiberSum_swap p x y hxle hmy]
   rw [fiberSum_eq p y x hy']
   rw [generalCL p.N p.m p.r p.k x y hkly hmy hry hN h4g]
+
+
+
+/-! ## F3 item 3 — the general CL in the `m + r > N` regime (the Commander)
+
+The `generalCL` above proves the counting identity under `m + r ≤ N`.  The
+**Commander** (99 50 50 25, `m + r = 100 > 99`) and the 7442 deck fall in the
+`m + r > N` regime, where the 4th-factor base `(N-m) - (r-y)` no longer equals
+the left-saturated `N - m - r + y`.  The fix is to use the *non-saturating* base
+`(N-m) - (r-y) = (N-r) - (m-y)` (equal, both = `N - m - r + y` as an `Int`,
+nonnegative for `y ≥ blLo`) for the 4th factor, which is valid for every valid
+state.  This block re-proves the whole chain without `m + r ≤ N`:
+
+  `baseInt_eqNatCast` (the base identity) → `F4match_ns` (4th factor) →
+  `tterm_eq_oterm_ns` (summand match) → `tterm_eq_oterm_all_ns` (all `a`) →
+  `transition_eq_sum_oterm_ySuba_ns` (the `a ↦ y-a` reindex) →
+  **`generalCL_ns`** (`transitionNumerator = overlap_count`, no `m + r ≤ N`).
+
+The guard-FAIL cases (F2/F4 factor negative index → `chooseSigned = 0`) are
+regime-independent, so they are reused verbatim. -/
+
+theorem baseInt_eqNatCast (N m r y : Nat)
+    (h4g : r - y ≤ N - m) (hNm : m ≤ N) (hRy : y ≤ r) :
+    (N : Int) - (r : Int) - ((m : Int) - (y : Int)) =
+      (Nat.cast ((N - m) - (r - y)) : Int) := by
+  have hL : (N : Int) - (r : Int) - ((m : Int) - (y : Int)) =
+      (N : Int) - (m : Int) - (r : Int) + (y : Int) := by ring_nf
+  have hR : (Nat.cast ((N - m) - (r - y)) : Int) =
+      (N : Int) - (m : Int) - (r : Int) + (y : Int) := by
+    rw [Nat.cast_sub h4g]
+    rw [Nat.cast_sub hNm, Nat.cast_sub hRy]
+    ring_nf
+  rw [hL, hR]
+
+theorem F4match_ns (N m r k x y a : Nat)
+    (h1g : y - a ≤ x) (h2g : x - (y - a) ≤ k)
+    (ha : a ≤ y) (hmy : y ≤ m) (hRy : y ≤ r) (h4g : r - y ≤ N - m) (hNm : m ≤ N) :
+    chooseSigned ((N : Int) - (r : Int) - ((m : Int) - (y : Int)))
+        (((m : Int) - (x : Int)) - (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int))) =
+      Nat.choose ((N - m) - (r - y)) (k - (x - (y - a))) := by
+  have hR : (Nat.cast (k - (x - (y - a))) : Int) = (Nat.cast k - Nat.cast x + Nat.cast (y - a) : Int) := by
+    rw [← intSub_eqCast k (x - (y - a)) h2g]
+    rw [← intSub_eqCast x (y - a) h1g]
+    ring_nf
+  have he : ((m : Int) - (x : Int)) - (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int)) =
+            (Nat.cast (k - (x - (y - a))) : Int) := by
+    rw [hR]
+    ring_nf
+  have he0 : 0 ≤ ((m : Int) - (x : Int)) - (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int)) := by
+    rw [he]
+    simp only [Nat.cast_nonneg]
+  have hbase : (N : Int) - (r : Int) - ((m : Int) - (y : Int)) = (Nat.cast ((N - m) - (r - y)) : Int) :=
+    baseInt_eqNatCast N m r y h4g hNm hRy
+  have hbase0 : 0 ≤ (N : Int) - (r : Int) - ((m : Int) - (y : Int)) := by
+    rw [hbase]
+    simp only [Nat.cast_nonneg]
+  rw [cs_eq_chooseNatI
+        ((N : Int) - (r : Int) - ((m : Int) - (y : Int)))
+        (((m : Int) - (x : Int)) - (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int)))
+        hbase0 he0]
+  have hbt : ((N : Int) - (r : Int) - ((m : Int) - (y : Int))).toNat = (N - m) - (r - y) := by
+    rw [hbase, Int.toNat_natCast]
+  have het : (((m : Int) - (x : Int)) - (((m : Int) - (k : Int)) - (Nat.cast (y - a) : Int))).toNat =
+             k - (x - (y - a)) := by
+    rw [he, Int.toNat_natCast]
+  rw [hbt, het]
+
+theorem tterm_eq_oterm_ns (N m r k x y a : Nat)
+    (h1g : y - a ≤ x) (h2g : x - (y - a) ≤ k)
+    (ha : a ≤ y) (hak : a ≤ k) (hky : k ≤ y) (hmy : y ≤ m) (hry : y ≤ r)
+    (h4g : r - y ≤ N - m) (hNm : m ≤ N) :
+    tterm N m r k x y a = oterm N m r k x y (y - a) := by
+  dsimp only [tterm, oterm]
+  rw [if_pos h1g, if_pos h2g]
+  rw [F1match y a ha,
+      F2match r y x (y - a) hry h1g,
+      F3match m k y a ha hak hky hmy,
+      F4match_ns N m r k x y a h1g h2g ha hmy hry h4g hNm]
+  ring_nf
+
+theorem tterm_eq_oterm_all_ns (N m r k x y a : Nat)
+    (ha : a ≤ y) (hak : a ≤ k) (hky : k ≤ y) (hmy : y ≤ m) (hry : y ≤ r)
+    (h4g : r - y ≤ N - m) (hNm : m ≤ N) :
+    tterm N m r k x y a = oterm N m r k x y (y - a) := by
+  by_cases h1g : y - a ≤ x
+  · by_cases h2g : x - (y - a) ≤ k
+    · exact tterm_eq_oterm_ns N m r k x y a h1g h2g ha hak hky hmy hry h4g hNm
+    · have hL : tterm N m r k x y a = 0 := by
+        dsimp only [tterm]
+        rw [ite_eq_left h1g, ite_eq_right h2g]
+      have hR : oterm N m r k x y (y - a) = 0 := by
+        dsimp only [oterm]
+        let t := y - a
+        have hb : k < x - t := by push Not at h2g; simpa [t] using h2g
+        have hIntlt : (k : Int) + (t : Int) < (x : Int) := by omega
+        have hF4neg : (m : Int) - (x : Int) - ((m : Int) - (k : Int) - (t : Int)) < 0 := by
+          ring_nf
+          nlinarith
+        have hF4zero : chooseSigned ((N : Int) - (r : Int) - ((m : Int) - (y : Int)))
+            ((m : Int) - (x : Int) - ((m : Int) - (k : Int) - (t : Int))) = 0 := by
+          exact chooseSigned_zero_neg _ _ hF4neg
+        rw [hF4zero]
+        simp only [mul_zero, zero_mul]
+      rw [hL, hR]
+  · have hL : tterm N m r k x y a = 0 := by
+      dsimp only [tterm]
+      rw [ite_eq_right h1g]
+    have hR : oterm N m r k x y (y - a) = 0 := by
+      dsimp only [oterm]
+      let t := y - a
+      have hF2neg : (x : Int) - (t : Int) < 0 := by
+        have hlt : (x : Int) < (t : Int) := by
+          push Not at h1g
+          omega
+        rw [sub_neg]
+        exact hlt
+      have hF2zero : chooseSigned ((r : Int) - (y : Int)) ((x : Int) - (t : Int)) = 0 := by
+        exact chooseSigned_zero_neg _ _ hF2neg
+      rw [hF2zero]
+      simp only [mul_zero, zero_mul]
+    rw [hL, hR]
+
+theorem transition_eq_sum_oterm_ySuba_ns (N m r k x y : Nat)
+    (hky : k ≤ y) (hmy : y ≤ m) (hry : y ≤ r) (h4g : r - y ≤ N - m) (hNm : m ≤ N) :
+    transitionNumerator N m r k y x = (Finset.Icc (y - k) y).sum (fun t => oterm N m r k x y t) := by
+  have h1 : transitionNumerator N m r k y x =
+      (Finset.range (k + 1)).sum (fun a => oterm N m r k x y (y - a)) := by
+    rw [transitionNumerator_eq_sum_tterm]
+    apply Finset.sum_congr rfl
+    intro a ha
+    have hak : a ≤ k := by simpa [Finset.mem_coe, Finset.mem_range] using ha
+    exact tterm_eq_oterm_all_ns N m r k x y a (Nat.le_trans hak hky) hak hky hmy hry h4g hNm
+  have hinj : Set.InjOn (fun a => y - a) (Finset.range (k + 1)) := by
+    intro a ha b hb h
+    have hak : a ≤ k := by simpa [Finset.mem_coe, Finset.mem_range] using ha
+    have hbk : b ≤ k := by simpa [Finset.mem_coe, Finset.mem_range] using hb
+    have haw : a ≤ y := Nat.le_trans hak hky
+    have hbw : b ≤ y := Nat.le_trans hbk hky
+    have h1 : y - (y - a) = a := Nat.sub_sub_self haw
+    have h2 : y - (y - b) = b := Nat.sub_sub_self hbw
+    have hsub : y - (y - a) = y - (y - b) := congrArg (fun u => y - u) h
+    exact calc
+      a = y - (y - a) := h1.symm
+      _ = y - (y - b) := hsub
+      _ = b := h2
+  have h2 : (Finset.Icc (y - k) y).sum (fun t => oterm N m r k x y t) =
+      (Finset.range (k + 1)).sum (fun a => oterm N m r k x y (y - a)) := by
+    rw [← rangeImage_ySuba_eq_Icc y k hky, Finset.sum_image hinj]
+  rw [h1, h2]
+
+theorem generalCL_ns (N m r k x y : Nat)
+    (hky : k ≤ y) (hmy : y ≤ m) (hry : y ≤ r) (h4g : r - y ≤ N - m) (hNm : m ≤ N) :
+    transitionNumerator N m r k y x = overlap_count N m r k x y := by
+  rw [transition_eq_sum_oterm_ySuba_ns N m r k x y hky hmy hry h4g hNm]
+  rw [oterm_sum_clip_eq N m r k x y hky hmy]
+  rw [overlap_eq_sum_oterm N m r k x y]
+  rw [Nat.range_succ_eq_Icc_zero (m - k)]
+
+/-! The 25-25 Commander transition is now proved **symbolically** (no
+    `native_decide`): `generalCL_ns` applies at (N m r k x y) =
+    (99 50 50 25 25 25) since every regime hypothesis holds
+    (`25 ≤ 25`, `25 ≤ 50`, `25 ≤ 50`, `50 - 25 = 25 ≤ 99 - 50 = 49`, `50 ≤ 99`).
+    This is the same identity the earlier `overlap_eq_revTransitionNumerator_cmdr_2525`
+    verified by `native_decide`. -/
+theorem generalCL_cmdr_2525 :
+    transitionNumerator 99 50 50 25 25 25 = overlap_count 99 50 50 25 25 25 := by
+  exact generalCL_ns 99 50 50 25 25 25 (by decide) (by decide) (by decide) (by decide) (by decide)
