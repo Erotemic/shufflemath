@@ -4,6 +4,8 @@ public import Shufflemath.CommanderPermutation
 public import Shufflemath.CommanderFiberCount
 public import Shufflemath.CommanderMembershipKernels
 public import Shufflemath.GSR
+public import Shufflemath.Finite
+public import Shufflemath.TotalVariation
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Tactic
@@ -272,6 +274,30 @@ theorem gsrProductKernel_mass (nL nR : Nat) (L' : List (Fin nL)) (R' : List (Fin
     exact Finsupp.sum_ite_self_eq' _ L'
   rw [hsumL]
 
+/-- F4.3: the point-mass of the actual two-pile GSR product kernel at
+    `(L', R')` is the product of the two piles' ideal-GSR masses.  This is
+    `gsrProductKernel_mass` instantiated at the GSR kernels; the kernel is
+    definitionally the `map`/`join` construction the core lemma handles. -/
+theorem gsrProductKernel_pointMass (nL nR a b : Nat) (ha : 0 < a) (hb : 0 < b)
+    (pr : List (Fin nL) × List (Fin nR))
+    (L' : List (Fin nL)) (R' : List (Fin nR)) :
+    (gsrProductKernel nL nR a b ha hb pr).weights (L', R') =
+      (GSR.idealShuffle nL a ha pr.1).weights L' * (GSR.idealShuffle nR b hb pr.2).weights R' := by
+  dsimp only [gsrProductKernel]
+  exact gsrProductKernel_mass nL nR L' R' _ _
+
+/-- The two-pile GSR product kernel is, pointwise, exactly the Fintype-free
+independent product of the two per-pile F4.1 `idealShuffle` kernels.  Both
+sides unfold to the same nested `StdSimplex.map`/`join` construction, so the
+identity is definitional.  This is the bridge that lets the F4.3 Fintype-free
+total-variation subadditivity (`TotalVariation.distProductFinsupp_tv_subadditive`)
+be applied to the concrete `gsrProductKernel`. -/
+theorem gsrProductKernel_eq_distProductFinsupp (nL nR a b : Nat) (ha : 0 < a) (hb : 0 < b)
+    (pr : List (Fin nL) × List (Fin nR)) :
+    gsrProductKernel nL nR a b ha hb pr =
+      distProductFinsupp (GSR.idealShuffle nL a ha pr.1) (GSR.idealShuffle nR b hb pr.2) := by
+  dsimp only [gsrProductKernel, distProductFinsupp]
+
 /-- A within-pile GSR can never move a card out of its pile: the output
 arrangement holds exactly the pile's original cards.  The deterministic
 `reorderedDeck_leftCards` is the fixed-relabel instance of this. -/
@@ -279,6 +305,25 @@ theorem gsrLocal_preserves_pile (n a : Nat)
     (deck : List (Fin n)) (labels : Fin n → Fin a) (x : Fin n) :
     x ∈ GSR.stableBuckets a labels deck ↔ x ∈ deck := by
   exact GSR.stableBuckets_set a labels deck x
+
+/-- F4.3 row-wise bound: the two-pile GSR product kernel, against *any*
+two-pile product reference, has total variation at most the sum of the two
+per-pile GSR-versus-reference errors.  This is the Fintype-free GSR two-pile
+contraction — the `List (Fin n)` state space is not a `Fintype`, so the bound
+is stated with `tvFinsupp` and the Finsupp product, not the `Finset.univ`-based
+`Dist.tv`.  Taking the two references to be the per-pile perfect (uniform)
+local shuffles gives exactly the "GSR discrepancy is at most the sum of the
+two local GSR-versus-uniform errors" statement of the plan.  The proof is the
+definitional bridge `gsrProductKernel_eq_distProductFinsupp` plus the general
+F4.3 subadditivity. -/
+theorem gsrProductKernel_rowTV_bound (nL nR a b : Nat) (ha : 0 < a) (hb : 0 < b)
+    (pr : List (Fin nL) × List (Fin nR))
+    (perfectL : Dist (List (Fin nL))) (perfectR : Dist (List (Fin nR))) :
+    tvFinsupp (gsrProductKernel nL nR a b ha hb pr) (distProductFinsupp perfectL perfectR) ≤
+      tvFinsupp (GSR.idealShuffle nL a ha pr.1) perfectL +
+      tvFinsupp (GSR.idealShuffle nR b hb pr.2) perfectR := by
+  rw [gsrProductKernel_eq_distProductFinsupp]
+  exact distProductFinsupp_tv_subadditive _ _ _ _
 
 end CommanderLocalGSR
 end Shufflemath
