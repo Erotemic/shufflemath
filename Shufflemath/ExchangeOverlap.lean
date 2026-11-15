@@ -788,28 +788,74 @@ theorem transitionNumerator_eq_sum_tterm (N m r k x y : Nat) :
   rfl
 
 
-/-! F3 item 3 — **general CL: sum reindexing — the single remaining step (STUCK on a Lean term-matching wall).**
-    All of the following are PROVEN (above):
-    - all four factor matches:  `F1match`, `F2match`, `F3match`, `F4match`;
-    - the summand assembly:  `tterm_eq_oterm`  (guard-hold regime:  `tterm a = oterm (y-a)`);
-    - the decomposition:  `transitionNumerator_eq_sum_tterm`;
-    - `chooseSigned_zero_neg` / `chooseSigned_zero_toobig`;
-    - in the guard-FAIL cases the oterm's vanishing factor is provably 0  in ISOLATION:
-      * F4 (h1g holds, h2g fails):  index  `(m-x)-(m-k-(y-a))  (Int)`  is  `< 0`  from  `k < x-(y-a)`;
-        proven  by  `ring_nf`  +  `nlinarith [ (k:Int)+(y-a:Int) < (x:Int) ]`  (the  Int  inequality  is
-        itself  by  `omega`  from  `k < x-(y-a)`  and  `y-a ≤ x`).
-      * F2 (h1g fails):  index  `(x:Int)-(y-a:Int)  <  0`  from  `x < y-a`;  `rw [sub_neg]`  +  `omega`.
-    **The wall:**  to close  `oterm N m r k x y (y-a) = 0`  I must fold the 4th factor  (=  0)  into the
-    4-way product  `F1*F2*F3*F4`.  After  `dsimp only [oterm]`,  `rw`/`simp`/`conv`/`change` all FAIL to
-    locate the 4th factor as a subterm of the product (the let-inlined AST does not match fresh
-    `chooseSigned (↑N-↑r-(↑m-↑y)) (↑m-↑x-(↑m-↑k-↑(y-a)))`  notation,  though the 4th factor  MATCHES  that
-    notation  when  stated  STANDALONE  —  caseB6  succeeds,  caseB5/B7/B8  fail  only  in  the  product
-    context).  This is a  Lean  term-representation  issue,  not  a  math  one  (the  math  is  complete).
-    **Next angle:**  prove  `oterm ... (y-a) = 0`  WITHOUT  dsimp-ing  into  the  product  —  e.g.  keep  the
-    oterm let-binders  (`plain_outside_target`,  `plain_overlap`)  and  show  the  let-based  product  =  0  by
-    `rw [chooseSigned_zero_neg _ _ hF4neg]`  on  the  4th  let-applied  factor  directly,  or  build  the
-    equality  by  `refine`/`calc`  through  `mul_zero`.  Then  the  reindexing  `∑ tterm = ∑ oterm`  is
-    `Finset.sum_bij`/`sum_image`  on  `a ↦ y-a`  over  the  common  support  `[max (0, y-k), min y (m-k)]`
-    (outside  it  both  sums  are  0).  Then  F3  item  4  (2-exchange  TV)  follows  from  the  CL  +
-    `fiberSum_eq`.  Do  NOT  use  bare  `simp`/`field_simp`  (this  module  is  adjacent  to  `Equiv.Perm (Fin 99)`
-    consumers).  Working  scratch:  see  the  11th-session  handoff  note  (docs/agent_handoff.md). -/
+
+/-! F3 item 3 — **general CL, pointwise all-a equality — PROVEN.**
+
+`tterm N m r k x y a = oterm N m r k x y (y-a)` for **every** `a` (not just the
+guard-hold regime).  Three cases:
+  - both guards hold:  by `tterm_eq_oterm`;
+  - `y-a ≤ x` but `x-(y-a) > k`  (F4 guard fails):  `tterm = 0`  (outer ite true,
+    inner ite false)  and  `oterm = 0`  because its 4th factor's  index
+    `(m-x)-(m-k-(y-a))`  is  `< 0`  (hence  `chooseSigned = 0`);
+  - `y-a > x`  (F2 guard fails):  `tterm = 0`  (outer ite false)  and
+    `oterm = 0`  because its 2nd factor's  index  `x-(y-a)`  is  `< 0`.
+
+The vanishing-factor proofs bind  `let t := y-a`  and  work  in  the  single-cast
+`↑t`  form  (matching  oterm's  inlined  `tI := t`)  so  that  `rw`  can  locate
+the factor inside the 4-way product;  `chooseSigned_zero_neg`  +  `mul_zero`/
+`zero_mul`  then  fold  the  product  to  `0`.  (Fresh  `(y-a : Int)`  notation
+normalizes  to  `↑y - ↑a`,  which  does  NOT  match  the  product  subterm.) -/
+
+theorem tterm_eq_oterm_all (N m r k x y a : Nat)
+    (ha : a ≤ y) (hak : a ≤ k) (hky : k ≤ y) (hmy : y ≤ m) (hry : y ≤ r)
+    (hN : m + r ≤ N) (h4g : r - y ≤ N - m) :
+    tterm N m r k x y a = oterm N m r k x y (y - a) := by
+  by_cases h1g : y - a ≤ x
+  · by_cases h2g : x - (y - a) ≤ k
+    · -- both guards hold:  the summand match is exactly `tterm_eq_oterm`
+      exact tterm_eq_oterm N m r k x y a h1g h2g ha hak hky hmy hry hN h4g
+    · -- h1g holds, h2g fails (b = x-(y-a) > k):  tterm = 0,  oterm = 0  (F4 factor)
+      have hL : tterm N m r k x y a = 0 := by
+        dsimp only [tterm]
+        rw [ite_eq_left h1g, ite_eq_right h2g]
+      have hR : oterm N m r k x y (y - a) = 0 := by
+        dsimp only [oterm]
+        let t := y - a
+        have hb : k < x - t := by push Not at h2g; simpa [t] using h2g
+        have hIntlt : (k : Int) + (t : Int) < (x : Int) := by omega
+        have hF4neg : (m : Int) - (x : Int) - ((m : Int) - (k : Int) - (t : Int)) < 0 := by
+          ring_nf
+          nlinarith
+        have hF4zero : chooseSigned ((N : Int) - (r : Int) - ((m : Int) - (y : Int)))
+            ((m : Int) - (x : Int) - ((m : Int) - (k : Int) - (t : Int))) = 0 := by
+          exact chooseSigned_zero_neg _ _ hF4neg
+        rw [hF4zero]
+        simp only [mul_zero, zero_mul]
+      rw [hL, hR]
+  · -- h1g fails (t = y-a > x):  tterm = 0,  oterm = 0  (F2 factor)
+    have hL : tterm N m r k x y a = 0 := by
+      dsimp only [tterm]
+      rw [ite_eq_right h1g]
+    have hR : oterm N m r k x y (y - a) = 0 := by
+      dsimp only [oterm]
+      let t := y - a
+      have hF2neg : (x : Int) - (t : Int) < 0 := by
+        have hlt : (x : Int) < (t : Int) := by
+          push Not at h1g
+          omega
+        rw [sub_neg]
+        exact hlt
+      have hF2zero : chooseSigned ((r : Int) - (y : Int)) ((x : Int) - (t : Int)) = 0 := by
+        exact chooseSigned_zero_neg _ _ hF2neg
+      rw [hF2zero]
+      simp only [mul_zero, zero_mul]
+    rw [hL, hR]
+
+/-! F3 item 3 — **general CL, final step: the sum reindexing (NEXT).**
+    With  `tterm_eq_oterm_all`,  `transitionNumerator N m r k y x = ∑_{a∈[0,k]} oterm (y-a)`
+    and  `overlap_count N m r k x y = ∑_{t∈[0,m-k]} oterm t`.  Since  `a ↦ y-a`  is  injective  on  [0,k]
+    (image  [y-k, y]),  it  remains  to  show
+        ∑_{t∈[y-k,y]} oterm t  =  ∑_{t∈[0,m-k]} oterm t
+    i.e.  oterm  is  0  outside  the  common  range  `[max (0, x-k, y-k), min (x, y, m-k)]`
+    (upper bounds  `t > m-k  ⇒  F3 = 0`  and  `t > y  ⇒  F1 = 0`  are  immediate;  the  lower-bound
+    vanishing  `t < y-k  ⇒  oterm = 0`  is  the  part  to  verify  under  the  CL  regime). -/
