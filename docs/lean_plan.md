@@ -426,6 +426,20 @@ algebra can advance in parallel.
    (`Equiv.Perm (Fin 99)`) — the distributional multiset/permutation fact
    (output is a genuine rearrangement, not merely set-equal) is the sub-wall
    (`List.mem_bind`/`length_filter`/`toMultiset` absent in this build).
+   *Progress (19th session, `0b7460a`/`f097fec`):* new `Shufflemath/CommanderDeckGSR.lean`
+   establishes the Fintype-free **structural identification** the deck-level lift
+   rests on: a *membership-preserving* deck permutation (one that sends the 50 left
+   positions to left cards and the 49 right positions to right cards, i.e.
+   `preservesPiles σ`) is **exactly** a within-pile relabeling.  Proven:
+   `pileRelabelEquiv_pairInjective` (a within-pile pair is recovered from its `Deck`
+   action by reading the left/right components on the position maps),
+   `pileRelabelEquiv_image` (any `preservesPiles` `σ` equals `pileRelabelEquiv` of
+   its components, via `leftPermOf`/`rightPermOf` + `Equiv.ofBijective` +
+   `Finite.surjective_of_injective`), and the capstone
+   `preservesPiles_iff_pileRelabel : preservesPiles σ ↔ ∃ p, pileRelabelEquiv p.1 p.2 = σ`.
+   Together `pileRelabelEquiv` is a bijection `Equiv.Perm (Fin 50) ×
+   Equiv.Perm (Fin 49) ≃ {σ : Deck // preservesPiles σ}` — the deck-level GSR
+   support, built without `List.mem_bind`/`toMultiset`.
 3. Establish the row-wise bound against *physical perfect-local* shuffling:
    for each deck, the TV discrepancy is no greater than the sum of the two
    local GSR-versus-uniform errors (49-card and 50-card working sets).
