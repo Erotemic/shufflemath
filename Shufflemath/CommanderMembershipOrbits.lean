@@ -865,5 +865,39 @@ theorem orbitMap_injective (m m' : Membership) (h : membershipCount m = membersh
     exact congrArg (fun x : {z : Fin 99 // z ∈ partD m} => x.val) ((orbitEquivD m m' h).injective hsub)
 
 
+
+/-- `orbitMap` preserves the left pile as a set: `orbitMap '' leftOrigSet = leftOrigSet`. -/
+theorem orbitMap_imageLeft (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    (orbitMap m m' h) '' leftOrigSet = leftOrigSet := by
+  ext c
+  constructor
+  · intro hmem
+    rcases hmem with ⟨a, ha, hca⟩
+    simpa [hca.symm] using orbitMap_preservesLeft m m' h a ha
+  · intro hc
+    exact left_subset_fimageLeft m m' h c hc
+
+/-- `orbitMap` sends the marked set of `m` exactly onto the marked set of `m'`. -/
+theorem orbitMap_imageM1 (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    (orbitMap m m' h) '' m.1 = m'.1 := by
+  ext c
+  constructor
+  · intro hmem
+    rcases hmem with ⟨a, ha, hca⟩
+    simpa [hca.symm] using orbitMap_mapsM1 m m' h a ha
+  · intro hc
+    exact m1p_subset_fimageM1 m m' h c hc
+
+/-- **Membership-fiber transitivity (F3 item 4, part ii).** Any two memberships with
+    the same count are related by a bijection of the deck that preserves the left
+    pile as a set and carries the marked set of one exactly onto the marked set of
+    the other. The witness is the piecewise orbit map `orbitMap`. -/
+theorem membershipFiber_transitive (m m' : Membership) (h : membershipCount m = membershipCount m') :
+    ∃ f : Fin 99 → Fin 99, Function.Bijective f ∧
+      f '' leftOrigSet = leftOrigSet ∧ f '' m.1 = m'.1 := by
+  refine ⟨orbitMap m m' h, ⟨orbitMap_injective m m' h, orbitMap_surjective m m' h⟩,
+    orbitMap_imageLeft m m' h, orbitMap_imageM1 m m' h⟩
+
+
 end Shufflemath
 end
