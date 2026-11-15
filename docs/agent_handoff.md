@@ -176,21 +176,21 @@ All committed; 37 tests pass; tree clean.
   finite `a`; the "reference" in the row bound is a *parameter* `perfectL`/
   `perfectR`, not a fixed uniform — that generality is what makes it usable.)
 
-*Resume order:* (1) **F4.5** — the tractable Fintype-free route (the
-  `List (Fin n)` space is infinite, so the `Finset.univ`-sup `kernelDiscrepancy`
-  / Dobrushin telescope has no direct Finsupp analog; instead use that a
-  stochastic kernel is 1-Lipschitz on TV, which needs no finiteness):
-  (a) prove `tvFinsupp (FiniteKernel.apply mu K) (FiniteKernel.apply nu K) ≤
-  tvFinsupp mu nu` (Fintype-free kernel contraction), then
-  (b) a 1-step two-pile riffle terminal bound:
-  `tvFinsupp (apply start (gsrProductKernel nL nR a b _ _))
-     (distProductFinsupp perfectL perfectR) ≤ E_L + E_R`, where `E_L`/`E_R` are
-  the (parameter) per-pile GSR-vs-perfect discrepancy constants, via the
-  F4.3 row bound + the 1-Lipschitz contraction. A multi-step (telescoped) or
-  full `Equiv.Perm (Fin 99)` version needs the F4.2 Deck-level GSR lift
-  (the `List.mem_bind`/`toMultiset` sub-wall) — defer.
-  (2) F3 item 3 general CL (Finset API wall — see 5th session).
-  (3) F3 item 4, F5 full/optimizer — downstream of (1)/(2).
+*Resume order:* The **F4.5 Fintype-free foundation is COMPLETE** (this
+  session): `apply_mass_finsupp`, `kernel_apply_lipschitz` (the Fintype-free
+  1-Lipschitz kernel contraction), `mixtureTV_le`, `gsrOneStep_terminalTV_bound`
+  (the 49+50 two-pile 1-step terminal bound), `run_nonexpansive`, and
+  `gsrRunNonexpansive` (multi-step non-expansiveness for GSR schedules).
+  Next: (1) **F3 item 3** general CL (symbolic combinatorial lemma) — return
+  with the 5th-session Finset API knowledge (`Finset.card_le`/`card_le_of_subset`/
+  `card_lt` do NOT exist; use `Finset.sum_le_sum`/`Finset.card_bij`); the 4-bin
+  identity is in `ExchangeOverlap.lean` (5th-session TODO). (2) F3 item 4 (2-
+  exchange TV) and F5 full/optimizer — downstream. (3) **F4.5 full-deck decay**
+  (contractive, to uniform) — blocked on finiteness: the non-finite pile-list
+  space admits the non-expansive bound but not the Dobrushin *contraction*; a
+  decay result needs the F4.2 Deck-level GSR lift to `Equiv.Perm (Fin 99)`
+  (the `List.mem_bind`/`toMultiset` sub-wall) or a new Finsupp Dobrushin
+  coefficient (incompatible with the non-finite space). Defer.
 
 ### Nov 12 (3rd) session status — resume here first
 

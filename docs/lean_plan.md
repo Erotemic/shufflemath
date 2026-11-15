@@ -340,6 +340,23 @@ algebra can advance in parallel.
    `ProtocolCertificate` weighted telescope to compose these errors over a
    schedule. Use a named initial law and an explicit 99-card uniform target.
 
+   *Progress (6th session, Fintype-free route — the `List (Fin n)` pile-list
+   space is not a `Fintype`, so the `Finset.univ`-sup Dobrushin telescope has no
+   direct Finsupp analog; a stochastic kernel is instead 1-Lipschitz on TV,
+   which needs no finiteness):* `Finite.apply_mass_finsupp` (Fintype-free
+   `apply_mass_dom` over the support), `TotalVariation.kernel_apply_lipschitz`
+   (Fintype-free 1-Lipschitz kernel contraction), `TotalVariation.mixtureTV_le`
+   (a mixture is no further from a reference than its component average),
+   `CommanderLocalGSR.gsrOneStep_terminalTV_bound` (one two-pile GSR step keeps
+   TV from the two-pile product reference within the start-weighted per-pile
+   GSR-vs-reference errors — the 49+50 one-step terminal bound),
+   `TotalVariation.run_nonexpansive` + `CommanderLocalGSR.gsrRunNonexpansive`
+   (multi-step non-expansiveness for GSR schedules). *Remaining / blocked:* the
+   fully *contractive* decay to the uniform target needs a Dobrushin coefficient
+   (a `Fintype` supremum) — available only after the F4.2 Deck-level GSR lift to
+   the Fintype space `Equiv.Perm (Fin 99)` (the `List.mem_bind`/`toMultiset`
+   sub-wall); deferred.
+
 **Acceptance:** a Lean-checked numeric or symbolic full-deck terminal TV
 upper bound for one explicit physical finite-GSR protocol, with every model
 assumption stated. Python's `experiments/oracle_gsr_budget.py` may propose a
