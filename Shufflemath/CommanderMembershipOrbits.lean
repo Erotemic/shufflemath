@@ -536,5 +536,49 @@ theorem piecesCover (m : Membership) :
       · exact Or.inl (Or.inl (Or.inr hcB))
       · exact Or.inr hcD
 
+
+
+/-- The marked set `m.1` is exactly part A (marked left) plus part B (marked right). -/
+theorem markedPieces_cover (m : Membership) : partA m ∪ partB m = m.1 := by
+  ext x
+  simp only [Finset.mem_union, Finset.mem_inter]
+  constructor
+  · intro h
+    cases h with
+    | inl hA => exact hA.1
+    | inr hB => exact hB.1
+  · intro hx
+    have hLorR : x ∈ leftOrigSet ∨ x ∈ rightOrigSet := by
+      have hLU : x ∈ leftOrigSet ∪ rightOrigSet := by
+        rw [leftRightOrig_cover]
+        simp only [Finset.mem_univ]
+      rw [Finset.mem_union] at hLU
+      exact hLU
+    cases hLorR with
+    | inl hL => left; exact ⟨hx, hL⟩
+    | inr hR => right; exact ⟨hx, hR⟩
+
+/-- `orbitMap` sends the left pile into the left pile. -/
+theorem orbitMap_preservesLeft (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (a : Fin 99) (ha : a ∈ leftOrigSet) : orbitMap m m' h a ∈ leftOrigSet := by
+  rw [leftCoverPieces m] at ha
+  simp only [Finset.mem_union] at ha
+  rcases ha with haA | haC
+  · rw [orbitMap_apply_partA m m' h a haA]
+    exact (Finset.mem_inter.mp ((orbitEquivA m m' h) ⟨a, haA⟩).2).2
+  · rw [orbitMap_apply_partC m m' h a haC]
+    exact (Finset.mem_sdiff.mp ((orbitEquivC m m' h) ⟨a, haC⟩).2).1
+
+/-- `orbitMap` sends the marked set `m.1` into `m'.1`. -/
+theorem orbitMap_mapsM1 (m m' : Membership) (h : membershipCount m = membershipCount m')
+    (a : Fin 99) (ha : a ∈ m.1) : orbitMap m m' h a ∈ m'.1 := by
+  rw [← markedPieces_cover m] at ha
+  simp only [Finset.mem_union] at ha
+  rcases ha with haA | haB
+  · rw [orbitMap_apply_partA m m' h a haA]
+    exact (Finset.mem_inter.mp ((orbitEquivA m m' h) ⟨a, haA⟩).2).1
+  · rw [orbitMap_apply_partB m m' h a haB]
+    exact (Finset.mem_inter.mp ((orbitEquivB m m' h) ⟨a, haB⟩).2).1
+
 end Shufflemath
 end
