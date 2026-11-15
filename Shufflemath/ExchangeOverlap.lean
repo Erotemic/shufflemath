@@ -1023,3 +1023,35 @@ theorem generalCL (N m r k x y : Nat)
   rw [oterm_sum_clip_eq N m r k x y hky hmy]
   rw [overlap_eq_sum_oterm N m r k x y]
   rw [Nat.range_succ_eq_Icc_zero (m - k)]
+
+/-! ## The general fiber-level CL (F3 item 3)
+
+Combining `fiberSum_swap` (`fiberSum p x y = fiberSum p y x`), `fiberSum_eq`
+(`fiberSum p y x = choose r y * choose (N-r) (m-y) * transitionNumerator N m r k y
+x`), and the pointwise CL `generalCL` (`transitionNumerator N m r k y x =
+overlap_count N m r k x y`), the exchange *fiber* `fiberSum p x y` factors into
+the stationary-weight factors and the 4-bin overlap count:
+
+    fiberSum p x y  =  choose r y * choose (N-r) (m-y) * overlap_count (N m r k) x y
+
+under the no-saturation regime `m + r ≤ N` (the 6321/8431 regime).  The
+Commander (99 50 50 25, `m + r = 100 > 99`) and 7442 (`8 > 7`) need the
+m + r > N regime, where the 4th-factor base `(N-m) - (r-y)` no longer equals the
+saturated `N - m - r + y` — that extension is the open F3-F4 saturation wall. -/
+theorem fiberSum_eq_overlap (p : ExchangeAdmissible) (x y : Nat)
+    (hxle : x ≤ p.m) (hy : y ∈ stateFinset p.N p.m p.r) (hkly : p.k ≤ y)
+    (hN : p.m + p.r ≤ p.N) (h4g : p.r - y ≤ p.N - p.m) :
+    fiberSum p x y =
+      Nat.choose p.r y * Nat.choose (p.N - p.r) (p.m - y) *
+        overlap_count p.N p.m p.r p.k x y := by
+  have hmy : y ≤ p.m := by
+    simp only [stateFinset, Finset.mem_Icc] at hy
+    exact hy.2.trans (Nat.min_le_left p.m p.r)
+  have hry : y ≤ p.r := by
+    simp only [stateFinset, Finset.mem_Icc] at hy
+    exact hy.2.trans (Nat.min_le_right p.m p.r)
+  have hy' : y ∈ stateFinset p.N p.m p.r := by
+    simpa [stateFinset, Finset.mem_Icc] using hy
+  rw [fiberSum_swap p x y hxle hmy]
+  rw [fiberSum_eq p y x hy']
+  rw [generalCL p.N p.m p.r p.k x y hkly hmy hry hN h4g]
