@@ -114,3 +114,49 @@ theorem rightPermOf_injective (σ : Deck)
       _ = rightPosition (rightPermOf σ hR j') := heq
       _ = σ (rightPosition j') := rightPos_rightPermOf σ hR j'
   exact rightPosition_injective (σ.injective hσ)
+
+/-! ## Main image theorem: the within-pile relabelings are exactly the membership-preserving decks. -/
+
+/-- **F4.2 image (surjectivity half):** a deck permutation `σ` that preserves the
+    left/right split (sends the 50 left positions to left cards and the 49 right
+    positions to right cards) is exactly `pileRelabelEquiv` of its two within-pile
+    components `leftPermOf σ hL`, `rightPermOf σ hR`.  Together with
+    `pileRelabelEquiv_pairInjective` this identifies the membership-preserving
+    deck permutations with `Equiv.Perm (Fin 50) × Equiv.Perm (Fin 49)`. -/
+theorem pileRelabelEquiv_image
+    (σ : Deck)
+    (hL : ∀ i : Fin 50, (σ (leftPosition i)).val < 50)
+    (hR : ∀ j : Fin 49, ¬ (σ (rightPosition j)).val < 50) :
+    ∃ p : Equiv.Perm (Fin 50) × Equiv.Perm (Fin 49), pileRelabelEquiv p.1 p.2 = σ := by
+  let pl : Equiv.Perm (Fin 50) := Equiv.ofBijective (leftPermOf σ hL)
+      ⟨leftPermOf_injective σ hL, Finite.surjective_of_injective (leftPermOf_injective σ hL)⟩
+  let pr : Equiv.Perm (Fin 49) := Equiv.ofBijective (rightPermOf σ hR)
+      ⟨rightPermOf_injective σ hR, Finite.surjective_of_injective (rightPermOf_injective σ hR)⟩
+  refine ⟨⟨pl, pr⟩, ?_⟩
+  apply Equiv.ext
+  intro pos
+  by_cases hpos : pos.val < 50
+  · -- pos is a left position
+    let i : Fin 50 := leftIndex pos hpos
+    have hposL : pos = leftPosition i := (leftPosition_leftIndex pos hpos).symm
+    have hLHS : pileRelabelEquiv pl pr pos = leftPosition (pl i) := by
+      rw [hposL]
+      exact pileRelabelEquiv_left pl pr i
+    have hRHS : σ pos = leftPosition (leftPermOf σ hL i) := by
+      rw [hposL]
+      exact (leftPos_leftPermOf σ hL i).symm
+    rw [hLHS, hRHS]
+    have hpl : pl i = leftPermOf σ hL i := by dsimp only [pl]; rfl
+    rw [hpl]
+  · -- pos is a right position
+    let j : Fin 49 := rightIndex pos hpos
+    have hposR : pos = rightPosition j := (rightPosition_rightIndex pos hpos).symm
+    have hLHS : pileRelabelEquiv pl pr pos = rightPosition (pr j) := by
+      rw [hposR]
+      exact pileRelabelEquiv_right pl pr j
+    have hRHS : σ pos = rightPosition (rightPermOf σ hR j) := by
+      rw [hposR]
+      exact (rightPos_rightPermOf σ hR j).symm
+    rw [hLHS, hRHS]
+    have hpr : pr j = rightPermOf σ hR j := by dsimp only [pr]; rfl
+    rw [hpr]
