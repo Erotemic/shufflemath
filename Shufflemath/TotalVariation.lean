@@ -588,5 +588,90 @@ theorem distProduct_tv_subadditive
     _ = Dist.tv μ μ' + Dist.tv ν ν' := by
       simp [Dist.tv, vectorTV]
 
+
+/-! ## F4.3: Fintype-free total variation on distribution supports
+
+The `Dist.tv` above assumes a `Fintype` state space.  The F4.3 two-pile
+`GSR` product kernel acts on `List (Fin n)`, which is **not** a `Fintype`,
+so we work with the distribution's `Finsupp` weights and their finite
+supports directly.  `tvFinsupp` is the same total-variation quantity,
+summed over the finite union of the two supports instead of over
+`Finset.univ`.  These lemmas are the Fintype-free analog of
+`distProduct_tv_subadditive` and its components. -/
+
+variable {α β : Type*} [DecidableEq α] [DecidableEq β]
+
+/-- Fintype-free total variation: half the `L1` distance of two
+distribution mass functions, summed over the (finite) union of their
+supports.  Coincides with `Dist.tv` when the state space is a `Fintype`. -/
+def tvFinsupp {γ : Type*} [DecidableEq γ] (p q : Dist γ) : Rat :=
+  (1 / 2 : Rat) * (p.weights.support ∪ q.weights.support).sum
+      (fun x => |p.weights x - q.weights x|)
+
+/-- The support of the Fintype-free product `distProductFinsupp μ ν` is the
+Cartesian product of the factor supports.  This is the Fintype-free
+replacement for the `Finset.univ`-over-`α × β` bookkeeping used in the
+Fintype subadditivity proof. -/
+theorem suppDistProductFinsupp (μ : Dist α) (ν : Dist β) :
+    (distProductFinsupp μ ν).weights.support = μ.weights.support ×ˢ ν.weights.support := by
+  ext z
+  simp only [Finsupp.mem_support_iff, Finset.mem_product]
+  have hz : (distProductFinsupp μ ν).weights z = μ.weights z.1 * ν.weights z.2 :=
+    distProductFinsupp_mass μ ν z.1 z.2
+  rw [hz, mul_ne_zero_iff]
+
+/-- Twice the Fintype-free total variation is exactly the (un-halved)
+`L1` distance summed over the union of the two supports. -/
+theorem twoTv_eq_unionSum {γ : Type*} [DecidableEq γ] (p q : Dist γ) :
+    (2 : Rat) * tvFinsupp p q =
+        (p.weights.support ∪ q.weights.support).sum (fun x => |p.weights x - q.weights x|) := by
+  simp [tvFinsupp]
+
+/-- A point outside a distribution's support carries zero mass. -/
+theorem not_mem_support_zero {γ : Type*} [DecidableEq γ] (μ : Dist γ) (w : γ)
+    (h : w ∉ μ.weights.support) : μ.weights w = 0 := by
+  by_contra hne
+  exact h (Finsupp.mem_support_iff.mpr hne)
+
+/-- Summing a distribution's mass over any set that contains its support
+gives total mass `1`.  Needed because the Fintype-free subadditivity sums
+over the enlarged set `supp μ ∪ supp μ'` rather than over the exact
+support. -/
+theorem sumOverEnlarged_eq_one {γ : Type*} [DecidableEq γ] (ν : Dist γ) (B : Finset γ)
+    (hB : ν.weights.support ⊆ B) : B.sum (fun b => ν.weights b) = 1 := by
+  have hzero_out {b} (h : b ∉ ν.weights.support) : ν.weights b = 0 := by
+    by_contra hne
+    exact h (Finsupp.mem_support_iff.mpr hne)
+  have hite : B.sum (fun b => ν.weights b) =
+      B.sum (fun b => if b ∈ ν.weights.support then ν.weights b else 0) := by
+    apply Finset.sum_congr rfl
+    intro b _
+    by_cases hb : b ∈ ν.weights.support
+    · simp [hb]
+    · simp [hb, hzero_out hb]
+  rw [hite, Finset.sum_ite, Finset.sum_const_zero, add_zero]
+  have hfilter : B.filter (fun b => b ∈ ν.weights.support) = ν.weights.support := by
+    ext x
+    constructor
+    · intro h; simp only [Finset.mem_filter] at h; exact h.2
+    · intro h; simp only [Finset.mem_filter]; exact ⟨hB h, h⟩
+  rw [hfilter]
+  change ν.weights.sum (fun _ r => r) = 1
+  exact ν.total
+
+/-- Pointwise subadditivity for a product of two nonnegative factors: the
+`L1` difference of two product masses is bounded by the sum of the
+per-factor differences, each weighted by the corresponding mass of the
+second law.  This is the scalar core of the product TV subadditivity. -/
+theorem productMassBound (a b : Rat) (a' b' : Rat) (hbn : 0 ≤ b) (hann' : 0 ≤ a') :
+    |a * b - a' * b'| ≤ |a - a'| * b + a' * |b - b'| := by
+  have hsplit : a * b - a' * b' = (a - a') * b + a' * (b - b') := by ring
+  calc
+    |a * b - a' * b'| = |(a - a') * b + a' * (b - b')| := by rw [hsplit]
+    _ ≤ |(a - a') * b| + |a' * (b - b')| := by exact abs_add_le _ _
+    _ = |a - a'| * b + a' * |b - b'| := by
+      rw [abs_mul, abs_mul, abs_of_nonneg hbn, abs_of_nonneg hann']
+
 end Shufflemath
+
 end
