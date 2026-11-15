@@ -237,14 +237,54 @@ common support using the `oterm = 0`-outside lemma.  Then F3 item 4
     separately (`omega` handles it in the regime) and `rw` it in, then a
     single `ring_nf` closes.
 
-*Resume order:* Next concrete step is the **F3 item 3 general CL — sum
-reindexing** (the `t = y-a` `Finset` reindex between the `a`-sum and the
-`t`-sum, per the plan above); then **F3 item 4** (2-exchange TV) and **F5
+*Resume order:* The **F3 item 3 general CL — sum reindexing** is the last
+deep step but is **STUCK on a Lean term-representation wall** (see the
+12th-session note below and the `-- TODO(proof)` at the bottom of
+`ExchangeOverlap.lean`); then **F3 item 4** (2-exchange TV) and **F5
 full/optimizer**.  **F4.5 full-deck decay** (contractive) remains blocked on
 finiteness (the non-finite pile-list space admits the non-expansive bound but
 not the Dobrushin contraction); defer.
 
-### Nov 12 (8th) session status — resume here first
+### 12th-session status — resume here first
+
+**F3 item 3 general CL: 95% proven; the last step is stuck on a term-
+representation wall, not a math gap.**
+
+What is PROVEN (committed, `ExchangeOverlap.lean`):
+  - all four factor matches `F1match`/`F2match`/`F3match`/`F4match`;
+  - the summand assembly `tterm_eq_oterm` (guard-hold regime);
+  - the decomposition `transitionNumerator_eq_sum_tterm`;
+  - `chooseSigned_zero_neg` / `chooseSigned_zero_toobig`;
+  - in each guard-FAIL case the oterm's vanishing factor is provably `0` **in
+    isolation**:  F4 (h1g holds, h2g fails) via `hF4neg : (m-x)-(m-k-(y-a)) < 0`
+    (`ring_nf` + `nlinarith [(k:Int)+(y-a:Int) < (x:Int)]`, the `Int` inequality
+    itself by `omega` from `k < x-(y-a)` and `y-a ≤ x`);  F2 (h1g fails) via
+    `(x:Int)-(y-a:Int) < 0` from `x < y-a` (`rw [sub_neg]` + `omega`).
+
+**The wall (exact):**  to close `oterm N m r k x y (y-a) = 0` in a guard-fail
+  case I must fold the `= 0` 4th factor into the 4-way product `F1*F2*F3*F4`.
+  After `dsimp only [oterm]`, `rw`/`simp`/`conv`/`change` ALL fail to locate
+  the 4th factor as a subterm.  Root cause (diagnosed via the regrouped goal):
+  oterm's 4th-factor index is `(mI-xI) - plain_overlap` with `plain_overlap :=
+  (mI-kI) - tI` and `tI := t = y-a`, so the innermost cast is the SINGLE cast
+  `↑(y-a)`.  But writing the same term fresh in a `have` (as `(y-a : Int)`)
+  normalizes to the DIFFERENCE OF CASTS `↑y - ↑a`, which is definitionally equal
+  but a different AST — so the fresh `chooseSigned (… ) (…)` LHS does not match
+  the product's 4th factor.  Standalone (caseB6) it matches; inside the product
+  (caseB5/B7/B8) it does not.
+
+**Next angle (untried):**  keep the oterm **let-binders** (do NOT `dsimp` into
+  the product) — `unfold oterm` and target the 4th let-factor
+  `chooseSigned plain_outside_target ((mI-xI) - plain_overlap)` directly with
+  `chooseSigned_zero_neg _ _ hF4neg`, where `hF4neg` is proven about the
+  let-named index `(mI-xI) - plain_overlap` (which retains the single-cast
+  `tI` form and should match).  Alternatively introduce `let t := y-a` in the
+  proof so the `have` uses the same single-cast `t`-based index as oterm.  Then
+  the reindexing `∑ tterm = ∑ oterm` is a `Finset.sum_bij`/`sum_image` on
+  `a ↦ y-a` over the common support `[max (0, y-k), min y (m-k)]` (both sums
+  are 0 outside it).
+
+### Nov 12 (8th) session status (historical — superseded by the 12th-session note above)
 
 
 **F3 item 3 general CL fully scoped (the last deep step).** This session
