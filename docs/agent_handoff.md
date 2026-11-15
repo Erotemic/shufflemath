@@ -1103,3 +1103,48 @@ and use `Finsupp`/`Dist` over `Equiv.Perm (Fin 99)` (a Fintype) instead of the
 pile-list `List` space.  This sidesteps `List.mem_bind`.  Check whether
 `Equiv.Perm (Fin 99)` has a usable `Fintype` instance (it does, via
 `Fintype` on `Equiv` for Fintype base) and build the riffle kernel there.
+
+---
+
+## 16th session (post-compaction resume) — F3 part (ii) groundwork: membership-count range
+
+**New module `Shufflemath/CommanderMembershipOrbits.lean` (proven, committed).**
+This is the first concrete step of Spec A (the group-action proof of part (ii)).
+It establishes the *well-typed range* for the marked count that the orbit
+construction (Spec A1) relies on:
+
+- `leftRightOrig_cover : leftOrigSet ∪ rightOrigSet = univ` — proven via
+  `ext x` + `Classical.em` (avoids the `tauto` recursion on the opaque `Finset`
+  filter membership).
+- `leftRightOrig_disjoint : Disjoint leftOrigSet rightOrigSet` — via
+  `Finset.inter_sdiff_self` (`rightOrigSet = univ \ leftOrigSet`).
+- `membershipCount_pos : 0 < membershipCount m` — a membership (50-subset of the
+  99 cards) splits into `k` left-orig cards and `50 - k` right-orig cards; since
+  only 49 right-orig cards exist, `50 - k ≤ 49`, forcing `k ≥ 1`.  Proven by a
+  `Finset`-algebraic disjoint-cover of `m.1` into `A = m.1 ∩ leftOrigSet` and
+  `B = m.1 ∩ rightOrigSet` (`Finset.card_union_of_disjoint`,
+  `Finset.card_le_card`), *not* element-wise membership (the opaque-Quot wall).
+- `membershipCount_le_50 : membershipCount m ≤ 50` — the marked part is
+  `m.1 ∩ leftOrigSet ⊆ leftOrigSet` (50 cards).
+
+Together: every valid membership has `1 ≤ membershipCount m ≤ 50`, so every fiber
+`MembershipFiber k` that the orbit construction targets has valid part-counts
+(`k ∈ [1,50]`, `50-k ∈ [0,49]`).
+
+**Next (Spec A1 proper):** prove transitivity of the `leftOrigSet`-stabilizer on
+each `MembershipFiber k` — a bijection `Fin 99 ≃ Fin 99` preserving
+`leftOrigSet` mapping one membership's 50-set to another's (4-part permutation
+via `Fintype.equivFinOfCardEq` on `{A, C, B, D}`).  This is the deep
+group-action core; it will need the `leftRightOrig_disjoint_cover`-style
+`Finset` identities already recorded here.  **Then** Spec A2 (stabilizer
+invariance of `newLeftCards`) and A3 (assemble + 2-exchange TV).
+
+**Note on the module system:** `Membership`, `membershipCount`, `MembershipFiber`
+live in the *nested* `Shufflemath.CommanderMembershipKernels` namespace (so this
+module opens it with `open CommanderMembershipKernels` inside `namespace
+Shufflemath`); `leftOrigSet`/`rightOrigSet`/`leftOrigSet_card`/`rightOrigSet_card`/
+`rightOrigSet_sdiff` live directly in `Shufflemath`.  The module is NOT in the
+`Shufflemath.lean` aggregator (consistent with the other Commander* modules) but
+IS in the AGENTS.md verified build list.
+
+Full verification green (37 tests, 0 failures) after this commit.

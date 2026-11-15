@@ -325,6 +325,11 @@ route, not a theorem already in the tree.
 > (the physical-exchange law, averaged over the uniform `project`-fiber, treats all
 > same-count memberships equally).  This is the "harder half" per the original
 > F3 note; it is a member-level uniformity, distinct from the count-level CL.
+> **16th-session progress (groundwork):** `Shufflemath/CommanderMembershipOrbits.lean`
+> proves the well-typed range `1 ≤ membershipCount m ≤ 50` for every membership
+> (`membershipCount_pos` + `membershipCount_le_50`), plus the `leftOrigSet`/
+> `rightOrigSet` disjoint-cover identities the orbit construction (Spec A1) needs.
+> The transitivity proof itself (Spec A1 proper) remains open.
 > **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
 > which depends on item 3 core.
 

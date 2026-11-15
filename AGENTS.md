@@ -47,6 +47,7 @@ lake build \
   Shufflemath.CommanderFiberCount \
   Shufflemath.CommanderFiberMembership \
   Shufflemath.CommanderMembershipKernels \
+  Shufflemath.CommanderMembershipOrbits \
   Shufflemath.CommanderPhysicalExchange
 ./dev/verify_next_phase.sh
 ```
