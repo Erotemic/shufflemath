@@ -258,6 +258,19 @@ route, not a theorem already in the tree.
 > remaining difficulty as the **boundary** (`if`-guards / `Nat`-saturated
 > `y - a` vs `chooseSigned = 0` out of range) — a pure reindexing with no
 > `Finset` API.
+> **8th-session progress (2026-11-14, `0811eb6`):** the target was corrected
+> to a **sum** identity (the pointwise `g(a) = h(y-a)` is *false* for `a > y`,
+> where Nat-saturating `t := y-a` to `0` makes `h(0)` potentially nonzero
+> while `g(a)=0`). The precise statement is
+> `transitionNumerator (N m r k) y x = overlap_count (N m r k) x y` as a
+> finite-sum equality; the `ExchangeOverlap.lean` comment records the exact
+> factor structures of both sums and the exact common support
+> `[max (0, y-k), min y (m-k)]` under `t := y-a`. This is a
+> **generalized Vandermonde / hypergeometric convolution** between the two
+> 4-factor decompositions (no Mathlib Vandermonde lemma exists; it must be
+> proven from scratch — a combinatorial double-counting or an iterated
+> Vandermonde manipulation). The S1-side counting (`FinsetFiberCount`) is
+> complete; the remaining step is this one hypergeometric sum identity.
 > **(item 4, OPEN)** the unconditional physical-perfect-local 2-exchange TV theorem,
 > which depends on item 3 core.
 
