@@ -160,21 +160,36 @@ targeted build (11 modules) is green; 37 Python tests pass; tree clean.
 **Next — F3 item 3 capstone (A3):** prove, in
 `Shufflemath/CommanderMembershipExchange.lean`,
 
-1. **`rawExchangeMembership_count`** (part (i), count total):
+1. **`commanderCountFiber_card`** (part (i), RHS helper — the immediate next
+   lemma): `# {y : Fin 50 // commanderLeftCount y = c} = if 1 ≤ c ∧ c ≤ 50
+   then 1 else 0`.  **Use a CARD formulation, NOT a Fin-singleton in the
+   statement** — `{⟨c-1, by omega⟩}` is ill-typed for arbitrary `c` (the
+   `c-1 < 50` proof is unavailable in the statement), which is the wall that
+   blocked the naive attempt this session.  Correct route: `by_cases hc :
+   1 ≤ c ∧ c ≤ 50`; the `hc` branch rewrites the count-filter to the
+   val-filter via `count y = c ↔ y.val = c - 1` (`Nat.add_sub_cancel_right` /
+   `Nat.sub_add_cancel hc.1` — *not* `omega`, which fails on the saturating
+   `c - 1`), shows it is a singleton (`Fin.ext_iff`), and takes `card = 1`;
+   the else branch shows the filter is empty (`z ∈ ∅` is `False` — prove
+   `¬(count z = c)` from `z.val + 1 = c ⟹ 1 ≤ c ≤ 50 ⊥ hc`).  Avoid
+   `Finset.mem_empty` and `Finset.eq_empty_of_forall_not_mem` (both absent);
+   use `Finset.ext` + `constructor`.
+   Then **`rawExchangeMembership_count`** (part (i) capstone):
        `comp (comp (fiberLaw project project_surjective) rawExchangeMembership)
           (deterministic membershipCount) =
          comp commanderExchange25 (deterministic commanderLeftCount)`.
-   Both sides are `FiniteKernel CommanderState Nat`.  At a source state `x`
-   (count `c`) and target count `c'`, this says the fiber-average post-exchange
-   count distribution equals `transitionWeight 99 50 25 c c'`.  Route: show the
-   count distribution of a *single* deck `d` (count `c`) is the hypergeometric
-   two-urn transition (the general CL `transitionNumerator = overlap_count` is
-   the counting core; instantiate it at the concrete `(L,R)`-exchange level via
-   the `leftHyper`/`rightHyper` 25-subset counts, cf. the `Finset.mem_coe` fix
-   noted in `docs/f3_membership_exchange.md`), which is independent of `d`, so
-   the fiber average is trivial; then match the RHS by
-   `commanderExchange25Matrix x y = transitionWeight 99 50 25 (count x) (count y)`
-   (line 101) with one `Fin 50` state per count.
+   Both sides are `FiniteKernel CommanderState Nat`.  The RHS then reduces,
+   via `apply_mass_eq_sum` + `Dist.mass_pointMass` + the
+   `commanderExchange25Matrix x y = transitionWeight 99 50 25 (count x)
+   (count y)` def (line 101) + `commanderCountFiber_card`, to
+   `if 1 ≤ c ≤ 50 then transitionWeight 99 50 25 (count x) c else 0`.  The
+   LHS needs the deck-fiber counting: the fiber-average post-exchange count
+   distribution equals the same hypergeometric weight (the `generalCL` /
+   `fiberSum_eq_overlap` counting core is the template; instantiate it at the
+   `(L,R)`-25-subset exchange level via `leftHyper`/`rightHyper`, cf. the
+   `Finset.mem_coe` fix in `docs/f3_membership_exchange.md`); it is
+   deck-independent given the source count, so the fiber average is trivial.
+
 2. **`hMembershipExchange`** (the capstone): assemble (1) with part (ii)
    within-count uniformity (`newLeftCards_conjugate` equivariance +
    `membershipFiber_transitive` transitivity, applied through
