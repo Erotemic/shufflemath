@@ -51,5 +51,24 @@ theorem Rset_card (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k ≤ N - m
   rw [Rset, Finset.card_powersetCard]
   congr
   rw [Finset.card_sdiff_of_subset (Finset.subset_univ _), S.2, Finset.card_univ, Fintype.card_fin]
+
+/-! ## Next: `subsetExchangeCount` (T3)
+
+The reachable-exchange count, proved by the inverse-based bijection
+`Finset.card_bij'`:
+
+- `i (T : Membership N m) (hT : T ∈ ReachSet S) = (S.1 \ T.1, T.1 \ S.1)`, landing
+  in `Lset.prod Rset` (`Finset.mk_mem_product`: `L = S\T` is a `k`-subset of
+  `S.1`, `R = T\S` a `k`-subset of `univ \ S.1`).
+- `j (p : _ × _) (hp : p ∈ Lset.prod Rset) = ⟨(S.1 \ p.1) ∪ p.2, card = m⟩`.
+- `left_inv` / `right_inv` use `S.1 \ (S.1 \ T.1) = S.1 ∩ T.1` and
+  `T.1 = (T.1 ∩ S.1) ∪ (T.1 \ S.1)`.
+
+Then `# ReachSet S = #(Lset.prod Rset) = #Lset · #Rset = choose m k · choose
+(N-m) k` via `Finset.card_prod` + `Lset_card` + `Rset_card`.  (Leaves of the
+finset API still being pinned: `Finset.mk_mem_product`, sdiff-subset, and the
+card-of-sdiff.)
+-/
+
 end FiniteDeck
 end Shufflemath
