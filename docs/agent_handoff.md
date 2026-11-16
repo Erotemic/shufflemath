@@ -27,11 +27,19 @@ in `FiniteDeck/SubsetExchange`). **The G2/T1 fiber count**
 `Fiber.lean` doc-comment): **`fibTransitive` is now PROVEN** — for any two
 `m`-piles `A, B`, a `Perm (Fin N)` sends `A` onto `B`, glued from equicardinal
 `Fintype.equivOfCardEq` bijections `A→B` and `Aᶜ→Bᶜ`, proved surjective
-(2 cases) and hence bijective via `Finite.injective_iff_surjective`. The next
-three lemmas are **`fibersPartition`** (the `Fib(A)` over all `A` form a
-pairwise-disjoint cover of `Perm (Fin N)`), **`fibersEqual`** (`#Fib(A)` is
-independent of `A`, from a `fibTransitive`-witness fiber-bijection), and
-**`fiberCount`** (`(choose N m)·#Fib(A) = N!` ⟹ `#Fib(A) = m!·(N-m)!`). **F4.1 COMPLETE** (`17ffab6`) and
+(2 cases) and hence bijective via `Finite.injective_iff_surjective`. **ALL
+FOUR supporting fiber lemmas are now PROVEN:** `fibTransitive`,
+**`fibersEqual`** (`#Fib(A)` is independent of `A`, from a `fibTransitive`-witness
+fiber-bijection), **`leftImageIsMembership`** (every perm's sent pile is a valid
+`m`-pile — the cover half of the fiber partition), and **`fibersUnique`** (a
+perm has a unique sent pile — the disjointness half). **The G2/T1 capstone
+`fiberCount`** (`(choose N m)·#Fib(A) = N!` ⟹ `#Fib(A) = m!·(N-m)!`) is the last
+G2 lemma; its two assembly routes (Sigma-bijection vs Finset-fiber-partition —
+the Finset route avoids the `Subtype.cast` wall that blocks the Sigma route)
+and every gotcha are documented in the `Fiber.lean` doc-comment. **The next
+concrete action is G3's `subsetExchangeCount`** (the `Finset.card_bij'` bijection
+`ReachSet S ≃ Lset S × Rset S` giving `# ReachSet S = choose m k · choose (N-m) k`).
+**F4.1 COMPLETE** (`17ffab6`) and
 **F4.2 GSR product is now in the library** (`4e1b76f`): `gsrProductKernel`
 (independent within-pile GSR riffles on the left and right piles, as a
 `FiniteKernel` on the pile-list product) + `gsrLocal_preserves_pile` (a

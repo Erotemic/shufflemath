@@ -346,11 +346,28 @@ theorem fibersUnique (N m : Nat) (hm : m ≤ N) (A B : Membership N m) (g : Equi
 --      from `eA a = ⟨z, hz⟩`; (d) the A-branch value `g (a.1) = (eA a).1` closes by
 --      `rw [hAval (a.1) a.2]` alone (a.2 IS a's proof, so ⟨a.1, a.2⟩ = a is rfl);
 --      the Aᶜ-branch needs the direct hAcval2 (proof-mismatch).
--- 1. fibersPartition : the Fib(A) form a pairwise-disjoint cover of G.
--- 2. fibersEqual     : #Fib(A) is independent of A  (from 0, via a fiber-bijection).
--- 3. fiberCount      : (choose N m) * #Fib(A) = N!  ⟹  #Fib(A) = m! * (N-m)!.
---      (from 1+2+membershipCount + N! = (choose N m) * m! * (N-m)!, i.e. the
---      factorial form of the binomial coefficient.)
+-- DONE: fibTransitive, fibersEqual, leftImageIsMembership (cover half of the
+--   partition), fibersUnique (disjointness half).
+-- REMAINING — fiberCount : Fintype.card (FibType N m hm A) = Nat.factorial m * Nat.factorial (N - m).
+--   Two assembly routes (all building blocks above + membershipCount + Fintype.card_perm are ready):
+--   (a) Sigma route:  Perm ≃ Σ A : Membership, Fib A  via  fwd g = (sentPile g, g),  bwd s = s.2.1.
+--       Injective via  congrArg (fun x => x.2.1);  surjective witness  s.2.1  with  Sigma.ext.
+--       THEN  Fintype.card_sigma  ->  Finset.sum_const  ->  Nat.choose_mul_factorial_mul_factorial
+--       ->  Nat.eq_of_mul_eq_mul_left (Nat.choose_pos hm).
+--       BLOCKED: the second subgoal of  Sigma.ext  is a  Subtype.cast  (≍ / HEq-based) of the
+--       dependent  FibType  second component;  apply/refine Subtype.ext  will not unify with it.
+--       The cast trivializes only if the  FibType  index is the  Finset  A.1  (not the membership A).
+--   (b) Finset-fiber route (RECOMMENDED, no dependent types):  fiberSet A =
+--       (univ : Finset (Equiv.Perm (Fin N))).filter (fun g => sentPile g = A).  Prove  #fiberSet A =
+--       Fintype.card (FibType A)  (Finset.card_bij), that the  fiberSet  partition  (univ : Finset
+--       (Equiv.Perm (Fin N)))  (from  leftImageIsMembership  +  fibersUnique,  via  Finset.card_biUnion
+--       +  PairwiseDisjoint),  hence  Fintype.card (Equiv.Perm (Fin N)) =
+--       (univ : Finset (Membership N m)).sum (fun A => #fiberSet A) = Nat.choose N m * #Fib(A),
+--       then  Fintype.card_perm (Fin N) = Nat.factorial N  and  cancel  Nat.choose N m.
+--   Gotchas:  Nat.factorial  (the  !  postfix does not parse in this module context);  explicit
+--   N m hm params;  Fintype.card_sigma  bridges  ∑ i  <->  Finset.univ.sum  by  rfl;  the  Finset
+--   sum -> product step needs  Finset.sum_const  +  Nat.smul_eq_mul;  cancellation uses
+--   Nat.choose_pos hm  (0 < choose N m).
 -- ============================================================================
 end FiniteDeck
 end Shufflemath
