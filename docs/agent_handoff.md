@@ -187,9 +187,15 @@ supersedes it (its probed Mathlib API — `Finset.sum_ite` form, `Finset.filter_
   `leftPositions`/`rightPositions` (cover/disjoint), `leftCards`/`membership`.
 - **G2** (`FiniteDeck/TwoPileFiber.lean`) — **compiled**: `membershipCount`
   (`choose N m`) + the four fintype-card building blocks
-  (`fintype_card_{leftPos,rightPos,pile,complementPile}`). **Remaining:** the
-  per-fiber count `# {d // membership d = A} = m!·(N-m)!` (Fiber ≃ (L ≃ A) ×
-  (R ≃ B), then `Fintype.card_equiv` + `Fintype.card_prod`).
+  (`fintype_card_{leftPos,rightPos,pile,complementPile}`).
+- **G2 fiber machinery** (`FiniteDeck/Fiber.lean`) — **compiled**: the fiber
+  type `FibType N m hm A` (= decks with left-image `A`) + the **two restriction
+  bijections** `fiberRestrictL : LType ≃ AAType` and `fiberRestrictR : RType ≃
+  BBType` (both via `Equiv.ofBijective`). **Remaining (documented in the
+  module):** the fiber count `#Fiber = m!·(N-m)!` = the glueing equiv
+  `Fiber ≃ (L ≃ A) × (R ≃ B)` + `Fintype.card_prod` + `Fintype.card_equiv` +
+  the position-card lemmas. The by_cases-def opacity wall and the preferred
+  disjoint-union `Equiv`-composition route are recorded in the module.
 - **G3** (`FiniteDeck/SubsetExchange.lean`) — **compiled foundation**:
   `ReachSet`/`Lset`/`Rset` + `Lset_card`/`Rset_card`. **Remaining:** the
   `subsetExchangeCount` (`card_bij'` bijection — exact construction recorded in
