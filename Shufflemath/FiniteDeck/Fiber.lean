@@ -45,5 +45,53 @@ noncomputable def fiberRestrictL (N m : Nat) (hm : m ≤ N) (A : Membership N m)
         exact a.2
       rcases hA with ⟨p, hp, heq⟩
       exact ⟨⟨p, hp⟩, Subtype.ext heq⟩
+
+-- The restriction of a fiber permutation to the right positions is a bijection
+-- to the complement of the left pile `A`: the right-image of a fiber deck is
+-- exactly `univ \ A`, because the deck is a bijection and its left-image is `A`.
+noncomputable def fiberRestrictR (N m : Nat) (hm : m ≤ N) (A : Membership N m) (e : FibType N m hm A) :
+    RType N m hm ≃ BBType N m hm A := by
+  have hmem : ∀ (r : RType N m hm), e.1 (r.1) ∈ (Finset.univ \ A.1) := by
+    intro r
+    rw [Finset.mem_sdiff]
+    constructor
+    · exact Finset.mem_univ _
+    · -- e.1 (r.1) ∉ A.1: if it were, its left-preimage would equal r.1, a left position
+      intro h
+      have hImg : e.1 (r.1) ∈ (leftPositions N m hm).image (fun p => e.1 p) := by
+        simpa [e.2] using h
+      rcases Finset.mem_image.mp hImg with ⟨p, hp, heq⟩
+      have hInj : p = r.1 := (Equiv.injective (e.1)) heq
+      have hLeft : r.1 ∈ leftPositions N m hm := by
+        simpa [hInj] using hp
+      have hNotLeft : r.1 ∉ leftPositions N m hm := by
+        have hr2 : r.1 ∈ rightPositions N m hm := r.2
+        dsimp only [rightPositions] at hr2
+        rw [Finset.mem_sdiff] at hr2
+        exact hr2.2
+      exact hNotLeft hLeft
+  apply Equiv.ofBijective (fun r => ⟨e.1 (r.1), hmem r⟩)
+  · constructor
+    · intro r₁ r₂ h
+      have hEq : e.1 (r₁.1) = e.1 (r₂.1) := by
+        simpa using (congrArg (fun (z : BBType N m hm A) => z.1) h)
+      exact Subtype.ext ((Equiv.injective (e.1)) hEq)
+    · -- surjective: b.1 ∉ A.1, so its unique preimage under the bijection e.1 is a right position
+      intro b
+      let q := (e.1).symm (b.1)
+      have hq : e.1 q = b.1 := Equiv.apply_symm_apply (e.1) (b.1)
+      have hNotLeft : q ∉ leftPositions N m hm := by
+        intro h
+        have hImg : e.1 q ∈ (leftPositions N m hm).image (fun p => e.1 p) := by
+          simpa [Finset.mem_image] using h
+        have hInA : e.1 q ∈ A.1 := by
+          simpa [e.2] using hImg
+        have hb2 : b.1 ∈ Finset.univ \ A.1 := b.2
+        rw [Finset.mem_sdiff] at hb2
+        exact hb2.2 (by simpa [hq] using hInA)
+      have hRight : q ∈ rightPositions N m hm := by
+        rw [rightPositions, Finset.mem_sdiff]
+        exact ⟨Finset.mem_univ _, hNotLeft⟩
+      exact ⟨⟨q, hRight⟩, Subtype.ext hq⟩
 end FiniteDeck
 end Shufflemath
