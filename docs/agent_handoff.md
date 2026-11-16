@@ -135,7 +135,54 @@ attempts, but is no longer the recommended route.
 
 ## Exactly where to resume
 
-### Nov 15 (25th) session status — resume here first
+### 2026-11-15 strategic pivot — resume here first (supersedes the A3-only queue)
+
+Two dated documents landed on 2026-11-15 and redefine the route to the F3 A3
+theorem; read them before continuing:
+
+- `docs/planning/reviews/2026-11-15-qwen-proof-quality-duplication-and-build-performance.md`
+  (duplication + build-cost; its **P0 / Commit A** is already done — see below).
+- `docs/planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md`
+  (the **campaign**: prove the *generic* finite-deck theory, with Commander as a
+  specialization).
+
+**New next action: the G1–G4 generic route.** Rather than finish another 99-only
+A3 counting proof, build the *generic* two-pile theory and discharge Commander A3
+by **instantiation** (roadmap T4/G4). The source-to-target manifest is
+`docs/planning/2026-11-15-g1g4-theorem-manifest.md`. Concrete order (small commits,
+one compiling generic theorem at a time):
+
+1. **G1** — new module `Shufflemath/FiniteDeck/TwoPile.lean`: `Deck N :=
+   Equiv.Perm (Fin N)`, `Membership N m := {S : Finset (Fin N) // S.card = m}`,
+   the deck→membership projection, and the position split/merge `Fin N ≃
+   Fin m ⊕ Fin (N-m)` for `m ≤ N`.  Acceptance: `N=0, m=0, m=N` compile; **no
+   `Commander*` import**.  Keep the `module` / `public import` /
+   `@[expose] public section` conventions.
+2. **T1 fiber count** (G2's first lemma, same or next module): `# {d //
+   allocation d = A} = m! · (N-m)!` by an explicit finite equivalence (NOT an
+   `N!` / `native_decide` enumeration); give one small numerical specialization.
+3. **G3** — generic `subsetExchange N m k` kernel (unique witness `A=S\T,
+   B=T\S`), symmetry/stationarity, and the pairing-independent `literalSwap`.
+4. **G4** — generic count projection + `M`-equivariance/transitivity + BL law;
+   **discharge Commander A3** (`comp (fiberLaw project) rawExchangeMembership =
+   comp commanderExchange25 membershipLift`) as an instance at `(99,50,50,25)`,
+   then the conditional `two_physical_perfect_exchanges_uniform_of_counts`.
+
+**Do not** start the quality-review P2/P3 module splits until G4 is green.  The
+Q1/Q2 deduplication (fiber-count wrapper, CL unification) is folded into the gate
+where the generalized theorem replaces the specialized proof.
+
+**Completed this session:** quality-review **Commit A / Q3** (commit `b1e5812`)
+— `overlap_eq_revTransitionNumerator_cmdr_2525` now derives from
+`generalCL_cmdr_2525.symm` instead of `native_decide`.  Also: Gate 0 (commit
+`c8582f3`, `verify_next_phase.sh` builds the 6 active F3/F4 modules),
+`commanderCountFiber_card` (commit `41a4bab`), and the review R1/R3/R4 status
+honesty fixes (commit `9072a3b`).  The F3 A3 `commanderExchange25_countMass`
+99-only lemma is documented but **not** pursued further; the generic route
+supersedes it (its probed Mathlib API — `Finset.sum_ite` form, `Finset.filter_eq'`,
+`refine Finset.sum_bij … ?_ ?_ ?_ ?_`, `Nat.sub_add_cancel` — is recorded below).
+
+### Nov 15 (25th) session status — prior A3-machinery detail
 
 This session built the **group-uniformity and lift-projection machinery** for
 F3 item 3's `hMembershipExchange` (Spec C / A3).  All committed; the full
