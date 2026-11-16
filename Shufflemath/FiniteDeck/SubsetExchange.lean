@@ -276,6 +276,41 @@ theorem subsetExchangeKernel_rowOne (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) 
 
 
 
+/-- T3 double-stochasticity: the exchange kernel's column sums are also 1,
+  because the kernel is symmetric (`K(S,T) = K(T,S)`) and its row sums are 1. -/
+theorem subsetExchangeKernel_colOne (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k ≤ N - m)
+    (T : Membership N m) :
+    (Finset.univ : Finset (Membership N m)).sum
+      (fun S => subsetExchangeKernel N m k hm hk hkm S.1 T.1) = 1 := by
+  have hswap (S : Membership N m) :
+      subsetExchangeKernel N m k hm hk hkm S.1 T.1 =
+        subsetExchangeKernel N m k hm hk hkm T.1 S.1 :=
+    subsetExchangeKernel_symm N m k hm hk hkm S.1 T.1
+  calc
+    _ = (Finset.univ : Finset (Membership N m)).sum
+        (fun S => subsetExchangeKernel N m k hm hk hkm T.1 S.1) := by
+      rw [Finset.sum_congr rfl (fun S _ => hswap S)]
+    _ = 1 := subsetExchangeKernel_rowOne N m k hm hk hkm T
+
+/-- The uniform distribution on m-piles is stationary under the exchange kernel:
+  averaging the column over the uniform input gives the uniform value back, because
+  each column sums to 1. -/
+theorem subsetExchangeKernel_stationary (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k ≤ N - m)
+    (T : Membership N m) :
+    (Finset.univ : Finset (Membership N m)).sum
+      (fun S => (1 / (Finset.card (pileSet N m)) : Rat) * subsetExchangeKernel N m k hm hk hkm S.1 T.1) =
+      1 / (Finset.card (pileSet N m)) := by
+  have hcol : (Finset.univ : Finset (Membership N m)).sum
+      (fun S => subsetExchangeKernel N m k hm hk hkm S.1 T.1) = 1 :=
+    subsetExchangeKernel_colOne N m k hm hk hkm T
+  have hpos : 0 < (Finset.card (pileSet N m)) := by
+    rw [pileSet, Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
+    exact Nat.choose_pos hm
+  have hnz : (↑(Finset.card (pileSet N m)) : Rat) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (Nat.ne_of_gt hpos)
+  rw [← Finset.mul_sum, hcol, mul_one]
+
+
 -- The concrete reachable set has the same cardinality as the membership one, and
 -- hence `choose m k * choose (N - m) k`.
 -- TODO(proof): ReachSetConcrete_card — #ReachSetConcrete T = #ReachSet (memT) via the
