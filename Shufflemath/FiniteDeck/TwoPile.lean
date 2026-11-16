@@ -58,6 +58,53 @@ theorem rightPositions_card (N m : Nat) (hm : m ≤ N) : (rightPositions N m hm)
 def pileSet (N m : Nat) : Finset (Finset (Fin N)) :=
   (Finset.univ : Finset (Fin N)).powersetCard m
 
+/-- Embed a left-pile index (of the `m` left positions) into a deck position
+  `0, 1, ..., m-1` (the same `Fin.castLE` embedding that `leftPositions` uses). -/
+def leftPosition (N m : Nat) (hm : m ≤ N) (i : Fin m) : Fin N :=
+  Fin.castLE hm i
+
+/-- Embed a right-pile index (of the `N - m` right positions) into a deck position
+  `m, m+1, ..., N-1`. -/
+def rightPosition (N m : Nat) (hm : m ≤ N) (i : Fin (N - m)) : Fin N :=
+  ⟨m + i.val, by
+    have hlt : i.val + m < (N - m) + m := Nat.add_lt_add_right i.isLt m
+    have hsum : (N - m) + m = N := Nat.sub_add_cancel hm
+    omega⟩
+
+theorem leftPosition_injective (N m : Nat) (hm : m ≤ N) : Function.Injective (leftPosition N m hm) :=
+  Fin.castLE_injective hm
+
+theorem rightPosition_injective (N m : Nat) (hm : m ≤ N) : Function.Injective (rightPosition N m hm) := by
+  intro a b hab
+  have hval : m + a.val = m + b.val := by
+    have h0 : (rightPosition N m hm a).val = (rightPosition N m hm b).val := congrArg Fin.val hab
+    simpa [rightPosition] using h0
+  exact Fin.ext (Nat.add_left_cancel_iff.mp hval)
+
+theorem leftPosition_memLeft (N m : Nat) (hm : m ≤ N) (i : Fin m) :
+    leftPosition N m hm i ∈ leftPositions N m hm := by
+  dsimp only [leftPosition, leftPositions]
+  exact Finset.mem_image_of_mem (Fin.castLE hm) (Finset.mem_univ i)
+
+theorem rightPosition_memRight (N m : Nat) (hm : m ≤ N) (i : Fin (N - m)) :
+    rightPosition N m hm i ∈ rightPositions N m hm := by
+  unfold rightPositions
+  rw [Finset.mem_sdiff]
+  constructor
+  · exact Finset.mem_univ _
+  · intro h
+    have hmem : rightPosition N m hm i ∈ (Finset.univ : Finset (Fin m)).image (Fin.castLE hm) := by
+      dsimp only [leftPositions] at h
+      exact h
+    rcases Finset.mem_image.mp hmem with ⟨j, hj, heq⟩
+    have hval : j.val = m + i.val := by
+      have h0 : (Fin.castLE hm j).val = (rightPosition N m hm i).val := congrArg Fin.val heq
+      have h1 : (Fin.castLE hm j).val = j.val := by dsimp only [Fin.castLE]
+      have h2 : (rightPosition N m hm i).val = m + i.val := by dsimp only [rightPosition]
+      omega
+    have hjlt : j.val < m := j.isLt
+    omega
+
 theorem leftRight_cover (N m : Nat) (hm : m ≤ N) :
     leftPositions N m hm ∪ rightPositions N m hm = Finset.univ := by
   unfold rightPositions
