@@ -19,12 +19,12 @@ public import Mathlib.Tactic
 namespace Shufflemath
 namespace FiniteDeck
 
-def FibType (N m : Nat) (hm : m ≤ N) (A : Membership N m) :=
+abbrev FibType (N m : Nat) (hm : m ≤ N) (A : Membership N m) :=
   {e : Equiv.Perm (Fin N) // (leftPositions N m hm).image (fun p => e p) = A.1}
-def LType (N m : Nat) (hm : m ≤ N) := {p : Fin N // p ∈ (leftPositions N m hm)}
-def RType (N m : Nat) (hm : m ≤ N) := {p : Fin N // p ∈ (rightPositions N m hm)}
-def AAType (N m : Nat) (hm : m ≤ N) (A : Membership N m) := {a : Fin N // a ∈ A.1}
-def BBType (N m : Nat) (hm : m ≤ N) (A : Membership N m) := {a : Fin N // a ∈ (Finset.univ \ A.1)}
+abbrev LType (N m : Nat) (hm : m ≤ N) := {p : Fin N // p ∈ (leftPositions N m hm)}
+abbrev RType (N m : Nat) (hm : m ≤ N) := {p : Fin N // p ∈ (rightPositions N m hm)}
+abbrev AAType (N m : Nat) (hm : m ≤ N) (A : Membership N m) := {a : Fin N // a ∈ A.1}
+abbrev BBType (N m : Nat) (hm : m ≤ N) (A : Membership N m) := {a : Fin N // a ∈ (Finset.univ \ A.1)}
 
 -- The restriction of a fiber permutation to the left pile is a bijection L ≃ A.
 noncomputable def fiberRestrictL (N m : Nat) (hm : m ≤ N) (A : Membership N m) (e : FibType N m hm A) :
@@ -232,6 +232,23 @@ theorem img_symm_img (N : Nat) (t : Equiv.Perm (Fin N)) (s : Finset (Fin N)) :
     have hTx : t x ∈ (s).image (fun p => t p) := Finset.mem_image_of_mem (fun p => t p) hx
     have hX : t.symm (t x) = x := Equiv.symm_apply_apply t x
     simpa [hX] using Finset.mem_image_of_mem (fun a => t.symm a) hTx
+
+theorem fibTransitive_finset (N m : Nat) (hm : m ≤ N) (A B : Membership N m) :
+    ∃ t : Equiv.Perm (Fin N), (A.1).image (fun a => t a) = B.1 := by
+  obtain ⟨t, hTB⟩ := fibTransitive N m hm A B
+  refine ⟨t, ?_⟩
+  apply Finset.ext
+  intro x
+  rw [← Finset.mem_coe, ← Finset.mem_coe]
+  -- now: x ∈ ↑((A.1).image (fun a => t a))  ↔  x ∈ ↑B.1   (both Set)
+  have hL : ↑((A.1).image (fun a => t a)) = (⇑t) '' ↑A.1 := by
+    have h1 : ↑((A.1).image (fun a => t a)) = (fun a => t a) '' ↑A.1 := by
+      simpa using Finset.coe_image (fun a => t a) A.1
+    have h2 : (fun a => t a) '' ↑A.1 = (⇑t) '' ↑A.1 := by
+      apply Set.ext; intro y; simp only [Set.mem_image]
+    simpa [h1, h2]
+  rw [hL]
+  simpa [hTB]
 
 -- ============================================================================
 -- NEXT STEP (G2/T1 capstone) — the fiber count  #Fiber(A) = m! * (N - m)!
