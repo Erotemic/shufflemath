@@ -7,6 +7,7 @@ public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Logic.Equiv.Basic
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -213,6 +214,27 @@ theorem subsetExchangeKernel_symm (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (h
       exact hc hC
     rw [ite_eq_right hc, ite_eq_right hneg]
 
+
+/-- T4 equivariance: the subset-exchange kernel is invariant under card
+  permutations. Because the kernel depends only on the four cardinalities
+  `#S`, `#T`, `#(S\T)`, `#(T\S)`, and a bijection preserves each (images
+  preserve cardinality and set-difference), the kernel value is unchanged by
+  permuting the deck. In particular the `M`-preserving subgroup (the symmetry
+  group of the count-fiber structure) leaves the kernel fixed. -/
+theorem subsetExchangeKernel_equivariant (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k ≤ N - m)
+    (σ : Equiv.Perm (Fin N)) (S T : Finset (Fin N)) :
+    subsetExchangeKernel N m k hm hk hkm (S.image σ) (T.image σ) =
+      subsetExchangeKernel N m k hm hk hkm S T := by
+  dsimp only [subsetExchangeKernel]
+  have hS : (S.image σ).card = S.card := Finset.card_image_of_injective (f := σ) S σ.injective
+  have hT : (T.image σ).card = T.card := Finset.card_image_of_injective (f := σ) T σ.injective
+  have hST : (S.image σ \ T.image σ).card = (S \ T).card := by
+    rw [← Finset.image_sdiff (f := σ) S T σ.injective, Finset.card_image_of_injective (f := σ) (S \ T) σ.injective]
+  have hTS : (T.image σ \ S.image σ).card = (T \ S).card := by
+    rw [← Finset.image_sdiff (f := σ) T S σ.injective, Finset.card_image_of_injective (f := σ) (T \ S) σ.injective]
+  by_cases hc : S.card = m ∧ T.card = m ∧ (S \ T).card = k ∧ (T \ S).card = k
+  · rw [ite_eq_left (by simpa [hS, hT, hST, hTS] using hc), ite_eq_left (by simpa using hc)]
+  · rw [ite_eq_right (by simpa [hS, hT, hST, hTS] using hc), ite_eq_right hc]
 /-! ## The concrete reachable set
 
 `ReachSetConcrete S` is the subset of `pileSet N m` reachable from the concrete
