@@ -195,6 +195,27 @@ theorem fibTransitive (N m : Nat) (hm : m ≤ N) (A B : Membership N m) :
       exact ⟨a.1, a.2, hval⟩
   exact ⟨Equiv.ofBijective g hBij, hImg⟩
 
+theorem img_comp (N : Nat) (t e : Equiv.Perm (Fin N)) (s : Finset (Fin N)) :
+    (s).image (fun p => (e.trans t) p) = ((s).image (fun p => e p)).image (fun a => t a) := by
+  apply Finset.ext
+  intro x
+  constructor
+  · -- -> : x in (t ∘ e)''s  =>  x in t''(e''s)
+    intro hx
+    obtain ⟨p, hp, htx⟩ := Finset.mem_image.mp hx
+    have hE : e p ∈ (s).image (fun q => e q) := Finset.mem_image_of_mem (fun q => e q) hp
+    have hX : t (e p) = x := (Equiv.trans_apply e t p).symm.trans htx
+    simpa [hX] using Finset.mem_image_of_mem (fun a => t a) hE
+  · -- <- : x in t''(e''s)  =>  x in (t ∘ e)''s
+    intro hx
+    obtain ⟨a, hAm, htax⟩ := Finset.mem_image.mp hx
+    obtain ⟨p, hp, hea⟩ := Finset.mem_image.mp hAm
+    have hX : (e.trans t) p = x := by
+      calc (e.trans t) p = t (e p) := by rw [Equiv.trans_apply]
+        _ = t a := by rw [hea]
+        _ = x := htax
+    simpa [hX] using Finset.mem_image_of_mem (fun p => (e.trans t) p) hp
+
 -- ============================================================================
 -- NEXT STEP (G2/T1 capstone) — the fiber count  #Fiber(A) = m! * (N - m)!
 -- ============================================================================
