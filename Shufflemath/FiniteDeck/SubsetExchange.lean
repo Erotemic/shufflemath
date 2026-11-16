@@ -5,6 +5,8 @@ public import Shufflemath.FiniteDeck.TwoPileFiber
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fintype.Basic
+public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -229,13 +231,59 @@ theorem ReachSetConcrete_subset (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm
   intro U hU
   exact (Finset.mem_filter.mp hU).1
 
+/-- T3 row-sum: for a fixed pile `S`, summing the exchange kernel over all piles `T`
+  (each reachable `T` carries the equal weight `1 / (choose m k * choose (N - m) k)`)
+  gives 1, so the uniform distribution on piles is a stationary measure. -/
+theorem subsetExchangeKernel_rowOne (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k ≤ N - m)
+    (S : Membership N m) :
+    (Finset.univ : Finset (Membership N m)).sum
+      (fun T => subsetExchangeKernel N m k hm hk hkm S.1 T.1) = 1 := by
+  let C : ℕ := Nat.choose m k * Nat.choose (N - m) k
+  have hCpos : 0 < C := Nat.mul_pos (Nat.choose_pos hk) (Nat.choose_pos hkm)
+  -- The kernel's 4-way condition, for two m-member piles, reduces exactly to the
+  -- reachability predicate: both sides are  true ∧ true ∧ (S\T).card = k ∧ (T\S).card = k.
+  have hK (T : Membership N m) :
+      subsetExchangeKernel N m k hm hk hkm S.1 T.1 =
+        if T ∈ ReachSet N m k hm hk hkm S then (1 / (C : Rat)) else 0 := by
+    by_cases h : (S.1 \ T.1).card = k ∧ (T.1 \ S.1).card = k
+    · -- reachable: kernel positive, target positive
+      dsimp only [subsetExchangeKernel, ReachSet, Membership]
+      simp only [Subtype.coe_mk, S.2, T.2, true_and, Finset.mem_filter, Finset.mem_univ]
+      simp only [h, ite_true, C, Nat.cast_mul, one_div]
+    · -- not reachable: both sides 0
+      dsimp only [subsetExchangeKernel, ReachSet, Membership]
+      simp only [Subtype.coe_mk, S.2, T.2, true_and, Finset.mem_filter, Finset.mem_univ]
+      simp only [h, ite_false]
+  have hfilter :
+      (Finset.univ : Finset (Membership N m)).filter
+        (fun T => T ∈ ReachSet N m k hm hk hkm S) = ReachSet N m k hm hk hkm S := by
+    apply Finset.ext
+    intro T
+    simp only [ReachSet, Finset.mem_filter, Finset.mem_univ, true_and]
+  calc
+    _ = (Finset.univ : Finset (Membership N m)).sum
+        (fun T => if T ∈ ReachSet N m k hm hk hkm S then (1 / (C : Rat)) else 0) := by
+      rw [Finset.sum_congr rfl (fun T _ => hK T)]
+    _ = 1 := by
+      rw [Finset.sum_ite, hfilter]
+      simp [Finset.sum_const]
+      rw [subsetExchangeCount N m k hm hk hkm S]
+      dsimp only [C]
+      have hCnz : (Nat.choose m k * Nat.choose (N - m) k : Rat) ≠ 0 := by
+        norm_cast
+        exact Nat.ne_of_gt (Nat.mul_pos (Nat.choose_pos hk) (Nat.choose_pos hkm))
+      field_simp [hCnz]
+
+
+
 -- The concrete reachable set has the same cardinality as the membership one, and
 -- hence `choose m k * choose (N - m) k`.
 -- TODO(proof): ReachSetConcrete_card — #ReachSetConcrete T = #ReachSet (memT) via the
 --   U ↦ U.1 bijection (Finset.card_image_of_injective; image equality by ext), then
 --   subsetExchangeCount. Finset-filter membership navigation is fiddly; the alternative
 --   is reusing the subsetExchangeCount i/j bijection with memT (whose .1 = T).
---   Needed for rowSum_eq_one (rows sum to 1) and subsetExchangeKernel_stationary.
+--   Needed for the CONCRETE-kernel rowSum_eq_one (the membership-kernel version above,
+--   subsetExchangeKernel_rowOne, is already proven).
 
 end FiniteDeck
 end Shufflemath
