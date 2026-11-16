@@ -309,6 +309,97 @@ theorem fibersUnique (N m : Nat) (hm : m ≤ N) (A B : Membership N m) (g : Equi
   intro hgA hgB
   simpa [hgA] using hgB
 
+/-- The finset of decks whose left-pile image is exactly `A` — the fiber of `A`
+  as an explicit finset of the full permutation space. -/
+def fiberSet (N m : Nat) (hm : m ≤ N) (A : Membership N m) : Finset (Equiv.Perm (Fin N)) :=
+  (Finset.univ : Finset (Equiv.Perm (Fin N))).filter
+    (fun g => (leftPositions N m hm).image (fun p => g p) = A.1)
+
+/-- `# fiberSet A = Fintype.card (FibType A)`: the finset of fiber decks and the
+  fiber-deck subtype have the same size (the value projection is the bijection).
+  First building block of the G2/T1 fiber count: it lets the later argument work
+  with finsets (and `Finset.card_biUnion` for the partition) instead of the
+  dependent `Fintype` sum. -/
+theorem fiberSet_card (N m : Nat) (hm : m ≤ N) (A : Membership N m) :
+    (fiberSet N m hm A).card = Fintype.card (FibType N m hm A) := by
+  let f : FibType N m hm A → Equiv.Perm (Fin N) := fun x => (x : Equiv.Perm (Fin N))
+  have hInj : Function.Injective f := by
+    intro x y h
+    exact Subtype.ext h
+  have hImg : (Finset.univ : Finset (FibType N m hm A)).image f = fiberSet N m hm A := by
+    dsimp only [fiberSet]
+    apply Finset.ext
+    intro g
+    simp only [f, Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and, FibType]
+    constructor
+    · intro h
+      rcases h with ⟨a, rfl⟩
+      exact a.2
+    · intro h
+      exact ⟨⟨g, h⟩, rfl⟩
+  rw [← hImg, Finset.card_image_of_injective (Finset.univ : Finset (FibType N m hm A)) hInj]
+  exact Finset.card_univ
+
+/-- The fiber of a pile `S` (no membership wrapper): the decks imaging the left
+  pile to exactly `S`. -/
+def fiberSetPile (N m : Nat) (hm : m ≤ N) (S : Finset (Fin N)) : Finset (Equiv.Perm (Fin N)) :=
+  (Finset.univ : Finset (Equiv.Perm (Fin N))).filter
+    (fun g => (leftPositions N m hm).image (fun p => g p) = S)
+
+/-- `fiberSet A` is just the fiber of its pile `A.1`. -/
+theorem fiberSet_eq_pile (N m : Nat) (hm : m ≤ N) (A : Membership N m) :
+    fiberSet N m hm A = fiberSetPile N m hm A.1 := rfl
+
+/-- The finset of all m-piles (the concrete index for the fiber partition). -/
+def pileSet (N m : Nat) : Finset (Finset (Fin N)) :=
+  (Finset.univ : Finset (Fin N)).powersetCard m
+
+/-- Cover half of the fiber partition: the pile-fibers bi-union to the whole
+  permutation space (each deck images the left pile to some m-pile). -/
+theorem fiberCover (N m : Nat) (hm : m ≤ N) :
+    (pileSet N m).biUnion (fun S => fiberSetPile N m hm S) =
+    (Finset.univ : Finset (Equiv.Perm (Fin N))) := by
+  ext g
+  simp only [Finset.mem_biUnion, Finset.mem_univ, true_and]
+  constructor
+  · intro _
+    trivial
+  · intro _
+    have hS : ((leftPositions N m hm).image (fun p => g p)).card = m := leftImageIsMembership N m hm g
+    have hIn : (leftPositions N m hm).image (fun p => g p) ∈ pileSet N m := by
+      rw [pileSet, Finset.mem_powersetCard]
+      exact ⟨Finset.subset_univ _, hS⟩
+    refine ⟨(leftPositions N m hm).image (fun p => g p), hIn, ?_⟩
+    dsimp only [fiberSetPile]
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+
+/-- Disjointness half of the fiber partition: distinct piles have disjoint
+  fibers (a deck images the left pile to exactly one pile). -/
+theorem fiberDisjoint (N m : Nat) (hm : m ≤ N) :
+    (pileSet N m : Set (Finset (Fin N))).PairwiseDisjoint (fun S => fiberSetPile N m hm S) := by
+  intros S1 _ S2 _ hne
+  change Disjoint (fiberSetPile N m hm S1) (fiberSetPile N m hm S2)
+  rw [Finset.disjoint_iff_ne]
+  intro a ha b hb heq
+  dsimp only [fiberSetPile] at ha hb
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha hb
+  have hIm : (leftPositions N m hm).image (fun p => a p) =
+      (leftPositions N m hm).image (fun p => b p) :=
+    congrArg (fun x : Equiv.Perm (Fin N) => (leftPositions N m hm).image (fun p => x p)) heq
+  exact hne (by rw [← ha, ← hb]; exact hIm)
+
+/-- The total permutation count is the sum of the pile-fiber counts: the
+  pile-fibers partition the permutation space. -/
+theorem fiberSum_eq_permCard (N m : Nat) (hm : m ≤ N) :
+    Fintype.card (Equiv.Perm (Fin N)) = (pileSet N m).sum (fun S => (fiberSetPile N m hm S).card) := by
+  have hDisj : (pileSet N m : Set (Finset (Fin N))).PairwiseDisjoint (fun S => fiberSetPile N m hm S) :=
+    fiberDisjoint N m hm
+  calc Fintype.card (Equiv.Perm (Fin N))
+      = (Finset.univ : Finset (Equiv.Perm (Fin N))).card := Finset.card_univ
+    _ = ((pileSet N m).biUnion (fun S => fiberSetPile N m hm S)).card :=
+      congrArg Finset.card (fiberCover N m hm).symm
+    _ = (pileSet N m).sum (fun S => (fiberSetPile N m hm S).card) := Finset.card_biUnion hDisj
+
 -- ============================================================================
 -- NEXT STEP (G2/T1 capstone) — the fiber count  #Fiber(A) = m! * (N - m)!
 -- ============================================================================
