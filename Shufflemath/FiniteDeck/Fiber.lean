@@ -115,15 +115,21 @@ noncomputable def fiberRestrictR (N m : Nat) (hm : m ≤ N) (A : Membership N m)
 -- term-mode `if`/`by_cases` opacity wall).  The only `Finset`s needed are
 -- Fib(A) itself and the pile set P.
 --
--- Concretely, the next lemmas:
---   1. fibTransitive  : the pushforward action of Perm (Fin N) on P is
---      transitive  (generalize the Commander `membershipFiber_transitive`).
---   2. fibersEqual    : Fib(A) has the same card for every A in P  (from (ii)).
---   3. fibersPartition : the Fib(A) form a disjoint cover of G        (from (i)).
---   4. fiberCount     : (choose N m) * Fintype.card (Fib A) = Nat.factorial N
---      and therefore  Fintype.card (Fib A) = Nat.factorial m * Nat.factorial
---      (N - m)   (from 2+3+membershipCount+Nat.choose_mul ... + N! = (choose N m)
---      * m! * (N-m)!).
+-- 0. fibTransitive  : the pushforward action is transitive — for any A, B in P,
+--      ∃ g : Perm (Fin N), g '' A.1 = B.1.  Built in TACTIC mode (a theorem's `by`),
+--      where `by_cases hx : x ∈ A.1` gives a usable `¬(x ∈ A.1)` in the else-branch
+--      (unlike a `def`).  Glue an equicardinal bijection A→B (Fintype.equivFinOfCardEq
+--      on the subtypes) with one Aᶜ→Bᶜ into a full Perm, prove it bijective (4-case
+--      injective via split_ifs; surjective via the two bijections' surj), and show
+--      its image of A is B.  GOTCHAS hit: (a) subtype constructors in `f ⟨x, hx⟩`
+--      are ambiguous — annotate `⟨x, hx⟩ : {y : Fin N // y ∈ A.1}`; (b) apply the
+--      Equiv as `f.1 …` / `↑f`, not a bare dependent `f` term; (c) complements need
+--      `← Finset.card_sdiff_of_subset (Finset.subset_univ _)` + `ring` to get N-m.
+-- 1. fibersPartition : the Fib(A) form a pairwise-disjoint cover of G.
+-- 2. fibersEqual     : #Fib(A) is independent of A  (from 0, via a fiber-bijection).
+-- 3. fiberCount      : (choose N m) * #Fib(A) = N!  ⟹  #Fib(A) = m! * (N-m)!.
+--      (from 1+2+membershipCount + N! = (choose N m) * m! * (N-m)!, i.e. the
+--      factorial form of the binomial coefficient.)
 -- ============================================================================
 end FiniteDeck
 end Shufflemath
