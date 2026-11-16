@@ -135,6 +135,61 @@ attempts, but is no longer the recommended route.
 
 ## Exactly where to resume
 
+### Nov 15 (25th) session status — resume here first
+
+This session built the **group-uniformity and lift-projection machinery** for
+F3 item 3's `hMembershipExchange` (Spec C / A3).  All committed; the full
+targeted build (11 modules) is green; 37 Python tests pass; tree clean.
+
+- **`map_equiv_mass`** (`Shufflemath/CommanderMembershipExchange.lean`,
+  commit `52214df`): for a bijection `e : Equiv X X`,
+  `Dist.mass (mu.map e) y = Dist.mass mu (e.symm y)` (the preimage sum collapses
+  to one term).
+- **`distUniform_ofInvariantTransitive`** (same file, `52214df`): a distribution
+  that is invariant under a group action **transitive** on a set `S` is uniform
+  on `S`: `(↑#S : Rat) * Dist.mass mu x = 1` for `x ∈ S`.  *This is the general
+  tool for part (ii)'s within-count uniformity.*
+- **`membershipFiber_card`** (`8b23c48`): `# {m // membershipCount m = k} =
+  membershipFiberCount k` (bridges `Fintype.card (MembershipFiber k)` through
+  `MembershipFiber_card` to the F1b choose product).
+- **`membershipLift_count`** (`8b23c48`):
+  `comp membershipLift (deterministic membershipCount) =
+   deterministic commanderLeftCount` — the uniform lift projects back to its
+  count (via `Dist.sum_mass` + `Finset.sum_congr`, no fiber-card expansion).
+
+**Next — F3 item 3 capstone (A3):** prove, in
+`Shufflemath/CommanderMembershipExchange.lean`,
+
+1. **`rawExchangeMembership_count`** (part (i), count total):
+       `comp (comp (fiberLaw project project_surjective) rawExchangeMembership)
+          (deterministic membershipCount) =
+         comp commanderExchange25 (deterministic commanderLeftCount)`.
+   Both sides are `FiniteKernel CommanderState Nat`.  At a source state `x`
+   (count `c`) and target count `c'`, this says the fiber-average post-exchange
+   count distribution equals `transitionWeight 99 50 25 c c'`.  Route: show the
+   count distribution of a *single* deck `d` (count `c`) is the hypergeometric
+   two-urn transition (the general CL `transitionNumerator = overlap_count` is
+   the counting core; instantiate it at the concrete `(L,R)`-exchange level via
+   the `leftHyper`/`rightHyper` 25-subset counts, cf. the `Finset.mem_coe` fix
+   noted in `docs/f3_membership_exchange.md`), which is independent of `d`, so
+   the fiber average is trivial; then match the RHS by
+   `commanderExchange25Matrix x y = transitionWeight 99 50 25 (count x) (count y)`
+   (line 101) with one `Fin 50` state per count.
+2. **`hMembershipExchange`** (the capstone): assemble (1) with part (ii)
+   within-count uniformity (`newLeftCards_conjugate` equivariance +
+   `membershipFiber_transitive` transitivity, applied through
+   `distUniform_ofInvariantTransitive`) into
+   `comp (fiberLaw project project_surjective) rawExchangeMembership =
+    comp commanderExchange25 membershipLift`, then instantiate
+   `two_physical_perfect_exchanges_uniform_of_counts` (the 2-exchange TV
+   theorem, F3 item 4).
+
+F4.2 item 4 (Dobrushin contraction / `Equiv.Perm (Fin 99)` lift) and F5 remain
+downstream; the full-deck TV (F4.5) needs F3 item 4.  Do not re-attempt the
+`List.mem_bind`/`toMultiset` sub-wall.
+
+### Nov 15 (24th) session status — (prior; resume above)
+
 ### Nov 15 (24th) session status — resume here first
 
 This session proved the two **group-action (orbit) pillars** of F3 item 3's
