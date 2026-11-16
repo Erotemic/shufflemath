@@ -20,7 +20,13 @@ lake build \
   Shufflemath.CommanderPhysicalExchange \
   Shufflemath.FiberDisintegration \
   Shufflemath.PhysicalExchangeReduction \
-  Shufflemath.CommanderFullDeckDisintegration
+  Shufflemath.CommanderFullDeckDisintegration \
+  Shufflemath.ExchangeOverlap \
+  Shufflemath.FinsetCombinatorics \
+  Shufflemath.CommanderMembershipOrbits \
+  Shufflemath.CommanderMembershipExchange \
+  Shufflemath.CommanderLocalGSR \
+  Shufflemath.CommanderDeckGSR
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace
