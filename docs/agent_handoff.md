@@ -69,6 +69,13 @@ priority; `AGENTS.md` governs repository behavior.
    user's request on the Nov 12 session.) This is a long autonomous build.
    You **will be compacted multiple times**; compaction is normal and is not
    a stopping signal.
+   **"Do not stop" includes never presenting a status.** A "session summary",
+   "state of the world", progress recap, or "here is where things stand" output
+   **is a stop** (the user has flagged presenting one as a stop). Do not emit
+   such a report at the end of a turn. The turn ends only by (a) the stuck
+   protocol (rule 8) or (b) the deadline — never on a status update (rule 10).
+   If you are tempted to summarize, instead take the next concrete proof
+   action in the same turn.
 2. **After every compaction, do exactly this, in order:**
    a. Read this document top to bottom, then `AGENTS.md` and
       `docs/lean_plan.md`.
