@@ -499,5 +499,20 @@ theorem countFiber_transitive (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (x : N
   exact permFinsetTransitive N m hm S T hScard hTcard
 
 
+
+/-! ### T4 (A,B) move count (fixed marked counts) -/
+theorem countAB (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (k a b : Nat)
+    (ha : a ≤ k) (hb : b ≤ k) (S : Membership N m) :
+    (Finset.filter (fun A => (A ∩ markedSet N r hr).card = a) (Finset.powersetCard k S.1) ×ˢ
+        Finset.filter (fun B => (B ∩ markedSet N r hr).card = b) (Finset.powersetCard k (Finset.univ \ S.1))).card =
+      Nat.choose (S.1 ∩ markedSet N r hr).card a *
+        Nat.choose (S.1 \ markedSet N r hr).card (k - a) *
+        Nat.choose ((Finset.univ \ S.1) ∩ markedSet N r hr).card b *
+        Nat.choose ((Finset.univ \ S.1) \ markedSet N r hr).card (k - b) := by
+  rw [Finset.card_product,
+      powersetCard_markedSplit N S.1 (markedSet N r hr) k a ha,
+      powersetCard_markedSplit N (Finset.univ \ S.1) (markedSet N r hr) k b hb]
+  ring
+
 end FiniteDeck
 end Shufflemath
