@@ -168,5 +168,48 @@ theorem subsetExchangeCount (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k
       · rw [inv_second N m k hm hk hkm S p hp]
   rw [hbij, Finset.card_product, hL, hR]
 
+/-! ## The weighted `k`-exchange kernel (`T3`)
+
+`subsetExchangeKernel` is the uniform kernel over the reachable set: it puts mass
+`[choose m k · choose (N-m) k]⁻¹` on each reachable pile and 0 elsewhere. It is
+defined on concrete piles (so the state space is the finset `pileSet N m`, which
+carries the `Fintype`/`Finset` structure that `Membership N m` lacks). -/
+
+/-- T3: the universal two-pile `k`-exchange kernel on concrete m-piles. -/
+def subsetExchangeKernel (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k ≤ N - m)
+    (S T : Finset (Fin N)) : Rat :=
+  if S.card = m ∧ T.card = m ∧ (S \ T).card = k ∧ (T \ S).card = k then
+    (Nat.choose m k * Nat.choose (N - m) k : Rat)⁻¹
+  else 0
+
+/-- T3 symmetry: the exchange kernel is symmetric, `K(S,T) = K(T,S)`. -/
+theorem subsetExchangeKernel_symm (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k ≤ N - m)
+    (S T : Finset (Fin N)) :
+    subsetExchangeKernel N m k hm hk hkm S T = subsetExchangeKernel N m k hm hk hkm T S := by
+  dsimp only [subsetExchangeKernel]
+  by_cases hc : S.card = m ∧ T.card = m ∧ (S \ T).card = k ∧ (T \ S).card = k
+  · rw [ite_eq_left (by simpa using hc)]
+    have hc2 : T.card = m ∧ S.card = m ∧ (T \ S).card = k ∧ (S \ T).card = k := by
+      constructor
+      · exact hc.2.1
+      · constructor
+        · exact hc.1
+        · constructor
+          · exact hc.2.2.2
+          · exact hc.2.2.1
+    rw [ite_eq_left hc2]
+  · have hneg : ¬(T.card = m ∧ S.card = m ∧ (T \ S).card = k ∧ (S \ T).card = k) := by
+      intro h2
+      have hC : S.card = m ∧ T.card = m ∧ (S \ T).card = k ∧ (T \ S).card = k := by
+        constructor
+        · exact h2.2.1
+        · constructor
+          · exact h2.1
+          · constructor
+            · exact h2.2.2.2
+            · exact h2.2.2.1
+      exact hc hC
+    rw [ite_eq_right hc, ite_eq_right hneg]
+
 end FiniteDeck
 end Shufflemath
