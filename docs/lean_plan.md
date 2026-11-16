@@ -364,10 +364,29 @@ route, not a theorem already in the tree.
 > **F3 item 3 is now COMPLETE in both halves** (counting part (i) + member-
 > uniformity part (ii)).  The named-if reduction wall was bypassed: instead of an
 > explicit inverse, injectivity was proved by target-piece exclusion
-> **(item 4, remaining): Specs A2/A3** — the physical-exchange-distribution
-> stabilizer invariance (A2) and the assembled kernel equality + 2-exchange TV
-> theorem (A3).  Item 3 (counting + member-uniformity, part i + ii) is now
-> COMPLETE, so A2/A3 no longer depend on it; they rest on A2's invariance itself.
+> **23rd–24th-session progress (Spec A2 core + A3 scaffold):**
+> `newLeftCards_conjugate` (`CommanderPhysicalExchange.lean`, commit `6ccae33`)
+> proves the **pointwise** equivariance of the post-exchange left set under any
+> deck relabeling `f`: `newLeftCards (d.trans f) L R = (newLeftCards d L R).image
+> f` (via `leftOrigSet_image` + `Equiv.trans_apply`) — the distributional-invariance
+> building block for part (ii).  (A 23rd-session Python-splice truncation lost the
+> file once; restored from `958d5f5` and re-merged, `dd221fd` — see the splice-safety
+> warning in `docs/agent_handoff.md`.)  The **A3 target module**
+> `Shufflemath/CommanderMembershipExchange` (commit `74f5dab`) scaffolds the kernel
+> equality `comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25
+> membershipLift` with its two-stage proof plan.
+> **(item 4 / Spec C — remaining):** (A3) prove that equality.  It splits into (i)
+> **counting** (the fiber-average post-exchange `membershipCount` = the
+> `commanderExchange25` transition — the counting core is DONE in
+> `generalCL`/`fiberSum_eq_overlap`; the fiber average over *decks* needs a
+> deck-level orbit/transitivity argument) and (ii) **within-count uniformity**
+> (given the count, the membership is uniform over its fiber), which follows from
+> **`newLeftCards_conjugate`** (equivariance) + **`membershipFiber_transitive`
+> (transitivity)**.  Then F3 item 4 (the 2-exchange TV theorem
+> `two_physical_perfect_exchanges_uniform_of_counts`) instantiates with this proved
+> `hMembershipExchange`.  F4.2 item 4 (Dobrushin contraction / `Equiv.Perm (Fin
+> 99)` lift) and F5 remain downstream; do not re-attempt the `List.mem_bind`/
+> `toMultiset` sub-wall.
 
 **Dependency:** F2 (satisfied: `membershipLift_localLift_eq_fiberLaw`, commit `19d417c`).
 

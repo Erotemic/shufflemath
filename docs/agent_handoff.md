@@ -135,6 +135,63 @@ attempts, but is no longer the recommended route.
 
 ## Exactly where to resume
 
+### Nov 15 (24th) session status — resume here first
+
+This session proved the two **group-action (orbit) pillars** of F3 item 3's
+part (ii) and scaffolded the A3 kernel-equality module.  All committed; the full
+targeted build (11 modules incl. the new
+`Shufflemath.CommanderMembershipExchange`) is green; 37 Python tests pass;
+working tree clean.
+
+- **F3 item 4 / Spec A1 — `membershipFiber_transitive`**
+  (`Shufflemath/CommanderMembershipOrbits.lean`, commit `43f845f`): any two
+  memberships `m, m'` with the same `membershipCount` are related by a deck
+  bijection that **preserves the left pile** and **carries `m.1` to `m'.1`**.
+  Proven via an explicit 4-piece `orbitMap` (matched/unmarked × left/right
+  position equivs, commit `55c07b5`) whose `surjective` (`cb5dd14`),
+  `injective` (`4f816b1`, via 12 pairwise-disjointness + 4 preimage lemmas),
+  and `imageLeft`/`imageM1` lemmas (`43f845f`) make `Equiv.ofBijective` close.
+  `leftRightOrig_cover` / `leftRightOrig_disjoint` / `piecesCover` give the
+  4-way position partition.  *This is part (ii)'s "group acts transitively on
+  each count-fiber" half, at the deck level.*
+- **Spec A2 — `newLeftCards_conjugate`** (`CommanderPhysicalExchange.lean`,
+  commit `6ccae33`): for any permutation `f : Equiv.Perm (Fin 99)`,
+  `newLeftCards (d.trans f) L R = (newLeftCards d L R).image f` (by
+  `leftOrigSet_image` + `Equiv.trans_apply`).  The *pointwise* equivariance of
+  the post-exchange left set under relabeling — the distributional-invariance
+  building block (part (ii)'s "exchange law is equivariant under the group"
+  half).  (A 23rd-session file-truncation incident lost this lemma once; it was
+  restored from `958d5f5` and re-merged — commit `dd221fd`; a splice-safety
+  warning was added to this doc.)
+
+**Next — F3 item 3 kernel equality (A3 / Spec C), now scaffolded:** the target
+`comp (fiberLaw project project_surjective) rawExchangeMembership =
+comp commanderExchange25 membershipLift` (`Shufflemath/CommanderMembershipExchange.lean`,
+commit `74f5dab`) splits into (i) **counting** — the post-exchange
+`membershipCount`, fiber-averaged, equals the `commanderExchange25` transition
+(the counting core `generalCL`/`fiberSum_eq_overlap` is DONE, but the fiber
+average over *decks* needs a deck-level orbit argument) — and (ii)
+**within-count uniformity** — given the count, the membership is uniform over
+its fiber, which follows from **`newLeftCards_conjugate`** (equivariance) +
+**`membershipFiber_transitive`** (transitivity).  *Concrete next step:* prove
+the count-projection part (i) — reduce the `project`-fiber average of
+`newLeftOriginalCount_eq` to the hypergeometric `transitionWeight` — likely via
+a deck-level transitivity lemma (the `Equiv.Perm`-level analog of
+`membershipFiber_transitive`) making the fiber-average depend only on the
+source count, then compute it for a canonical deck.  F4.2 item 4 (Dobrushin
+contraction / `Equiv.Perm (Fin 99)` lift) and F5 (full theorem) remain
+downstream/blocked; do not re-attempt the `List.mem_bind`/`toMultiset` sub-wall.
+
+**Splice-safety (23rd session):** a Python `s[:start] + ... + s[end:]` splice
+with `end = s.rfind("-/")` (or any `find` returning `-1`) **silently truncated**
+`CommanderPhysicalExchange.lean` to its last character (lost 267 lines of
+committed code, including `newLeftCards_conjugate`).  *Always `assert end != -1
+and start != -1` before a splice* (or use `s.split(anchor)` with a length
+check).  The file was restored from `958d5f5` + the new lemma re-merged
+(`dd221fd`).  Also: `∘` coerces `Equiv`/`Deck` to plain `Function.comp` (losing
+the type) — use explicit `.trans`; and `f '' s` (Set image) breaks `Finset.ext`
+— use `(s).image f`.
+
 ### Nov 14 (6th) session status — resume here first
 
 This session completed the **F4.3 Fintype-free TV subadditivity** — the
