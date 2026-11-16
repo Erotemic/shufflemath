@@ -93,5 +93,43 @@ noncomputable def fiberRestrictR (N m : Nat) (hm : m ≤ N) (A : Membership N m)
         rw [rightPositions, Finset.mem_sdiff]
         exact ⟨Finset.mem_univ _, hNotLeft⟩
       exact ⟨⟨q, hRight⟩, Subtype.ext hq⟩
+
+-- ============================================================================
+-- NEXT STEP (G2/T1 capstone) — the fiber count  #Fiber = m! * (N - m)!
+-- ============================================================================
+-- The two restriction bijections above (fiberRestrictL / fiberRestrictR) are the
+-- nontrivial content. The count itself is:
+--
+--   Fintype.card (FibType N m hm A) = Nat.factorial m * Nat.factorial (N - m)
+--
+-- Strategy (all the ingredients are now in place):
+--   1. fiberToPair : FibType -> (LType ≃ AAType) × (RType ≃ BBType),
+--      fiberToPair e := (fiberRestrictL … e, fiberRestrictR … e).
+--   2. pairToFiber : the inverse — glue the two equivs into one Perm (Fin N):
+--      glue p x := if x ∈ leftPositions then (p.1 (⟨x, hx⟩ : LType)).1
+--                  else (p.2 (⟨x, hrx⟩ : RType)).1   -- hrx : x ∈ rightPositions
+--      and show: glue is a bijection, glue '' leftPositions = A.1 (the fiber
+--      condition), and fiberToPair / pairToFiber are mutual inverses, giving
+--      FibType ≃ (LType ≃ AAType) × (RType ≃ BBType).
+--   3. Count: Fintype.card (Fiber)
+--        = Fintype.card ((L ≃ AA) × (R ≃ BB))          [Fintype.card_congr / of the equiv]
+--        = Fintype.card (L ≃ AA) * Fintype.card (R ≃ BB)   [Fintype.card_prod]
+--        = (Fintype.card L)! * (Fintype.card R)!        [Fintype.card_equiv, witness = the equivs]
+--        = m! * (N - m)!                                [leftPositions_card, rightPositions_card, Fintype.card_fin]
+--
+-- KEY GOTCHA (confirmed): the pointwise `glue` written as `fun x => by by_cases …`
+-- is OPAQUE to `dsimp`/`simp`. The `if hx : x ∈ L then … else …` form IS reducible
+-- by `dsimp only [glue]; split_ifs` (auto-prunes using the in-context `hx`/`¬hx`),
+-- BUT the else-branch must construct `⟨x, hrx⟩ : RType`, needing `hrx : x ∈ rightPositions`
+-- i.e. `x ∉ leftPositions`, which is not directly nameable in term-mode `if`.
+--
+-- PREFERRED (avoids pointwise by_cases entirely): build the glue as an `Equiv`
+-- via the disjoint-union decomposition:
+--     Fin N ≃ (LType ⊔ RType)   (leftRight_cover + leftRight_disjoint)
+--   followed by  (p.1 ⊔ p.2) : (LType ⊔ RType) ≃ (AAType ⊔ BBType)
+--   followed by  (AAType ⊔ BBType) ≃ Fin N   (A ∪ B = univ, disjoint),
+-- composing `Equiv`s. Then the fiber condition (glue '' L = A.1) and the
+-- injectivity/surjectivity are `Equiv`-level facts (no pointwise reduction).
+-- ============================================================================
 end FiniteDeck
 end Shufflemath
