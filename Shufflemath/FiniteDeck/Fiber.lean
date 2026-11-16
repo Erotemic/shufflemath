@@ -95,41 +95,35 @@ noncomputable def fiberRestrictR (N m : Nat) (hm : m ≤ N) (A : Membership N m)
       exact ⟨⟨q, hRight⟩, Subtype.ext hq⟩
 
 -- ============================================================================
--- NEXT STEP (G2/T1 capstone) — the fiber count  #Fiber = m! * (N - m)!
+-- NEXT STEP (G2/T1 capstone) — the fiber count  #Fiber(A) = m! * (N - m)!
 -- ============================================================================
--- The two restriction bijections above (fiberRestrictL / fiberRestrictR) are the
--- nontrivial content. The count itself is:
+-- CORRECT STRATEGY (avoids the pointwise-glue wall): use the TRANSITIVE group
+-- action of G = Perm (Fin N) on the pile set P = {s : Finset (Fin N) // #s = m}
+-- by pushforward  g . s := g '' s.  The fiber  Fib(A) := {g // g '' L = A}
+-- (L = leftPositions) is the "translation set" sending the fixed base pile L to
+-- A.  Facts:
+--   (i)   the Fib(A) over A in P are pairwise disjoint and their union is G
+--         (every g sends L to exactly one m-pile);
+--   (ii)  by transitivity of the action (membershipFiber_transitive, already
+--         established generically / in the Commander case), a group element
+--         mapping A to B gives a bijection Fib(A) -> Fib(B), so all Fib(A)
+--         have EQUAL cardinality;
+--   (iii)  hence  #P * #Fib(A) = #G,  i.e.  (choose N m) * #Fib(A) = N!,  so
+--         #Fib(A) = N! / choose N m = N! / (N!/(m!(N-m)!)) = m! * (N - m)!.
+-- This is a pure orbit/fiber count: no pointwise `glue` function (whose
+-- `if x ∈ L ... else ...` else-branch cannot name its own negation — the
+-- term-mode `if`/`by_cases` opacity wall).  The only `Finset`s needed are
+-- Fib(A) itself and the pile set P.
 --
---   Fintype.card (FibType N m hm A) = Nat.factorial m * Nat.factorial (N - m)
---
--- Strategy (all the ingredients are now in place):
---   1. fiberToPair : FibType -> (LType ≃ AAType) × (RType ≃ BBType),
---      fiberToPair e := (fiberRestrictL … e, fiberRestrictR … e).
---   2. pairToFiber : the inverse — glue the two equivs into one Perm (Fin N):
---      glue p x := if x ∈ leftPositions then (p.1 (⟨x, hx⟩ : LType)).1
---                  else (p.2 (⟨x, hrx⟩ : RType)).1   -- hrx : x ∈ rightPositions
---      and show: glue is a bijection, glue '' leftPositions = A.1 (the fiber
---      condition), and fiberToPair / pairToFiber are mutual inverses, giving
---      FibType ≃ (LType ≃ AAType) × (RType ≃ BBType).
---   3. Count: Fintype.card (Fiber)
---        = Fintype.card ((L ≃ AA) × (R ≃ BB))          [Fintype.card_congr / of the equiv]
---        = Fintype.card (L ≃ AA) * Fintype.card (R ≃ BB)   [Fintype.card_prod]
---        = (Fintype.card L)! * (Fintype.card R)!        [Fintype.card_equiv, witness = the equivs]
---        = m! * (N - m)!                                [leftPositions_card, rightPositions_card, Fintype.card_fin]
---
--- KEY GOTCHA (confirmed): the pointwise `glue` written as `fun x => by by_cases …`
--- is OPAQUE to `dsimp`/`simp`. The `if hx : x ∈ L then … else …` form IS reducible
--- by `dsimp only [glue]; split_ifs` (auto-prunes using the in-context `hx`/`¬hx`),
--- BUT the else-branch must construct `⟨x, hrx⟩ : RType`, needing `hrx : x ∈ rightPositions`
--- i.e. `x ∉ leftPositions`, which is not directly nameable in term-mode `if`.
---
--- PREFERRED (avoids pointwise by_cases entirely): build the glue as an `Equiv`
--- via the disjoint-union decomposition:
---     Fin N ≃ (LType ⊔ RType)   (leftRight_cover + leftRight_disjoint)
---   followed by  (p.1 ⊔ p.2) : (LType ⊔ RType) ≃ (AAType ⊔ BBType)
---   followed by  (AAType ⊔ BBType) ≃ Fin N   (A ∪ B = univ, disjoint),
--- composing `Equiv`s. Then the fiber condition (glue '' L = A.1) and the
--- injectivity/surjectivity are `Equiv`-level facts (no pointwise reduction).
+-- Concretely, the next lemmas:
+--   1. fibTransitive  : the pushforward action of Perm (Fin N) on P is
+--      transitive  (generalize the Commander `membershipFiber_transitive`).
+--   2. fibersEqual    : Fib(A) has the same card for every A in P  (from (ii)).
+--   3. fibersPartition : the Fib(A) form a disjoint cover of G        (from (i)).
+--   4. fiberCount     : (choose N m) * Fintype.card (Fib A) = Nat.factorial N
+--      and therefore  Fintype.card (Fib A) = Nat.factorial m * Nat.factorial
+--      (N - m)   (from 2+3+membershipCount+Nat.choose_mul ... + N! = (choose N m)
+--      * m! * (N-m)!).
 -- ============================================================================
 end FiniteDeck
 end Shufflemath
