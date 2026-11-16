@@ -82,6 +82,8 @@ Uniform on ordered decks **conditional on a given capacity vector** is a sensibl
 
 ## 4. Canonical theorem ladder (mathematical statements before Lean tactics)
 
+**Progress update (Nov 15-16, 2026):** G1 (2 lemmas), G2 (Fintype-free fiber: `fiberSet_card`, `fibTransitive`, `fibersPartition`, `fibersEqual`, `fiberCount`), G3 (`subsetExchangeCount`, `ReachSetConcrete`+`_card`+`_image`, `leftPosition`/`rightPosition`, `PhysicalSwap` swap + `_parts_disjoint`/`_card`/`literalSwapMembership`/`_conjugate`, `subsetExchangeKernel` + `symmetric`/`rowOne`/`colOne`/`stationary`/`equivariant`), and **G4 T4 counting core** (`countFiber_card`, `countFiber_blStationary`, `subsetExchangeKernel_equivariant`, `powersetCard_markedSplit`+`pmcDecomp`/`pmcInvFirst`/`pmcInvSecond`) are now **proven and in the library** (full build green, gate 37/37). **Remaining:** T2 transitivity on the marked-count fibers (generalize `membershipFiber_transitive` to the (m-pile, x-marked) level); T4 `count : Membership → BLState` projection + the count-level hypergeometric transition formula + the uniform-fiber intertwining (the big theorem that discharges Commander A3 by instantiation); T3 physical↔membership projection + T2/T3 synthesis + the generic full-deck theorem; T5 (multivariate hypergeometric stationarity).
+
 Below, each formula is a **target mathematical theorem**, not a claim that a Lean declaration already exists. Choose names/contracts close to these, compile small modules, and record exact resulting Lean names.
 
 ### T1 — uniform fiber counting, any finite piles

@@ -44,17 +44,17 @@ the definition. No generic theorem may import a `Commander*` module; the proved
 
 | Current Commander declaration | Generalized target | State |
 | --- | --- | --- |
-| `rawExchangeMembership : Deck → Membership` (25+25 position subsets, `CommanderPhysicalExchange`) | T3: `subsetExchange N m k : Membership → Membership` kernel, `K(S,T) = (choose m k · choose (N-m) k)⁻¹` iff `|S\T| = |T\S| = k` | **count compiled** — `subsetExchangeCount : # ReachSet S = choose m k · choose (N-m) k` (`FiniteDeck/SubsetExchange`, inverse bijection `ReachSet ≃ Lset ×ˢ Rset`); the weighted kernel `K(S,T) = (…)⁻¹` is next |
-| `newMembership` / `newLeftCards` (`CommanderPhysicalExchange`) | `literalSwap` membership pushforward, pairing-independent | **target** |
+| `rawExchangeMembership : Deck → Membership` (25+25 position subsets, `CommanderPhysicalExchange`) | T3: `subsetExchange N m k : Membership → Membership` kernel, `K(S,T) = (choose m k · choose (N-m) k)⁻¹` iff `|S\T| = |T\S| = k` | **DONE** — `subsetExchangeCount` (count) + `subsetExchangeKernel` (weight) + `subsetExchangeKernel_symmetric`/`_rowOne`/`_colOne`/`_stationary` (all in `SubsetExchange`) |
+| `newMembership` / `newLeftCards` (`CommanderPhysicalExchange`) | `literalSwap` membership pushforward, pairing-independent | **DONE** — `PhysicalSwap.lean` `newLeftCards` + `_parts_disjoint`/`_card`/`literalSwapMembership`/`_conjugate` (A2-core, generic) |
 | `commanderExchange25 : FiniteKernel (Fin 50) (Fin 50)` (`BernoulliLaplace`) | T3-to-BL: `count ∘ subsetExchange = blExchange N m r k` | **target** |
 
 ## G4 — macro intertwining / physical-perfect (`FiniteDeck/BLRefinement.lean`) — **the scientific target**
 
 | Current Commander declaration | Generalized target | State |
 | --- | --- | --- |
-| **A3**: `comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25 membershipLift` (`CommanderMembershipExchange`) | T4: `uniform count-fiber membership ⊳ subsetExchange = blExchange ⊳ uniform count-fiber membership`, generic `N,m,r,k` | **open — THE target**; discharge Commander A3 by instantiation at `(99,50,50,25)` |
-| `membershipFiber_transitive` (`CommanderMembershipOrbits`, 903-line 4-part orbit) | marked-set-equivariance + transitivity on each count-fiber (generic `Equiv`-action orbit) | **compiled (Commander)** — extract generic partition-orbit lemma after G4 |
-| `newLeftCards_conjugate` (`CommanderPhysicalExchange`) | subset-exchange equivariance under `M`-preserving card permutations | **compiled (Commander)** — generalize |
+| **A3**: `comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25 membershipLift` (`CommanderMembershipExchange`) | T4: `uniform count-fiber membership ⊳ subsetExchange = blExchange ⊳ uniform count-fiber membership`, generic `N,m,r,k` | **counting core DONE** (`countFiber_card`, `countFiber_blStationary`, `subsetExchangeKernel_equivariant`, `powersetCard_markedSplit`+helpers, all in `BLRefinement`). **Remaining:** transitivity on the marked-count fibers; the `count : Membership → BLState` projection; the count-level hypergeometric transition formula; then the uniform-fiber intertwining (discharge Commander A3 by instantiation) |
+| `membershipFiber_transitive` (`CommanderMembershipOrbits`, 903-line 4-part orbit) | marked-set-equivariance + transitivity on each count-fiber (generic `Equiv`-action orbit) | **equivariance DONE** (`subsetExchangeKernel_equivariant`, generic). Transitivity on the marked-count fibers: **next** (generalize the 99-orbit to the (m-pile, x-marked) level) |
+| `newLeftCards_conjugate` (`CommanderPhysicalExchange`) | subset-exchange equivariance under `M`-preserving card permutations | **compiled (generic)** — `PhysicalSwap.lean` `newLeftCards_conjugate` (A2-core) + `subsetExchangeKernel_equivariant` |
 | `two_physical_perfect_exchanges_uniform_of_counts` (hyp. `hMembershipExchange`, `CommanderFullDeckDisintegration`) | generic physical-perfect two-pile mixing identity | **conditional on A3** |
 
 **Boundary caveat (T4):** the existing `generalCL_ns` assumes `k ≤ y`, so it is
