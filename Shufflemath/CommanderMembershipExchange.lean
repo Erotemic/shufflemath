@@ -282,5 +282,63 @@ theorem membershipLift_count :
       simp
     have hRHS : (if k = commanderLeftCount x then (1 : Rat) else 0) = 0 := by simp [hk]
     simpa [hRHS] using hsum
+/-!
+## Count-projection of `commanderExchange25` (A3 part (i), RHS helper)
+
+Each count `1 ≤ c ≤ 50` is realized by exactly one `Fin 50` state and no count
+outside that range is realized at all, so the count fiber has cardinality
+`1` (resp. `0`).  This is the RHS helper for the part-(i) count-total identity
+`rawExchangeMembership_count`.
+-/
+
+/-- The fiber of `commanderLeftCount` over `c` is a singleton (one `Fin 50`
+    state per count in `1..50`) or empty (no state realizes a count outside
+    `1..50`). -/
+theorem commanderCountFiber_card (c : Nat) :
+    ((Finset.univ : Finset CommanderState).filter (fun y => commanderLeftCount y = c)).card =
+      if 1 ≤ c ∧ c ≤ 50 then 1 else 0 := by
+  by_cases hc : 1 ≤ c ∧ c ≤ 50
+  · rw [if_pos hc]
+    -- `count y = c <-> y.val = c - 1` under `1 ≤ c`
+    have hIff (y : CommanderState) : commanderLeftCount y = c ↔ y.val = c - 1 := by
+      constructor
+      · intro h
+        have hc_eq : c = y.val + 1 := by
+          simp only [commanderLeftCount] at h
+          exact h.symm
+        rw [hc_eq, Nat.add_sub_cancel_right]
+      · intro h
+        simp only [commanderLeftCount]
+        rw [h, Nat.sub_add_cancel hc.1]
+    -- Rewrite the count-filter to the val-filter, then to the singleton
+    -- {⟨c - 1⟩}; the Fin bound `c - 1 < 50` follows from `1 ≤ c ≤ 50`.
+    have hfin : c - 1 < 50 := by
+      have hle : c - 1 ≤ 50 - 1 := Nat.sub_le_sub_right hc.2 1
+      exact Nat.lt_of_le_of_lt hle (by norm_num)
+    have hf : (Finset.univ : Finset CommanderState).filter (fun y => commanderLeftCount y = c) =
+        {Fin.mk (c - 1) hfin} := by
+      apply Finset.ext
+      intro y
+      simp only [Finset.mem_filter, Finset.mem_univ, Finset.mem_singleton,
+        Fin.ext_iff, hIff]
+      simp
+    rw [hf]
+    simp
+  · rw [if_neg hc]
+    have hempty : (Finset.univ : Finset CommanderState).filter (fun y => commanderLeftCount y = c) = ∅ := by
+      apply Finset.ext
+      intro z
+      constructor
+      · intro hz
+        simp only [Finset.mem_filter, Finset.mem_univ] at hz
+        simp only [commanderLeftCount] at hz
+        have h1 : 1 ≤ c := by omega
+        have h2 : c ≤ 50 := by omega
+        exact False.elim (hc ⟨h1, h2⟩)
+      · intro hz
+        simp at hz
+    rw [hempty]
+    simp
+
 end CommanderMembershipExchange
 end Shufflemath
