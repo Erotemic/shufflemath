@@ -1,10 +1,18 @@
 # F3 item 3 core: the `hMembershipExchange` counting identity
 
-**Status (2026-11-12):** Open. The structural reduction is done and committed
-(`hMembershipExchange_lhs_reduces`, commit `958d5f5`); what remains is a single
-*counting* identity between two `FiniteKernel CommanderState Membership` laws.
-This is the hard part of F3, on the critical path for F3 item 4 (the
-unconditional 2-exchange TV theorem) and F4.5.
+**Status (2026-11-15):** In assembly. The structural reduction
+(`hMembershipExchange_lhs_reduces`) and the counting core (general CL,
+`transitionNumerator = overlap_count`; `fiberSum_eq_overlap`) are committed.
+The `Shufflemath/CommanderMembershipExchange` module now holds the supporting
+machinery for the two halves: `map_equiv_mass` (pushforward mass under a
+bijection), `distUniform_ofInvariantTransitive` (invariant + transitive =
+uniform on a fiber — the part-(ii) group-uniformity tool), `membershipFiber_card`
+(the F1b fiber-card bridge), and `membershipLift_count` (the lift projects back
+to its count).  Remaining: the **part-(i) count-total projection**
+(`rawExchangeMembership_count`) and the **capstone assembly** of
+`hMembershipExchange`, which then instantiates
+`two_physical_perfect_exchanges_uniform_of_counts`.  This is on the critical
+path for F3 item 4 (the 2-exchange TV theorem) and F4.5.
 
 ## The exact statement to prove
 

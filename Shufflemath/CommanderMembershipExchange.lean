@@ -58,16 +58,44 @@ open FiberDisintegration
 open FiniteKernel
 
 /-
-## Next (A3 part (i), counting): the count-level projection
+## Assembly plan for `hMembershipExchange`
 
-Prove
+Mass-at-a-point, the two sides are:
 
-    comp (comp (fiberLaw project project_surjective) rawExchangeMembership)
-      (deterministic membershipCount) =
-    comp commanderExchange25 (deterministic commanderLeftCount)
+    LHS  x at m  =  (1 / (|fiber project x| * N_LR)) *
+                    sum {d : project d = x} |{(L,R) : newLeftCards d L R = m.1}|
+    RHS  x at m  =  transitionWeight 99 50 25 (count x) (count m) /
+                    membershipFiberCount (count m)
 
-by reducing the fiber-average of `newLeftOriginalCount_eq` to the hypergeometric
-`transitionWeight` (the counting core, cf. `fiberSum_eq_overlap`).
+where `N_LR = choose 50 25 * choose 49 25 = transitionDenominator 99 50 25`
+and `count := commanderLeftCount`.  The identity therefore splits:
+
+* **Part (i) — count total.**  Push the LHS to the count level; the total mass
+  over the `count m`-fiber equals `transitionWeight 99 50 25 (count x) (count m)`.
+  The counting core is the general CL (`transitionNumerator = overlap_count`)
+  already proved in `BernoulliLaplaceGeneral` / `BernoulliLaplaceFiber`.
+* **Part (ii) — within-count uniformity.**  Conditioned on the new count, the
+  LHS is uniform over that count-fiber: the exchange law is equivariant under
+  the deck-relabeling group (`newLeftCards_conjugate`) which acts transitively
+  on each count-fiber (`membershipFiber_transitive` / `orbitMap`), so
+  `distUniform_ofInvariantTransitive` (proved here) gives the uniform mass.
+
+### Committed this module
+* `map_equiv_mass` — pushforward mass under a bijection.
+* `distUniform_ofInvariantTransitive` — invariant + transitive = uniform on the
+  fiber (the group-uniformity tool for part (ii)).
+* `membershipFiber_card` — `# {m // count m = k} = membershipFiberCount k`.
+* `membershipLift_count` — `comp membershipLift (det membershipCount) =
+  det commanderLeftCount` (the lift projects back to its count).
+
+### Next concrete lemmas
+1. **`rawExchangeMembership_count`** (part i, count total): prove
+       `comp (comp (fiberLaw project project_surjective) rawExchangeMembership)
+          (deterministic membershipCount) =
+         comp commanderExchange25 (deterministic commanderLeftCount)`.
+2. **`hMembershipExchange`** (the capstone): assemble (1) + part (ii) into the
+       full kernel equality, then instantiate
+       `two_physical_perfect_exchanges_uniform_of_counts`.
 -/
 
 /-- Pushforward mass at a point, for a bijection: moving a distribution by an
