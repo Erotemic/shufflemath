@@ -236,5 +236,124 @@ theorem countFiber_blStationary (hm : m ≤ N) (hr : r ≤ N)
   rw [BernoulliLaplaceGeneral.blStationary,
       countFiber_card N m r hm hr x.val hxm, hPile]
 
+/-- G4/T4 counting primitive: the marked-count split of a k-subset set. Among the
+  k-subsets of a pile S, the number carrying exactly a marked cards (a ≤ k) is
+  choose #(S∩M) a * choose #(S\M) (k-a): a k-subset with a marked is uniquely
+  (a-subset of S∩M) ∪ ((k-a)-subset of S\M). Used to count the Lset/Rset splits
+  of the T4 refinement. -/
+
+theorem pmcDecomp (N : Nat) (S M : Finset (Fin N)) (k a : Nat)
+    (p : Finset (Fin N) × Finset (Fin N))
+    (hp : p ∈ (Finset.powersetCard a (S ∩ M)) ×ˢ (Finset.powersetCard (k - a) (S \ M))) :
+    p.1 ⊆ S ∩ M ∧ p.1.card = a ∧ p.2 ⊆ S \ M ∧ p.2.card = k - a := by
+  rw [Finset.mem_product] at hp
+  rcases hp with ⟨hL, hR⟩
+  rw [Finset.mem_powersetCard] at hL hR
+  exact ⟨hL.1, hL.2, hR.1, hR.2⟩
+
+/-- Right-inverse, marked part: for a product pair `(A, B)` with `A ⊆ S∩M` and
+  `B ⊆ S\M`, the marked part of their union is `A`. -/
+theorem pmcInvFirst (N : Nat) (S M : Finset (Fin N)) (k a : Nat)
+    (p : Finset (Fin N) × Finset (Fin N))
+    (hp : p ∈ (Finset.powersetCard a (S ∩ M)) ×ˢ (Finset.powersetCard (k - a) (S \ M))) :
+    (p.1 ∪ p.2) ∩ M = p.1 := by
+  rcases pmcDecomp N S M k a p hp with ⟨hAsub, _hAcard, hBsub, _hBcard⟩
+  ext z
+  simp only [Finset.mem_inter, Finset.mem_union, Finset.mem_sdiff, not_and, not_not, iff_self]
+  have hzA : z ∈ p.1 → z ∈ M := fun h => (Finset.mem_inter.mp (hAsub h)).2
+  have hzB : z ∈ p.2 → z ∉ M := fun h => (Finset.mem_sdiff.mp (hBsub h)).2
+  tauto
+
+/-- Right-inverse, unmarked part: for a product pair `(A, B)` with `A ⊆ S∩M` and
+  `B ⊆ S\M`, the unmarked part of their union is `B`. -/
+theorem pmcInvSecond (N : Nat) (S M : Finset (Fin N)) (k a : Nat)
+    (p : Finset (Fin N) × Finset (Fin N))
+    (hp : p ∈ (Finset.powersetCard a (S ∩ M)) ×ˢ (Finset.powersetCard (k - a) (S \ M))) :
+    (p.1 ∪ p.2) \ M = p.2 := by
+  rcases pmcDecomp N S M k a p hp with ⟨hAsub, _hAcard, hBsub, _hBcard⟩
+  ext z
+  simp only [Finset.mem_sdiff, Finset.mem_union, Finset.mem_inter, Finset.mem_univ, not_and, not_not, iff_self]
+  have hzA : z ∈ p.1 → z ∈ M := fun h => (Finset.mem_inter.mp (hAsub h)).2
+  have hzB : z ∈ p.2 → z ∉ M := fun h => (Finset.mem_sdiff.mp (hBsub h)).2
+  tauto
+
+/-- The marked-count split of a `k`-subset set: among the `k`-subsets of a pile
+  `S`, the number carrying exactly `a` marked cards (with `a ≤ k`) is
+  `choose #(S∩M) a * choose #(S\M) (k-a)`: a `k`-subset with `a` marked is
+  uniquely `(a-subset of S∩M) ∪ ((k-a)-subset of S\M)`. This is the counting
+  primitive for the Lset/Rset splits and for the T4 count-count identity. -/
+theorem powersetCard_markedSplit (N : Nat) (S M : Finset (Fin N)) (k a : Nat) (ha : a ≤ k) :
+    (Finset.filter (fun L => (L ∩ M).card = a) (Finset.powersetCard k S)).card =
+      Nat.choose (S ∩ M).card a * Nat.choose (S \ M).card (k - a) := by
+  let AM := S ∩ M
+  let BM := S \ M
+  let Lf := Finset.filter (fun L => (L ∩ M).card = a) (Finset.powersetCard k S)
+  let P := (Finset.powersetCard a AM) ×ˢ (Finset.powersetCard (k - a) BM)
+  let i (L : Finset (Fin N)) (hL : L ∈ Lf) : Finset (Fin N) × Finset (Fin N) := (L ∩ M, L \ M)
+  let j (p : Finset (Fin N) × Finset (Fin N)) (hp : p ∈ P) : Finset (Fin N) := p.1 ∪ p.2
+  have hbij : (Lf).card = (P).card := by
+    refine Finset.card_bij' i j ?_ ?_ ?_ ?_
+    · -- i lands in the product
+      intro L hL
+      simp only [Lf, Finset.mem_filter, Finset.mem_powersetCard] at hL
+      dsimp only [i, P] at ⊢
+      have hA : (L ∩ M).card = a := hL.2
+      have hLk : L.card = k := hL.1.2
+      have hLsub : L ⊆ S := hL.1.1
+      have hsubA : L ∩ M ⊆ AM := by
+        intro z hz
+        rw [Finset.mem_inter]
+        exact ⟨hLsub (Finset.mem_inter.mp hz).1, (Finset.mem_inter.mp hz).2⟩
+      have hsubB : L \ M ⊆ BM := by
+        intro z hz
+        rw [Finset.mem_sdiff] at hz
+        rw [Finset.mem_sdiff]
+        exact ⟨hLsub hz.1, hz.2⟩
+      have hcardB : (L \ M).card = k - a := by
+        rw [Finset.card_sdiff, Finset.inter_comm, hA, hLk]
+      rw [Finset.mem_product, Finset.mem_powersetCard, Finset.mem_powersetCard]
+      change ((L ∩ M) ⊆ AM ∧ (L ∩ M).card = a) ∧ ((L \ M) ⊆ BM ∧ (L \ M).card = k - a)
+      refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+      · exact hsubA
+      · exact hA
+      · exact hsubB
+      · exact hcardB
+    · -- j lands back in Lf
+      intro p hp
+      simp only [Lf, Finset.mem_filter, Finset.mem_powersetCard] at ⊢
+      dsimp only [P] at hp
+      rcases pmcDecomp N S M k a p hp with ⟨hAsub, hAcard, hBsub, hBcard⟩
+      have hAsubS : p.1 ⊆ S := by intro z hz; exact (Finset.mem_inter.mp (hAsub hz)).1
+      have hBsubS : p.2 ⊆ S := by intro z hz; exact (Finset.mem_sdiff.mp (hBsub hz)).1
+      refine ⟨?_, ?_⟩
+      · refine ⟨?_, ?_⟩
+        · intro z hz
+          rw [Finset.mem_union] at hz
+          rcases hz with hzA | hzB
+          · exact hAsubS hzA
+          · exact hBsubS hzB
+        · have hDisjP : Disjoint p.1 p.2 := by
+            rw [Finset.disjoint_iff_inter_eq_empty]
+            apply Finset.eq_empty_of_forall_notMem
+            intro z hz
+            have hzM : z ∈ M := (Finset.mem_inter.mp (hAsub (Finset.mem_inter.mp hz).1)).2
+            have hznotM : z ∉ M := (Finset.mem_sdiff.mp (hBsub (Finset.mem_inter.mp hz).2)).2
+            exact hznotM hzM
+          rw [Finset.card_union_of_disjoint hDisjP, hAcard, hBcard, Nat.add_comm]
+          exact Nat.sub_add_cancel ha
+      · rw [pmcInvFirst N S M k a p hp, hAcard]
+    · -- left inverse: j (i L) = L
+      intro L _hL
+      dsimp only [i, j]
+      ext z
+      simp only [Finset.mem_union, Finset.mem_inter, Finset.mem_sdiff, Finset.mem_univ, true_and]
+      tauto
+    · -- right inverse: i (j p) = p
+      intro p hp
+      dsimp only [P] at hp
+      dsimp only [i, j, P, AM, BM] at ⊢
+      rw [pmcInvFirst N S M k a p hp, pmcInvSecond N S M k a p hp]
+  rw [hbij, Finset.card_product, Finset.card_powersetCard, Finset.card_powersetCard]
+
 end FiniteDeck
 end Shufflemath
