@@ -1,5 +1,6 @@
 module
 public import Shufflemath.FiniteDeck.TwoPile
+public import Shufflemath.BernoulliLaplaceGeneral
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Finset.Prod
@@ -210,6 +211,30 @@ theorem countFiber_card (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (x : Nat) (h
       · rw [cntInvSecond N m r hm hr x hx p hp]
   rw [hbij, Finset.card_product, hL, hR]
 
+
+/-! The **stationary half of the G4 macro-intertwining**: the Bernoulli-Laplace
+  stationary macrostate distribution equals the pushforward of the uniform
+  distribution over `m`-piles through the marked-card count. `countFiber_card`
+  gives `#countFiber(x) = choose r x * choose (N-r) (m-x)`, `blStationary` is
+  that same numerator over `choose N m`, and `#pileSet = choose N m`, so the
+  two coincide. -/
+
+/-- For an admissible count `x`, the BL stationary mass equals the uniform
+  mass of the corresponding count-fiber over the pile space:
+  `blStationary x = #countFiber(x) / #pileSet`. This is the stationary half of
+  the G4 macro-intertwining. -/
+theorem countFiber_blStationary (hm : m ≤ N) (hr : r ≤ N)
+    (x : BernoulliLaplaceGeneral.BLState N m r) :
+    BernoulliLaplaceGeneral.blStationary N m r x =
+      (Finset.card (countFiber N m r hm hr x.val) : Rat) / (Finset.card (pileSet N m) : Rat) := by
+  have hxm : x.val ≤ m := by
+    have h : x.val ≤ min m r := by
+      simpa [BernoulliLaplaceGeneral.blHi_def] using x.2.2
+    exact Nat.le_trans h (Nat.min_le_left m r)
+  have hPile : (Finset.card (pileSet N m) : Rat) = (Nat.choose N m : Rat) := by
+    rw [pileSet, Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
+  rw [BernoulliLaplaceGeneral.blStationary,
+      countFiber_card N m r hm hr x.val hxm, hPile]
 
 end FiniteDeck
 end Shufflemath
