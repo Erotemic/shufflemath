@@ -400,8 +400,55 @@ theorem fiberSum_eq_permCard (N m : Nat) (hm : m ≤ N) :
       congrArg Finset.card (fiberCover N m hm).symm
     _ = (pileSet N m).sum (fun S => (fiberSetPile N m hm S).card) := Finset.card_biUnion hDisj
 
+/-- G2 / T1 capstone (PROVEN): every membership fiber of the left-pile map on the
+  full permutation space has exactly `m! * (N - m)!` decks.
+  All fibers are equal (`fibersEqual`); the permutation space partitions into
+  them (`fiberCover` + `fiberDisjoint` + `fiberSum_eq_permCard`); and the total
+  is `N! = choose N m * m! * (N - m)!`, so one fiber is `N! / choose N m =
+  m! * (N - m)!` — a pure combinatorial count, symbolic for every `N`, `m`. -/
+theorem fiberCount (N m : Nat) (hm : m ≤ N) (A : Membership N m) :
+    Fintype.card (FibType N m hm A) = Nat.factorial m * Nat.factorial (N - m) := by
+  have hPerm : Fintype.card (Equiv.Perm (Fin N)) = Nat.factorial N := by
+    rw [Fintype.card_perm, Fintype.card_fin]
+  have hAll : ∀ S ∈ pileSet N m, (fiberSetPile N m hm S).card = (fiberSetPile N m hm A.1).card := by
+    intro S hS
+    have hSm : S.card = m := by
+      rw [pileSet, Finset.mem_powersetCard] at hS
+      exact hS.2
+    calc (fiberSetPile N m hm S).card
+        = (fiberSet N m hm ⟨S, hSm⟩).card := rfl
+      _ = Fintype.card (FibType N m hm ⟨S, hSm⟩) := fiberSet_card N m hm ⟨S, hSm⟩
+      _ = Fintype.card (FibType N m hm A) := fibersEqual N m hm ⟨S, hSm⟩ A
+      _ = (fiberSet N m hm A).card := (fiberSet_card N m hm A).symm
+      _ = (fiberSetPile N m hm A.1).card := rfl
+  have hSum : (pileSet N m).sum (fun S => (fiberSetPile N m hm S).card) =
+      (fiberSetPile N m hm A.1).card * (pileSet N m).card := by
+    rw [Finset.sum_congr rfl (fun S hS => hAll S hS), Finset.sum_const]
+    ring_nf
+  have hPileCard : (pileSet N m).card = Nat.choose N m := by
+    rw [pileSet, Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
+  have hN : Nat.factorial N = (fiberSetPile N m hm A.1).card * Nat.choose N m := by
+    calc Nat.factorial N
+        = Fintype.card (Equiv.Perm (Fin N)) := by rw [hPerm]
+      _ = (pileSet N m).sum (fun S => (fiberSetPile N m hm S).card) := by rw [fiberSum_eq_permCard]
+      _ = (fiberSetPile N m hm A.1).card * (pileSet N m).card := hSum
+      _ = (fiberSetPile N m hm A.1).card * Nat.choose N m := by rw [hPileCard]
+  have hChF : Nat.choose N m * Nat.factorial m * Nat.factorial (N - m) = Nat.factorial N :=
+    Nat.choose_mul_factorial_mul_factorial hm
+  have hFiber : (fiberSetPile N m hm A.1).card = Nat.factorial m * Nat.factorial (N - m) := by
+    have h1 : (fiberSetPile N m hm A.1).card * Nat.choose N m =
+        Nat.choose N m * Nat.factorial m * Nat.factorial (N - m) := by
+      rw [← hN, hChF]
+    have h2 : (fiberSetPile N m hm A.1).card * Nat.choose N m =
+        (Nat.factorial m * Nat.factorial (N - m)) * Nat.choose N m := by
+      rw [h1]
+      ring
+    exact Nat.mul_right_cancel (Nat.choose_pos hm) h2
+  rw [(fiberSet_card N m hm A).symm, fiberSet_eq_pile]
+  exact hFiber
+
 -- ============================================================================
--- NEXT STEP (G2/T1 capstone) — the fiber count  #Fiber(A) = m! * (N - m)!
+-- G2/T1 capstone (PROVEN above) — the fiber count  #Fiber(A) = m! * (N - m)!
 -- ============================================================================
 -- CORRECT STRATEGY (avoids the pointwise-glue wall): use the TRANSITIVE group
 -- action of G = Perm (Fin N) on the pile set P = {s : Finset (Fin N) // #s = m}
