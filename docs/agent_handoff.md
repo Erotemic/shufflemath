@@ -15,7 +15,7 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-15 (autonomous session, post-compaction). The 2026-11-15
+**Updated:** 2026-11-15 (autonomous session; 29th session — `fibTransitive` proven). The 2026-11-15
 review + arbitrary-finite-deck roadmap pivoted the build to the **G1–G4
 generic finite-deck theory**, from which Commander A3 is a specialization.
 **Done:** P0/Commit A (native_decide → `.symm`); **G1** complete
@@ -24,8 +24,14 @@ fintype-card blocks, and BOTH fiber-restriction bijections `fiberRestrictL/R`
 in `FiniteDeck/Fiber`); **G3** foundation (`ReachSet/Lset/Rset` + card lemmas
 in `FiniteDeck/SubsetExchange`). **The G2/T1 fiber count**
 (`#Fiber(A) = m!·(N-m)!`) is on the **transitive orbit-count route** (see the
-`Fiber.lean` doc-comment): the next concrete lemma is **`fibTransitive`** (a
-permutation sending any `m`-pile onto any other). **F4.1 COMPLETE** (`17ffab6`) and
+`Fiber.lean` doc-comment): **`fibTransitive` is now PROVEN** — for any two
+`m`-piles `A, B`, a `Perm (Fin N)` sends `A` onto `B`, glued from equicardinal
+`Fintype.equivOfCardEq` bijections `A→B` and `Aᶜ→Bᶜ`, proved surjective
+(2 cases) and hence bijective via `Finite.injective_iff_surjective`. The next
+three lemmas are **`fibersPartition`** (the `Fib(A)` over all `A` form a
+pairwise-disjoint cover of `Perm (Fin N)`), **`fibersEqual`** (`#Fib(A)` is
+independent of `A`, from a `fibTransitive`-witness fiber-bijection), and
+**`fiberCount`** (`(choose N m)·#Fib(A) = N!` ⟹ `#Fib(A) = m!·(N-m)!`). **F4.1 COMPLETE** (`17ffab6`) and
 **F4.2 GSR product is now in the library** (`4e1b76f`): `gsrProductKernel`
 (independent within-pile GSR riffles on the left and right piles, as a
 `FiniteKernel` on the pile-list product) + `gsrLocal_preserves_pile` (a
