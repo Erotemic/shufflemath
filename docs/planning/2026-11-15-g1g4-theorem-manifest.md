@@ -35,7 +35,7 @@ the definition. No generic theorem may import a `Commander*` module; the proved
 
 | Current Commander declaration | Generalized target | State |
 | --- | --- | --- |
-| `CommanderFiberCount` fiber counts (`# {d // leftOriginalCount d = k}`) | T1: `# {d // allocation d = A} = m! (N-m)!`; `# {A} = choose N m` | **target** |
+| `CommanderFiberCount` fiber counts (`# {d // leftOriginalCount d = k}`) | T1: `# {d // allocation d = A} = m! (N-m)!`; `# {A} = choose N m` | **`choose N m` compiled** (`membershipCount`); `fintype_card_{leftPos,rightPos,pile,complementPile}` compiled. **Next:** per-fiber count `m! (N-m)!` via `Fiber ≃ (L ≃ A) × (R ≃ B)` + `Fintype.card_equiv` + `Fintype.card_prod` |
 | `membershipFiberCount k = choose 50 k * choose 49 (50-k)` (`CommanderMembershipKernels`) | T2: BL histogram fiber = `choose r (marked) * choose (N-r) (unmarked)` | **partially general** — the `choose` product is already `N,m,r`-parametric in `BernoulliLaplaceGeneral`; needs the generic `Membership N m` statement |
 | `fiberLaw` / uniform-deck disintegration (`FiberDisintegration`) | uniform deck ⇒ uniform over allocation fibers | **compiled (generic)** — reuse as-is |
 | `blStationary N m r`, detailed balance (`BernoulliLaplaceGeneral`) | T2 multivariate hypergeometric `π` | **compiled (two-color)** — reuse; generalize to categories in G5 |
@@ -69,7 +69,9 @@ is a *restricted* regime, not the universal statement.
    position split/merge equivalence; `N=0/m=0/m=N` compile; no `Commander*`
    import.
 2. **T1 fiber count** (G2 first lemma): `m!(N-m)!` per allocation by a finite
-   equivalence (not `N!` enumeration); one small numerical specialization.
+   equivalence (not `N!` enumeration); one small numerical specialization. **Done so far:**
+   the histogram count `choose N m` and the four fintype-card blocks; the per-fiber
+   count is the next concrete lemma (build `Fiber ≃ (L ≃ A) × (R ≃ B)`).
 3. **G3** (`subsetExchange` kernel + symmetry/stationarity + `literalSwap`).
 4. **G4** (`BLRefinement`): generic count projection + equivariance + BL law;
    **discharge Commander A3 as an instance.**
