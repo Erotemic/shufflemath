@@ -182,6 +182,20 @@ honesty fixes (commit `9072a3b`).  The F3 A3 `commanderExchange25_countMass`
 supersedes it (its probed Mathlib API — `Finset.sum_ite` form, `Finset.filter_eq'`,
 `refine Finset.sum_bij … ?_ ?_ ?_ ?_`, `Nat.sub_add_cancel` — is recorded below).
 
+**Progress (2026-11-15, autonomous session):**
+- **G1** (`FiniteDeck/TwoPile.lean`) — **compiled**: `Deck N`, `Membership N m`,
+  `leftPositions`/`rightPositions` (cover/disjoint), `leftCards`/`membership`.
+- **G2** (`FiniteDeck/TwoPileFiber.lean`) — **compiled**: `membershipCount`
+  (`choose N m`) + the four fintype-card building blocks
+  (`fintype_card_{leftPos,rightPos,pile,complementPile}`). **Remaining:** the
+  per-fiber count `# {d // membership d = A} = m!·(N-m)!` (Fiber ≃ (L ≃ A) ×
+  (R ≃ B), then `Fintype.card_equiv` + `Fintype.card_prod`).
+- **G3** (`FiniteDeck/SubsetExchange.lean`) — **compiled foundation**:
+  `ReachSet`/`Lset`/`Rset` + `Lset_card`/`Rset_card`. **Remaining:** the
+  `subsetExchangeCount` (`card_bij'` bijection — exact construction recorded in
+  the module) and then the uniform `k`-exchange kernel (T3).
+- **G4** (discharge Commander A3 generically) — after G3.
+
 ### Nov 15 (25th) session status — prior A3-machinery detail
 
 This session built the **group-uniformity and lift-projection machinery** for
