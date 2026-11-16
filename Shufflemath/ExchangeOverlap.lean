@@ -110,10 +110,6 @@ theorem overlap_eq_revTransitionNumerator_valid_8431 :
       overlap_count 8 4 3 1 x.val y.val = transitionNumerator 8 4 3 1 y.val x.val := by
   native_decide
 
-/-- Commander instance `(99,50,50,25)`, `x=25, y=25` (the symmetric center). -/
-theorem overlap_eq_revTransitionNumerator_cmdr_2525 :
-    overlap_count 99 50 50 25 25 25 = transitionNumerator 99 50 50 25 25 25 := by
-  native_decide
 
 /-- Commander instance `(99,50,50,25)`, `x=25, y=1` (asymmetric, marked-heavy
 target). -/
@@ -1222,3 +1218,11 @@ theorem generalCL_ns (N m r k x y : Nat)
 theorem generalCL_cmdr_2525 :
     transitionNumerator 99 50 50 25 25 25 = overlap_count 99 50 50 25 25 25 := by
   exact generalCL_ns 99 50 50 25 25 25 (by decide) (by decide) (by decide) (by decide) (by decide)
+/-- The `(25,25)` center certificate, now derived from the symbolic
+    `generalCL_cmdr_2525` instead of `native_decide` (quality review Q3): the
+    reversed identity at the center is exactly `generalCL_cmdr_2525.symm`.  The
+    earlier `native_decide` proof is superseded and no longer needed. -/
+theorem overlap_eq_revTransitionNumerator_cmdr_2525 :
+    overlap_count 99 50 50 25 25 25 = transitionNumerator 99 50 50 25 25 25 := by
+  exact generalCL_cmdr_2525.symm
+
