@@ -82,5 +82,33 @@ def literalSwapMembership (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k �
     Membership N m :=
   ⟨newLeftCards N m hm d L R, newLeftCards_card N m k hm hk hkm d L hL R hR⟩
 
+/-- **General-N/m A2 core: stabilizer-invariance of the swap, pointwise.** Relabeling
+  the cards by a permutation `f` commutes with the swap: the post-swap left pile of
+  the relabeled deck `d.trans f` is exactly the `f`-image of the original post-swap
+  left pile.  General analog of `CommanderPhysicalExchange.newLeftCards_conjugate`. -/
+theorem newLeftCards_conjugate (N m : Nat) (hm : m ≤ N) (f d : Deck N)
+    (L : Finset (Fin m)) (R : Finset (Fin (N - m))) :
+    newLeftCards N m hm (d.trans f) L R = (newLeftCards N m hm d L R).image f := by
+  unfold newLeftCards at *
+  apply Finset.ext
+  intro c
+  simp only [Function.comp_apply, Equiv.trans_apply, Finset.mem_union, Finset.mem_image]
+  constructor
+  · intro h
+    rcases h with hL | hR
+    · rcases hL with ⟨l, hl, hcl⟩
+      refine ⟨d (leftPosition N m hm l), ⟨Or.inl ⟨l, hl, rfl⟩, hcl⟩⟩
+    · rcases hR with ⟨r, hr, hcr⟩
+      refine ⟨d (rightPosition N m hm r), ⟨Or.inr ⟨r, hr, rfl⟩, hcr⟩⟩
+  · intro h
+    rcases h with ⟨a, ha, hac⟩
+    rcases ha with hL | hR
+    · rcases hL with ⟨l, hl, hal⟩
+      refine Or.inl ⟨l, hl, ?_⟩
+      simpa [hal] using hac
+    · rcases hR with ⟨r, hr, har⟩
+      refine Or.inr ⟨r, hr, ?_⟩
+      simpa [har] using hac
+
 end FiniteDeck
 end Shufflemath
