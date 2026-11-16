@@ -358,6 +358,91 @@ theorem powersetCard_markedSplit (N : Nat) (S M : Finset (Fin N)) (k a : Nat) (h
       rw [pmcInvFirst N S M k a p hp, pmcInvSecond N S M k a p hp]
   rw [hbij, Finset.card_product, Finset.card_powersetCard, Finset.card_powersetCard]
 
+/-! ### T4 count projection
+
+The map from the membership (subset) level to the macroscopic Bernoulli-Laplace
+state: the number of marked cards in an `m`-pile. It lands exactly in the admissible
+`BLState N m r` interval `blLo..blHi`. This is the T4 projection that the
+count-level transition and the uniform-fiber intertwining are built on.
+-/
+def countInPileVal (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (S : Membership N m) : Nat :=
+  (S.1 ∩ markedSet N r hr).card
+
+theorem countInPile_admissible (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (S : Membership N m) :
+    BernoulliLaplaceGeneral.blLo N m r ≤ countInPileVal N m r hm hr S ∧
+      countInPileVal N m r hm hr S ≤ BernoulliLaplaceGeneral.blHi N m r := by
+  set M := markedSet N r hr
+  have hMcard : M.card = r := markedSet_card N r hr
+  have hIntMsub : (S.1 ∩ M) ⊆ M := by
+    intro z hz
+    exact (Finset.mem_inter.mp hz).2
+  have hIntM : (S.1 ∩ M).card ≤ r := by
+    have h0 : (S.1 ∩ M).card ≤ M.card := Finset.card_le_card hIntMsub
+    rwa [hMcard] at h0
+  have hSIntMsub : (S.1 ∩ M) ⊆ S.1 := by
+    intro z hz
+    exact (Finset.mem_inter.mp hz).1
+  have hSinter : (S.1 ∩ M).card ≤ m := by
+    have h0 : (S.1 ∩ M).card ≤ S.1.card := Finset.card_le_card hSIntMsub
+    rwa [S.2] at h0
+  have hSD : (M \ S.1).card = r - (S.1 ∩ M).card := by
+    rw [Finset.card_sdiff, hMcard, Finset.inter_comm]
+  have hCalc : (S.1 ∩ M).card = r - (M \ S.1).card := by
+    omega
+  have hSsub : (M \ S.1) ⊆ (Finset.univ \ S.1) := by
+    intro z hz
+    rw [Finset.mem_sdiff] at hz ⊢
+    exact ⟨Finset.mem_univ z, hz.2⟩
+  have hUnivS : (Finset.univ \ S.1).card = N - m := by
+    rw [Finset.card_sdiff, Finset.inter_univ, Finset.card_univ, Fintype.card_fin, S.2]
+  have hB : (M \ S.1).card ≤ N - m := by
+    calc
+      (M \ S.1).card ≤ (Finset.univ \ S.1).card := Finset.card_le_card hSsub
+      _ = N - m := by rw [hUnivS]
+  have hAsub : (M \ S.1) ⊆ M := by
+    intro z hz
+    rw [Finset.mem_sdiff] at hz
+    exact hz.1
+  have hA : (M \ S.1).card ≤ r := by
+    have h0 : (M \ S.1).card ≤ M.card := Finset.card_le_card hAsub
+    rwa [hMcard] at h0
+  have hMax : max (r - (N - m)) 0 ≤ r - (M \ S.1).card := by
+    rw [max_le_iff]
+    constructor
+    · by_cases hRm : r ≤ N - m
+      · have h0 : r - (N - m) = 0 := by omega
+        rw [h0]
+        exact Nat.zero_le _
+      · exact (by omega : r - (N - m) ≤ r - (M \ S.1).card)
+    · exact Nat.zero_le _
+  have hval : countInPileVal N m r hm hr S = (S.1 ∩ M).card := rfl
+  constructor
+  · rw [BernoulliLaplaceGeneral.blLo_def, hval, hCalc]
+    exact hMax
+  · rw [BernoulliLaplaceGeneral.blHi_def, hval]
+    exact le_min hSinter hIntM
+
+def countInPile (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (S : Membership N m) :
+    BernoulliLaplaceGeneral.BLState N m r :=
+  ⟨countInPileVal N m r hm hr S, countInPile_admissible N m r hm hr S⟩
+
+theorem countInPile_val (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (S : Membership N m) :
+    (countInPile N m r hm hr S).1 = countInPileVal N m r hm hr S := by
+  rfl
+
+/- S has count `x` (as a Bernoulli-Laplace macrostate) iff its underlying `m`-subset
+   lies in the `x`-th count-fiber. -/
+theorem countInPile_countFiber (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (x : Nat) (S : Membership N m) :
+    (S.1 : Finset (Fin N)) ∈ countFiber N m r hm hr x ↔ (countInPile N m r hm hr S).1 = x := by
+  rw [countInPile_val, countInPileVal, countFiber, pileSet]
+  simp only [Finset.mem_filter, Finset.mem_powersetCard, Finset.mem_univ]
+  constructor
+  · intro h
+    exact h.2
+  · intro h
+    exact ⟨⟨Finset.subset_univ _, S.2⟩, h⟩
+
+
 /-! ### T4 transitivity backbone
 
 The symmetric group `Perm (Fin N)` acts **transitively on the `m`-subsets**: for any
