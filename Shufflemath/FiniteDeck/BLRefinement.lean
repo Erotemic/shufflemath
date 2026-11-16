@@ -6,6 +6,9 @@ public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.GroupTheory.GroupAction.SubMulAction.Combination
+public import Mathlib.Data.Set.PowersetCard
+public import Mathlib.Algebra.Group.Pointwise.Finset.Scalar
 public import Mathlib.Tactic
 @[expose] public section
 namespace Shufflemath
@@ -354,6 +357,62 @@ theorem powersetCard_markedSplit (N : Nat) (S M : Finset (Fin N)) (k a : Nat) (h
       dsimp only [i, j, P, AM, BM] at ⊢
       rw [pmcInvFirst N S M k a p hp, pmcInvSecond N S M k a p hp]
   rw [hbij, Finset.card_product, Finset.card_powersetCard, Finset.card_powersetCard]
+
+/-! ### T4 transitivity backbone
+
+The symmetric group `Perm (Fin N)` acts **transitively on the `m`-subsets**: for any
+two `m`-subsets `S, T` there is a permutation mapping `S` onto `T`. This is the
+group-action engine behind the T4 count-fiber transitivity (and hence the uniform
+count-fiber being a single orbit, so the count-level dynamics closes).
+
+Built on Mathlib's `Set.powersetCard.isPretransitive` (the symmetric group is
+pretransitive on `n`-subsets), lifted to a `Finset` statement via the
+`SubMulAction` / `smulFinset` machinery.
+-/
+open scoped Pointwise
+
+theorem permFinsetTransitive (N m : Nat) (hm : m ≤ N) (S T : Finset (Fin N))
+    (hS : S.card = m) (hT : T.card = m) :
+    ∃ g : Equiv.Perm (Fin N), S.image g = T := by
+  have hPre : MulAction.IsPretransitive (Equiv.Perm (Fin N))
+      (Set.powersetCard (Fin N) m) :=
+    Set.powersetCard.isPretransitive (α := Fin N) (n := m)
+  have hs : S ∈ (Set.powersetCard (Fin N) m) := by
+    simpa [Set.powersetCard.mem_iff] using hS
+  have ht : T ∈ (Set.powersetCard (Fin N) m) := by
+    simpa [Set.powersetCard.mem_iff] using hT
+  obtain ⟨g, hg⟩ := hPre.exists_smul_eq ⟨S, hs⟩ ⟨T, ht⟩
+  -- `hg : g • ⟨S, hs⟩ = ⟨T, ht⟩`  (as powersetCard-subtype elements)
+  have hval : ((g • ⟨S, hs⟩ : Set.powersetCard (Fin N) m) : Finset (Fin N)) =
+      ((⟨T, ht⟩ : Set.powersetCard (Fin N) m) : Finset (Fin N)) :=
+    congrArg (fun (x : Set.powersetCard (Fin N) m) => (x : Finset (Fin N))) hg
+  have h1 : Finset.image (fun x => g x) S = T := by
+    simpa [Set.powersetCard.coe_smul, Finset.smul_finset_def, Finset.image_congr] using hval
+  have h2 : S.image g = Finset.image (fun x => g x) S := by
+    ext z
+    simp only [Finset.mem_image]
+  exact ⟨g, by
+    rw [h2]
+    exact h1⟩
+
+/- The **count-fiber** `countFiber x` (the m-subsets with exactly x marked cards) is a
+   single orbit of the full symmetric group: any two of its members are related by a
+   permutation. Immediate from `permFinsetTransitive`, since count-fiber members are
+   m-subsets. This is the transitivity half of the G4 macro-intertwining: the uniform
+   distribution over a count-fiber is supported on one orbit, so the count-level dynamics
+   preserves it. -/
+theorem countFiber_transitive (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (x : Nat)
+    (hx : x ≤ m) (S T : Finset (Fin N))
+    (hS : S ∈ countFiber N m r hm hr x) (hT : T ∈ countFiber N m r hm hr x) :
+    ∃ g : Equiv.Perm (Fin N), S.image g = T := by
+  have hScard : S.card = m := by
+    simp only [countFiber, pileSet, Finset.mem_filter, Finset.mem_powersetCard] at hS
+    exact hS.1.2
+  have hTcard : T.card = m := by
+    simp only [countFiber, pileSet, Finset.mem_filter, Finset.mem_powersetCard] at hT
+    exact hT.1.2
+  exact permFinsetTransitive N m hm S T hScard hTcard
+
 
 end FiniteDeck
 end Shufflemath
