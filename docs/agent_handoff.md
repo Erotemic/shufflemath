@@ -200,8 +200,7 @@ one compiling generic theorem at a time):
 2. **T1 fiber count** (G2's first lemma, same or next module): `# {d //
    allocation d = A} = m! · (N-m)!` by an explicit finite equivalence (NOT an
    `N!` / `native_decide` enumeration); give one small numerical specialization.
-3. **G3** — generic `subsetExchange N m k` kernel (unique witness `A=S\T,
-   B=T\S`), symmetry/stationarity, and the pairing-independent `literalSwap`.
+3. **G3** — `subsetExchangeCount` (the reachable count `# ReachSet = choose m k · choose (N-m) k`) **compiled** (`FiniteDeck/SubsetExchange`); next: the weighted generic `subsetExchange N m k` kernel (unique witness `A=S\T, B=T\S`), symmetry/stationarity, and the pairing-independent `literalSwap`.
 4. **G4** — generic count projection + `M`-equivariance/transitivity + BL law;
    **discharge Commander A3** (`comp (fiberLaw project) rawExchangeMembership =
    comp commanderExchange25 membershipLift`) as an instance at `(99,50,50,25)`,

@@ -44,7 +44,7 @@ the definition. No generic theorem may import a `Commander*` module; the proved
 
 | Current Commander declaration | Generalized target | State |
 | --- | --- | --- |
-| `rawExchangeMembership : Deck → Membership` (25+25 position subsets, `CommanderPhysicalExchange`) | T3: `subsetExchange N m k : Membership → Membership` kernel, `K(S,T) = (choose m k · choose (N-m) k)⁻¹` iff `|S\T| = |T\S| = k` | **target** — the unique-witness `A = S\T, B = T\S` |
+| `rawExchangeMembership : Deck → Membership` (25+25 position subsets, `CommanderPhysicalExchange`) | T3: `subsetExchange N m k : Membership → Membership` kernel, `K(S,T) = (choose m k · choose (N-m) k)⁻¹` iff `|S\T| = |T\S| = k` | **count compiled** — `subsetExchangeCount : # ReachSet S = choose m k · choose (N-m) k` (`FiniteDeck/SubsetExchange`, inverse bijection `ReachSet ≃ Lset ×ˢ Rset`); the weighted kernel `K(S,T) = (…)⁻¹` is next |
 | `newMembership` / `newLeftCards` (`CommanderPhysicalExchange`) | `literalSwap` membership pushforward, pairing-independent | **target** |
 | `commanderExchange25 : FiniteKernel (Fin 50) (Fin 50)` (`BernoulliLaplace`) | T3-to-BL: `count ∘ subsetExchange = blExchange N m r k` | **target** |
 
@@ -72,7 +72,7 @@ is a *restricted* regime, not the universal statement.
    equivalence (not `N!` enumeration); one small numerical specialization. **Done so far:**
    the histogram count `choose N m` and the four fintype-card blocks; the per-fiber
    count is the next concrete lemma (build `Fiber ≃ (L ≃ A) × (R ≃ B)`).
-3. **G3** (`subsetExchange` kernel + symmetry/stationarity + `literalSwap`).
+3. **G3** — `subsetExchangeCount` (the reachable count) **compiled** (`FiniteDeck/SubsetExchange`); next: the weighted `subsetExchange` kernel (symmetry/stationarity) + `literalSwap`.
 4. **G4** (`BLRefinement`): generic count projection + equivariance + BL law;
    **discharge Commander A3 as an instance.**
 
