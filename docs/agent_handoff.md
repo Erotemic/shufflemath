@@ -160,20 +160,10 @@ targeted build (11 modules) is green; 37 Python tests pass; tree clean.
 **Next — F3 item 3 capstone (A3):** prove, in
 `Shufflemath/CommanderMembershipExchange.lean`,
 
-1. **`commanderCountFiber_card`** (part (i), RHS helper — the immediate next
-   lemma): `# {y : Fin 50 // commanderLeftCount y = c} = if 1 ≤ c ∧ c ≤ 50
-   then 1 else 0`.  **Use a CARD formulation, NOT a Fin-singleton in the
-   statement** — `{⟨c-1, by omega⟩}` is ill-typed for arbitrary `c` (the
-   `c-1 < 50` proof is unavailable in the statement), which is the wall that
-   blocked the naive attempt this session.  Correct route: `by_cases hc :
-   1 ≤ c ∧ c ≤ 50`; the `hc` branch rewrites the count-filter to the
-   val-filter via `count y = c ↔ y.val = c - 1` (`Nat.add_sub_cancel_right` /
-   `Nat.sub_add_cancel hc.1` — *not* `omega`, which fails on the saturating
-   `c - 1`), shows it is a singleton (`Fin.ext_iff`), and takes `card = 1`;
-   the else branch shows the filter is empty (`z ∈ ∅` is `False` — prove
-   `¬(count z = c)` from `z.val + 1 = c ⟹ 1 ≤ c ≤ 50 ⊥ hc`).  Avoid
-   `Finset.mem_empty` and `Finset.eq_empty_of_forall_not_mem` (both absent);
-   use `Finset.ext` + `constructor`.
+1. **`commanderCountFiber_card`** (part (i), RHS helper) — **COMMITTED**
+   (commit `41a4bab`): `# {y : Fin 50 // commanderLeftCount y = c} =
+   if 1 ≤ c ∧ c ≤ 50 then 1 else 0`.  (Card formulation, not a Fin-singleton in
+   the statement — `{⟨c-1⟩}` is ill-typed for arbitrary `c`.)
    Then **`rawExchangeMembership_count`** (part (i) capstone):
        `comp (comp (fiberLaw project project_surjective) rawExchangeMembership)
           (deterministic membershipCount) =
@@ -189,6 +179,34 @@ targeted build (11 modules) is green; 37 Python tests pass; tree clean.
    `(L,R)`-25-subset exchange level via `leftHyper`/`rightHyper`, cf. the
    `Finset.mem_coe` fix in `docs/f3_membership_exchange.md`); it is
    deck-independent given the source count, so the fiber average is trivial.
+
+   **`commanderExchange25_countMass`** (part (i) RHS — the immediate next
+   lemma): `Dist.mass (comp commanderExchange25 (deterministic
+   commanderLeftCount) x) c = if 1 ≤ c ∧ c ≤ 50 then transitionWeight 99 50 25
+   (commanderLeftCount x) c else 0`.  *25th-session status: attempted but not
+   yet committed.*  **Confirmed working API** (probed this session, do not
+   guess — `#print` each before use):
+     - `Finset.sum_ite (f g) : (∑ x ∈ s, if p x then f x else g x) =
+       ∑ x ∈ s with p x, f x + ∑ x ∈ s with ¬p x, g x` (the `∑ with` is the
+       filter sum).
+     - `Finset.filter_eq' : s.filter (fun a => a = b) = ite (b ∈ s) {b} ∅`.
+     - `Finset.sum_singleton`, `Finset.sum_empty`, `Finset.sum_const_zero`.
+     - `Finset.sum_bij` (transport) — but see blocker below.
+   **Route:** `apply_mass_eq_sum` → `simp only [deterministic, mass_pointMass,
+   commanderExchange25, ofRowStochastic, mass_ofFun, commanderExchange25Matrix,
+   commanderExchangeMatrix]` → transport the count-sum to `Finset.Icc 1 50` →
+   per-term `* [c = t]` → `if t = c then K else 0` (`K = transitionWeight
+   (count x) c`) → `sum_ite` + `sum_const_zero` + `add_zero` → `filter_eq'` →
+   `split_ifs` on `c ∈ Icc 1 50` → `sum_singleton`/`sum_empty` +
+   `if_pos`/`if_neg (1 ≤ c ∧ c ≤ 50)`.  **Blockers hit (change representation,
+   don't grind):** (a) the source is a **Fintype sum** `∑ y : CommanderState,
+   …`; `apply Finset.sum_bij` on it left a *non-equality* 4th-bullet goal —
+   transport to a `Finset.univ`-based Finset sum *first* (or drop `sum_bij` and
+   prove the count-domain sum directly over `Icc 1 50`).  (b) the surjective
+   bullet's Fin bound `t - 1 < 50` (from `t ∈ Icc 1 50`) fails under `omega`
+   (saturating `Nat` subtraction) — use `Nat.sub_le_sub_right (ht.2) 1` +
+   `Nat.lt_of_le_of_lt _ (by norm_num)`, the same fix as in
+   `commanderCountFiber_card`.
 
 2. **`hMembershipExchange`** (the capstone): assemble (1) with part (ii)
    within-count uniformity (`newLeftCards_conjugate` equivariance +

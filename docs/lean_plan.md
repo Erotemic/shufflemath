@@ -361,9 +361,17 @@ route, not a theorem already in the tree.
 > two sources into the same piece, and the piece-equiv is injective). The image
 > equalities `orbitMap_imageLeft`/`orbitMap_imageM1` and the capstone
 > `membershipFiber_transitive` close it (commit `43f845f`).
-> **F3 item 3 is now COMPLETE in both halves** (counting part (i) + member-
-> uniformity part (ii)).  The named-if reduction wall was bypassed: instead of an
-> explicit inverse, injectivity was proved by target-piece exclusion
+> **Gate (F3-a): the combinatorial/orbit ingredients of F3 item 3 are complete**
+> (the symbolic counting part (i) core in `generalCL`/`fiberSum_eq_overlap` and
+> the member-uniformity part (ii) orbit/transitivity `membershipFiber_transitive`),
+> and `newLeftCards_conjugate` (below) gives the equivariance they need.
+> **Gate (F3-b) is still open:** the *concrete* membership-kernel equality (A3)
+> `comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25
+> membershipLift` has not been proved; it must be assembled from these
+> ingredients (part (i) count-total + part (ii) within-count uniformity) and then
+> discharged in the physical-perfect corollary.  See
+> `docs/planning/reviews/2026-11-15-qwen-proof-engineering-review.md` (R1) for the
+> two-gate distinction.
 > **23rd–24th-session progress (Spec A2 core + A3 scaffold):**
 > `newLeftCards_conjugate` (`CommanderPhysicalExchange.lean`, commit `6ccae33`)
 > proves the **pointwise** equivariance of the post-exchange left set under any

@@ -19,8 +19,16 @@ namespace CommanderMembershipExchange
 The two-layer physical-perfect capstone
 `two_physical_perfect_exchanges_uniform_of_counts`
 (`Shufflemath.CommanderFullDeckDisintegration`) takes the membership-exchange law
-`hMembershipExchange` as a hypothesis.  This module **proves** that law for the
-concrete Commander objects.
+`hMembershipExchange` as a hypothesis.  **The concrete law (A3) is not yet
+proved**; this module currently contains the *supporting ingredients* it will
+be assembled from and the assembly plan below: the group-uniformity tools
+(`map_equiv_mass`, `distUniform_ofInvariantTransitive`), the fiber-card bridge
+(`membershipFiber_card`), the lift projection (`membershipLift_count`), and the
+RHS count-fiber cardinality (`commanderCountFiber_card`).  The open F3 gate is
+the concrete `hMembershipExchange` equality (A3) and the physical-perfect
+corollary it discharges; the combinatorial/orbit ingredients it depends on
+(F1b fiber counts, `generalCL`/`fiberSum_eq_overlap`, `membershipFiber_transitive`)
+are complete in the other modules.
 
 The 3a reduction (`hMembershipExchange_lhs_reduces`) already shows the LHS is the
 uniform `project`-fiber deck law pushed through the membership-level exchange:
