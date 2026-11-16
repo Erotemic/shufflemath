@@ -350,10 +350,6 @@ def fiberSetPile (N m : Nat) (hm : m ≤ N) (S : Finset (Fin N)) : Finset (Equiv
 theorem fiberSet_eq_pile (N m : Nat) (hm : m ≤ N) (A : Membership N m) :
     fiberSet N m hm A = fiberSetPile N m hm A.1 := rfl
 
-/-- The finset of all m-piles (the concrete index for the fiber partition). -/
-def pileSet (N m : Nat) : Finset (Finset (Fin N)) :=
-  (Finset.univ : Finset (Fin N)).powersetCard m
-
 /-- Cover half of the fiber partition: the pile-fibers bi-union to the whole
   permutation space (each deck images the left pile to some m-pile). -/
 theorem fiberCover (N m : Nat) (hm : m ≤ N) :

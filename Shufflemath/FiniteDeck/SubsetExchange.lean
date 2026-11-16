@@ -211,5 +211,31 @@ theorem subsetExchangeKernel_symm (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (h
       exact hc hC
     rw [ite_eq_right hc, ite_eq_right hneg]
 
+/-! ## The concrete reachable set
+
+`ReachSetConcrete S` is the subset of `pileSet N m` reachable from the concrete
+pile `S` by a `k`-exchange. It carries the same count as the membership
+`ReachSet` (`choose m k · choose (N-m) k`) — the pile-card projection is a
+bijection between them. -/
+
+/-- The concrete piles reachable from `S` by a `k`-exchange (a subset of `pileSet`). -/
+def ReachSetConcrete (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k ≤ N - m)
+    (S : Finset (Fin N)) : Finset (Finset (Fin N)) :=
+  (pileSet N m).filter (fun T => (S \ T).card = k ∧ (T \ S).card = k)
+
+theorem ReachSetConcrete_subset (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k ≤ N - m)
+    (S : Finset (Fin N)) : ReachSetConcrete N m k hm hk hkm S ⊆ pileSet N m := by
+  rw [ReachSetConcrete]
+  intro U hU
+  exact (Finset.mem_filter.mp hU).1
+
+-- The concrete reachable set has the same cardinality as the membership one, and
+-- hence `choose m k * choose (N - m) k`.
+-- TODO(proof): ReachSetConcrete_card — #ReachSetConcrete T = #ReachSet (memT) via the
+--   U ↦ U.1 bijection (Finset.card_image_of_injective; image equality by ext), then
+--   subsetExchangeCount. Finset-filter membership navigation is fiddly; the alternative
+--   is reusing the subsetExchangeCount i/j bijection with memT (whose .1 = T).
+--   Needed for rowSum_eq_one (rows sum to 1) and subsetExchangeKernel_stationary.
+
 end FiniteDeck
 end Shufflemath

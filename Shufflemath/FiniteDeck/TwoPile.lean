@@ -2,6 +2,7 @@ module
 
 public import Mathlib.Data.Fin.Basic
 public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Nat.Basic
 public import Mathlib.Tactic
@@ -50,6 +51,12 @@ theorem rightPositions_card (N m : Nat) (hm : m ≤ N) : (rightPositions N m hm)
   unfold rightPositions
   rw [Finset.card_sdiff_of_subset (Finset.subset_univ (leftPositions N m hm)), leftPositions_card,
     Finset.card_univ, Fintype.card_fin]
+
+/-- The finset of all `m`-element piles of the `N`-card deck (the concrete state
+  space for the pile-level theory; a `Membership N m` is exactly such a pile with
+  its size proof). -/
+def pileSet (N m : Nat) : Finset (Finset (Fin N)) :=
+  (Finset.univ : Finset (Fin N)).powersetCard m
 
 theorem leftRight_cover (N m : Nat) (hm : m ≤ N) :
     leftPositions N m hm ∪ rightPositions N m hm = Finset.univ := by
