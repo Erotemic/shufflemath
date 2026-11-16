@@ -1,6 +1,31 @@
+> ⚠️ **DO NOT STOP — READ FIRST (re-read after every compaction).**
+> **Autonomous build active until: Wed 2026-11-18 23:59:59 EST** (the user may
+> extend this — if a later dated note gives a later date, that one wins).
+> **Do not stop, ask, or end the session before that deadline.** Compaction is
+> NOT a stopping signal. Never emit a "session summary" / "state of the world"
+> / "ready to continue" as terminal output — that reads as a stop; instead end
+> each turn by committing and immediately starting the next proof step.
+> **Goal: complete everything in `docs/planning` (the G1–G4 arbitrary-finite-deck
+> generalization, then the Commander A3 discharge, then F5) before the deadline.**
+> After compaction, in order: (1) read THIS banner + this whole file, (2) `git
+> log --oneline -15` + `git status --short`, (3) confirm the tree is green with
+> the targeted `lake build`s, (4) resume at the exact next lemma named below
+> ("Exactly where to resume"). Continue lemma-by-lemma; the only legal stops
+> are the stuck-protocol (rule 8) and the deadline itself.
+
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-12 (5th session). **F4.1 COMPLETE** (`17ffab6`) and
+**Updated:** 2026-11-15 (autonomous session, post-compaction). The 2026-11-15
+review + arbitrary-finite-deck roadmap pivoted the build to the **G1–G4
+generic finite-deck theory**, from which Commander A3 is a specialization.
+**Done:** P0/Commit A (native_decide → `.symm`); **G1** complete
+(`FiniteDeck/TwoPile`); **G2** core (`membershipCount = choose N m`, the four
+fintype-card blocks, and BOTH fiber-restriction bijections `fiberRestrictL/R`
+in `FiniteDeck/Fiber`); **G3** foundation (`ReachSet/Lset/Rset` + card lemmas
+in `FiniteDeck/SubsetExchange`). **The G2/T1 fiber count**
+(`#Fiber(A) = m!·(N-m)!`) is on the **transitive orbit-count route** (see the
+`Fiber.lean` doc-comment): the next concrete lemma is **`fibTransitive`** (a
+permutation sending any `m`-pile onto any other). **F4.1 COMPLETE** (`17ffab6`) and
 **F4.2 GSR product is now in the library** (`4e1b76f`): `gsrProductKernel`
 (independent within-pile GSR riffles on the left and right piles, as a
 `FiniteKernel` on the pile-list product) + `gsrLocal_preserves_pile` (a
