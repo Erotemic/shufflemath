@@ -35,7 +35,7 @@ the definition. No generic theorem may import a `Commander*` module; the proved
 
 | Current Commander declaration | Generalized target | State |
 | --- | --- | --- |
-| `CommanderFiberCount` fiber counts (`# {d // leftOriginalCount d = k}`) | T1: `# {d // allocation d = A} = m! (N-m)!`; `# {A} = choose N m` | **`choose N m` compiled** (`membershipCount`); `fintype_card_{leftPos,rightPos,pile,complementPile}` compiled. **Next:** per-fiber count `m! (N-m)!` via `Fiber ≃ (L ≃ A) × (R ≃ B)` + `Fintype.card_equiv` + `Fintype.card_prod` |
+| `CommanderFiberCount` fiber counts (`# {d // leftOriginalCount d = k}`) | T1: `# {d // allocation d = A} = m! (N-m)!`; `# {A} = choose N m` | **`choose N m` compiled** (`membershipCount`) + the four fintype-card blocks + **both restriction bijections** `fiberRestrictL : L ≃ A`, `fiberRestrictR : R ≃ B` (`FiniteDeck/Fiber`). **Next:** the count `m!(N-m)!` = glueing equiv `Fiber ≃ (L ≃ A) × (R ≃ B)` + `Fintype.card_prod` + `Fintype.card_equiv` + position-card lemmas (construction + the by_cases-opacity gotcha documented in `Fiber.lean`) |
 | `membershipFiberCount k = choose 50 k * choose 49 (50-k)` (`CommanderMembershipKernels`) | T2: BL histogram fiber = `choose r (marked) * choose (N-r) (unmarked)` | **partially general** — the `choose` product is already `N,m,r`-parametric in `BernoulliLaplaceGeneral`; needs the generic `Membership N m` statement |
 | `fiberLaw` / uniform-deck disintegration (`FiberDisintegration`) | uniform deck ⇒ uniform over allocation fibers | **compiled (generic)** — reuse as-is |
 | `blStationary N m r`, detailed balance (`BernoulliLaplaceGeneral`) | T2 multivariate hypergeometric `π` | **compiled (two-color)** — reuse; generalize to categories in G5 |
