@@ -55,6 +55,7 @@ open BernoulliLaplace
 open CommanderMembershipKernels
 open CommanderPhysicalExchange
 open FiberDisintegration
+open FiniteKernel
 
 /-
 ## Next (A3 part (i), counting): the count-level projection
@@ -141,5 +142,117 @@ theorem distUniform_ofInvariantTransitive
     (↑S.card : Rat) * Dist.mass μ x = (↑S.card : Rat) * Dist.mass μ x0 := by
       rw [hc x hx]
     _ = 1 := hVal
+
+/-!
+## Count-level projection (A3 part (i), RHS side)
+
+The lift is *uniform within each count-fiber*; projecting it back to the
+count is therefore the identity on counts.  This is the RHS half of the
+`hMembershipExchange` count projection.
+-/
+
+/-- The membership fiber `{m // membershipCount m = k}` has the F1b card
+    `membershipFiberCount k`.  Bridges the Fintype subtype count through
+    `MembershipFiber_card` to the standalone choose product. -/
+theorem membershipFiber_card (k : Nat) :
+    ((Finset.univ : Finset Membership).filter (fun m => membershipCount m = k)).card =
+      membershipFiberCount k := by
+  have hfin : ((Finset.univ : Finset Membership).filter (fun m => membershipCount m = k)).card =
+      Fintype.card (MembershipFiber k) := by
+    exact (@Fintype.card_ofFinset Membership (fun m => membershipCount m = k)
+        ((Finset.univ : Finset Membership).filter (fun m => membershipCount m = k))
+        (fun m => by
+          simp [Finset.mem_filter, Finset.mem_univ]
+          exact Iff.rfl)).symm
+  calc
+    ((Finset.univ : Finset Membership).filter (fun m => membershipCount m = k)).card =
+        Fintype.card (MembershipFiber k) := hfin
+    _ = (fiberMembershipSets k).card := MembershipFiber_card k
+    _ = membershipFiberCount k := (membershipFiberCount_eq_fiberMembershipSets k).symm
+
+/-- Pushing `membershipLift` back through the marked count recovers
+    `deterministic commanderLeftCount`: the lift only puts mass on the
+    `commanderLeftCount x`-fiber, on which the marked count is constant, so the
+    pushforward is a point mass at that count. -/
+theorem membershipLift_count :
+    FiniteKernel.comp membershipLift (FiniteKernel.deterministic membershipCount) =
+      FiniteKernel.deterministic commanderLeftCount := by
+  classical
+  funext x
+  apply (Convexity.StdSimplex.weights_inj
+      (f := (FiniteKernel.comp membershipLift (FiniteKernel.deterministic membershipCount)) x)
+      (g := (FiniteKernel.deterministic commanderLeftCount) x)).mp
+  apply Finsupp.ext
+  intro k
+  rw [← Dist.mass, ← Dist.mass]
+  -- Read the LHS as the `apply` of the lift against the deterministic count map.
+  have hLHS : Dist.mass (FiniteKernel.comp membershipLift (FiniteKernel.deterministic membershipCount) x) k =
+      Dist.mass (FiniteKernel.apply (membershipLift x) (FiniteKernel.deterministic membershipCount)) k := by
+    dsimp only [FiniteKernel.comp, FiniteKernel.apply]
+  rw [hLHS, apply_mass_eq_sum]
+  simp only [FiniteKernel.deterministic, Dist.mass_pointMass, membershipLift_mass]
+  -- Goal:
+  --   sum over m of
+  --     (if membershipCount m = commanderLeftCount x then 1 / fc else 0)   [m-count LEFT]
+  --       * (if k = membershipCount m then 1 else 0)                       [k LEFT]
+  --     =  (if k = commanderLeftCount x then 1 else 0).
+  by_cases hk : k = commanderLeftCount x
+  · -- k equals the source count: the second ite matches the first, so the sum
+    --   collapses to the lift's total mass, `1`.
+    have hsum : (∑ m : Membership,
+        (if membershipCount m = commanderLeftCount x
+          then 1 / (↑(membershipFiberCount (commanderLeftCount x)) : Rat) else 0) *
+        (if k = membershipCount m then (1 : Rat) else 0)) = 1 := by
+      have h1 : (∑ m : Membership,
+          (if membershipCount m = commanderLeftCount x
+            then 1 / (↑(membershipFiberCount (commanderLeftCount x)) : Rat) else 0) *
+          (if k = membershipCount m then (1 : Rat) else 0)) =
+          (∑ m : Membership,
+            (if membershipCount m = commanderLeftCount x
+              then 1 / (↑(membershipFiberCount (commanderLeftCount x)) : Rat) else 0)) := by
+        apply Finset.sum_congr rfl
+        intro m _
+        by_cases hm : membershipCount m = commanderLeftCount x
+        · simp [hm, hk, mul_one]
+        · simp [hm, mul_zero]
+      have h2 : (∑ m : Membership,
+          (if membershipCount m = commanderLeftCount x
+            then 1 / (↑(membershipFiberCount (commanderLeftCount x)) : Rat) else 0)) =
+          (∑ m : Membership, Dist.mass (membershipLift x) m) := by
+        apply Finset.sum_congr rfl
+        intro m _
+        rw [← membershipLift_mass]
+      calc
+        (∑ m : Membership,
+          (if membershipCount m = commanderLeftCount x
+            then 1 / (↑(membershipFiberCount (commanderLeftCount x)) : Rat) else 0) *
+          (if k = membershipCount m then (1 : Rat) else 0)) =
+          (∑ m : Membership,
+            (if membershipCount m = commanderLeftCount x
+              then 1 / (↑(membershipFiberCount (commanderLeftCount x)) : Rat) else 0)) := h1
+        _ = (∑ m : Membership, Dist.mass (membershipLift x) m) := h2
+        _ = 1 := Dist.sum_mass _
+    have hRHS : (if k = commanderLeftCount x then (1 : Rat) else 0) = 1 := by simp [hk]
+    simpa [hRHS] using hsum
+  · -- k differs from the source count: no membership carries both counts, so
+    --   every summand is `0`.
+    have hsum : (∑ m : Membership,
+        (if membershipCount m = commanderLeftCount x
+          then 1 / (↑(membershipFiberCount (commanderLeftCount x)) : Rat) else 0) *
+        (if k = membershipCount m then (1 : Rat) else 0)) = 0 := by
+      have hpoint : (∑ m : Membership,
+          (if membershipCount m = commanderLeftCount x
+            then 1 / (↑(membershipFiberCount (commanderLeftCount x)) : Rat) else 0) *
+          (if k = membershipCount m then (1 : Rat) else 0)) =
+          (∑ m : Membership, (0 : Rat)) := by
+        apply Finset.sum_congr rfl
+        intro m _
+        by_cases hm1 : membershipCount m = commanderLeftCount x
+        · simp [hm1, hk, mul_zero]
+        · simp [hm1, mul_zero]
+      rw [hpoint]
+      simp
+    have hRHS : (if k = commanderLeftCount x then (1 : Rat) else 0) = 0 := by simp [hk]
+    simpa [hRHS] using hsum
 end CommanderMembershipExchange
 end Shufflemath
