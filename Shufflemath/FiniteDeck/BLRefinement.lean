@@ -532,5 +532,17 @@ theorem filterProduct {α β : Type*} [DecidableEq α] [DecidableEq β]
 def reachMoves (N m k : Nat) (S : Membership N m) : Finset (Finset (Fin N) × Finset (Fin N)) :=
   (Finset.powersetCard k S.1) ×ˢ (Finset.powersetCard k (Finset.univ \ S.1))
 
+/-! ### T4 product-filter lemma -/
+theorem filterCardProduct (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (k a b : Nat)
+    (S : Membership N m) :
+    ((Finset.powersetCard k S.1) ×ˢ (Finset.powersetCard k (Finset.univ \ S.1))).filter
+      (fun p : Finset (Fin N) × Finset (Fin N) =>
+        (p.1 ∩ markedSet N r hr).card = a ∧ (p.2 ∩ markedSet N r hr).card = b) =
+      (Finset.powersetCard k S.1).filter (fun A : Finset (Fin N) => (A ∩ markedSet N r hr).card = a) ×ˢ
+        (Finset.powersetCard k (Finset.univ \ S.1)).filter (fun B : Finset (Fin N) => (B ∩ markedSet N r hr).card = b) := by
+  ext p
+  simp only [Finset.mem_filter, Finset.mem_product]
+  tauto
+
 end FiniteDeck
 end Shufflemath
