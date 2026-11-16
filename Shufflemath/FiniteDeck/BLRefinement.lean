@@ -514,5 +514,23 @@ theorem countAB (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (k a b : Nat)
       powersetCard_markedSplit N (Finset.univ \ S.1) (markedSet N r hr) k b hb]
   ring
 
+/-! ### T4 filter/product helper and move set -/
+theorem filterProduct {α β : Type*} [DecidableEq α] [DecidableEq β]
+    (s u : Finset α) (t v : Finset β) (hs : u ⊆ s) (ht : v ⊆ t) :
+    (s ×ˢ t).filter (fun p => p.1 ∈ u ∧ p.2 ∈ v) = u ×ˢ v := by
+  ext p
+  constructor
+  · intro hL
+    rw [Finset.mem_filter] at hL
+    rw [Finset.mem_product]
+    exact hL.2
+  · intro hR
+    rw [Finset.mem_product] at hR
+    rw [Finset.mem_filter, Finset.mem_product]
+    exact ⟨⟨hs hR.1, ht hR.2⟩, hR⟩
+
+def reachMoves (N m k : Nat) (S : Membership N m) : Finset (Finset (Fin N) × Finset (Fin N)) :=
+  (Finset.powersetCard k S.1) ×ˢ (Finset.powersetCard k (Finset.univ \ S.1))
+
 end FiniteDeck
 end Shufflemath
