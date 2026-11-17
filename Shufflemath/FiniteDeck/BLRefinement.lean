@@ -849,5 +849,79 @@ theorem yMoves_card_eq_sum (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
     tauto
   rw [hBi, card_biUnion_pd fun i j hij => Pa_disjoint N m r k hm hr S x y i j hij]
 
+/- T4: `transitionTerm` — the `a`-summand of
+   `BernoulliLaplaceGeneral.transitionNumerator N m r k x y`: the moves from
+   a membership carrying `x` marked cards landing at `y`, indexed by
+   `a = (p.1 ∩ M).card`, the marked cards removed from `S`. The four factors
+   are (marked staying in `S`, unmarked staying in `S`, marked arriving from
+   the complement, unmarked arriving from the complement). -/
+def transitionTerm (N m r k x y a : Nat) : Nat :=
+  let remaining := x - a
+  if remaining ≤ y then
+    let b := y - remaining
+    if b ≤ k then
+      Nat.choose x a *
+        Nat.choose (m - x) (k - a) *
+        Nat.choose (r - x) b *
+        Nat.choose ((N - m) - (r - x)) (k - b)
+    else 0
+  else 0
+
+/- `transitionNumerator N m r k x y` is the sum of its `transitionTerm`
+   summands over `a ∈ 0..k` (the definition's `let`-bindings unfold
+   definitionally, so this is `rfl` after `dsimp`). -/
+theorem transitionNumerator_eq_sum_transitionTerm (N m r k x y : Nat) :
+    BernoulliLaplaceGeneral.transitionNumerator N m r k x y =
+      (Finset.range (k + 1)).sum fun a => transitionTerm N m r k x y a := by
+  dsimp only [BernoulliLaplaceGeneral.transitionNumerator, transitionTerm]
+
+/- T4: one `Pa` fiber's count is the corresponding `transitionTerm` summand:
+   `pieceCount`'s left side *is* `Pa` (the identical filter on `reachMoves`),
+   and `markedPileCards` rewrites the four binomial bases to
+   `x, m - x, r - x, (N - m) - (r - x)`. -/
+theorem Pa_card_eq_transitionTerm (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
+    (S : Membership N m) (x y a : Nat) (ha : a ≤ k)
+    (hx : x = (S.1 ∩ markedSet N r hr).card) :
+    (Pa N m r k hr S x y a).card = transitionTerm N m r k x y a := by
+  dsimp only [Pa, transitionTerm]
+  rw [pieceCount N m r hm hr k x y a ha S hx]
+  by_cases hC1 : x - a ≤ y
+  · by_cases hC2 : y - (x - a) ≤ k
+    · have h1 := (markedPileCards N m r hm hr S x hx).1
+      have h2 := (markedPileCards N m r hm hr S x hx).2.1
+      have h3 := (markedPileCards N m r hm hr S x hx).2.2.1
+      have h4 := (markedPileCards N m r hm hr S x hx).2.2.2
+      rw [ite_eq_left hC1, ite_eq_left hC1, ite_eq_left hC2, ite_eq_left hC2]
+      simp only [h1, h2, h3, h4]
+    · rw [ite_eq_left hC1, ite_eq_left hC1, ite_eq_right hC2, ite_eq_right hC2]
+  · rw [ite_eq_right hC1, ite_eq_right hC1]
+
+/- T4 capstone: the number of reachable `k`-exchange moves from a membership
+   carrying `x` marked cards that land at macro count `y` is the
+   Bernoulli--Laplace transition numerator: sum the per-`a` `Pa` counts
+   (`yMoves_card_eq_sum`), each of which is the corresponding `transitionTerm`
+   summand (`Pa_card_eq_transitionTerm`). No admissibility regime is needed:
+   the `Nat`-saturated `choose` factors and the two `ite` guards already
+   vanish on impossible regimes. -/
+theorem yMoves_card_eq_transitionNumerator (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
+    (S : Membership N m) (x y : Nat) (hx : x = (S.1 ∩ markedSet N r hr).card) :
+    (yMoves N m r k hr S x y).card = BernoulliLaplaceGeneral.transitionNumerator N m r k x y := by
+  have hIco : Finset.Ico 0 (k + 1) = Finset.range (k + 1) := by
+    ext a
+    simp_rw [Finset.mem_Ico, Finset.mem_range]
+    exact ⟨fun h => h.2, fun h => ⟨Nat.zero_le a, h⟩⟩
+  calc
+    (yMoves N m r k hr S x y).card
+      = ∑ a ∈ Finset.Ico 0 (k + 1), (Pa N m r k hr S x y a).card :=
+        yMoves_card_eq_sum N m r k hm hr S x y
+    _ = ∑ a ∈ Finset.range (k + 1), (Pa N m r k hr S x y a).card :=
+      Finset.sum_congr hIco fun _ _ => rfl
+    _ = ∑ a ∈ Finset.range (k + 1), transitionTerm N m r k x y a := by
+      apply Finset.sum_congr rfl
+      intro a ha
+      have haK : a ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp ha)
+      exact Pa_card_eq_transitionTerm N m r k hm hr S x y a haK hx
+    _ = BernoulliLaplaceGeneral.transitionNumerator N m r k x y :=
+      (transitionNumerator_eq_sum_transitionTerm N m r k x y).symm
 end FiniteDeck
 end Shufflemath
