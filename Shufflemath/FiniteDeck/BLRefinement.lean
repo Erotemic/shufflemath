@@ -923,5 +923,214 @@ theorem yMoves_card_eq_transitionNumerator (N m r k : Nat) (hm : m ≤ N) (hr : 
       exact Pa_card_eq_transitionTerm N m r k hm hr S x y a haK hx
     _ = BernoulliLaplaceGeneral.transitionNumerator N m r k x y :=
       (transitionNumerator_eq_sum_transitionTerm N m r k x y).symm
+
+/- T2 at the (m-pile, x-marked) level: any two `m`-piles holding the same
+   number `x` of marked cards are related by a **marked-preserving**
+   permutation (one that stabilizes `M = markedSet`). Generalizes
+   `Fiber.fibTransitive`, which used arbitrary permutations; the M-invariant
+   group is what the T4 fiber-uniform intertwining needs (it conjugates
+   moves between two targets in the same count-fiber). -/
+theorem markedFiberTransitive (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (x : Nat)
+    (S T : Membership N m) (hS : (S.1 ∩ markedSet N r hr).card = x)
+    (hT : (T.1 ∩ markedSet N r hr).card = x) :
+    ∃ g : Equiv.Perm (Fin N),
+        g '' S.1 = T.1 ∧ g '' (markedSet N r hr) = markedSet N r hr := by
+  classical
+  let M : Finset (Fin N) := markedSet N r hr
+  let MC : Finset (Fin N) := markedComp N r hr
+  have hC1 (X : Membership N m) (hX : (X.1 ∩ M).card = x) :
+      Fintype.card {a : Fin N // a ∈ M ∧ a ∈ X.1} = x := by
+    rw [Fintype.card_subtype (fun a : Fin N => a ∈ M ∧ a ∈ X.1)]
+    have hF : (Finset.univ : Finset (Fin N)).filter (fun a => a ∈ M ∧ a ∈ X.1) =
+        M ∩ X.1 := by
+      ext a
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_inter]
+    rw [hF, Finset.inter_comm M X.1]
+    exact hX
+
+  have hC2 (X : Membership N m) (hX : (X.1 ∩ M).card = x) :
+      Fintype.card {a : Fin N // a ∈ M ∧ a ∉ X.1} = r - x := by
+    rw [Fintype.card_subtype (fun a : Fin N => a ∈ M ∧ a ∉ X.1)]
+    have hF : (Finset.univ : Finset (Fin N)).filter (fun a => a ∈ M ∧ a ∉ X.1) =
+        M \ X.1 := by
+      ext a
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_sdiff]
+    rw [hF, Finset.card_sdiff, markedSet_card N r hr, hX]
+
+  have hC3 (X : Membership N m) (hX : (X.1 ∩ M).card = x) :
+      Fintype.card {a : Fin N // a ∉ M ∧ a ∈ X.1} = m - x := by
+    rw [Fintype.card_subtype (fun a : Fin N => a ∉ M ∧ a ∈ X.1)]
+    have hF : (Finset.univ : Finset (Fin N)).filter (fun a => a ∉ M ∧ a ∈ X.1) =
+        X.1 \ M := by
+      ext a
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_sdiff, not_not, and_comm]
+    rw [hF, unmarkedCard _ X.1 M, X.2, hX]
+
+  have hC4 (X : Membership N m) (hX : (X.1 ∩ M).card = x) :
+      Fintype.card {a : Fin N // a ∉ M ∧ a ∉ X.1} = (N - r) - (m - x) := by
+    let U : Finset (Fin N) := Finset.univ
+    rw [Fintype.card_subtype (fun a : Fin N => a ∉ M ∧ a ∉ X.1)]
+    have hF : U.filter (fun a => a ∉ M ∧ a ∉ X.1) = ((U \ M) \ X.1) := by
+      ext a
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_sdiff, not_and, not_not, and_assoc]
+    rw [hF, Finset.card_sdiff]
+    have hI : (X.1 ∩ (U \ M)) = X.1 \ M := by
+      ext a
+      constructor
+      · intro h
+        rw [Finset.mem_inter, Finset.mem_sdiff] at h
+        rw [Finset.mem_sdiff]
+        exact ⟨h.1, h.2.2⟩
+      · intro h
+        rw [Finset.mem_sdiff] at h
+        rw [Finset.mem_inter, Finset.mem_sdiff]
+        exact ⟨h.1, Finset.mem_univ _, h.2⟩
+    rw [hI, unmarkedCard _ X.1 M, X.2, hX]
+    have hUM : (U \ M).card = N - r := by
+      change (markedComp N r hr).card = N - r
+      exact markedComp_card N r hr
+    rw [hUM]
+
+  have hS1 := hC1 S hS
+  have hS2 := hC2 S hS
+  have hS3 := hC3 S hS
+  have hS4 := hC4 S hS
+  have hT1 := hC1 T hT
+  have hT2 := hC2 T hT
+  have hT3 := hC3 T hT
+  have hT4 := hC4 T hT
+  let eSM : {a : Fin N // a ∈ M ∧ a ∈ S.1} ≃ {a : Fin N // a ∈ M ∧ a ∈ T.1} :=
+      Fintype.equivOfCardEq (by rw [hS1, hT1])
+  let eSU : {a : Fin N // a ∈ M ∧ a ∉ S.1} ≃ {a : Fin N // a ∈ M ∧ a ∉ T.1} :=
+      Fintype.equivOfCardEq (by rw [hS2, hT2])
+  let eUM : {a : Fin N // a ∉ M ∧ a ∈ S.1} ≃ {a : Fin N // a ∉ M ∧ a ∈ T.1} :=
+      Fintype.equivOfCardEq (by rw [hS3, hT3])
+  let eUU : {a : Fin N // a ∉ M ∧ a ∉ S.1} ≃ {a : Fin N // a ∉ M ∧ a ∉ T.1} :=
+      Fintype.equivOfCardEq (by rw [hS4, hT4])
+  let g : Fin N → Fin N := fun x => by
+    by_cases hxs : x ∈ S.1
+    · by_cases hxm : x ∈ M
+      · exact (eSM ⟨x, ⟨hxm, hxs⟩⟩).1
+      · exact (eUM ⟨x, ⟨hxm, hxs⟩⟩).1
+    · by_cases hxm : x ∈ M
+      · exact (eSU ⟨x, ⟨hxm, hxs⟩⟩).1
+      · exact (eUU ⟨x, ⟨hxm, hxs⟩⟩).1
+  -- value lemmas: by_cases adds the branch facts to the context; simp only
+  -- [hA, hB, ite_true, ite_false] reduces the if-then-else body of g to the
+  -- matching branch value; congrArg + Subtype.ext (proof irrelevance) closes
+  -- the matching branch, and the non-matching branches are contradictions.
+  have hSMval (x : Fin N) (hM : x ∈ M) (hS : x ∈ S.1) :
+      g x = (eSM ⟨x, ⟨hM, hS⟩⟩).1 := by
+    by_cases hA : x ∈ S.1
+    · by_cases hB : x ∈ M
+      · simp only [g, hA, hB, ite_true, ite_false]
+        refine congrArg (fun z => (eSM z).1) ?_
+        exact Subtype.ext rfl
+      · exfalso
+        exact hB hM
+    · exfalso
+      exact hA hS
+  have hUMval (x : Fin N) (hM : x ∉ M) (hS : x ∈ S.1) :
+      g x = (eUM ⟨x, ⟨hM, hS⟩⟩).1 := by
+    by_cases hA : x ∈ S.1
+    · by_cases hB : x ∈ M
+      · exfalso
+        exact hM hB
+      · simp only [g, hA, hB, ite_true, ite_false]
+        refine congrArg (fun z => (eUM z).1) ?_
+        exact Subtype.ext rfl
+    · exfalso
+      exact hA hS
+  have hSUval (x : Fin N) (hM : x ∈ M) (hS : x ∉ S.1) :
+      g x = (eSU ⟨x, ⟨hM, hS⟩⟩).1 := by
+    by_cases hA : x ∈ S.1
+    · exfalso
+      exact hS hA
+    · by_cases hB : x ∈ M
+      · simp only [g, hA, hB, ite_true, ite_false]
+        refine congrArg (fun z => (eSU z).1) ?_
+        exact Subtype.ext rfl
+      · exfalso
+        exact hB hM
+  have hUUval (x : Fin N) (hM : x ∉ M) (hS : x ∉ S.1) :
+      g x = (eUU ⟨x, ⟨hM, hS⟩⟩).1 := by
+    by_cases hA : x ∈ S.1
+    · exfalso
+      exact hS hA
+    · by_cases hB : x ∈ M
+      · exfalso
+        exact hM hB
+      · simp only [g, hA, hB, ite_true, ite_false]
+        refine congrArg (fun z => (eUU z).1) ?_
+        exact Subtype.ext rfl
+
+  -- region-image lemmas: g sends each S-region onto the corresponding T-region
+  have hSMimg : ∀ x (hM : x ∈ M) (hS : x ∈ S.1), (eSM ⟨x, ⟨hM, hS⟩⟩).1 ∈ M ∧ (eSM ⟨x, ⟨hM, hS⟩⟩).1 ∈ T.1 :=
+      fun x hM hS => (eSM ⟨x, ⟨hM, hS⟩⟩).2
+  have hUMimg : ∀ x (hM : x ∉ M) (hS : x ∈ S.1), (eUM ⟨x, ⟨hM, hS⟩⟩).1 ∉ M ∧ (eUM ⟨x, ⟨hM, hS⟩⟩).1 ∈ T.1 :=
+      fun x hM hS => (eUM ⟨x, ⟨hM, hS⟩⟩).2
+  -- surjective: every z in one of the four T-regions has a preimage in the S-region
+  have hSurj : Function.Surjective g := by
+    intro z
+    by_cases hzM : z ∈ M
+    · by_cases hzT : z ∈ T.1
+      · obtain ⟨a, ha⟩ := eSM.surjective ⟨z, ⟨hzM, hzT⟩⟩
+        have hv : g a.1 = z := by
+          rw [hSMval (a.1) a.2.1 a.2.2]
+          simpa [ha]
+        exact ⟨a.1, hv⟩
+      · obtain ⟨a, ha⟩ := eSU.surjective ⟨z, ⟨hzM, hzT⟩⟩
+        have hv : g a.1 = z := by
+          rw [hSUval (a.1) a.2.1 a.2.2, ha]
+        exact ⟨a.1, hv⟩
+    · by_cases hzT : z ∈ T.1
+      · obtain ⟨a, ha⟩ := eUM.surjective ⟨z, ⟨hzM, hzT⟩⟩
+        have hv : g a.1 = z := by
+          rw [hUMval (a.1) a.2.1 a.2.2, ha]
+        exact ⟨a.1, hv⟩
+      · obtain ⟨a, ha⟩ := eUU.surjective ⟨z, ⟨hzM, hzT⟩⟩
+        have hv : g a.1 = z := by
+          rw [hUUval (a.1) a.2.1 a.2.2, ha]
+        exact ⟨a.1, hv⟩
+  have hBij : Function.Bijective g := by
+    constructor
+    · exact Finite.injective_iff_surjective.mpr hSurj
+    · exact hSurj
+  -- image of S.1 is T.1
+  have hImgS : g '' S.1 = T.1 := by
+    ext z
+    constructor
+    · intro hmem
+      rcases hmem with ⟨a, haS, rfl⟩
+      by_cases haM : a ∈ M
+      · rw [hSMval a haM haS]
+        exact (eSM ⟨a, ⟨haM, haS⟩⟩).2.2
+      · rw [hUMval a haM haS]
+        exact (eUM ⟨a, ⟨haM, haS⟩⟩).2.2
+    · intro hzT
+      by_cases hzM : z ∈ M
+      · obtain ⟨a, ha⟩ := eSM.surjective ⟨z, ⟨hzM, hzT⟩⟩
+        exact ⟨a.1, a.2.2, by rw [hSMval (a.1) a.2.1 a.2.2, ha]⟩
+      · obtain ⟨a, ha⟩ := eUM.surjective ⟨z, ⟨hzM, hzT⟩⟩
+        exact ⟨a.1, a.2.2, by rw [hUMval (a.1) a.2.1 a.2.2, ha]⟩
+  -- image of M is M
+  have hImgM : g '' M = M := by
+    ext z
+    constructor
+    · intro hmem
+      rcases hmem with ⟨a, haM, rfl⟩
+      by_cases haS : a ∈ S.1
+      · rw [hSMval a haM haS]
+        exact (eSM ⟨a, ⟨haM, haS⟩⟩).2.1
+      · rw [hSUval a haM haS]
+        exact (eSU ⟨a, ⟨haM, haS⟩⟩).2.1
+    · intro hzM
+      by_cases hzT : z ∈ T.1
+      · obtain ⟨a, ha⟩ := eSM.surjective ⟨z, ⟨hzM, hzT⟩⟩
+        exact ⟨a.1, a.2.1, by rw [hSMval (a.1) a.2.1 a.2.2, ha]⟩
+      · obtain ⟨a, ha⟩ := eSU.surjective ⟨z, ⟨hzM, hzT⟩⟩
+        exact ⟨a.1, a.2.1, by rw [hSUval (a.1) a.2.1 a.2.2, ha]⟩
+  exact ⟨Equiv.ofBijective g hBij, hImgS, hImgM⟩
+
 end FiniteDeck
 end Shufflemath

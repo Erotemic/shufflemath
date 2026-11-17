@@ -1856,6 +1856,51 @@ reordering fixed); a **`calc` proof with direct theorem applications**
 simp lemma here (use `simp_rw [Finset.mem_Ico, Finset.mem_range]`), and
 `if_pos`/`if_neg` are deprecated for `ite_eq_left`/`ite_eq_right`.
 
+### T2 marked-fiber transitivity (this session)
+
+`markedFiberTransitive` (in `Shufflemath/FiniteDeck/BLRefinement.lean`):
+for any two `m`-piles `S, T` with the same `x` marked cards
+(`(S ∩ M).card = (T ∩ M).card = x`, `M = markedSet N r hr`), there is a
+**marked-preserving permutation** `g : Equiv.Perm (Fin N)` with
+`g '' S.1 = T.1` and `g '' M = M`. This is the generalization of
+`Fiber.fibTransitive` (which used arbitrary permutations) to the
+`M`-invariant group — the transitivity the T4 uniform-fiber
+intertwining needs, since the exchange kernel must be uniform on each
+count-fiber.
+
+Proof structure: partition the deck into the four regions
+`M∩S`, `M∖S`, `Mᶜ∩S`, `Mᶜ∖S` (and the `T`-analogs); each region
+pair has equal cardinality (four lemmas via `Fintype.card_subtype` +
+filter/`sdiff` cardinalities, with `markedSet_card` /
+`markedComp_card` / `unmarkedCard` doing the arithmetic);
+`Fintype.equivOfCardEq` gives a bijection per region pair; `g` is the
+four-case function (two nested `by_cases`); surjectivity from the four
+region bijections (`eXX.surjective` at the target region of `z`, then
+the matching value lemma); bijectivity from
+`Finite.injective_iff_surjective`; both images by direct
+`ext`/`by_cases` arguments.
+
+Elaboration gotchas (this 4.34 build, all worked around):
+- `split_ifs` splits **all** `if`s in the goal at once and does **not**
+  add the branch conditions to the context (unlike `by_cases`, which
+  adds hypotheses but does not reduce the goal). The working pattern
+  for a nested-`if` function `g`: `by_cases hA : p` +
+  `by_cases hB : q`, then
+  `simp only [g, hA, hB, ite_true, ite_false]` — `ite_true`/`ite_false`
+  **do exist** and reduce an `ite` whose condition has been rewritten to
+  `True`/`False` by the local hypotheses; the matching branch closes by
+  `congrArg (fun z => (e z).1) (Subtype.ext rfl)` (proof irrelevance),
+  the other branches by `exfalso` + the negation hypothesis.
+- `Finset.mem_inter` lives in `Mathlib.Data.Finset.Lattice.Basic`
+  (not `Finset.Basic`); it reaches this file transitively and is a
+  simp lemma, but `Finset.mem_univ` is only reachable via
+  `Mathlib.Data.Fintype.Card` (already imported).
+- Finset membership (`a ∈ s \ t` etc.) is an opaque `Quot.lift`:
+  projections `h.1`/`h.2` fail until `rw [Finset.mem_sdiff] at h`.
+- `change` accepts definitionally equal goals (used to switch
+  `(U \ M).card` to `(markedComp N r hr).card` before `exact`);
+  `rw` auto-closes `rfl` goals, so no trailing `rfl`/`exact rfl`.
+
 ### Resume point
 
 The T4 **measure** half: (i) the `count : Membership → BLState`
@@ -1868,5 +1913,6 @@ measure theory (`detailedBalance` etc.) + `ExchangeOverlap.generalCL`
 where its hypotheses apply (direct subset-kernel argument elsewhere —
 the roadmap's care note warns `generalCL_ns` assumes `k ≤ y`); (iii)
 **discharge Commander F3 A3 by instantiating at (99, 50, 50, 25)**.
-T2 transitivity at the (m-pile, x-marked) level and T3 physical↔
-membership projection remain in parallel.
+T2 is now complete at the (m-pile, x-marked) level
+(`markedFiberTransitive`); T3 (physical↔membership projection) remains
+in parallel.
