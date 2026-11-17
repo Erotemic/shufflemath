@@ -634,5 +634,44 @@ theorem pieceCount (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (k x y a : Nat)
       exact hxy hge
     rw [hEmpty, Finset.card_empty]
 
+
+/- `markedPileCards` ... (T4: pile/marked cards in x, m-x, r-x, N-m-r+x terms). -/
+theorem markedPileCards (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N)
+    (S : Membership N m) (x : Nat) (hx : x = (S.1 ∩ markedSet N r hr).card) :
+    (S.1 ∩ markedSet N r hr).card = x ∧
+    (S.1 \ markedSet N r hr).card = m - x ∧
+    ((Finset.univ \ S.1) ∩ markedSet N r hr).card = r - x ∧
+    ((Finset.univ \ S.1) \ markedSet N r hr).card = (N - m) - (r - x) := by
+  set M := markedSet N r hr
+  have hS1 : S.1.card = m := S.2
+  have hInt : (S.1 ∩ M).card = x := hx.symm
+  have hMcard : M.card = r := markedSet_card N r hr
+  have hInt3 : ((Finset.univ \ S.1) ∩ M).card = r - x := by
+    have hEq : (Finset.univ \ S.1) ∩ M = M \ S.1 := by
+      ext z
+      by_cases hzS : z ∈ S.1
+      · by_cases hzM : z ∈ M
+        · simp [Finset.mem_sdiff, Finset.mem_inter, hzS, hzM, Finset.mem_univ]
+        · simp [Finset.mem_sdiff, Finset.mem_inter, hzS, hzM, Finset.mem_univ]
+      · by_cases hzM : z ∈ M
+        · simp [Finset.mem_sdiff, Finset.mem_inter, hzS, hzM, Finset.mem_univ]
+        · simp [Finset.mem_sdiff, Finset.mem_inter, hzS, hzM, Finset.mem_univ]
+    rw [hEq, unmarkedCard N M S.1, hMcard]
+    rw [show (M ∩ S.1).card = (S.1 ∩ M).card from by rw [Finset.inter_comm]]
+    rw [hInt]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · -- (S.1 ∩ M).card = x
+    exact hx.symm
+  · -- (S.1 \ M).card = m - x
+    rw [unmarkedCard N S.1 M, hS1, hInt]
+  · -- ((univ \ S.1) ∩ M).card = r - x
+    exact hInt3
+  · -- ((univ \ S.1) \ M).card = (N-m) - (r-x)
+    have hUnivS : (Finset.univ \ S.1).card = N - m := by
+      rw [Finset.card_sdiff, Finset.inter_univ, Finset.card_univ, Fintype.card_fin, S.2]
+    rw [Finset.card_sdiff, hUnivS]
+    rw [show (M ∩ (Finset.univ \ S.1)).card = ((Finset.univ \ S.1) ∩ M).card from by rw [Finset.inter_comm]]
+    rw [hInt3]
+
 end FiniteDeck
 end Shufflemath
