@@ -1,6 +1,7 @@
 module
 public import Shufflemath.FiniteDeck.TwoPile
 public import Shufflemath.BernoulliLaplaceGeneral
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Finset.Prod
@@ -778,6 +779,75 @@ theorem yMoves_fiberCard (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
   ext p
   simp only [yMoves, Pa, Finset.mem_filter]
   tauto
+
+/- T4: card of a finite disjoint union: `#(s.biUnion t) = ∑ i ∈ s, #(t i)` when
+   the fibers `t i` are pairwise disjoint for `i ≠ j`. The general
+   `Finset.card_biUnion` asks for `Set.PairwiseDisjoint`, i.e. `∀ i ∈ s, ∀ j ∈
+   s, Disjoint (t i) (t j)` including the `i = j` case — too strong when the
+   fibers are nonempty. This inductive version only needs `i ≠ j`, which is
+   what the `Pa` fibers satisfy (a move has exactly one `(p.1 ∩ M).card`). -/
+theorem card_biUnion_pd {ι α : Type*} [DecidableEq ι] [DecidableEq α]
+    {s : Finset ι} {t : ι → Finset α}
+    (h : ∀ i j, i ≠ j → Disjoint (t i) (t j)) :
+    Finset.card (s.biUnion t) = Finset.sum s fun i => Finset.card (t i) := by
+  induction s using Finset.induction_on with
+  | empty =>
+      have hE : (∅ : Finset ι).biUnion t = ∅ := by
+        apply Finset.eq_empty_of_forall_notMem
+        intro x hx
+        rcases Finset.mem_biUnion.mp hx with ⟨a, ha, _⟩
+        exact Finset.notMem_empty a ha
+      rw [hE, Finset.card_empty, Finset.sum_empty]
+  | insert a s ha IH =>
+      have hU : (insert a s).biUnion t = t a ∪ s.biUnion t := by
+        ext x
+        constructor
+        · intro h
+          rcases Finset.mem_biUnion.mp h with ⟨a1, ha1, hx⟩
+          rw [Finset.mem_insert] at ha1
+          rcases ha1 with (heq | hm)
+          · subst a1
+            rw [Finset.mem_union]
+            exact Or.inl hx
+          · rw [Finset.mem_union]
+            exact Or.inr (Finset.mem_biUnion.mpr ⟨a1, hm, hx⟩)
+        · intro h
+          rw [Finset.mem_union] at h
+          rcases h with (hx | ha)
+          · exact Finset.mem_biUnion.mpr ⟨a, (Finset.mem_insert).mpr (Or.inl rfl), hx⟩
+          · rcases Finset.mem_biUnion.mp ha with ⟨a1, hm, hx⟩
+            exact Finset.mem_biUnion.mpr ⟨a1, (Finset.mem_insert).mpr (Or.inr hm), hx⟩
+      rw [hU]
+      have hDisj : Disjoint (t a) (s.biUnion t) := by
+        rw [Finset.disjoint_left]
+        intro p hp hcontra
+        rcases Finset.mem_biUnion.mp hcontra with ⟨j, hj, hzj⟩
+        have hne : j ≠ a := by
+          intro heq
+          exact ha (heq ▸ hj)
+        exact (Finset.disjoint_left.mp (h j a hne)) hzj hp
+      have hIntEmpty : t a ∩ s.biUnion t = ∅ := by
+        rw [← Finset.disjoint_iff_inter_eq_empty]
+        exact hDisj
+      have hIntZero : (t a ∩ s.biUnion t).card = 0 := by
+        rw [hIntEmpty, Finset.card_empty]
+      rw [Finset.sum_insert ha, IH.symm, ← Finset.card_union_add_card_inter, hIntZero, add_zero]
+
+/- T4: `#yMoves = Σ_{a ∈ 0..k} #Pa(a)` — the count-level transition formula's
+   left side: the moves landing at macro count `y` are partitioned, over
+   `a ∈ 0..k`, by how many marked cards they remove from `S` (the `Pa` are
+   disjoint by `Pa_disjoint`; their union is `yMoves` by `yMoves_biUnion`). -/
+theorem yMoves_card_eq_sum (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
+    (S : Membership N m) (x y : Nat) :
+    (yMoves N m r k hr S x y).card =
+      Finset.sum (Finset.Ico 0 (k + 1)) fun a => (Pa N m r k hr S x y a).card := by
+  have hBi : yMoves N m r k hr S x y =
+      Finset.biUnion (Finset.Ico 0 (k + 1)) fun a => Pa N m r k hr S x y a := by
+    rw [yMoves_biUnion]
+    ext p
+    simp only [Finset.mem_biUnion, Finset.mem_filter, Pa]
+    tauto
+  rw [hBi, card_biUnion_pd fun i j hij => Pa_disjoint N m r k hm hr S x y i j hij]
 
 end FiniteDeck
 end Shufflemath
