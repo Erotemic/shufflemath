@@ -185,6 +185,19 @@ attempts, but is no longer the recommended route.
 
 **Environment pre-step (once per fresh machine / clone):** `git submodule update --init submodules/aiq-lean-formalization-tools` then `python -m pip install -e submodules/aiq-lean-formalization-tools` (that submodule provides `leanq`/`aiq-lean`/`lake-build-report` **and** `scripts/setup-lake-cache.sh`); then `lake exe cache get`, and if the repo is a virtiofs share re-apply the local build cache with `sudo submodules/aiq-lean-formalization-tools/scripts/setup-lake-cache.sh --all` (the `.lake` bind mount does not survive a reboot). See the AGENTS.md "Lean tooling" + "Build cache" sections.
 
+**Known bind-mount gotcha (hit 2026-11-16):** the recorded cache
+`/var/cache/lake/shufflemath/owner` still holds `id=103:7870669`, but the live
+repo's `stat -c '%d:%i'` is now `104:7870669` — the **inode is unchanged**
+(`7870669`), only the virtiofs **device number** changed across a
+reboot/remount. Because the script keys its owner-marker on `device:inode`,
+`setup-lake-cache.sh --all` will `die "cache ... belongs to another tree"`
+unless you pass `--force`. This is *not* a different repo adopting another
+repo's oleans (the inode proves it is the same tree) — so re-apply with
+`sudo .../setup-lake-cache.sh --all --force`, or just edit the `id=` line in
+/var/cache/lake/shufflemath/owner to `104:7870669` and re-run `--all`. Note the
+recorded cache's oleans date from Oct 3, so the first build after remounting
+will re-elaborate heavily before it goes incremental.
+
 Everything from the 2026-11-15 G1–G4 pivot down through the **G4 counting core
 and most of the T4 transition-formula infrastructure** is now **PROVEN AND
 COMMITTED**. Concrete completed set:
