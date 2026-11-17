@@ -1,6 +1,6 @@
 # Lean formalization roadmap (current)
 
-Status date: **2026-11-11**. This is the **single active mathematical task list**.
+Status date: **2026-11-17**. This is the **single active mathematical task list**.
 For a new agent, begin with [agent_handoff.md](agent_handoff.md). Historical
 phase notes are linked at the end; they do not override this plan. Read
 `AGENTS.md` before modifying code.
@@ -65,12 +65,20 @@ they do not establish the separate, still-open F1-F5 theorems.
 
 ## Current entry point
 
-**F1 is complete. Resume at F2c-iv-b** using
-[`f2_fiberlaw_unblock.md`](f2_fiberlaw_unblock.md). The preceding
-fiber/disintegration tranche compiles. For new Lean work, run `lake exe cache get` followed
-by the affected module's `lake build`; run `./dev/verify_next_phase.sh` when
-finishing a tranche. This is a regression workflow, not an extra gate on
-the existing results.
+**F1 and F2 are complete.** The active build is the **G1–G4 arbitrary-finite-
+deck generalization** (the 2026-11-15 pivot): the generic two-pile theory in
+`Shufflemath/FiniteDeck/*` (G1 `TwoPile`, G2 `Fiber`, G3 `SubsetExchange`,
+G4 `BLRefinement`), from which Commander A3 is a specialization. The G1–G4
+core and the T4 transition-formula infrastructure are complete through
+`yMoves_fiberCard`; the single next lemma is `card_biUnion_pd` (disjoint-union
+card), then `yMoves_card_eq_sum`, then the sum-to-`transitionNumerator`
+assembly. The exact resume point, proof skeleton, and blocker list are in
+[`agent_handoff.md`](agent_handoff.md) (45th-/44th-session notes); the campaign
+roadmap is
+[`planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md`](planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md).
+For new Lean work, run `lake exe cache get` followed by the affected module's
+`lake build`; run `./dev/verify_next_phase.sh` when finishing a tranche. This
+is a regression workflow, not an extra gate on the existing results.
 
 ## Work queue in dependency order
 
@@ -137,7 +145,7 @@ unproven counting assumptions. Existing `tests/test_commander_fiber_witness.py`
 provides exact numeric regression evidence, not a substitute for Lean.
 No need to change the already verified BL certificates.
 
-### F2. Define the concrete membership and perfect-local kernels
+### F2. Define the concrete membership and perfect-local kernels -- COMPLETE
 
 **Dependency:** The compiled `CommanderPermutation` and fiber/disintegration
 foundations. F2 can develop independently of F1's arithmetic, but needs F1
@@ -198,6 +206,16 @@ route, not a theorem already in the tree.
 > kept as a record of the diagnosis but no longer reflects the open work.
 
 ### F3. Prove the 25-position physical-exchange membership law
+
+> **Route change (2026-11-15 pivot):** the route to item 3 (A3) is now the
+> **G1–G4 generic finite-deck theory** (see `docs/agent_handoff.md`,
+> 2026-11-15 pivot + 44th-session note), from which the 99-card A3 kernel
+> equality is a specialization at `(99,50,50,25)`. The 99-only A3 counting
+> (`commanderExchange25_countMass`) is documented below but parked pending the
+> generic route; it is not the next action. The 25th-session machinery
+> (`map_equiv_mass`, `distUniform_ofInvariantTransitive`,
+> `membershipFiber_card`, `membershipLift_count`, `commanderCountFiber_card`)
+> remains committed and usable.
 
 > **Progress (F3, 2026-11-12):** In `Shufflemath/CommanderPhysicalExchange`:
 > **(item 1, done)** the post-exchange left-pile membership `newLeftCards d L R`

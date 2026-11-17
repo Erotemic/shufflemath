@@ -1,5 +1,5 @@
 > ⚠️ **DO NOT STOP — READ FIRST (re-read after every compaction).**
-> **Autonomous build active until: Wed 2026-11-18 23:59:59 EST** (the user may
+> **Autonomous build active until: Wed 2026-11-24 23:59:59 EST** (the user may
 > extend this — if a later dated note gives a later date, that one wins).
 > **Do not stop, ask, or end the session before that deadline.** Compaction is
 > NOT a stopping signal. Never emit a "session summary" / "state of the world"
@@ -15,7 +15,12 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-16 (44th session — G4 counting core + T4 transition-formula infrastructure through `yMoves_fiberCard`; resume at `card_biUnion_pd`. The **"Exactly where to resume"** section's 44th-session note is the current state; the older 29th-session text below is history.) The 2026-11-15
+**Updated:** 2026-11-17 (45th session — new agent on a new AIVM VM; environment
+bootstrap complete and the 10-module targeted build confirmed green. **Deadline
+extended to Wed 2026-11-24 23:59:59 EST at the user's request** (banner, rule 1,
+and `AGENTS.md` updated). A new `setup-lake-cache.sh` chown gotcha was hit and is
+recorded in the 45th-session note below. Resume point unchanged: `card_biUnion_pd`
+in `Shufflemath/FiniteDeck/BLRefinement.lean`.) The 2026-11-15
 review + arbitrary-finite-deck roadmap pivoted the build to the **G1–G4
 generic finite-deck theory**, from which Commander A3 is a specialization.
 **Done:** P0/Commit A (native_decide → `.symm`); **G1** complete
@@ -64,9 +69,10 @@ priority; `AGENTS.md` governs repository behavior.
 
 ## Standing rules for the agent reading this document (non-negotiable)
 
-1. **Do not stop, ask, or end the session before Wed Nov 18 23:59:59 EST 2026.**
-   (Deadline extended from the original Thu Nov 12 22:27:06 EST at the
-   user's request on the Nov 12 session.) This is a long autonomous build.
+1. **Do not stop, ask, or end the session before Wed Nov 24 23:59:59 EST 2026.**
+   (Deadline extended at the user's request: originally Thu Nov 12 22:27:06
+   EST, then Wed Nov 18 23:59:59 EST, now Wed Nov 24 23:59:59 EST — the latest
+   extension was given on the Nov 17 session.) This is a long autonomous build.
    You **will be compacted multiple times**; compaction is normal and is not
    a stopping signal.
    **"Do not stop" includes never presenting a status.** A "session summary",
@@ -181,7 +187,40 @@ attempts, but is no longer the recommended route.
 
 ## Exactly where to resume
 
-### 44th session (2026-11-16) — **CURRENT RESUME POINT** (read this first; supersedes the 2026-11-15 pivot text below)
+### 45th session (2026-11-17) — **CURRENT RESUME POINT** (read this first; the 44th-session note below is the detailed state — its blocker list stays in force)
+
+New agent, new AIVM VM, **deadline extended to Wed 2026-11-24 23:59:59 EST**
+at the user's request (banner + rule 1 updated; `AGENTS.md` and
+`docs/lean_plan.md` re-pointed at the G1–G4 campaign). Environment bootstrap
+done and verified:
+
+- `git submodule` already checked out; `leanq`/`aiq-lean`/`lake-build-report`
+  **reinstalled from this repo's** `submodules/aiq-lean-formalization-tools`
+  (the pre-existing editable install pointed at *another* repo's checkout;
+  note `python` is absent on this VM — use `python3 -m pip install -e …
+  --break-system-packages`, PEP 668).
+- `.lake` bind-mounted to `/var/cache/lake/shufflemath/.lake` (this machine had
+  **no** shufflemath cache — the Oct-3 one is gone; first build is cold).
+- `lake exe cache get` fetched the public mathlib4 cache (3 files / 8908
+  oleans; 3 private shufflemath files 404 — expected).
+- The 10-module targeted build from `AGENTS.md` is **green** (3214 jobs).
+
+**New bind-mount gotcha (hit 2026-11-17):** running
+`sudo submodules/…/setup-lake-cache.sh …` makes the script's internal
+`sudo chown "$(id -u):$(id -g)"` evaluate `id` in the *sudo* context (→
+`0:0`), so `/var/cache/lake/<repo>/.lake` is left `root:root 755` and `lake`
+dies with `permission denied … .lake/config`. The owner marker is written
+correctly either way. **Fix:** run the script **without the leading `sudo`**
+(it sudo's `mkdir`/`chown`/`mount` internally, and `$(id -u)` then evaluates
+as the calling user) — use that form for the post-reboot `--all` re-apply too
+(plus `--force` if the device-number-changed gotcha below also bites). One-off
+repair if already bit: `sudo chown -R $(id -u):$(id -g) /var/cache/lake/<repo>`.
+
+**Resume point unchanged: `card_biUnion_pd`** (the 44th-session note below:
+statement, proof skeleton, and the 7 recorded blockers), then
+`yMoves_card_eq_sum`, then the T4 sum-to-`transitionNumerator` assembly.
+
+### 44th session (2026-11-16) — prior detailed state (its 7 blocker notes remain the reference for `card_biUnion_pd`)
 
 **Environment pre-step (once per fresh machine / clone):** `git submodule update --init submodules/aiq-lean-formalization-tools` then `python -m pip install -e submodules/aiq-lean-formalization-tools` (that submodule provides `leanq`/`aiq-lean`/`lake-build-report` **and** `scripts/setup-lake-cache.sh`); then `lake exe cache get`, and if the repo is a virtiofs share re-apply the local build cache with `sudo submodules/aiq-lean-formalization-tools/scripts/setup-lake-cache.sh --all` (the `.lake` bind mount does not survive a reboot). See the AGENTS.md "Lean tooling" + "Build cache" sections.
 
@@ -197,6 +236,11 @@ repo's oleans (the inode proves it is the same tree) — so re-apply with
 /var/cache/lake/shufflemath/owner to `104:7870669` and re-run `--all`. Note the
 recorded cache's oleans date from Oct 3, so the first build after remounting
 will re-elaborate heavily before it goes incremental.
+**Sister gotcha (2026-11-17, the chown one):** invoke the script *without the
+leading `sudo`* — under a leading `sudo`, its internal
+`sudo chown "$(id -u):$(id -g)"` evaluates `id` as root and leaves the cache
+`root:root`, breaking `lake` with `permission denied .lake/config`. See the
+45th-session note in "Exactly where to resume".
 
 Everything from the 2026-11-15 G1–G4 pivot down through the **G4 counting core
 and most of the T4 transition-formula infrastructure** is now **PROVEN AND

@@ -13,12 +13,14 @@ formalization (library `Shufflemath`).
 
 - **Active status and work queue:** `docs/lean_plan.md`.
 - **Current single next action and proof acceptance criteria:**
-  `docs/agent_handoff.md`. For the current F2 blocker, see
-  `docs/f2_fiberlaw_unblock.md`.
+  `docs/agent_handoff.md` (the active build is the **G1–G4 arbitrary-finite-
+  deck generalization**, per the 2026-11-15 pivot; its resume point is
+  `card_biUnion_pd`). F1 and F2 are complete.
 - **Active do-not-stop rule:** `docs/agent_handoff.md` contains a
   **Standing rules** section (the revived October autonomous-build protocol)
-  that is **active until Wed Nov 18 23:59:59 EST 2026** (extended from the
-  original Thu Nov 12 22:27:06 EST at the user's request): do not stop, ask,
+  that is **active until Wed Nov 24 23:59:59 EST 2026** (extended from the
+  original Thu Nov 12 22:27:06 EST, then to Wed Nov 18, and now to Wed Nov 24,
+  each at the user's request): do not stop, ask,
   or
   end the session before then; compaction is not a stopping signal; its
   compaction-resume protocol, small-batch commit gates, and stuck protocol are
