@@ -544,5 +544,95 @@ theorem filterCardProduct (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (k a b : N
   simp only [Finset.mem_filter, Finset.mem_product]
   tauto
 
+
+/- `pieceCount` ... (T4 counting core: one reachable-move summand). -/
+theorem pieceCount (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (k x y a : Nat)
+    (ha : a ≤ k) (S : Membership N m)
+    (hx : x = (S.1 ∩ markedSet N r hr).card) :
+    ((reachMoves N m k S).filter
+      (fun p : Finset (Fin N) × Finset (Fin N) =>
+        (p.1 ∩ markedSet N r hr).card = a ∧ x - (p.1 ∩ markedSet N r hr).card + (p.2 ∩ markedSet N r hr).card = y)).card =
+      if x - a ≤ y then
+        if y - (x - a) ≤ k then
+          Nat.choose (S.1 ∩ markedSet N r hr).card a *
+            Nat.choose (S.1 \ markedSet N r hr).card (k - a) *
+            Nat.choose ((Finset.univ \ S.1) ∩ markedSet N r hr).card (y - (x - a)) *
+            Nat.choose ((Finset.univ \ S.1) \ markedSet N r hr).card (k - (y - (x - a)))
+        else 0
+      else 0 := by
+  set M := markedSet N r hr
+  set C := reachMoves N m k S
+  set b := y - (x - a)
+  set Pa := (C).filter (fun p : Finset (Fin N) × Finset (Fin N) =>
+      (p.1 ∩ M).card = a ∧ x - (p.1 ∩ M).card + (p.2 ∩ M).card = y)
+  split_ifs with hxy hby
+  · -- valid (a,b): land at b; project the product, count via countAB
+    have hPred : Pa = (C).filter (fun p : Finset (Fin N) × Finset (Fin N) =>
+        (p.1 ∩ M).card = a ∧ (p.2 ∩ M).card = b) := by
+      ext p
+      by_cases hmem : p ∈ C
+      · rw [Finset.mem_filter, Finset.mem_filter] at *
+        simp only [hmem]
+        by_cases ha2 : (p.1 ∩ M).card = a
+        · rw [ha2]
+          have hL : x - a + (p.2 ∩ M).card = y ↔ (p.2 ∩ M).card = b := by
+            constructor
+            · intro h; omega
+            · intro h; omega
+          simpa [hL]
+        · simp only [ha2]
+          tauto
+      · rw [Finset.mem_filter, Finset.mem_filter] at *
+        simp only [hmem]
+        tauto
+    have hFilter : (C).filter (fun p : Finset (Fin N) × Finset (Fin N) =>
+        (p.1 ∩ M).card = a ∧ (p.2 ∩ M).card = b) =
+        (Finset.powersetCard k S.1).filter (fun A : Finset (Fin N) => (A ∩ M).card = a) ×ˢ
+          (Finset.powersetCard k (Finset.univ \ S.1)).filter (fun B : Finset (Fin N) => (B ∩ M).card = b) := by
+      dsimp only [C, reachMoves]
+      simpa using filterCardProduct N m r hm hr k a b S
+    rw [hPred, hFilter, countAB N m r hm hr k a b ha hby S]
+  · -- x-a ≤ y but b > k: (p.2∩M).card = b > k impossible for p ∈ C
+    have hEmpty : Pa = ∅ := by
+      apply Finset.eq_empty_of_forall_notMem
+      intro p hp
+      have hpA : p ∈ C ∧ (p.1 ∩ M).card = a ∧ x - (p.1 ∩ M).card + (p.2 ∩ M).card = y := by
+        simpa [Pa, Finset.mem_filter] using hp
+      have hA : (p.1 ∩ M).card = a := hpA.2.1
+      have hb : (p.2 ∩ M).card = b := by
+        have hland : x - (p.1 ∩ M).card + (p.2 ∩ M).card = y := by simpa [hA] using hpA.2.2
+        omega
+      have hpC : p ∈ Finset.powersetCard k S.1 ×ˢ Finset.powersetCard k (Finset.univ \ S.1) := by
+        simpa [C, reachMoves] using hpA.1
+      have hprod : p.1 ∈ Finset.powersetCard k S.1 ∧ p.2 ∈ Finset.powersetCard k (Finset.univ \ S.1) := by
+        simpa only [Finset.mem_product] using hpC
+      have hk : (p.2).card = k := by
+        have hf : p.2 ⊆ (Finset.univ \ S.1) ∧ (p.2).card = k := by
+          simpa only [Finset.mem_powersetCard] using hprod.2
+        exact hf.2
+      have hBle : (p.2 ∩ M).card ≤ k := by
+        have h1 : (p.2 ∩ M).card ≤ (p.2).card := by
+          apply Finset.card_le_card
+          intro z hz
+          exact (Finset.mem_inter.mp hz).1
+        simpa only [hk] using h1
+      rw [hb] at hBle
+      exact lt_irrefl b (lt_of_le_of_lt hBle (by omega : k < b))
+    rw [hEmpty, Finset.card_empty]
+  · -- x-a > y: x-(p.1∩M).card+(p.2∩M).card ≥ x-a > y, so Pa is empty
+    have hEmpty : Pa = ∅ := by
+      apply Finset.eq_empty_of_forall_notMem
+      intro p hp
+      have hpA : p ∈ C ∧ (p.1 ∩ M).card = a ∧ x - (p.1 ∩ M).card + (p.2 ∩ M).card = y := by
+        simpa [Pa, Finset.mem_filter] using hp
+      have hA : (p.1 ∩ M).card = a := hpA.2.1
+      have hland : x - (p.1 ∩ M).card + (p.2 ∩ M).card = y := by simpa [hA] using hpA.2.2
+      have hge : x - a ≤ y := by
+        have htmp : x - (p.1 ∩ M).card + (p.2 ∩ M).card ≥ x - a := by simpa [hA]
+        simp only [hland] at htmp
+        exact htmp
+      exact hxy hge
+    rw [hEmpty, Finset.card_empty]
+
 end FiniteDeck
 end Shufflemath
