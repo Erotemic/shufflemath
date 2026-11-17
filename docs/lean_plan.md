@@ -69,11 +69,13 @@ they do not establish the separate, still-open F1-F5 theorems.
 deck generalization** (the 2026-11-15 pivot): the generic two-pile theory in
 `Shufflemath/FiniteDeck/*` (G1 `TwoPile`, G2 `Fiber`, G3 `SubsetExchange`,
 G4 `BLRefinement`), from which Commander A3 is a specialization. The G1–G4
-core and the T4 transition-formula infrastructure are complete through
-`yMoves_fiberCard`; the single next lemma is `card_biUnion_pd` (disjoint-union
-card), then `yMoves_card_eq_sum`, then the sum-to-`transitionNumerator`
-assembly. The exact resume point, proof skeleton, and blocker list are in
-[`agent_handoff.md`](agent_handoff.md) (45th-/44th-session notes); the campaign
+core and the T4 transition-formula infrastructure are complete through the
+T4 *measure* half's count-fiber machinery (`countFiberMemb` card/equiv/nonempty
++ `uniformFiber_intertwines`, commit `19d964d`); the single next lemma is the
+`count : Membership → BLState` projection, then the Commander F3 A3 discharge
+by instantiation at `(99, 50, 50, 25)`. The exact resume point, proof skeleton,
+and blocker list are in
+[`agent_handoff.md`](agent_handoff.md) (47th-/46th-/45th-session notes); the campaign
 roadmap is
 [`planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md`](planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md).
 For new Lean work, run `lake exe cache get` followed by the affected module's

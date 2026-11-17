@@ -20,10 +20,15 @@ counting core is now COMPLETE**: `card_biUnion_pd` + `yMoves_card_eq_sum`
 (commit `ae26aed`) and the capstone `yMoves_card_eq_transitionNumerator`
 (`#yMoves = transitionNumerator N m r k x y`, commit `1cd40b0`) are in
 `Shufflemath/FiniteDeck/BLRefinement.lean`; 10-module build green. **Deadline
-Wed 2026-11-24 23:59:59 EST.** New resume point: the T4 *measure* half — the
-`count : Membership → BLState` projection, the uniform-fiber intertwining, and
-Commander F3 A3 discharge by instantiation at (99, 50, 50, 25). T2/T3/T5
-remain.) The 2026-11-15
+Wed 2026-11-24 23:59:59 EST.** **47th session: the T4 *measure* half's
+count-fiber machinery is now COMPLETE** — `countFiberMemb` (a `Finset` over
+`Membership`), `countFiberMemb_equiv` (marked/unmarked-split bijection),
+`countFiberMemb_card` (hypergeometric), `countFiberMemb_nonempty`,
+`yMoves_uniformOnFiber`, `fiberPushforward_count`, and the capstone
+`uniformFiber_intertwines` (commit `19d964d`). **New resume point: the
+`count : Membership → BLState` projection** (a pile maps to
+`⟨(S∩M).card, lo, hi⟩`), then the Commander F3 A3 discharge by instantiation at
+(99, 50, 50, 25). T2/T3/T5 remain.) The 2026-11-15
 review + arbitrary-finite-deck roadmap pivoted the build to the **G1–G4
 generic finite-deck theory**, from which Commander A3 is a specialization.
 **Done:** P0/Commit A (native_decide → `.symm`); **G1** complete
@@ -190,7 +195,25 @@ attempts, but is no longer the recommended route.
 
 ## Exactly where to resume
 
-### 45th session (2026-11-17) — **CURRENT RESUME POINT** (read this first; the 44th-session note below is the detailed state — its blocker list stays in force)
+### 47th session — **CURRENT RESUME POINT** (T4 measure-half count-fiber machinery committed, `19d964d`)
+
+The T4 *measure* half's count-fiber machinery is **DONE and committed**
+(`19d964d`, `Shufflemath/FiniteDeck/BLRefinement.lean`): `countFiberMemb` (the
+membership count-fiber as a `Finset`), `countFiberMemb_equiv` (the
+marked/unmarked-split bijection to the powerset-card product),
+`countFiberMemb_card` (hypergeometric fiber cardinality),
+`countFiberMemb_nonempty`, `yMoves_uniformOnFiber`, `fiberPushforward_count`,
+and the capstone `uniformFiber_intertwines` (fiber-uniform kernel = the
+`blExchange` pushforward). Targeted build green.
+
+**Next concrete action — the `count : Membership → BLState` projection:** map
+a pile `S : Membership N m` to `⟨(S∩markedSet N r hr).card, hLo, hHi⟩ :
+BLState N m r` with `hLo : blLo N m r ≤ (S∩M).card`, `hHi : (S∩M).card ≤
+blHi N m r`. Read `blLo`/`blHi` in `BernoulliLaplaceGeneral` first (the
+hypergeometric support bounds). This projection is what the A3 discharge
+instantiates at `(99, 50, 50, 25)`.
+
+### 45th session (2026-11-17) — prior resume point (bootstrap notes below stay in force for this VM)
 
 New agent, new AIVM VM, **deadline extended to Wed 2026-11-24 23:59:59 EST**
 at the user's request (banner + rule 1 updated; `AGENTS.md` and
