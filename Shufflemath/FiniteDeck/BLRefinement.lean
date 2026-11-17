@@ -745,5 +745,28 @@ theorem yMoves_biUnion (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
     simp only [hland, and_false]
     tauto
 
+
+/- T4: `Pa(a)` (moves removing exactly a marked cards, landing at y) + `Pa_disjoint` -/
+def Pa (N m r k : Nat) (hr : r ≤ N) (S : Membership N m) (x y a : Nat) :
+    Finset (Finset (Fin N) × Finset (Fin N)) :=
+  (reachMoves N m k S).filter
+    (fun p : Finset (Fin N) × Finset (Fin N) =>
+      (p.1 ∩ markedSet N r hr).card = a ∧
+        x - (p.1 ∩ markedSet N r hr).card + (p.2 ∩ markedSet N r hr).card = y)
+
+/- Two `Pa a` with different `a` are disjoint (a move has exactly one value of
+   `(p.1 ∩ M).card`). -/
+theorem Pa_disjoint (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
+    (S : Membership N m) (x y : Nat) (a b : Nat) (hab : a ≠ b) :
+    Disjoint (Pa N m r k hr S x y a) (Pa N m r k hr S x y b) := by
+  rw [Finset.disjoint_iff_inter_eq_empty]
+  apply Finset.eq_empty_of_forall_notMem
+  intro p hp
+  have hpa : p ∈ Pa N m r k hr S x y a := (Finset.mem_inter.mp hp).1
+  have hpb : p ∈ Pa N m r k hr S x y b := (Finset.mem_inter.mp hp).2
+  have hA : (p.1 ∩ markedSet N r hr).card = a := (Finset.mem_filter.mp hpa).2.1
+  have hB : (p.1 ∩ markedSet N r hr).card = b := (Finset.mem_filter.mp hpb).2.1
+  exact hab (hA.symm.trans hB)
+
 end FiniteDeck
 end Shufflemath
