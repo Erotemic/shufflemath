@@ -673,5 +673,77 @@ theorem markedPileCards (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N)
     rw [show (M ∩ (Finset.univ \ S.1)).card = ((Finset.univ \ S.1) ∩ M).card from by rw [Finset.inter_comm]]
     rw [hInt3]
 
+
+/- T4: `yMoves` (reachable moves landing at macro count `y`) + `yMoves_biUnion`
+   (the disjoint union over `a` of the per-`a` landing moves). -/
+def yMoves (N m r k : Nat) (hr : r ≤ N) (S : Membership N m) (x y : Nat) :
+    Finset (Finset (Fin N) × Finset (Fin N)) :=
+  (reachMoves N m k S).filter
+    (fun p : Finset (Fin N) × Finset (Fin N) =>
+      x - (p.1 ∩ markedSet N r hr).card + (p.2 ∩ markedSet N r hr).card = y)
+
+/- `yMoves` is the union, over `a ∈ 0..k`, of the moves that remove exactly
+   `a` marked cards from `S` and land at `y`. -/
+theorem yMoves_biUnion (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
+    (S : Membership N m) (x y : Nat) :
+    yMoves N m r k hr S x y =
+      Finset.biUnion (Finset.Ico 0 (k + 1))
+        (fun a => (reachMoves N m k S).filter
+          (fun p : Finset (Fin N) × Finset (Fin N) =>
+            (p.1 ∩ markedSet N r hr).card = a ∧
+              x - (p.1 ∩ markedSet N r hr).card + (p.2 ∩ markedSet N r hr).card = y)) := by
+  ext p
+  have hL : p ∈ yMoves N m r k hr S x y ↔ p ∈ reachMoves N m k S ∧ x - (p.1 ∩ markedSet N r hr).card + (p.2 ∩ markedSet N r hr).card = y := by
+    constructor
+    · intro hp
+      rcases Finset.mem_filter.mp hp with ⟨hC, hland2⟩
+      refine ⟨hC, ?_⟩
+      simpa using hland2
+    · intro h
+      apply Finset.mem_filter.mpr
+      have hland3 : x - (p.1 ∩ markedSet N r hr).card + (p.2 ∩ markedSet N r hr).card = y := by
+        simpa using h.2
+      exact ⟨h.1, hland3⟩
+  have hR : p ∈ Finset.biUnion (Finset.Ico 0 (k + 1))
+        (fun a => (reachMoves N m k S).filter
+          (fun p : Finset (Fin N) × Finset (Fin N) =>
+            (p.1 ∩ markedSet N r hr).card = a ∧ x - (p.1 ∩ markedSet N r hr).card + (p.2 ∩ markedSet N r hr).card = y)) ↔
+      ∃ a ∈ Finset.Ico 0 (k + 1), p ∈ reachMoves N m k S ∧
+        (p.1 ∩ markedSet N r hr).card = a ∧ x - (p.1 ∩ markedSet N r hr).card + (p.2 ∩ markedSet N r hr).card = y := by
+    simp only [Finset.mem_biUnion, Finset.mem_filter, Finset.mem_Ico]
+  rw [hL, hR]
+  by_cases hland : x - (p.1 ∩ markedSet N r hr).card + (p.2 ∩ markedSet N r hr).card = y
+  · by_cases hC : p ∈ reachMoves N m k S
+    · -- in the product and lands at y: index by a = (p.1∩M).card (≤ k)
+      simp only [hland, hC, and_true]
+      constructor
+      · -- True → ∃ a ∈ Ico 0 (k+1), (p.1∩M).card = a
+        intro _
+        use (p.1 ∩ markedSet N r hr).card
+        have hfC : p.1 ∈ Finset.powersetCard k S.1 ∧
+            p.2 ∈ Finset.powersetCard k (Finset.univ \ S.1) := by
+          simpa only [reachMoves, Finset.mem_product] using hC
+        have hf1 : p.1 ⊆ S.1 ∧ (p.1).card = k := by
+          simpa only [Finset.mem_powersetCard] using hfC.1
+        have hcard : (p.1).card = k := hf1.2
+        have hsub : (p.1 ∩ markedSet N r hr) ⊆ (p.1) := by
+          intro z hz
+          exact (Finset.mem_inter.mp hz).1
+        have hle : (p.1 ∩ markedSet N r hr).card ≤ k := by
+          calc
+            (p.1 ∩ markedSet N r hr).card ≤ (p.1).card := Finset.card_le_card hsub
+            _ = k := hcard
+        simp only [Finset.mem_Ico, and_true]
+        exact ⟨Nat.zero_le _, by omega⟩
+      · -- ∃ ... → True
+        intro _
+        trivial
+    · -- not in the product: both sides false
+      simp only [hland, hC, and_false]
+      tauto
+  · -- does not land at y: both sides false
+    simp only [hland, and_false]
+    tauto
+
 end FiniteDeck
 end Shufflemath
