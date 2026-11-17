@@ -15,7 +15,7 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-15 (autonomous session; 29th session — `fibTransitive` proven). The 2026-11-15
+**Updated:** 2026-11-16 (44th session — G4 counting core + T4 transition-formula infrastructure through `yMoves_fiberCard`; resume at `card_biUnion_pd`. The **"Exactly where to resume"** section's 44th-session note is the current state; the older 29th-session text below is history.) The 2026-11-15
 review + arbitrary-finite-deck roadmap pivoted the build to the **G1–G4
 generic finite-deck theory**, from which Commander A3 is a specialization.
 **Done:** P0/Commit A (native_decide → `.symm`); **G1** complete
@@ -180,6 +180,100 @@ attempts, but is no longer the recommended route.
 `Shufflemath.CommanderPhysicalExchange`; retain them when extending the script.
 
 ## Exactly where to resume
+
+### 44th session (2026-11-16) — **CURRENT RESUME POINT** (read this first; supersedes the 2026-11-15 pivot text below)
+
+Everything from the 2026-11-15 G1–G4 pivot down through the **G4 counting core
+and most of the T4 transition-formula infrastructure** is now **PROVEN AND
+COMMITTED**. Concrete completed set:
+
+- **G1** `FiniteDeck/TwoPile`, **G2/T1** `FiniteDeck/Fiber` (`fiberCount` capstone done),
+  **G3/T3** `FiniteDeck/SubsetExchange` (`subsetExchangeCount`, kernel + symmetry +
+  row/col-one + stationarity, `subsetExchangeKernel_equivariant`), **G4** `FiniteDeck/BLRefinement`.
+- **BLRefinement (G4/T4) now contains**, all committed: `markedSet`, `markedComp`,
+  `countFiber`(+`_card`,`_blStationary`), `powersetCard_markedSplit`(+3 helpers),
+  `permFinsetTransitive`, `countFiber_transitive`, `countInPile`(transparent),
+  `countAB`, **`filterProduct`**, **`reachMoves`**, **`filterCardProduct`**,
+  **`pieceCount`** (one reachable-move summand = 4-factor choose product, 0 in the
+  guard-failure regimes), **`markedPileCards`** (`(S∩M).card=x`, `(S\M).card=m-x`,
+  `((univ\S)∩M).card=r-x`, `((univ\S)\M).card=(N-m)-(r-x)`), **`yMoves`** (moves
+  landing at macro count `y`), **`yMoves_biUnion`** (`yMoves = ⋃_{a∈0..k} Pa(a)`),
+  **`Pa`** (moves removing exactly `a` marked, landing at `y`), **`Pa_disjoint`**
+  (distinct `a` ⇒ disjoint), **`yMoves_fiberCard`** (filtering `yMoves` on
+  `(p.1∩M).card=a` gives `Pa(a)`).
+
+**The single next lemma: `card_biUnion_pd`** — a general *disjoint-union card*
+lemma, then `yMoves_card_eq_sum` (`#yMoves = Σ_{a∈0..k} #Pa(a)`). `card_biUnion_pd`:
+```
+theorem card_biUnion_pd [DecidableEq ι] [DecidableEq α] {s : Finset ι} {t : ι → Finset α}
+    (h : ∀ i j, i ≠ j → Disjoint (t i) (t j)) :
+    Finset.card (s.biUnion t) = Finset.sum s (fun i => Finset.card (t i)) := by
+  induction s using Finset.induction_on
+```
+Then `yMoves_card_eq_sum` = `yMoves_biUnion` (so `#yMoves = #biUnion (Ico 0 (k+1)) Pa`)
++ `card_biUnion_pd` with `h = Pa_disjoint`. That yields the count-level transition
+formula's left side; summing `pieceCount` over `a` and matching to
+`transitionNumerator` (via `markedPileCards`) completes T4.
+
+**Blockers already hit (do NOT rediscover) while writing `card_biUnion_pd`:**
+1. The `Finset.induction_on` nonempty case is named **`insert`** (not `ins`).
+2. There is **no `Finset.bind_empty` / `Finset.biUnion_empty`** simp lemma — the
+   empty case `#(∅.biUnion t) = 0` did not close with
+   `simp only [Finset.biUnion, Finset.bind_empty, Finset.card_empty, Finset.sum_empty]`
+   (left `∅.val.bind ….toFinset.card = 0` open). Try proving `(∅.biUnion t) = ∅` by
+   `ext`/`simp [Finset.mem_biUnion]` first, or add `haveI := Classical.decEq ι` and
+   retry, or avoid induction and instead prove `#yMoves = Σ #Pa` directly via
+   `yMoves_fiberCard` + a fiber-count sum.
+3. The **`#` notation does not accept `#(t i)`** (an application) — it fails with
+   "unexpected token '#'". Write **`Finset.card (t i)`** explicitly everywhere.
+4. The induction needs `[DecidableEq ι]`; an unsolved `DecidableEq ι` goal appears
+   otherwise.
+5. There is **no `Finset.biUnion_insert`**; prove
+   `(insert i s).biUnion t = t i ∪ s.biUnion t` by
+   `ext x; simp only [Finset.mem_biUnion, Finset.mem_insert, Finset.mem_union]; tauto`.
+6. Disjointness of `t i` from `s.biUnion t`:
+   `rintro x hx ⟨j, hj, hzj⟩; exact h i j (Ne.ofMem hmem hj) hx hzj` (with
+   `hmem : i ∉ s`).
+7. Disjoint-union card: `Finset.card_union_add_card_inter (a b) : #a + #b = #(a∪b) +
+   #(a∩b)`; with `#(a∩b)=0` (via `Finset.card_eq_zero` +
+   `Finset.disjoint_iff_inter_eq_empty` + the `Disjoint`) close the `a∪b`/`a`/`b`
+   goal by `omega`.
+
+**Alternative (if induction keeps fighting):** `Finset.card_biUnion_le` exists (no
+disjointness) for the `≤` direction; the reverse `≥` follows because `yMoves ⊆
+⋃ Pa` with the `Pa` covering `yMoves` exactly (`yMoves_biUnion`), so
+`#yMoves = #biUnion Pa ≤ Σ #Pa`, and `yMoves_fiberCard` gives equality of each
+fiber — but the induction is the cleaner single lemma.
+
+**Key API gotchas confirmed this session (44th):**
+- `Finset.card_biUnion [DecidableEq M] {t : ι → Finset M} (h : (s : Set ι).PairwiseDisjoint t) :
+  #s.biUnion t = Σ u ∈ s, #t u` — the hypothesis is a **`Set.PairwiseDisjoint`**, and
+  `Set.Pairwise s r` for a binary `r` is `∀ i ∈ s, ∀ j ∈ s, r i j` (**all** pairs, the
+  `i=j` case included), so `PairwiseDisjoint` for *nonempty* fibers is too strong to
+  prove directly — that is exactly why the `∀ i ≠ j, Disjoint` induction route above is
+  preferred over `Finset.card_biUnion`.
+- `Finset.card_eq_sum_card_fiberwise [DecidableEq M] {f : ι → M} {s : Finset ι}
+  {t : Finset M} (H : (s : Set ι).MapsTo f t) : #s = Σ b ∈ t, #{a ∈ s | f a = b}` —
+  the `#{a ∈ s | …}` **set-comprehension-card** notation did **not** parse in a scratch
+  (`# {` vs `#{`); if you use this lemma you must bridge that fiber notation to
+  `#(s.filter …)` (via `yMoves_fiberCard`) rather than write `#{}` yourself.
+- `Finset.mem_inter` / `Finset.mem_sdiff` / `Finset.mem_union` leave **opaque
+  `Quot.lift`** membership; destructure only with `rw [Finset.mem_…]` then `rcases`
+  the resulting `∧`, or use `simp only [Finset.mem_filter, Finset.mem_product]` +
+  `tauto` for product-filter equalities.
+- The **`×˓`** (Finset product) character is U+00D7 U+02E2; in **type annotations**
+  (lambda `fun p : Finset (Fin N) × Finset (Fin N)`) use plain `×` (U+00D7 only),
+  while in **expression** positions it is `×˓`. Heredoc scripts can emit the wrong
+  second codepoint — verify with `cat -A`.
+- `set M := …` (a local `def`) is **opaque** to `rw`/`simp` pattern-matching: a goal
+  written with `markedSet N r hr` will not match a hypothesis written with the local
+  `M`. When a lemma's statement must textually match a theorem's, **inline the full
+  `markedSet N r hr`** in every predicate instead of a `set`.
+
+**Working-tree state at handoff:** clean (last commits `26b1f3b` removed an orphaned
+scratch, `5b84ee9` = `yMoves_fiberCard`). Full library `lake build Shufflemath`
+green (3205 jobs); `./dev/verify_next_phase.sh` 37/37.
+
 
 ### 2026-11-15 strategic pivot — resume here first (supersedes the A3-only queue)
 
