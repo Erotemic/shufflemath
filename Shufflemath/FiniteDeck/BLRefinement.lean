@@ -768,5 +768,16 @@ theorem Pa_disjoint (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
   have hB : (p.1 ∩ markedSet N r hr).card = b := (Finset.mem_filter.mp hpb).2.1
   exact hab (hA.symm.trans hB)
 
+
+/- T4: filtering yMoves on (p.1∩M).card = a gives Pa(a). -/
+theorem yMoves_fiberCard (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
+    (S : Membership N m) (x y a : Nat) :
+    (yMoves N m r k hr S x y).filter
+      (fun p : Finset (Fin N) × Finset (Fin N) => (p.1 ∩ markedSet N r hr).card = a) =
+      Pa N m r k hr S x y a := by
+  ext p
+  simp only [yMoves, Pa, Finset.mem_filter]
+  tauto
+
 end FiniteDeck
 end Shufflemath
