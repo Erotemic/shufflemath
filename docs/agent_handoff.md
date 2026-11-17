@@ -183,6 +183,8 @@ attempts, but is no longer the recommended route.
 
 ### 44th session (2026-11-16) — **CURRENT RESUME POINT** (read this first; supersedes the 2026-11-15 pivot text below)
 
+**Environment pre-step (once per fresh machine / clone):** `git submodule update --init submodules/aiq-lean-formalization-tools` then `python -m pip install -e submodules/aiq-lean-formalization-tools` (that submodule provides `leanq`/`aiq-lean`/`lake-build-report` **and** `scripts/setup-lake-cache.sh`); then `lake exe cache get`, and if the repo is a virtiofs share re-apply the local build cache with `sudo submodules/aiq-lean-formalization-tools/scripts/setup-lake-cache.sh --all` (the `.lake` bind mount does not survive a reboot). See the AGENTS.md "Lean tooling" + "Build cache" sections.
+
 Everything from the 2026-11-15 G1–G4 pivot down through the **G4 counting core
 and most of the T4 transition-formula infrastructure** is now **PROVEN AND
 COMMITTED**. Concrete completed set:

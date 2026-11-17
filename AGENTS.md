@@ -114,11 +114,19 @@ file (no `module`).
 
 ## Lean tooling (`submodules/aiq-lean-formalization-tools`)
 
-The shared Lean formalization tooling lives in the
-`submodules/aiq-lean-formalization-tools` submodule. After cloning, install
-it once into the active Python environment:
+The shared Lean formalization tooling (`leanq`, `aiq-lean`,
+`lake-build-report`, and the `scripts/setup-lake-cache.sh` build-cache
+helper) all come from the `submodules/aiq-lean-formalization-tools`
+submodule, which is **committed in this repo** (a gitlink; see
+`.gitmodules`). You do not need to add it or vendor any copy separately.
+
+**Fresh clone / new agent — run once, in this order.** `git clone` does not
+check out the submodule, and the console commands are not on `PATH` until the
+editable install is run, so a brand-new checkout needs both lines (the
+`pip install -e` alone fails on the empty submodule dir):
 
 ```bash
+git submodule update --init submodules/aiq-lean-formalization-tools
 python -m pip install -e submodules/aiq-lean-formalization-tools
 ```
 
