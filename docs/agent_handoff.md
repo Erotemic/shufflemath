@@ -15,12 +15,15 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-17 (45th session — new agent on a new AIVM VM; environment
-bootstrap complete and the 10-module targeted build confirmed green. **Deadline
-extended to Wed 2026-11-24 23:59:59 EST at the user's request** (banner, rule 1,
-and `AGENTS.md` updated). A new `setup-lake-cache.sh` chown gotcha was hit and is
-recorded in the 45th-session note below. Resume point unchanged: `card_biUnion_pd`
-in `Shufflemath/FiniteDeck/BLRefinement.lean`.) The 2026-11-15
+**Updated:** 2026-11-22 (46th session — resumed at the 45th's resume point; the **T4
+counting core is now COMPLETE**: `card_biUnion_pd` + `yMoves_card_eq_sum`
+(commit `ae26aed`) and the capstone `yMoves_card_eq_transitionNumerator`
+(`#yMoves = transitionNumerator N m r k x y`, commit `1cd40b0`) are in
+`Shufflemath/FiniteDeck/BLRefinement.lean`; 10-module build green. **Deadline
+Wed 2026-11-24 23:59:59 EST.** New resume point: the T4 *measure* half — the
+`count : Membership → BLState` projection, the uniform-fiber intertwining, and
+Commander F3 A3 discharge by instantiation at (99, 50, 50, 25). T2/T3/T5
+remain.) The 2026-11-15
 review + arbitrary-finite-deck roadmap pivoted the build to the **G1–G4
 generic finite-deck theory**, from which Commander A3 is a specialization.
 **Done:** P0/Commit A (native_decide → `.symm`); **G1** complete
@@ -1790,3 +1793,80 @@ bridge `List (Fin n) ↔ Equiv.Perm (Fin n)` (via `Equiv.ofPermList`, not `toMul
 lift the two per-pile `idealShuffle` riffles into a `Deck`-level kernel. See the
 "Next F4.2" note above.
 
+
+## 46th session (2026-11-22) — T4 counting core completed; new resume point
+
+Environment: clean AIVM VM (rebooted again since the 45th session — fresh
+device number). Re-registered the `.lake` bind mount with
+`scripts/setup-lake-cache.sh --all` (no `sudo` prefix; the script sudo's
+its own `mkdir`/`chown`/`mount` internally). The 45th-session's
+`sudo chown 42:53629361` fix for the owner-marker gotcha was still in
+effect. Reinstalled `aiq-lean-formalization-tools`
+(`python -m pip install -e submodules/aiq-lean-formalization-tools`) after
+`git submodule update --init`. `lake exe cache get` + full 10-module
+targeted build green at session start.
+
+### `card_biUnion_pd` + `yMoves_card_eq_sum` (commit `ae26aed`)
+
+- `card_biUnion_pd`: `#(s.biUnion t) = ∑ i ∈ s, #(t i)` for pairwise
+  disjoint range — the missing bridge between the F2 `fiberCard` machinery
+  and the T4 capstone. Proof: induction on `s`, union/insert bridges.
+- `yMoves_card_eq_sum`: `#(yMoves N m r k hr S x y) = ∑ a ∈ Ico 0 (k+1),
+  #(Pa N m r k hr S x y a)`.
+
+New-Mathlib gotchas (this build, all worked around, none blocked):
+1. `Finset.Disjoint` is the **lattice** definition
+   (`∀ ⦃a⦄, a ≤ s → a ≤ t → a ≤ ⊥`); use `Finset.disjoint_left` for the
+   element-level form.
+2. Membership in `s ∪ t`, `insert a s`, and `s.biUnion t` is an **opaque
+   `Quot.lift`** — `rcases`/`cases` produce unsolvable goals. Bridge with
+   `Finset.mem_union`, `Finset.mem_insert`, `Finset.mem_biUnion`.
+3. `Ne.ofMem` is gone; `not_mem_empty` is `Finset.notMem_empty`
+   (capital M); `tauto` does not split `∃`-over-disjunction; a trailing
+   `rfl` after a goal-closing `rw` is an error (drop it).
+
+### T4 capstone (commit `1cd40b0`)
+
+- `transitionTerm (N m r k x y a : Nat) : Nat` — the `a`-summand of
+  `BernoulliLaplaceGeneral.transitionNumerator N m r k x y`
+  (`x` = marked count at source, `y` = marked count at target,
+  `a` = marked removed from the `m`-pile; 4-factor `Nat.choose` product
+  with the two `if` guards).
+- `transitionNumerator_eq_sum_transitionTerm` — the definition's
+  `let`-bound body is definitionally the `transitionTerm` sum
+  (`dsimp` + `rfl`).
+- `Pa_card_eq_transitionTerm` — `(Pa … x y a).card = transitionTerm … x y a`:
+  `pieceCount`'s LHS **is** the `Pa` filter, and `markedPileCards` rewrites
+  the four binomial bases to `x / m-x / r-x / (N-m)-(r-x)`; the guards
+  match by construction.
+- **`yMoves_card_eq_transitionNumerator`** — `#yMoves = transitionNumerator
+  N m r k x y`: `yMoves_card_eq_sum` + `Finset.sum_congr` (with the
+  `Ico 0 (k+1) = range (k+1)` bridge) + the per-`a` equality. **No
+  admissibility regime needed** — `Nat.choose` saturation plus the
+  `if` guards already vanish on impossible regimes; the `overlap_count`
+  connection (`generalCL` / `generalCL_ns`) is separately available
+  under `m + r ≤ N` (and `k ≤ y` for `generalCL_ns`).
+
+Elaboration gotcha (this 4.34 build): a `by`-block mixing `rw`/`refine`
+over `Finset.sum_congr`'s dependent explicit arguments elaborated
+unreliably (spurious unsolved-`hm` cascade that no amount of argument
+reordering fixed); a **`calc` proof with direct theorem applications**
+(`sum_congr hIco (fun _ _ => rfl)`, `sum_congr rfl` + `intro`,
+`(…eq…symm)`) elaborates cleanly. Also: `Finset.mem_Ico` is **not** a
+simp lemma here (use `simp_rw [Finset.mem_Ico, Finset.mem_range]`), and
+`if_pos`/`if_neg` are deprecated for `ite_eq_left`/`ite_eq_right`.
+
+### Resume point
+
+The T4 **measure** half: (i) the `count : Membership → BLState`
+projection (check `BernoulliLaplaceGeneral` for the `BLState` type — it
+may already exist); (ii) the **uniform-fiber intertwining**
+`(uniform count-fiber membership) >> (subsetExchange) = (BL exchange) >>
+(uniform count-fiber membership)` in generic `N, m, r, k`, built from
+`yMoves_card_eq_transitionNumerator` + the `BernoulliLaplaceFiber`
+measure theory (`detailedBalance` etc.) + `ExchangeOverlap.generalCL`
+where its hypotheses apply (direct subset-kernel argument elsewhere —
+the roadmap's care note warns `generalCL_ns` assumes `k ≤ y`); (iii)
+**discharge Commander F3 A3 by instantiating at (99, 50, 50, 25)**.
+T2 transitivity at the (m-pile, x-marked) level and T3 physical↔
+membership projection remain in parallel.
