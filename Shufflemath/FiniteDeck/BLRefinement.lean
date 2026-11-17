@@ -1132,5 +1132,315 @@ theorem markedFiberTransitive (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (x : N
         exact ⟨a.1, a.2.1, by rw [hSUval (a.1) a.2.1 a.2.2, ha]⟩
   exact ⟨Equiv.ofBijective g hBij, hImgS, hImgM⟩
 
+/-! ## T4 measure half: count projection, count-fiber cardinality, fiber-uniformity
+
+The macrostate of a pile is its count of marked cards, as a `BLState`. The
+count-fiber over a macrostate has the hypergeometric cardinality, and the
+exchange count `#yMoves` is constant along a fiber: the counting form of the
+uniform-fiber-to-BL-kernel intertwining.
+-/ 
+
+/-- The macrostate of a pile: its number of marked (initially-left) cards,
+    with the admissibility bounds checked. -/
+noncomputable def countOf (N m r : Nat) (hr : r ≤ N) (S : Membership N m) :
+    BernoulliLaplaceGeneral.BLState N m r := by
+  let M := markedSet N r hr
+  set x := (S.1 ∩ M).card with hx
+  refine ⟨x, ?_, ?_⟩
+  · -- lo: x ≥ BernoulliLaplaceGeneral.blLo = max (r - (N - m)) 0
+    rw [BernoulliLaplaceGeneral.blLo]
+    refine max_le_iff.mpr ⟨?_, by omega⟩
+    by_cases hNmr : N - m ≤ r
+    · -- max = r - (N - m); show r - x ≤ N - m, i.e. x ≥ r - (N - m)
+      have hRsub : (M \ S.1).card = r - x := by
+        rw [Finset.card_sdiff, markedSet_card N r hr, hx]
+      have hSub : M \ S.1 ⊆ (Finset.univ : Finset (Fin N)) \ S.1 := by
+        intro a ha
+        rw [Finset.mem_sdiff] at ha ⊢
+        exact ⟨Finset.mem_univ a, ha.2⟩
+      have hUcard : ((Finset.univ : Finset (Fin N)) \ S.1).card = N - m := by
+        rw [Finset.card_sdiff_of_subset (Finset.subset_univ S.1),
+            Finset.card_univ, Fintype.card_fin, S.2]
+      have hCap : r - x ≤ N - m := by
+        calc
+          r - x = (M \ S.1).card := hRsub.symm
+          _ ≤ ((Finset.univ : Finset (Fin N)) \ S.1).card := Finset.card_le_card hSub
+          _ = N - m := hUcard
+      have hle : r ≤ x + (N - m) := by
+        rw [Nat.sub_le_iff_le_add] at hCap
+        simpa [Nat.add_comm] using hCap
+      rw [Nat.sub_le_iff_le_add]
+      exact hle
+    · -- r < N - m, so r - (N - m) = 0 ≤ x
+      rw [Nat.sub_eq_zero_of_le (Nat.le_of_lt (Nat.lt_of_not_ge hNmr))]
+      omega
+  · -- hi: x ≤ BernoulliLaplaceGeneral.blHi = min m r
+    rw [BernoulliLaplaceGeneral.blHi]
+    exact Nat.le_min.mpr ⟨
+      by
+        calc (S.1 ∩ markedSet N r hr).card ≤ (S.1).card :=
+              Finset.card_le_card (Finset.inter_subset_left : S.1 ∩ markedSet N r hr ⊆ S.1)
+          _ = m := S.2,
+      by
+        calc (S.1 ∩ markedSet N r hr).card ≤ (markedSet N r hr).card :=
+              Finset.card_le_card (Finset.inter_subset_right : S.1 ∩ markedSet N r hr ⊆ markedSet N r hr)
+          _ = r := markedSet_card N r hr⟩
+
+/-- The first projection of `countOf`: the marked-card count. -/
+@[simp] theorem countOf_val (N m r : Nat) (hr : r ≤ N) (S : Membership N m) :
+    (countOf N m r hr S).val = (S.1 ∩ markedSet N r hr).card := by
+  dsimp only [countOf]
+
+/-- The count-fiber over `Membership` (the G1 typed pile): the piles whose
+    macrostate is `x`. Distinct from the `pileSet`-based `countFiber` above:
+    this one is the fiber the measure-level intertwining sums over; the two
+    carry the same hypergeometric cardinality. -/
+def countFiberMemb (N m r : Nat) (hr : r ≤ N) (x : BernoulliLaplaceGeneral.BLState N m r) :
+    Finset (Membership N m) :=
+  (Finset.univ : Finset (Membership N m)).filter (fun S =>
+    (S.1 ∩ markedSet N r hr).card = x.val)
+
+/- The fiber is the set of marked-part/unmarked-part choices: a pile in the
+   fiber is (up to bijection) a pair (A, B) with A a size-`x` subset of the
+   marked set and B a size-`(m - x)` subset of the unmarked set. -/
+def countFiberMemb_equiv (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (x : BernoulliLaplaceGeneral.BLState N m r) :
+    ({S : Membership N m // (S.1 ∩ markedSet N r hr).card = x.val} : Type) ≃
+      {p : Finset (Fin N) × Finset (Fin N) //
+        p.1 ∈ (markedSet N r hr).powersetCard x.val ∧
+        p.2 ∈ (markedComp N r hr).powersetCard (m - x.val)} := by
+  let M := markedSet N r hr
+  let MC := markedComp N r hr
+  have hxm : x.val ≤ m := (Nat.le_min.mp x.2.2).1
+  have hDis : Disjoint M MC := markedDisjoint N r hr
+  have hMC : MC = (Finset.univ : Finset (Fin N)) \ M := rfl
+  have hMCempty : M ∩ MC = ∅ := Finset.disjoint_iff_inter_eq_empty.mp hDis
+  let f : {S : Membership N m // (S.1 ∩ M).card = x.val} →
+          {p : Finset (Fin N) × Finset (Fin N) //
+            p.1 ∈ M.powersetCard x.val ∧ p.2 ∈ MC.powersetCard (m - x.val)} :=
+    fun S =>
+      let sF : Finset (Fin N) := S.1
+      ⟨⟨sF ∩ M, sF \ M⟩, by
+        refine ⟨?_, ?_⟩
+        · rw [Finset.mem_powersetCard]
+          exact ⟨(Finset.inter_subset_right : sF ∩ M ⊆ M), S.2⟩
+        · rw [Finset.mem_powersetCard]
+          refine ⟨?_, ?_⟩
+          · intro a ha
+            rw [Finset.mem_sdiff] at ha
+            rw [hMC, Finset.mem_sdiff]
+            exact ⟨Finset.mem_univ a, ha.2⟩
+          · rw [unmarkedCard _ sF M, S.1.2, S.2]
+            ⟩
+  let g : {p : Finset (Fin N) × Finset (Fin N) //
+            p.1 ∈ M.powersetCard x.val ∧ p.2 ∈ MC.powersetCard (m - x.val)} →
+          {S : Membership N m // (S.1 ∩ M).card = x.val} :=
+    fun p =>
+      let A := p.1.1
+      let B := p.1.2
+      let hA := (Finset.mem_powersetCard.mp p.2.1 : A ⊆ M ∧ A.card = x.val)
+      let hB := (Finset.mem_powersetCard.mp p.2.2 : B ⊆ MC ∧ B.card = m - x.val)
+      let hDisAB : Disjoint A B := by
+        rw [Finset.disjoint_iff_inter_eq_empty]
+        ext a
+        rw [Finset.mem_inter]
+        constructor
+        · intro h
+          have hIn : a ∈ M ∩ MC :=
+            Finset.mem_inter.mpr ⟨hA.1 h.1, hB.1 h.2⟩
+          rw [hMCempty] at hIn
+          exact hIn
+        · intro h
+          cases h
+      let hCardAB : (A ∪ B).card = m := by
+        rw [Finset.card_union_of_disjoint hDisAB, hA.2, hB.2,
+            Nat.add_comm, Nat.sub_add_cancel hxm]
+      let hInter : (A ∪ B) ∩ M = A := by
+        ext a
+        simp only [Finset.mem_inter, Finset.mem_union]
+        constructor
+        · intro h
+          rcases h.1 with hA' | hB'
+          · exact hA'
+          · exfalso
+            have hIn : a ∈ M ∩ MC := Finset.mem_inter.mpr ⟨h.2, hB.1 hB'⟩
+            rw [hMCempty] at hIn
+            exact Finset.notMem_empty a hIn
+        · intro h
+          exact ⟨Or.inl h, hA.1 h⟩
+      let hSDiff : (A ∪ B) \ M = B := by
+        ext a
+        simp only [Finset.mem_sdiff, Finset.mem_union]
+        constructor
+        · intro h
+          rcases h.1 with hA' | hB'
+          · exfalso
+            exact h.2 (hA.1 hA')
+          · exact hB'
+        · intro hb
+          exact ⟨Or.inr hb, by
+            intro hM
+            have hIn : a ∈ M ∩ MC := Finset.mem_inter.mpr ⟨hM, hB.1 hb⟩
+            rw [hMCempty] at hIn
+            exact Finset.notMem_empty a hIn⟩
+      let hFiber : ((A ∪ B) ∩ M).card = x.val := by
+        rw [hInter, hA.2]
+      ⟨⟨A ∪ B, hCardAB⟩, hFiber⟩
+  refine Equiv.mk f g ?_ ?_
+  · -- g ∘ f = id: the split parts recombine to S.1 by markSplit
+    intro S
+    apply Subtype.ext
+    apply Subtype.ext
+    dsimp only [g, f]
+    exact (markSplit _ _ M).symm
+  · -- f ∘ g = id: the marked part of A ∪ B is A, the unmarked part is B
+    intro T
+    let A := T.1.1
+    let B := T.1.2
+    have hA : A ⊆ M := (Finset.mem_powersetCard.mp T.2.1).1
+    have hBMC : B ⊆ MC := (Finset.mem_powersetCard.mp T.2.2).1
+    have hInterT : (A ∪ B) ∩ M = A := by
+      ext a
+      simp only [Finset.mem_inter, Finset.mem_union]
+      refine ⟨fun h => ?_, fun h => ?_⟩
+      · rcases h.1 with hA' | hB'
+        · exact hA'
+        · exfalso
+          have hIn : a ∈ M ∩ MC := Finset.mem_inter.mpr ⟨h.2, hBMC hB'⟩
+          rw [hMCempty] at hIn
+          exact Finset.notMem_empty a hIn
+      · exact ⟨Or.inl h, hA h⟩
+    have hSDiffT : (A ∪ B) \ M = B := by
+      ext a
+      simp only [Finset.mem_sdiff, Finset.mem_union]
+      refine ⟨fun h => ?_, fun h => ?_⟩
+      · rcases h.1 with hA' | hB'
+        · exfalso
+          exact h.2 (hA hA')
+        · exact hB'
+      · have hNotM : a ∉ M := by
+          intro hM
+          have hIn : a ∈ M ∩ MC := Finset.mem_inter.mpr ⟨hM, hBMC h⟩
+          rw [hMCempty] at hIn
+          exact Finset.notMem_empty a hIn
+        exact ⟨Or.inr h, hNotM⟩
+    apply Subtype.ext
+    apply Prod.ext
+    · dsimp only [g, f]
+      exact hInterT
+    · dsimp only [g, f]
+      exact hSDiffT
+
+/-- The count-fiber cardinality: the hypergeometric number. -/
+theorem countFiberMemb_card (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (x : BernoulliLaplaceGeneral.BLState N m r) :
+    (countFiberMemb N m r hr x).card = Nat.choose r x.val * Nat.choose (N - r) (m - x.val) := by
+  let M := markedSet N r hr
+  let MC := markedComp N r hr
+  have hBridge : (countFiberMemb N m r hr x).card =
+      Fintype.card {S : Membership N m // (S.1 ∩ M).card = x.val} :=
+    (Fintype.card_of_subtype
+        (p := fun S => (S.1 ∩ markedSet N r hr).card = x.val)
+        (s := countFiberMemb N m r hr x)
+        (H := fun S => by
+          simp [countFiberMemb, Finset.mem_filter, Finset.mem_univ])).symm
+  have hFiberCard : Fintype.card {S : Membership N m // (S.1 ∩ M).card = x.val} =
+      Fintype.card {p : Finset (Fin N) × Finset (Fin N) //
+        p.1 ∈ M.powersetCard x.val ∧ p.2 ∈ MC.powersetCard (m - x.val)} :=
+    Fintype.card_congr (countFiberMemb_equiv N m r hm hr x)
+  have hProd : Fintype.card {p : Finset (Fin N) × Finset (Fin N) //
+      p.1 ∈ M.powersetCard x.val ∧ p.2 ∈ MC.powersetCard (m - x.val)} =
+      (M.powersetCard x.val ×ˢ MC.powersetCard (m - x.val)).card :=
+    Fintype.card_of_subtype
+      (p := fun p => p.1 ∈ M.powersetCard x.val ∧ p.2 ∈ MC.powersetCard (m - x.val))
+      (s := M.powersetCard x.val ×ˢ MC.powersetCard (m - x.val))
+      (H := fun p => by simp only [Finset.mem_product])
+  rw [hBridge, hFiberCard, hProd, Finset.card_product,
+      Finset.card_powersetCard, Finset.card_powersetCard,
+      markedSet_card N r hr, markedComp_card N r hr]
+
+/-- Every admissible macrostate is realized: its count-fiber is nonempty. -/
+theorem countFiberMemb_nonempty (N m r : Nat) (hm : m ≤ N) (hr : r ≤ N) (x : BernoulliLaplaceGeneral.BLState N m r) :
+    0 < (countFiberMemb N m r hr x).card := by
+  rw [countFiberMemb_card N m r hm hr x]
+  have hxm : x.val ≤ m := (Nat.le_min.mp x.2.2).1
+  have hxr : x.val ≤ r := (Nat.le_min.mp x.2.2).2
+  have hNmr : m - x.val ≤ N - r := by
+    by_cases hL : N - m ≤ r
+    · -- x ≥ r - (N - m) and (N - r) + (r - (N - m)) = m
+      have hX1raw : BernoulliLaplaceGeneral.blLo N m r ≤ x.val := x.2.1
+      dsimp only [BernoulliLaplaceGeneral.blLo] at hX1raw
+      have hMax : (max (r - (N - m)) 0 : Nat) = r - (N - m) := by
+        exact max_eq_left (Nat.zero_le _)
+      have hX1 : r - (N - m) ≤ x.val := by simpa [hMax] using hX1raw
+      have hKey : (N - r) + (r - (N - m)) = m := by
+        have hNR : r ≤ N := hr
+        have hmN : m ≤ N := hm
+        omega
+      rw [Nat.sub_le_iff_le_add]
+      omega
+    · -- r < N - m, so N - r > m
+      have hNRlt : m < N - r := by omega
+      have hLT : m - x.val < N - r := by
+        calc
+          m - x.val ≤ m := Nat.sub_le m x.val
+          _ < N - r := hNRlt
+      exact Nat.le_of_lt hLT
+  exact mul_pos (Nat.choose_pos hxr) (Nat.choose_pos hNmr)
+
+/-- The exchange count is constant along a count-fiber (counting form of the
+    fiber-uniformity). -/
+theorem yMoves_uniformOnFiber (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
+    (S T : Membership N m) (x y : Nat)
+    (hS : (S.1 ∩ markedSet N r hr).card = x)
+    (hT : (T.1 ∩ markedSet N r hr).card = x) :
+    (yMoves N m r k hr S x y).card = (yMoves N m r k hr T x y).card := by
+  rw [yMoves_card_eq_transitionNumerator N m r k hm hr S x y hS.symm,
+      yMoves_card_eq_transitionNumerator N m r k hm hr T x y hT.symm]
+
+/-- The fiber-pushforward count: the total exchange count out of a whole
+    count-fiber into the `y`-fiber is `#fiber · transitionNumerator` — the
+    counting form of the uniform-fiber-to-BL-kernel intertwining. -/
+theorem fiberPushforward_count (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
+    (x y : BernoulliLaplaceGeneral.BLState N m r) :
+    (∑ S ∈ countFiberMemb N m r hr x, (yMoves N m r k hr S x.val y.val).card) =
+      (countFiberMemb N m r hr x).card * BernoulliLaplaceGeneral.transitionNumerator N m r k x.val y.val := by
+  have hPt : ∀ S ∈ countFiberMemb N m r hr x,
+      (yMoves N m r k hr S x.val y.val).card = BernoulliLaplaceGeneral.transitionNumerator N m r k x.val y.val := by
+    intro S hS
+    dsimp only [countFiberMemb] at hS
+    simp only [Finset.mem_filter, Finset.mem_univ] at hS
+    have hCard : (S.1 ∩ markedSet N r hr).card = x.val := by tauto
+    rw [yMoves_card_eq_transitionNumerator N m r k hm hr S x.val y.val hCard.symm]
+  rw [Finset.sum_const_nat hPt]
+
+/-- The macrostate kernel is the pushforward of the fiber-uniform kernel: a
+    fiber-uniform start at `x` puts mass `BernoulliLaplaceGeneral.transitionWeight x y` on the `y`-fiber
+    after one exchange. -/
+theorem uniformFiber_intertwines (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x y : BernoulliLaplaceGeneral.BLState p.N p.m p.r) :
+    (∑ S ∈ countFiberMemb p.N p.m p.r p.hrN x,
+        ((yMoves p.N p.m p.r p.k p.hrN S x.val y.val).card : Rat) /
+          (BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k : Rat)) /
+      ((countFiberMemb p.N p.m p.r p.hrN x).card : Rat) =
+      BernoulliLaplaceGeneral.transitionWeight p.N p.m p.r p.k x.val y.val := by
+  let hr := p.hrN
+  have hEach (S : Membership p.N p.m) (hS : S ∈ countFiberMemb p.N p.m p.r hr x) :
+      ((yMoves p.N p.m p.r p.k hr S x.val y.val).card : Rat) /
+        (BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k : Rat) =
+        BernoulliLaplaceGeneral.transitionWeight p.N p.m p.r p.k x.val y.val := by
+    dsimp only [countFiberMemb] at hS
+    simp only [Finset.mem_filter, Finset.mem_univ] at hS
+    have hCard : (S.1 ∩ markedSet p.N p.r hr).card = x.val := by tauto
+    rw [yMoves_card_eq_transitionNumerator p.N p.m p.r p.k (Nat.le_of_lt p.hmn) hr S x.val y.val hCard.symm,
+        BernoulliLaplaceGeneral.transitionWeight]
+  have hSum : (∑ S ∈ countFiberMemb p.N p.m p.r hr x,
+      ((yMoves p.N p.m p.r p.k hr S x.val y.val).card : Rat) /
+        (BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k : Rat)) =
+      (countFiberMemb p.N p.m p.r hr x).card * BernoulliLaplaceGeneral.transitionWeight p.N p.m p.r p.k x.val y.val := by
+    rw [Finset.sum_congr rfl (fun S hS => hEach S hS), Finset.sum_const]
+    ring
+  have hPos : 0 < (countFiberMemb p.N p.m p.r p.hrN x).card :=
+    countFiberMemb_nonempty p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN x
+  rw [hSum]
+  field_simp [hPos.ne']
+
 end FiniteDeck
 end Shufflemath
