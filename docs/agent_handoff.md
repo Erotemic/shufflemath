@@ -25,10 +25,12 @@ count-fiber machinery is now COMPLETE** — `countFiberMemb` (a `Finset` over
 `Membership`), `countFiberMemb_equiv` (marked/unmarked-split bijection),
 `countFiberMemb_card` (hypergeometric), `countFiberMemb_nonempty`,
 `yMoves_uniformOnFiber`, `fiberPushforward_count`, and the capstone
-`uniformFiber_intertwines` (commit `19d964d`). **New resume point: the
-`count : Membership → BLState` projection** (a pile maps to
-`⟨(S∩M).card, lo, hi⟩`), then the Commander F3 A3 discharge by instantiation at
-(99, 50, 50, 25). T2/T3/T5 remain.) The 2026-11-15
+`uniformFiber_intertwines` (commit `19d964d`). The T4 projection was already
+in the library (`countInPile` L426 = `⟨countInPileVal, countInPile_admissible⟩`
++ `countInPile_val`/`_countFiber`), so the 46th note's projection item is done.
+**New resume point: the Commander F3 A3 discharge by instantiation at
+(99, 50, 50, 25)** (in `Shufflemath/CommanderMembershipExchange.lean`). T3/T5
+remain.) The 2026-11-15
 review + arbitrary-finite-deck roadmap pivoted the build to the **G1–G4
 generic finite-deck theory**, from which Commander A3 is a specialization.
 **Done:** P0/Commit A (native_decide → `.symm`); **G1** complete
@@ -206,12 +208,22 @@ marked/unmarked-split bijection to the powerset-card product),
 and the capstone `uniformFiber_intertwines` (fiber-uniform kernel = the
 `blExchange` pushforward). Targeted build green.
 
-**Next concrete action — the `count : Membership → BLState` projection:** map
-a pile `S : Membership N m` to `⟨(S∩markedSet N r hr).card, hLo, hHi⟩ :
-BLState N m r` with `hLo : blLo N m r ≤ (S∩M).card`, `hHi : (S∩M).card ≤
-blHi N m r`. Read `blLo`/`blHi` in `BernoulliLaplaceGeneral` first (the
-hypergeometric support bounds). This projection is what the A3 discharge
-instantiates at `(99, 50, 50, 25)`.
+**Correction to the 46th note:** the T4 projection it lists as open is already
+in the library — `countInPile` (L426) = `⟨countInPileVal,
+countInPile_admissible⟩ : BLState`, plus `countInPile_val` /
+`countInPile_countFiber` (L430/436). So the projection item is DONE.
+
+**Next concrete action — the Commander F3 A3 discharge** at `(99, 50, 50, 25)`
+in `Shufflemath/CommanderMembershipExchange.lean`: prove
+`comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25
+membershipLift` (A3) by instantiating the G4 theory (`uniformFiber_intertwines`
++ `countInPile`). Two parts: (i) counting — the post-exchange membership count,
+averaged, is the `commanderExchange25` transition; (ii) within-count uniformity
+— conditioned on landing count `c`, the membership is uniform over the `c`-fiber
+(equivariance + transitivity). Supporting ingredients already exist
+(`map_equiv_mass`, `distUniform_ofInvariantTransitive`, `membershipFiber_card`,
+`membershipLift_count`, `commanderCountFiber_card`); read that module's
+doc-comment for the assembly plan.
 
 ### 45th session (2026-11-17) — prior resume point (bootstrap notes below stay in force for this VM)
 
