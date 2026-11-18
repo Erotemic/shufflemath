@@ -374,6 +374,36 @@ the membership instead. A first implementation of the kernel hit six build
 iterations on exactly these names and was reverted; the statement and plan
 above are sound, only the name/rewrite details remain.
 
+**47m (this session): the A3 *count half* is committed in a new standalone
+module `Shufflemath/CommanderA3Count.lean` (builds; in the verify-script build
+list).** The module pins down, for a single deck `e`, the *composition of the
+left pile after an exchange*: of the 50 left-pile positions, exactly
+`leftOriginalCount e` hold a marked (originally-left) card and the rest —
+`50 − leftOriginalCount e` — hold an unmarked (originally-right) card.
+Definitions: `leftMarked e i` (the card at left index `i` is marked, i.e.
+`e (leftPosition i) ∈ leftOrigSet`), `leftIdxFinset e` (the 50 left indices
+holding a marked card — definitionally `markedLeftPos e`), `rightIdxFinset e`
+(`Fin 50` \ `leftIdxFinset e`, the originally-right cards that landed in the
+left pile). Two theorems: `leftIdxFinset_card`
+(`#leftIdxFinset e = leftOriginalCount e`, by `markedLeftPos_card`) and the
+**count half** `leftUnmarkedCardCount`
+(`#rightIdxFinset e = 50 − leftOriginalCount e`), the latter a 4-line proof
+via `Finset.card_sdiff_of_subset` + `Finset.filter_subset` + `by decide`
+(`#(Fin 50) = 50`). This is the per-deck **count-invariance fact** the 47j
+analysis reduces the A3 count half to: the post-exchange count depends on the
+deck only through `x = leftOriginalCount d`, and the number of marked cards
+displaced into the right pile is `50 − x` (so the right pile gains `50 − x`
+marked and the left pile gains `50 − x` unmarked, symmetrically). It is the
+foundation for **build-order item 3** (the per-deck Vandermonde bridge
+connecting `transitionNumerator` to the per-deck `(L, R)` count): the next
+step is to prove `powersetCard_markedContent` (the 47j kernel, via the
+`countFiberMemb_equiv` structure) and show the per-deck count mass at `n`
+equals `transitionWeight 99 50 25 x n`, so the fiber-average fiber-constant
+mass = the `commanderExchange25` transition (`commanderExchange25_countMass`).
+The `CommanderA3Count` module is purely additive (imported by no other
+module); `./dev/verify_next_phase.sh` passes with it in the build list (37
+tests OK).
+
 **Build order to finish the A3 count half (after the kernel):**
 1. `leftPileCount25`: `#(L ∈ leftChoices, markedInLeft d L = a) =
    choose(x, a)·choose(50 - x, 25 - a)` — kernel instance with

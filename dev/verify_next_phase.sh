@@ -25,6 +25,7 @@ lake build \
   Shufflemath.FinsetCombinatorics \
   Shufflemath.CommanderMembershipOrbits \
   Shufflemath.CommanderMembershipExchange \
+  Shufflemath.CommanderA3Count \
   Shufflemath.CommanderLocalGSR \
   Shufflemath.CommanderDeckGSR
 
