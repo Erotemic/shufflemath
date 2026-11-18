@@ -15,6 +15,51 @@
 
 # Agent handoff: next Shufflemath task
 
+**Updated:** 2026-11-22 (A3 **part (ii) kernel equivariance**) — two more part (ii)
+results landed in the main library this session:
+- **`relabelMembership_equiv`** (`Shufflemath/CommanderMembershipOrbits.lean`,
+  `commit 89eb06c`): the deck-symmetry **`Equiv Membership ≃ Membership`** — the
+  `E : Set (Equiv Membership)` for `distUniform_ofInvariantTransitive`.
+- **`newMembership_conjugate`** (`Shufflemath/CommanderPhysicalExchange.lean`,
+  `commit 9f71265`): the **pointwise** kernel equivariance
+  `newMembership (d.trans g) L hL R hR = relabelMembership (g : Fin 99 → Fin 99)
+  g.bijective (newMembership d L hL R hR)` — the direct building block for the
+  distribution-level equivariance. (`CommanderPhysicalExchange` now imports
+  `CommanderMembershipOrbits`; no cycle — Orbits depends only on
+  Kernels/Permutation/FinsetCombinatorics.)
+
+**Exactly where to resume: the distribution-level kernel equivariance
+`rawExchangeMembership_conjugate`** (place in `Shufflemath/CommanderPhysicalExchange.lean`
+right after the `rawExchangeMembership` def):
+```
+theorem rawExchangeMembership_conjugate (d g : Deck) :
+    rawExchangeMembership (d.trans g) =
+      (rawExchangeMembership d).map (relabelMembership (g : Fin 99 → Fin 99) g.bijective)
+```
+Reduction: `unfold rawExchangeMembership at *` (both sides become
+`(GSR.uniformDist exchangeChoice).map (fun c => newMembership · (c.1.1)
+(leftCard25 c.1.2) (c.2.1) (rightCard25 c.2.2))`); pull the nested `.map` into one,
+then reduce to the pointwise `newMembership_conjugate d g (c.1.1) (leftCard25 c.1.2)
+(c.2.1) (rightCard25 c.2.2)` by function extensionality.
+**Got stuck here (API caveat):** the raw `Convexity.StdSimplex.map` / `.map`
+notation is `@[deprecated]` (since 2026-08-29); the composition lemma is
+`map_comp_apply : map g (map f x) = map (g.comp f) x` (NOT a `map_map` named that
+way), and the `.map` notation's argument order (`(dist).map f`) differs from the raw
+`map f (dist)`. `Finite.lean` uses `Convexity.StdSimplex.map_map` (lines 261, 478)
+*without* warnings, so prefer that spelling. If `rw [Convexity.StdSimplex.map_map]`
+does not fire on `((μ).map f).map h`, inspect the goal after `unfold` (via a
+`?goal` hole in a scratch probe) and use whichever of `map_map`/`map_comp_apply`
+matches the actual `.map` spelling, then close `μ.map p = μ.map q` from the
+pointwise function equality (`congrArg (μ.map ·) h` or an explicit `change` to a
+common term — NOT `funext`, since a `Dist` is a `StdSimplex` struct, not a function).
+After that: (a) the **fiber-level invariance**
+`μ_x.map (relabelMembership_equiv f hf) = μ_x` for
+`μ_x = comp (fiberLaw project project_surjective) rawExchangeMembership x` (the
+uniform project-fiber law is invariant under `d ↦ d.trans g` when `g` preserves the
+source count `x`); then (b) feed it into `distUniform_ofInvariantTransitive` and the
+**A3 capstone** `hMembershipExchange`. **Deadline Wed 2026-11-24 23:59:59 EST.**
+
+**Earlier (2026-11-22, part (ii) group action):**
 **Updated:** 2026-11-22 (A3 **part (ii) group action** session) — the
 **deck-symmetry group action on memberships** is now in the main library
 (`Shufflemath/CommanderMembershipOrbits.lean`, commit `89eb06c`):
