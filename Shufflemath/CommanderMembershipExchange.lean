@@ -194,6 +194,44 @@ theorem distUniform_ofInvariantTransitive
       rw [hc x hx]
     _ = 1 := hVal
 
+/- A uniform project-fiber law (the `fiberLaw` at source state `x`) is
+    invariant under any equiv of the fiber space that commutes with the
+    observation: mapping the uniform law by such an `e` leaves it unchanged,
+    because `e` permutes the fiber `{ b | observe b = x }` onto itself.
+    This is the distributional "uniform is invariant under the fiber's
+    symmetry group" fact — the key invariance input to
+    `distUniform_ofInvariantTransitive`, and the building block for the
+    post-exchange membership law `μ_x = comp (fiberLaw project project_surjective)
+    rawExchangeMembership x` being fixed by the deck-relabeling equivariance. -/
+theorem fiberLaw_invariant_underFiberEquiv
+    {α β : Type*} [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β] [Nonempty β]
+    (observe : β → α) (hsurj : Function.Surjective observe) (x : α)
+    (e : Equiv β β) (hE : ∀ b, observe (e b) = observe b) :
+    (fiberLaw observe hsurj x).map e = fiberLaw observe hsurj x := by
+  classical
+  set μ := fiberLaw observe hsurj x
+  ext y
+  -- (μ.map e).weights y = μ.weights (e.symm y)   [map_equiv_mass; Dist.mass = .weights]
+  have hMap : (μ.map e).weights y = μ.weights (e.symm y) := by
+    simpa only [Dist.mass] using (map_equiv_mass e μ y)
+  rw [hMap]
+  -- both weights are the `fiberLaw_mass` if-expressions (Dist.mass = .weights definitionally)
+  have hL : μ.weights (e.symm y) =
+        (if observe (e.symm y) = x then ((fiberSet observe x).card : Rat)⁻¹ else 0) :=
+    fiberLaw_mass observe hsurj x (e.symm y)
+  have hR : μ.weights y =
+        (if observe y = x then ((fiberSet observe x).card : Rat)⁻¹ else 0) :=
+    fiberLaw_mass observe hsurj x y
+  rw [hL, hR]
+  -- observe (e.symm y) = observe y  (e commutes with observe)
+  have hComm : observe (e.symm y) = observe y := by
+    have h1 : observe (e (e.symm y)) = observe (e.symm y) := hE (e.symm y)
+    rw [e.apply_symm_apply] at h1
+    exact h1.symm
+  by_cases hxy : observe y = x
+  · simp only [hComm, hxy]
+  · simp only [hComm, hxy]
+
 /-!
 ## Count-level projection (A3 part (i), RHS side)
 
