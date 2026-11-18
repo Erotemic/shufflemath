@@ -2180,14 +2180,25 @@ in parallel.
 
 ## 47k — F3 A3 counting kernel: `sdiff_inter_split` committed; `Equiv`+theorem WIP (Nov 17)
 
-**Status:** of the three pieces of the F3 A3 pile-count kernel, **piece 1
-(`sdiff_inter_split`) is committed** (builds green, `FinsetCombinatorics.lean`).
-Pieces 2 (`powersetCard_markedContent_equiv`, the `Equiv`) and 3
-(`powersetCard_markedContent`, the card theorem) are **WIP** — fully drafted and
-saved at **`.pi-glla/47k_kernel_wip.lean`** (the two declarations are ready to
-splice in after `sdiff_inter_split`). They hit a small set of fiddly Lean
-elaboration issues; the easy ones are already fixed in the saved file, and **one
-genuinely fiddly bit (the `f ∘ g` round-trip) is the only real obstacle**.
+**Status: COMPLETE.** All three pieces of the F3 A3 pile-count kernel are
+committed in `Shufflemath/FinsetCombinatorics.lean` (build green, no new
+warnings, dependent chain green): piece 1 `sdiff_inter_split` (commit `2488cb5`),
+pieces 2+3 `powersetCard_markedContent_equiv` (the `Equiv`) and
+`powersetCard_markedContent` (the card theorem) (commit `ee6cd79`).
+
+**Fixes that actually worked (supersede the predictions above — do not re-derive):**
+- `Finset.disjoint_iff_inter_eq_empty : Disjoint s t ↔ s ∩ t = ∅` has **no
+  explicit args** and the *forward* direction is **`.mp`** (not `.mpr`):
+  `have hEmpty : A∩B=∅ := (Finset.disjoint_iff_inter_eq_empty).mp hDisAB`.
+- The `f∘g` round-trip bullet 2 does **not** need top-level defs / `dsimp`:
+  after `intro p; dsimp only [f,g]; apply Subtype.ext; apply Prod.ext`, close the
+  second component with **`exact hSdiff`** (defeq-accepting) instead of
+  `rw [hSdiff]` (which fails with "motive is not type correct").
+- In the card theorem, `hProd := Fintype.card_of_subtype …` needs **no `.symm`**
+  (the lemma is already `card {subtype} = #product`, matching hProd's LHS/RHS);
+  and the final `rw […, card_sdiff_of_subset hM]` **auto-closes**, so there is
+  **no trailing `rfl`**. The two `Finset.card_powersetCard` in the `rw` list are
+  both needed (each rewrites one `#(…)` instance).
 
 **Why the split:** I built the kernel as three independently-checkable pieces
 instead of one big proof, per the small-batch discipline. `sdiff_inter_split`
@@ -2260,14 +2271,12 @@ powersetCard_markedContent …`. That closes A3 → the G1 main theorem, complet
 the A3 item. The RHS (`hMembershipExchange_rhs_mass`) and A4/A5 lemmas are
 already in place.
 
-### Resume point for the next session (47k)
+### Resume point for the next session (47k → A3 LHS assembly)
 
-1. Read `.pi-glla/47k_kernel_wip.lean` (the two remaining declarations, with the
-   easy fixes applied). Splice it into `FinsetCombinatorics.lean` right after
-   `sdiff_inter_split` (before `end FinsetCombinatorics`).
-2. Build `Shufflemath.FinsetCombinatorics`. The only expected failure is the
-   `f ∘ g` round-trip (see "THE one remaining hard bit"); apply fix (a) or (b).
-3. Once green, commit the `Equiv` + `powersetCard_markedContent` (second
-   tranche). Then do the A3 LHS assembly in `CommanderMembershipExchange.lean`
-   (47h's RHS pattern, LHS side), build the chain, commit, and update the 47j
-   note to mark the A3 count half DONE and the item F3 → A3 done.
+The kernel is done. Next: the **A3 part-(i) LHS assembly** in
+`Shufflemath/CommanderMembershipExchange.lean` — `import FinsetCombinatorics`,
+then rewrite the LHS per-deck sum to the fiber `#(S ∈ U.powersetCard k, (S∩M).card=a)`
+(as 47h did for the RHS) and close with `powersetCard_markedContent`. This is
+the step that completes the A3 count half and (with the already-present RHS
+`hMembershipExchange_rhs_mass`) discharges `hMembershipExchange` → the G1 main
+theorem → the A3 item.
