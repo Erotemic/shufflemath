@@ -401,6 +401,16 @@ route, not a theorem already in the tree.
 > in `Shufflemath/CommanderMembershipExchange.lean` — the *RHS* half of (A3) is
 > now pointwise established in both the membership and count formulations.
 > Next: the LHS counting core `rawExchangeMembership_count` (part (i)).
+> **47d-session progress (Route B unblocker):** the GPT-6 route's `exchangePair_exists`
+> (the Nov-12 5-conjunct `isExchangePair` wall) is now **committed** in
+> `Shufflemath/FinsetCombinatorics.lean` (commit `9b693f3`), together with the two
+> pure set-identities `sdiff_sdiff_inter` (`S \ (S \ T) = S ∩ T`) and
+> `sdiff_sdiff_union_eq` (`(S \ (S \ T)) ∪ (T \ S) = T`, the 5th conjunct). The
+> canonical pair `(S \ T, T \ S)` is a valid 25/25 exchange `S → T` when
+> `|S| = |T| = 50` and `|S∩T| = 25`. Next on Route B: the membership-level mass
+> identity via `BernoulliLaplaceFiber.lean`'s `detailedBalance` + the
+> `BernoulliLaplaceCommanderBridge` (gives the point mass `= transitionWeight/F(y)`
+> and, as a consequence, within-count uniformity — bypassing part (ii)).
 > **23rd–24th-session progress (Spec A2 core + A3 scaffold):**
 > `newLeftCards_conjugate` (`CommanderPhysicalExchange.lean`, commit `6ccae33`)
 > proves the **pointwise** equivariance of the post-exchange left set under any

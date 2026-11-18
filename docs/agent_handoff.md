@@ -236,7 +236,12 @@ pointwise mass of `comp commanderExchange25 membershipLift`), and
 that module's doc-comment for the assembly plan. The **next concrete lemma is
 the LHS counting core `rawExchangeMembership_count`** (part (i)): the
 fiber-average post-exchange `membershipCount` equals the `commanderExchange25`
-transition (RHS already `commanderExchange25_countMass`).
+transition (RHS already `commanderExchange25_countMass`). **47d (Route B):** the
+GPT-6 route's `exchangePair_exists` wall is now closed (commit `9b693f3`, with
+`sdiff_sdiff_inter` + `sdiff_sdiff_union_eq` in `FinsetCombinatorics.lean`); next
+is the membership-level mass identity via `BernoulliLaplaceFiber.lean`
+`detailedBalance` + the `BernoulliLaplaceCommanderBridge` (gives the point mass
+`transitionWeight/F(y)` and within-count uniformity, bypassing part (ii)).
 
 ### 45th session (2026-11-17) — prior resume point (bootstrap notes below stay in force for this VM)
 
