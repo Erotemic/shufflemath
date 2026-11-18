@@ -901,5 +901,17 @@ theorem exchangeChoice_card_eq_transitionDenominator :
   rw [hProd, hSubL, hSubR, hLc, hRc, hTd]
   simp [Nat.cast_mul]
 
+/-- **Part (i) count connection.**  The post-exchange membership's left-card count is
+    exactly the number of originally-left cards in the new left pile: the `membership`
+    count of `newMembership d L R` is `(newLeftCards d L R ∩ leftOrigSet).card` (both
+    sides are definitionally the `.1`-pile's `leftOrigSet` overlap).  This is the count
+    connection the A3 part-(i) inner-sum needs, to relate the post-exchange count
+    distribution to the `(L, R)` counting core (`newLeftOriginalCount_eq` /
+    `newLeftCount_eq_transitionNumerator`). -/
+theorem membershipCount_newMembership (d : Deck) (L : Finset (Fin 50)) (hL : L.card = 25)
+    (R : Finset (Fin 49)) (hR : R.card = 25) :
+    membershipCount (newMembership d L hL R hR) = (newLeftCards d L R ∩ leftOrigSet).card := by
+  dsimp only [membershipCount, newMembership]
+
 end CommanderMembershipExchange
 end Shufflemath
