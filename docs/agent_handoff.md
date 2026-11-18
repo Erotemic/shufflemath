@@ -67,21 +67,23 @@ selected-right card-set determines the selected positions, via `image_injective_
 complement = the right pile, since the deck is a permutation) and the chosen card-sets —
 independent of the deck's position arrangement.
 
-**47y (next — the position↔card EXISTENCE half).** Converse to 47x: every 25-card-subset
-`A ⊆ leftCards d` is `L.image (d ∘ leftPosition)` for exactly one 25-position-set `L`
-(the preimage). Intended proof: `L := (univ : Finset (Fin 50)).filter (fun l => f l ∈ A)`
-with `f := d ∘ leftPosition`; `L.image f = A` by `Finset.ext` (injectivity +
-`A ⊆ image f`); `L.card = 25` by `Finset.card_image_of_injective f L hf`. **Friction hit
-this session (avoid repeating):** (1) `Finset.preimage` resolves to an injective-preimage
-overload with a different arg order — use `Finset.filter` instead; (2) `Finset.mem_filter`
-`.mp/.mpr` projections do not elaborate under `open Shufflemath` — use `simp` with
-`[Finset.mem_filter, Finset.mem_univ]` (drop `true_and` from an `only` set, which deadlocks);
-(3) the `rw` for `A ⊆ (univ).image f` from `hAsub : A ⊆ leftCards d` +
-`hleft : (univ).image f = leftCards d` must be `rw [hleft]` (forward, LHS `(univ).image f`
-→ RHS `leftCards d`), then `exact hAsub.mpr hx` — NOT `rw [← hleft]`. With both the left and
-right existence halves, the exchange is a uniform choice over 25-card-subsets (independent
-of arrangement), enabling F3 item 3 step 3 (point mass on the `|S∩T|=25` fiber) and the
-`hMembershipExchange` capstone.
+**47y (this session — the position↔card EXISTENCE half, BOTH piles done).**
+`leftCardImage_has_preimage` and `rightCardImage_has_preimage` in `CommanderPhysicalExchange`:
+for `A ⊆` (the left / right pile) with `A.card = 25`, there is exactly one 25-position-set
+`L = (univ : Finset (Fin 50 | 49)).filter (fun p => (d ∘ {left,right}Position) p ∈ A)`
+with `L.card = 25` and `L.image (d ∘ …Position) = A` (injective map → `card_image_of_injective`).
+Combined with 47x's unique halves, 25-position-subsets **biject** with 25-card-subsets for
+BOTH piles — the membership-level deck-independence the A3 kernel (`s50` × `t49`, both
+`powersetCard 25`) needs. **Friction resolved:** the `let`-bound witness set is opaque to
+`simp`/`dsimp`/`unfold` — fix is `change p ∈ (Finset.univ : Finset (Fin 50 | 49)).filter (fun p =>
+f p ∈ A) at h` to expose the `.filter` before `simp only [Finset.mem_filter]` (note
+`mem_filter` is `@[simp, grind =]` — grind-gated, so a bare `simp` won't fire it unless
+listed); `Finset.subset` is a raw `∀` (use `hAsub hx`, NOT `.mpr`); `card_image_of_injective
+(s) (H : Injective f)` takes the SET first, the injectivity second (function implicit). **Next:**
+F3 item 3 step 3 — the point-mass statement: a uniform choice of 25 left positions × 25 right
+positions (each `1 / (choose 50 25)·(choose 49 25)`) induces a uniform choice of the new left-
+pile card-set, so the transition mass to a new membership depends only on the `|S∩T|` fiber
+and not the deck arrangement — then the `hMembershipExchange` capstone discharging A3.
 
 The
 2026-11-15
