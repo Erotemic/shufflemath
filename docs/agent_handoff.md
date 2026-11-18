@@ -15,13 +15,24 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-22 (46th session — resumed at the 45th's resume point; the **T4
-counting core is now COMPLETE**: `card_biUnion_pd` + `yMoves_card_eq_sum`
-(commit `ae26aed`) and the capstone `yMoves_card_eq_transitionNumerator`
-(`#yMoves = transitionNumerator N m r k x y`, commit `1cd40b0`) are in
-`Shufflemath/FiniteDeck/BLRefinement.lean`; 10-module build green. **Deadline
-Wed 2026-11-24 23:59:59 EST.** **47th session: the T4 *measure* half's
-count-fiber machinery is now COMPLETE** — `countFiberMemb` (a `Finset` over
+**Updated:** 2026-11-22 (A3 **count kernel** session) — the F3 A3 **count half is
+now in the main library**: `Shufflemath/CommanderA3Kernel.lean` proves
+`newLeftCount_eq_transitionNumerator` (the post-exchange count of `(L,R)` pairs
+= `transitionNumerator 99 50 25 (leftOriginalCount d) n`) and
+`newLeftCount_deckIndependent` (same source count ⇒ same post-exchange count
+distribution) — the fiber-average collapse for the `rawExchangeMembership_count`
+LHS, the exact "remaining step" in the `hMembershipExchange` assembly plan
+(commit `8e4106d`, in the build list + verify script; 24 modules + 37 tests
+green). Also done this stretch: the 47y **existence halves for BOTH piles**
+(`newLeftCards_exists` / `newRightCards_exists` in `CommanderPhysicalExchange`).
+**Next: F3 item 3 step 3 (point mass at the fiber), then A3's *measure* half,
+then the `hMembershipExchange` capstone** — see the F3 item 3 section below for
+the full resume detail. **Deadline Wed 2026-11-24 23:59:59 EST.**
+
+**Earlier (46th/47th sessions):** the **T4 counting core** (`card_biUnion_pd` +
+`yMoves_card_eq_sum` `ae26aed`, capstone `yMoves_card_eq_transitionNumerator`
+`#yMoves = transitionNumerator N m r k x y` `1cd40b0`, `Shufflemath/FiniteDeck/BLRefinement.lean`)
+and the T4 **measure** half's count-fiber machinery (`countFiberMemb` `Finset` over
 `Membership`), `countFiberMemb_equiv` (marked/unmarked-split bijection),
 `countFiberMemb_card` (hypergeometric), `countFiberMemb_nonempty`,
 `yMoves_uniformOnFiber`, `fiberPushforward_count`, and the capstone
@@ -334,11 +345,31 @@ is the abstract `exchangePair_exists`).
 **47i (`d8b4abd`): first deck-independence lemma** — `newLeftCards_as_sdiff_union`:
 `newLeftCards d L R = (leftCards d \ L.image (d ∘ leftPosition)) ∪ R.image (d ∘
 rightPosition)` (via `Finset.image_sdiff` + deck injectivity). The post-exchange pile
-depends on `d` only through `leftCards d` and the chosen card-sets. **47i NEXT:** the
-full membership version (`newMembership` / `rawExchangeMembership` well-defined as a
-function of the source membership `S` — the selected LEFT cards are a 25-subset of
-`leftCards d`, so the choice is card-set-level, not position-level), then F3 item 3
-step 3 (point mass).
+depends on `d` only through `leftCards d` and the chosen card-sets.
+
+**47y: existence halves for BOTH piles** (in `CommanderPhysicalExchange`):
+`newLeftCards_exists` (`L=leftChoices, R=∅` gives a valid pair) and
+`newRightCards_exists` (`L=∅, R=rightChoices`). The deck-level `(L,R)↦T` bijection is
+now complete on both halves (unique via 47h; existence for both piles).
+
+**47ab (`8e4106d`): A3 COUNT KERNEL lands in the main library**
+(`Shufflemath/CommanderA3Kernel.lean`, added to the AGENTS.md build list +
+`dev/verify_next_phase.sh`; full verify gate — 24 modules + 37 tests — green):
+- `newLeftCount_eq_transitionNumerator`: `# {(L,R) : (newLeftCards d L R ∩ leftOrigSet).card = n} =
+  transitionNumerator 99 50 25 (leftOriginalCount d) n` — assembled from
+  `newLeftOriginalCount_eq` (count = source − markedInLeft + markedInRight) and the 47v
+  fiber-product kernel over the same `(L,R)` product (bridged by
+  `leftChoices`/`rightChoices = s50`/`t49` extensionally).
+- `newLeftCount_deckIndependent`: two decks with the same source count induce the same
+  post-exchange count distribution. **This is the fiber-average collapse for the
+  `rawExchangeMembership_count` LHS — the exact "remaining step" the
+  `hMembershipExchange` assembly plan names** — now proven in the main library.
+
+**NEXT:** F3 item 3 step 3 (point mass at the fiber) — the deck-level distribution
+identity over the whole fiber (the 47u/47v route already has the per-`x` transition
+numerator); then A3's *measure* half (replace the count law by the point-mass law,
+`commanderExchange25_mass`/`hMembershipExchange_rhs_mass`); then the capstone
+`hMembershipExchange`. The count-half kernel is now a building block for both.
 
 **47j (this session): the A3 count half is reduced to one reusable counting
 kernel + a trivial fiber-average (analysis done; the kernel's Lean proof is the
