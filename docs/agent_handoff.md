@@ -2175,3 +2175,99 @@ the roadmap's care note warns `generalCL_ns` assumes `k ≤ y`); (iii)
 T2 is now complete at the (m-pile, x-marked) level
 (`markedFiberTransitive`); T3 (physical↔membership projection) remains
 in parallel.
+
+---
+
+## 47k — F3 A3 counting kernel: `sdiff_inter_split` committed; `Equiv`+theorem WIP (Nov 17)
+
+**Status:** of the three pieces of the F3 A3 pile-count kernel, **piece 1
+(`sdiff_inter_split`) is committed** (builds green, `FinsetCombinatorics.lean`).
+Pieces 2 (`powersetCard_markedContent_equiv`, the `Equiv`) and 3
+(`powersetCard_markedContent`, the card theorem) are **WIP** — fully drafted and
+saved at **`.pi-glla/47k_kernel_wip.lean`** (the two declarations are ready to
+splice in after `sdiff_inter_split`). They hit a small set of fiddly Lean
+elaboration issues; the easy ones are already fixed in the saved file, and **one
+genuinely fiddly bit (the `f ∘ g` round-trip) is the only real obstacle**.
+
+**Why the split:** I built the kernel as three independently-checkable pieces
+instead of one big proof, per the small-batch discipline. `sdiff_inter_split`
+(the split lemma) is self-contained and green. The `Equiv` reuses it plus the
+existing `union_inter_parts` and standard finset facts.
+
+**The kernel, in one line:** `#(S ∈ U.powersetCard k, (S ∩ M).card = a) =
+choose M.card a · choose (U.card − M.card) (k − a)` for `M ⊆ U`, `a ≤ k`. This
+is the hypergeometric count the 25/25 exchange A3 pile counts reduce to (with
+`U` = the relevant card set, `M` = the part that was in the left pile).
+
+**The `Equiv` structure** (in `.pi-glla/47k_kernel_wip.lean`): `f` maps a fiber
+element `S` to the pair `(S ∩ M, S \ M)` (an `a`-subset of `M`, a `(k−a)`-subset
+of `U\M`); `g` maps `(A, B)` to `A ∪ B`. The round-trips:
+- `g ∘ f = id`: `(S∩M) ∪ (S\M) = S` — this is `sdiff_inter_split.…1`. **DONE**
+  (fixed the conjunction accessor: the recombine equality is `.1`, the Disjoint
+  is `.2.1` — I initially grabbed the wrong one).
+- `f ∘ g = id`: `(A∪B)∩M = A` (via `union_inter_parts.1`) and
+  `(A∪B)\M = B` (via `hSdiff` + `union_inter_parts.2`). **This is the one
+  remaining fiddly bit.**
+
+**Already-fixed in the saved file** (do not re-derive):
+1. `hDisAB : Disjoint A B` is NOT an `Eq`, so it cannot be a `rw` argument.
+   Convert first: `have hEmpty : A ∩ B = ∅ :=
+   (Finset.disjoint_iff_inter_eq_empty A B).mpr hDisAB`, then
+   `rw [hEmpty, Finset.card_empty]`.
+2. `hABcard` closer: after `rw […, hAcard, hBcard] at hUnion` the local fact is
+   `(A∪B).card = a + (k − a)` and the goal is `(A∪B).card = k` — close with
+   `omega` (uses `ha : a ≤ k`), **not** `exact hUnion.symm` (wrong orientation).
+3. `g ∘ f` recombine: use the **`.1`** accessor (recombine equality), not `.2.1`
+   (the Disjoint).
+4. `Finset.notMem_empty` is the name (camelCase `notMem`), not `not_mem_empty`.
+5. `z ∈ (S\M)` / `z ∈ (A∪B)\M` are `Quot.lift` membership props, **not**
+   inductive — decompose with `Finset.mem_sdiff.mp`, build with
+   `Finset.mem_sdiff.mpr` (do **not** use `⟨…, …⟩` for a membership goal).
+6. `Finset.card_sdiff` (no explicit args in `rw`) rewrites `#(t\s) = #t −
+   #(s∩t)`; combine with `Finset.inter_comm`, `hScard`, `hSmark` for `hBcard`.
+
+**THE one remaining hard bit — the `f ∘ g` round-trip.** After
+`refine Equiv.mk f g ?_ ?_; intro p; dsimp only [f, g]; apply Subtype.ext;
+apply Prod.ext`, the second component goal does **not** reduce cleanly to
+`(p.1.1 ∪ p.1.2) \ M = p.1.2`: `dsimp [f,g]` expands `g`'s `let A := p.1.1`
+incorrectly (the goal shows `(↑p).1 ∪ (↑p).2`, i.e. it treats `p` as the *pair*
+`Finset×Finset` rather than the subtype whose `.1` is the pair), so `rw
+[hSdiff]` (stated in terms of `p.1.1`, `p.1.2`) fails with "motive is not type
+correct". **Suggested fixes, in order of preference:**
+- (a) Define `f` and `g` as **named top-level `private def`s** (not `let`-bound
+  inside the `by` block) so `dsimp`/`unfold` reduces `(g p).1` to
+  `p.1.1 ∪ p.1.2` cleanly; then the `f∘g` component goals are plain finset
+  equalities provable by `union_inter_parts` + the small `hSdiff`.
+- (b) Keep `let` but, after `intro p`, first `change (f (g p)).1 = p.1` and use
+  `unfold` / `show` to force `(g p).1` to reduce to `p.1.1 ∪ p.1.2` before
+  `rw [hSdiff, …]`.
+- (c) Bypass the `Equiv` entirely for the card theorem: prove the cardinality
+  with a single injective map `product → fiber` plus a surjectivity witness
+  (same `union_inter_parts` facts), avoiding `Equiv.mk`'s two round-trips.
+
+**Verified Mathlib facts available** (all checked in this session's mathlib
+4.15.0-rc1): `Finset.card_sdiff`, `Finset.card_sdiff_of_subset`,
+`Finset.card_union_add_card_inter`, `Finset.card_product`,
+`Finset.card_powersetCard`, `Finset.inter_sdiff_self`, `Finset.mem_sdiff`,
+`Finset.notMem_empty`, `Finset.disjoint_iff_inter_eq_empty`,
+`Fintype.card_of_subtype`, `Fintype.card_congr`, and (in-repo)
+`union_inter_parts`, `sdiff_inter_split`, `countFiberMemb_equiv`/`_card`.
+
+**After the kernel builds:** the A3 part (i) LHS assembly in
+`CommanderMembershipExchange.lean` becomes: rewrite the LHS per-deck sum to the
+fiber `#(S ∈ U.powersetCard k, …)` (as 47h did for the RHS), then `exact
+powersetCard_markedContent …`. That closes A3 → the G1 main theorem, completing
+the A3 item. The RHS (`hMembershipExchange_rhs_mass`) and A4/A5 lemmas are
+already in place.
+
+### Resume point for the next session (47k)
+
+1. Read `.pi-glla/47k_kernel_wip.lean` (the two remaining declarations, with the
+   easy fixes applied). Splice it into `FinsetCombinatorics.lean` right after
+   `sdiff_inter_split` (before `end FinsetCombinatorics`).
+2. Build `Shufflemath.FinsetCombinatorics`. The only expected failure is the
+   `f ∘ g` round-trip (see "THE one remaining hard bit"); apply fix (a) or (b).
+3. Once green, commit the `Equiv` + `powersetCard_markedContent` (second
+   tranche). Then do the A3 LHS assembly in `CommanderMembershipExchange.lean`
+   (47h's RHS pattern, LHS side), build the chain, commit, and update the 47j
+   note to mark the A3 count half DONE and the item F3 → A3 done.
