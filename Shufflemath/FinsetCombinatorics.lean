@@ -110,5 +110,54 @@ theorem cardSdiffInter2 [DecidableEq α] (S T : Finset α)
   rw [← Finset.sdiff_inter_self_left, Finset.inter_comm,
       Finset.card_sdiff_of_subset hsub, h, hT]
 
+/-- `S \ (S \ T) = S ∩ T`: removing from `S` the part that misses `T`
+    leaves exactly the part of `S` inside `T`.  Pure set algebra (no `Fintype`). -/
+theorem sdiff_sdiff_inter [DecidableEq α] (S T : Finset α) :
+    (S \ (S \ T)) = S ∩ T := by
+  ext x
+  simp only [Finset.mem_sdiff, Finset.mem_inter]
+  -- (x ∈ S ∧ ¬(x ∈ S ∧ ¬x ∈ T)) ↔ (x ∈ S ∧ x ∈ T)
+  tauto
+
+/-- `(S \ (S \ T)) ∪ (T \ S) = T`: the part of `S` inside `T` together with
+    the part of `T` outside `S` covers exactly `T`.  Pure set algebra.  This is
+    the 5th conjunct of `isExchangePair` proved as a standalone lemma so the
+    `Fintype`-context 5-conjunct assembly can `exact` it without the `Finset`
+    quotient `rw`-in-term-position quirk. -/
+theorem sdiff_sdiff_union_eq [DecidableEq α] (S T : Finset α) :
+    (S \ (S \ T)) ∪ (T \ S) = T := by
+  rw [sdiff_sdiff_inter]
+  -- (S ∩ T) ∪ (T \ S) = T
+  ext x
+  simp only [Finset.mem_union, Finset.mem_inter, Finset.mem_sdiff]
+  tauto
+
+/-- The canonical exchange pair `(S \ T, T \ S)` is a valid 25/25 exchange from
+    `S` to `T` when both piles have 50 cards and overlap in 25: remove the 25
+    cards of `S` not in `T`, add the 25 cards of `T` not in `S`, land on `T`. -/
+theorem exchangePair_exists [Fintype α] [DecidableEq α] (S T : Finset α)
+    (hInter : (S ∩ T).card = 25) (hS : S.card = 50) (hT : T.card = 50) :
+    isExchangePair S T (S \ T) (T \ S) := by
+  dsimp only [isExchangePair]
+  have hAcard : (S \ T).card = 25 := cardSdiffInter S T hInter hS
+  have hBcard : (T \ S).card = 25 := cardSdiffInter2 S T hInter hT
+  have hAsub : (S \ T) ⊆ S := fun _ hx => (Finset.mem_sdiff.mp hx).1
+  have hBcomp : (T \ S) ⊆ Finset.univ \ S := by
+    rintro x hx
+    have hxS : x ∉ S := (Finset.mem_sdiff.mp hx).2
+    simp only [Finset.mem_sdiff]
+    exact ⟨by simp, hxS⟩
+  have hTdef : (S \ (S \ T)) ∪ (T \ S) = T := sdiff_sdiff_union_eq S T
+  constructor  -- A ⊆ S
+  exact hAsub
+  constructor  -- A.card = 25
+  exact hAcard
+  constructor  -- B ⊆ univ \ S
+  exact hBcomp
+  constructor  -- B.card = 25
+  exact hBcard
+  -- 5th conjunct: (S \ (S\T)) ∪ (T\S) = T
+  exact hTdef
+
 
 end FinsetCombinatorics
