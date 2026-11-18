@@ -392,6 +392,12 @@ route, not a theorem already in the tree.
 > discharged in the physical-perfect corollary.  See
 > `docs/planning/reviews/2026-11-15-qwen-proof-engineering-review.md` (R1) for the
 > two-gate distinction.
+> **47b-session progress (A3 RHS count-mass):** `commanderExchange25_mass`
+> (the `commanderExchange25` transition bridge) and `hMembershipExchange_rhs_mass`
+> (the pointwise mass of `comp commanderExchange25 membershipLift`, commit
+> `c276eda`) are in `Shufflemath/CommanderMembershipExchange.lean` — the *RHS*
+> half of (A3) is now pointwise established.  Next: the LHS counting core
+> `rawExchangeMembership_count` (part (i)).
 > **23rd–24th-session progress (Spec A2 core + A3 scaffold):**
 > `newLeftCards_conjugate` (`CommanderPhysicalExchange.lean`, commit `6ccae33`)
 > proves the **pointwise** equivariance of the post-exchange left set under any
