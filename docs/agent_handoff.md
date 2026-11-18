@@ -2280,3 +2280,48 @@ then rewrite the LHS per-deck sum to the fiber `#(S ∈ U.powersetCard k, (S∩M
 the step that completes the A3 count half and (with the already-present RHS
 `hMembershipExchange_rhs_mass`) discharges `hMembershipExchange` → the G1 main
 theorem → the A3 item.
+
+
+---
+
+### 47l — A3 count half: pile-count lemmas done; next is the per-deck count mass (build-order item 3)
+
+**Done this session (all building green; commits `1d2308f` + `dbe2a50` + `ee6cd79`):**
+- `leftPileCount25 (d : CommanderPermutation.Deck) (a : Nat) (ha : a ≤ 25)`:
+  `#(L ∈ leftChoices, markedInLeft d L = a) = choose (markedLeftPos d).card a *
+  choose (50 - (markedLeftPos d).card) (25 - a)`.
+- `rightPileCount25`: the right-pile (`Fin 49`) analogue,
+  `choose (markedRightPos d).card a * choose (49 - (markedRightPos d).card) (25 - a)`.
+  Both are one-line instances of `FinsetCombinatorics.powersetCard_markedContent`
+  (`U = univ`, `M = markedLeftPos d` / `markedRightPos d`); they live in
+  `CommanderMembershipExchange.lean`, which now `public import
+  Shufflemath.FinsetCombinatorics`.
+- **Type note:** in `CommanderMembershipExchange` the bare `Deck` is a polymorphic
+  `Sort u_1` and mismatches `markedLeftPos`/`markedInLeft` (which want the concrete
+  `CommanderPermutation.Deck = Equiv.Perm (Fin 99)`). Type `d` as
+  `CommanderPermutation.Deck`.
+- `_`-prefixed two genuinely-unused kernel hypotheses
+  (`exchangePair_unique_A._hBcard`, `sdiff_inter_split._hM`) to clear the lints.
+
+**Next (build-order item 3 → 4): the per-deck count mass.**
+The per-(L,R) new-left marked count is `newLeftOriginalCount_eq`
+(`CommanderPhysicalExchange`): `(newLeftCards d L R ∩ leftOrigSet).card =
+leftOriginalCount d - markedInLeft d L + markedInRight d R`. So for a deck `d` with
+`x := leftOriginalCount d`, `xR := (markedRightPos d).card`, the number of
+`(L,R) ∈ leftChoices ×ˢ rightChoices` giving new count `n` is the 4-fold Vandermonde
+sum (split on `aL`, with `aR := n - x + aL`),
+  `∑_{aL} choose x aL · choose (50-x) (25-aL) · choose xR (n-x+aL) ·
+        choose (49-xR) (25-n+x-aL)`
+(the `aL`-factor via `leftPileCount25`, the `aR`-factor via `rightPileCount25`).
+This equals the BL transition numerator `transitionNumerator 99 50 25 x n` (the CL —
+already proved in `BernoulliLaplaceGeneral` / `BernoulliLaplaceFiber`), so the per-deck
+count mass `= transitionWeight 99 50 25 x n`. Item 5
+(`rawExchangeMembership_count`) then fiber-averages the per-deck mass over the project
+fiber and matches the already-committed RHS `commanderExchange25_countMass` (as 47h
+mirrored) — discharging `hMembershipExchange` → the G1 main theorem → the A3 item.
+
+**Watch-outs for item 3:** clamp the `aR := n - x + aL` index (out-of-range
+`Nat.choose` is `0`); check how `transitionNumerator` is *defined* before re-proving a
+Vandermonde identity — the existing BL overlap-count lemma may bridge directly; keep all
+new work in `CommanderMembershipExchange.lean` and never import a `Commander*` module
+from `Shufflemath.FiniteDeck.*`.
