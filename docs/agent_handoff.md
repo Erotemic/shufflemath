@@ -77,18 +77,32 @@ proof composes pieces now in the library:
      **`fiberLaw_invariant_underFiberEquiv`**, needing `hE : ∀ d, project (d.trans f) = project d`;
   2. `rawExchangeMembership (d.trans f) = (rawExchangeMembership d).map
      (relabelMembership f f.bijective)` by **`rawExchangeMembership_conjugate`**;
-  3. push the exchange through the equiv: `(fiberLaw project h x).map
-     (rawExchangeMembership ∘ e) = ((fiberLaw project h x).map e).map
-     rawExchangeMembership` — the `.map`/`.join`/`.apply` associativity lives in
-     `Shufflemath/Finite.lean`; confirm the exact lemmas there (a `Dist.map` of a
-     kernel, then `.join`, then `.map` a function).
-**RESOLVED (50th session)** — the missing `hE` is now `project_conjugate` in
-`CommanderPhysicalExchange.lean` (reducing to `leftOriginalCount_conjugate`),
-proved by the frameshift strategy summarized at the top. *(Original analysis kept
-below for reference.)* **The one missing piece was `hE : ∀ d, project (d.trans f) =
-project d`** under
+  3. push the exchange through the equiv: the `.map`/`.join`/`.apply`/`comp`
+     associativity (in `Shufflemath/Finite.lean`: `apply_comp`, `comp_assoc`).
+**[50th session] The full 7-step `calc` assembly is now BLUEPRINTED** at
+`.pi-glla/47b1_membership_invariance_wip.lean` (out of the build graph). It composes:
+`μ_x.map M = apply μ (det M) [apply_deterministic_eq_map] = apply (apply (K x) L) (det M)
+= apply (K x) (comp L (det M)) [apply_comp] = apply (K x) (comp (det e) L)
+[comp_L_Mk_eq_comp_E_L, via rawExchangeMembership_conjugate] = apply (apply (K x) (det e)) L
+[apply_comp] = apply (K x) L [step 1: fiberLaw_invariant_underFiberEquiv + project_conjugate]
+= μ_x`. Two lemmas remain to prove, then the `calc` fills in:
+  (1) **`apply_deterministic_eq_map`** (put in `Finite.lean`): `apply μ (deterministic f) =
+      μ.map f` — `ext y` + the Finsupp pushforward-sum simp set; the 47b1 probe already
+      reduced the LHS to `Σ_{a, f a = y} μ a`, the only open step is not over-reducing the
+      RHS `μ.map f` (drop `Convexity.StdSimplex.map` from the set, then close by the `map`
+      pushforward def).
+  (2) **`comp_L_Mk_eq_comp_E_L`**: `comp L (det M) = comp (det (fun d => d.trans g)) L`,
+      by `funext d` + `rawExchangeMembership_conjugate` (the Equiv's toFun IS
+      `relabelMembership g g.bijective`).
+  A `deckTransEquiv g : Equiv Deck Deck` (the `Equiv` form of `fun d => d.trans g`, via
+  `Equiv.ofBijective` + `Equiv.trans_assoc`/`trans_self_symm`/`trans_one`) is needed because
+  `fiberLaw_invariant_underFiberEquiv` takes an `Equiv`, not a bare function. NOTE: integrate
+  into `CommanderPhysicalExchange.lean` (`.trans`/`.symm` on `Deck` resolve there; an isolated
+  probe fails on `Equiv.trans` dot-notation without the full import context).
+*Historical 47th-session reduction of `hE` (superseded — `hE` is now proven by
+`project_conjugate` above; kept for reference):* the `hE` premise
 `f '' leftOrigSet = leftOrigSet` (a deck map preserving the originally-left set, so
-it commutes with `project`). Since `project d = ⟨leftOriginalCount d - 1, _⟩`, this
+it commutes with `project`) — since `project d = ⟨leftOriginalCount d - 1, _⟩`, this
 reduces (Subtype `ext` on the proof component) to
 **`leftOriginalCount (d.trans f) = leftOriginalCount d`**. A near-complete recipe
 is saved at `.pi-glla/47ak_leftOriginalCount_wip.lean`: reindex the 50 left positions
