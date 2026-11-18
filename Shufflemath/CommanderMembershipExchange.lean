@@ -8,6 +8,8 @@ public import Shufflemath.BernoulliLaplace
 public import Shufflemath.FiberDisintegration
 public import Shufflemath.FinsetCombinatorics
 public import Mathlib.Tactic
+public import Shufflemath.Finite
+public import Mathlib.Data.Fintype.Perm
 
 @[expose] public section
 
@@ -65,6 +67,7 @@ open CommanderMembershipKernels
 open CommanderPhysicalExchange
 open FiberDisintegration
 open FiniteKernel
+open CommanderPermutation
 
 /-
 ## Assembly plan for `hMembershipExchange`
@@ -655,6 +658,134 @@ theorem rightPileCount25 (d : CommanderPermutation.Deck) (a : Nat) (ha : a ≤ 2
   simpa using
     FinsetCombinatorics.powersetCard_markedContent
       (Finset.univ : Finset (Fin 49)) (markedRightPos d) hSub 25 a ha
+
+/-! ## The within-count invariance of the post-exchange membership law (A3 part ii)
+
+The capstone `two_physical_perfect_exchanges_uniform_of_counts` needs the membership-exchange
+law `hMembershipExchange` as a hypothesis.  Its RHS is the uniform membership law, and to show the
+RHS is uniform on a fiber the orbit-stabilizer lemma `distUniform_ofInvariantTransitive` wants a
+*within-count* invariance: for each `leftOrigSet`-preserving deck `g`, the post-exchange law at fiber
+`x` is fixed by the membership relabeling `relabelMembership_equiv g`.  That invariance is exactly
+`mu_x_map_invariance` below, assembled from four building blocks (each a one-line application of an
+existing lemma):
+
+* `deckRelabel` — the deck-relabeling `d ↦ d.trans g` as an `Equiv Deck Deck`;
+* `h6_fiberLaw_fixed` — a uniform `project` fiber law is fixed by the deterministic
+  deck-relabeling kernel (via `fiberLaw_invariant_underFiberEquiv`);
+* `comp_L_detM_eq_comp_detE_L` — kernel-composition equivariance `comp L (det M) = comp (det E) L`;
+* `mu_x_map_invariance` — the 7-step kernel-monad calc tying the above together. -/
+
+/-- The deck-relabeling by `g` (post-composition) as an `Equiv` of the deck type. -/
+noncomputable def deckRelabel (g : Deck) : Equiv Deck Deck :=
+  Equiv.ofBijective (fun d : Deck => Equiv.trans d g)
+    ⟨fun d₁ d₂ h => by
+        apply Equiv.ext; intro a
+        have h1 : g (d₁ a) = g (d₂ a) := by
+          simpa only [Equiv.trans_apply] using (Equiv.ext_iff.mp h) a
+        exact g.injective h1
+      , fun e => ⟨Equiv.trans e (Equiv.symm g), by
+        apply Equiv.ext; intro a
+        change (Equiv.trans (Equiv.trans e (Equiv.symm g)) g) a = e a
+        simp only [Equiv.trans_apply]
+        exact g.apply_symm_apply (e a)⟩⟩
+
+theorem deckRelabel_toFun (g : Deck) (d : Deck) :
+    deckRelabel g d = Equiv.trans d g := by
+  dsimp only [deckRelabel]
+  rfl
+
+/-- The deck-relabeling function equals the `Equiv`'s function. -/
+theorem deckRelabel_fun (g : Deck) :
+    (fun d : Deck => Equiv.trans d g) = (deckRelabel g) := by
+  funext d
+  simpa only [deckRelabel_toFun]
+
+/-- A uniform `project` fiber law is fixed by the deterministic deck-relabeling kernel (the fiber
+law is invariant under a `project`-preserving deck equiv). -/
+theorem h6_fiberLaw_fixed (x : CommanderState) (g : Deck)
+    (hgL : (leftOrigSet).image (g : Fin 99 → Fin 99) = leftOrigSet) :
+    FiniteKernel.apply (fiberLaw project project_surjective x)
+      (FiniteKernel.deterministic (fun d : Deck => Equiv.trans d g)) =
+    fiberLaw project project_surjective x := by
+  rw [FiniteKernel.apply_deterministic_eq_map]
+  have hBridge := congrArg (fun q : Deck → Deck => (fiberLaw project project_surjective x).map q)
+    (deckRelabel_fun g)
+  rw [hBridge]
+  have hE : ∀ d, project ((deckRelabel g) d) = project d :=
+    fun d => by simpa [deckRelabel_toFun] using (project_conjugate d g hgL)
+  exact fiberLaw_invariant_underFiberEquiv
+      project project_surjective x (deckRelabel g) hE
+
+/-- Kernel-composition equivariance: `comp L (det M) = comp (det E) L` (L = physical exchange,
+M = membership relabeling, E = deck relabeling). Both sides reduce to `rawExchangeMembership
+(d.trans g)` via `apply_deterministic_eq_map`, `apply_pointMass`, and `rawExchangeMembership_conjugate`. -/
+theorem comp_L_detM_eq_comp_detE_L (g : Deck) :
+    FiniteKernel.comp rawExchangeMembership
+      (FiniteKernel.deterministic (↑(relabelMembership_equiv (g : Fin 99 → Fin 99) g.bijective))) =
+    FiniteKernel.comp (FiniteKernel.deterministic (fun d : Deck => Equiv.trans d g))
+      rawExchangeMembership := by
+  funext d
+  unfold FiniteKernel.comp
+  have hLHS : ((rawExchangeMembership d).map
+      (FiniteKernel.deterministic (↑(relabelMembership_equiv (g : Fin 99 → Fin 99) g.bijective)))).join =
+      (rawExchangeMembership d).map (↑(relabelMembership_equiv (g : Fin 99 → Fin 99) g.bijective)) := by
+    change FiniteKernel.apply (rawExchangeMembership d)
+      (FiniteKernel.deterministic (↑(relabelMembership_equiv (g : Fin 99 → Fin 99) g.bijective))) =
+      (rawExchangeMembership d).map (↑(relabelMembership_equiv (g : Fin 99 → Fin 99) g.bijective))
+    rw [FiniteKernel.apply_deterministic_eq_map]
+  have hRHS : ((FiniteKernel.deterministic (fun d' : Deck => Equiv.trans d' g) d).map rawExchangeMembership).join =
+      rawExchangeMembership (Equiv.trans d g) := by
+    dsimp only [FiniteKernel.deterministic]
+    change FiniteKernel.apply (Dist.pointMass (Equiv.trans d g)) rawExchangeMembership =
+      rawExchangeMembership (Equiv.trans d g)
+    rw [FiniteKernel.apply_pointMass]
+  rw [hLHS, hRHS]
+  have hRel : (rawExchangeMembership d).map (↑(relabelMembership_equiv (g : Fin 99 → Fin 99) g.bijective)) =
+      (rawExchangeMembership d).map (relabelMembership (g : Fin 99 → Fin 99) g.bijective) := by
+    apply congrArg
+    simp only [relabelMembership_equiv, Equiv.coe_ofBijective]
+  simpa [hRel] using (rawExchangeMembership_conjugate d g).symm
+
+/-- `μ_x.map (relabelMembership_equiv g) = μ_x`: the post-exchange membership law at fiber `x` is
+fixed by the `leftOrigSet`-preserving deck-relabeling `g`. This is the within-count invariance input
+to `distUniform_ofInvariantTransitive` (part (ii) of the A3 `hMembershipExchange` capstone).
+
+The 7-step kernel-monad calc: monad unit (`apply_deterministic_eq_map`), associativity
+(`apply_comp`), the comp-equivariance (`comp_L_detM_eq_comp_detE_L`), and the fiber-law invariance
+(`h6_fiberLaw_fixed`). -/
+theorem mu_x_map_invariance (x : CommanderState) (g : Deck)
+    (hgL : (leftOrigSet).image (g : Fin 99 → Fin 99) = leftOrigSet) :
+    ((FiniteKernel.comp (fiberLaw project project_surjective) rawExchangeMembership) x).map
+      (↑(relabelMembership_equiv (g : Fin 99 → Fin 99) g.bijective)) =
+    (FiniteKernel.comp (fiberLaw project project_surjective) rawExchangeMembership) x := by
+  set K := fiberLaw project project_surjective
+  set L := rawExchangeMembership
+  set eM : Equiv Membership Membership := relabelMembership_equiv (g : Fin 99 → Fin 99) g.bijective
+  set μx := (FiniteKernel.comp K L) x
+  have h2 : μx = FiniteKernel.apply (K x) L := by
+    dsimp only [μx, FiniteKernel.comp, FiniteKernel.apply]
+  have h4 : FiniteKernel.comp L (FiniteKernel.deterministic (↑eM)) =
+      FiniteKernel.comp (FiniteKernel.deterministic (fun d : Deck => Equiv.trans d g)) L :=
+    comp_L_detM_eq_comp_detE_L g
+  change μx.map (↑eM) = μx
+  have h1 : μx.map (↑eM) = FiniteKernel.apply μx (FiniteKernel.deterministic (↑eM)) :=
+    (FiniteKernel.apply_deterministic_eq_map μx (↑eM)).symm
+  calc
+    μx.map (↑eM) = FiniteKernel.apply μx (FiniteKernel.deterministic (↑eM)) := h1
+    _ = FiniteKernel.apply (FiniteKernel.apply (K x) L) (FiniteKernel.deterministic (↑eM)) := by
+        rw [h2]
+    _ = FiniteKernel.apply (K x) (FiniteKernel.comp L (FiniteKernel.deterministic (↑eM))) :=
+        FiniteKernel.apply_comp _ _ _
+    _ = FiniteKernel.apply (K x)
+        (FiniteKernel.comp (FiniteKernel.deterministic (fun d : Deck => Equiv.trans d g)) L) := by
+        rw [h4]
+    _ = FiniteKernel.apply (FiniteKernel.apply (K x)
+        (FiniteKernel.deterministic (fun d : Deck => Equiv.trans d g))) L := by
+        rw [← FiniteKernel.apply_comp]
+    _ = FiniteKernel.apply (K x) L := by
+        dsimp only [K]
+        rw [h6_fiberLaw_fixed x g hgL]
+    _ = μx := (h2).symm
 
 end CommanderMembershipExchange
 end Shufflemath
