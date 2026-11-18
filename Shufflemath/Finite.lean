@@ -262,6 +262,27 @@ theorem apply_comp (mu : Dist alpha) (K : FiniteKernel alpha beta)
     _ = (mu.map (comp K L)).join := by
       rfl
 
+/-- Applying a **deterministic** kernel (one that sends each `a` to the point mass at
+`f a`) to a distribution is exactly the ordinary function pushforward `mu.map f`: the
+`mu`-weighted mixture of point masses `pointMass (f a)` is the pushforward of `f`.
+This is the kernel-level form of the distribution-monad unit law and is what lets a
+bare function be used wherever a kernel is expected.
+
+Proved on masses: `apply_mass` gives the left side the `mu`-weighted sum of the
+point-mass row masses, and the right side unfolds to the same pushforward sum (`map`
+keeps the `Finsupp.mapDomain` weights, flattened to a `Finset.sum`). The codomain
+`Fintype` is required only so that `apply_mass` sums over `Finset.univ`. -/
+theorem apply_deterministic_eq_map [Fintype alpha] [Fintype beta]
+    [DecidableEq alpha] [DecidableEq beta] (mu : Dist alpha) (f : alpha → beta) :
+    apply mu (deterministic f) = mu.map f := by
+  ext y
+  rw [← Dist.mass, apply_mass]
+  simp only [Dist.mass, Convexity.StdSimplex.map, Finsupp.mapDomain]
+  rw [Finsupp.sum_fintype]
+  <;> simp
+  simp [Finsupp.single_apply, eq_comm, deterministic, Dist.pointMass,
+    Convexity.StdSimplex.single]
+
 /-- Associativity of kernel composition: `comp (comp K L) M = comp K (comp L M)`.
 
 Follows by applying `apply_comp` at a point mass, which makes `comp` a genuine

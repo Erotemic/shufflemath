@@ -41,30 +41,42 @@ generic T4 measure-half):
     step 1 (`fiberLaw_invariant_underFiberEquiv`) needs.
   - [DONE] `rawExchangeMembership_conjugate` — in the library (commit 6a45608).
   - [DONE] `fiberLaw_invariant_underFiberEquiv` — in the library (commit 7cbc3e6).
-  - [TODO 1] `apply_deterministic_eq_map`: `apply μ (deterministic f) = μ.map f`,
+  - [DONE — in the library] `apply_deterministic_eq_map` (Fintype version) is now in
+    `Shufflemath/Finite.lean` (next to `apply_comp`), proved by `ext y` + `apply_mass`
+    for the LHS and `mapDomain`/`Finsupp.sum_fintype` for the RHS (the Fubini side
+    conditions close under a bare default `simp` with the imported `SMulWithZero` lemmas).
+    ORIGINAL PLAN (now historical): `apply μ (deterministic f) = μ.map f`,
     a general `Finite.lean` map/join identity.
-    **50th session — REDUCED.** `unfold apply deterministic; ext y` then
-    `simp [Shufflemath.Dist.pointMass, Convexity.StdSimplex.single, Finsupp.mapDomain,
-    Finsupp.mapDomain_apply, Finsupp.sum_apply', Finsupp.single_apply, ...]` leaves:
-      `(μ.weights.mapDomain (fun a => StdSimplex.single (f a))).sum (fun d w => w * d.weights y)
-       = μ.weights.mapDomain (fun a => StdSimplex.single (f a))`  -- NO, the RHS is below
-    Precisely, the residual goal is
-      `((μ.weights.sum fun a => Finsupp.single (StdSimplex.single (f a))).sum fun d w => w * d.weights y)
-       = μ.weights.sum fun a w => (Finsupp.single (f a) w) y`
-    i.e. LHS = the **join** mass at `y` (a *nested* Finsupp sum: over the
-    point-mass distributions, then their mass at y) and RHS = the **flat pushforward**
-    (`mapDomain f`-style). Both evaluate to `Σ_{a : α} μ a · (Finsupp.single (f a)) y`.
-    **The one remaining step** is the Finsupp **Fubini** rearrangement that flattens the
-    nested LHS sum into the flat RHS sum — `Finsupp.sum_sum` / `sum_sum_index` (cf.
-    `map_join_kernels`, which closes the analogous `(σ.join).map L` rearrangement with
-    `simp [Finsupp.mapDomain, add_smul, Finsupp.sum_sum_index, Finsupp.sum_smul_index,
-    Finsupp.smul_sum]`). NOTE: a *single* `simp` has not yet flattened it — the inner sum
-    has index type `StdSimplex β` while the outer has `α`, so the Fubini step must apply
-    `Finsupp.sum_sum` to the *nested* `((x.sum k).sum k')` form first. Next session: try
-    `dsimp [pointMass, StdSimplex.single]; rw [Finsupp.sum_sum]; simp [Finsupp.single_apply,
-    Finsupp.mapDomain, ite_mul]; ring`, or route through `map_join_kernels`/`join_join_kernels`.
-    (Also: `apply`/`deterministic` live in `Shufflemath.FiniteKernel`, not `Shufflemath.Finite`.)
-    Put the finished lemma in `Finite.lean` next to `map_join_kernels`.
+    **50th session — nearly solved.** The practical **Fintype version** is the one the
+    μ_x case needs (α = Deck, β = Membership, both Fintype) and it goes:
+      ```
+      theorem apply_deterministic_eq_map [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β]
+          (μ : Shufflemath.Dist α) (f : α → β) :
+          Shufflemath.FiniteKernel.apply μ (Shufflemath.FiniteKernel.deterministic f) = μ.map f := by
+        ext y
+        rw [← Shufflemath.Dist.mass, Shufflemath.FiniteKernel.apply_mass]   -- LHS → ∑ a, μ a * (det f a).weights y
+        simp only [Shufflemath.Dist.mass, Convexity.StdSimplex.map, Finsupp.mapDomain]
+        rw [Finsupp.sum_fintype]     -- RHS (μ.weights.mapDomain f) y → Finset.sum
+        <;> simp [Finsupp.smul_apply, Finsupp.single_apply, Finsupp.zero_apply, mul_comm]
+        apply Finset.sum_congr rfl; intro a _
+        simp [Shufflemath.FiniteKernel.deterministic, Shufflemath.Dist.pointMass,
+              Convexity.StdSimplex.single, Finsupp.single_apply, eq_comm]
+      ```
+    **The one residual**: `rw [Finsupp.sum_fintype]` (≡ the Fubini `Finsupp.sum_finsetSum`,
+    `Mathlib/Algebra/BigOperators/Finsupp/Basic.lean:418` `(∑ i ∈ s, f i).sum g =
+    ∑ i ∈ s, (f i).sum g`) emits a bilinearity side condition `∀ i, Finsupp.single (f i) 0 = 0`
+    (i.e. `0 • Finsupp.single (f i) = 0`, = `smul_zero`). The side condition + the RHS
+    summand normalization (`(Finsupp.single (f a₁) m) y → m * (Finsupp.single (f a₁)) y`) need
+    the right `SMul`-linearity simp lemmas. **Next session:** in the FULL library context
+    (a probe that imports `Shufflemath.Finite` and the SMulWithZero file `Finite.lean` already
+    imports, `Mathlib.Data.Finsupp.SMulWithZero`), close the side condition with
+    `Finsupp.smul_zero`/`SMulWithZero`-class lemmas (grep `SMulWithZero` for the exact names —
+    `Finsupp.smul_zero`/`smul_add` do NOT exist under those bare names in this Mathlib), or
+    avoid it by `rw [Finsupp.sum_finsetSum]` with the two explicit `h₁`/`h₂` goals discharged
+    by `ring`. Once it compiles, put it in `Finite.lean` next to `apply_mass`.
+    **Once TODO 1 lands, TODO 2 is trivial** (`comp L (det M) = comp (det E) L` reduces to
+    `funext; rw [apply_comp, apply_deterministic_eq_map]; exact rawExchangeMembership_conjugate`),
+    and the 7-step μ_x calc assembles.
   - [TODO 2] `comp_L_Mk_eq_comp_E_L`: kernel equality
     `comp L (det M) = comp (det (fun d => d.trans g)) L` for L =
     rawExchangeMembership, M = relabelMembership_equiv g g.bijective. Proof:
