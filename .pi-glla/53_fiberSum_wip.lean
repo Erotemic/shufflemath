@@ -6,6 +6,16 @@ public import Mathlib.Data.Finset.Basic
 
 @[expose] public section
 
+-- *** RESOLVED (55th session) ***  The double-count is now a durable library lemma:
+--   `FinsetCombinatorics.fiberSum_eq_preimageCard`
+--   `Fintype.card {x : X // f x ∈ S} = ∑ m ∈ S, Fintype.card {x : X // f x = m}`
+-- proved by the `Finset.card_biUnion` path (pairwise-disjoint fiber Finsets),
+-- bridging Fintype↔Finset-card via `Fintype.card_subtype` + `Set.ncard_coe_finset`
+-- (the sigma/HEq path was abandoned: its `right_inv` 2nd component is an `HEq`
+-- between propositionally-equal fiber types that `Subtype.ext rfl` would not
+-- typecheck).  Lands in `Shufflemath/FinsetCombinatorics.lean` (already imported by
+-- `CommanderMembershipExchange`).  Next step: A3 part (i) `rawExchange_membershipCount_mass`.
+
 namespace Shufflemath
 
 /-! WIP (54th session) — the general fiber-sum / double-count identity.

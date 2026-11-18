@@ -4,6 +4,10 @@ public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Finset.SDiff
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Set.Card
+public import Mathlib.Data.Finset.Union
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -326,5 +330,54 @@ theorem powersetCard_markedContent {α : Type*} [Fintype α] [DecidableEq α]
   rw [hBridge, hEquiv, hProd, Finset.card_product,
       Finset.card_powersetCard, Finset.card_powersetCard,
       Finset.card_sdiff_of_subset hM]
+
+/-- **Fiber double-count.**  For a function `f : X → Y` between finite types and a
+    set of targets `S`, the total size of the fibers over `S` is the size of the
+    preimage of `S`: `∑ m ∈ S, #{x : f x = m} = #{x : f x ∈ S}`.  The fibers
+    `#{x : f x = m}` (for `m ∈ S`) are pairwise disjoint and their union is exactly
+    the preimage `{x : f x ∈ S}`.
+
+    This is the general form of the A3 part-(i) fiber-sum → preimage-sum collapse
+    (`Σ_{m : count m = c} #{j : F j = m} = #{j : count (F j) = c}`, with `F` the
+    post-exchange membership map and `S` the `c`-fiber of membership counts): the
+    total mass of the raw exchange into a membership-count fiber is a count of a
+    preimage, which then identifies with the Bernoulli--Laplace transition -/
+theorem fiberSum_eq_preimageCard {X : Type*} [Fintype X] [DecidableEq X]
+    (Y : Type*) [Fintype Y] [DecidableEq Y] (f : X → Y) (S : Finset Y) :
+    Fintype.card {x : X // f x ∈ S} = ∑ m ∈ S, Fintype.card {x : X // f x = m} := by
+  classical
+  let F (m : Y) : Finset X := (Finset.univ : Finset X).filter (fun x => f x = m)
+  -- fiber Fintype-card = its Finset-filter card (bridge via Fintype.card_subtype + ncard)
+  have hFiber (m : Y) : Fintype.card {x // f x = m} = (F m).card := by
+    simp [F, Fintype.card_subtype]
+  -- preimage Fintype-card = its Finset-filter card
+  have hPre : Fintype.card {x // f x ∈ S} =
+      Finset.card ((Finset.univ : Finset X).filter (fun x => f x ∈ S)) := by
+    simp [Fintype.card_subtype]
+  -- the biUnion of the fibers over S is exactly the preimage
+  have hBiUnion : (S).biUnion F = (Finset.univ : Finset X).filter (fun x => f x ∈ S) := by
+    ext x
+    simp [F]
+  calc
+    _ = Finset.card ((Finset.univ : Finset X).filter (fun x => f x ∈ S)) := by rw [hPre]
+    _ = Finset.card ((S).biUnion F) := by rw [hBiUnion]
+    _ = ∑ m ∈ S, (F m).card := by
+      rw [Finset.card_biUnion]
+      · -- (S : Set Y).PairwiseDisjoint F : distinct fibers are disjoint
+        intro i _ j _ hne
+        change Disjoint (F i) (F j)
+        rw [Finset.disjoint_left]
+        -- goal: ∀ a, a ∈ F i → a ∉ F j
+        intro a ha
+        by_contra hab
+        -- ha : a ∈ F i  =>  f a = i ;  hab : a ∈ F j  =>  f a = j
+        have hia : f a = i := by simpa [F, Finset.mem_filter, Finset.mem_univ] using ha
+        have hja : f a = j := by simpa [F, Finset.mem_filter, Finset.mem_univ] using hab
+        -- i = f a = j, contradicting hne : i ≠ j
+        exact hne (hia.symm.trans hja)
+    _ = ∑ m ∈ S, Fintype.card {x // f x = m} := by
+      apply Finset.sum_congr rfl
+      intro m _
+      rw [hFiber]
 
 end FinsetCombinatorics
