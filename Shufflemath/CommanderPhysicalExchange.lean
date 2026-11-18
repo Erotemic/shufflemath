@@ -744,6 +744,54 @@ theorem hMembershipExchange_lhs_reduces :
     apply Finset.mem_image.mpr
     exact ⟨l, Finset.mem_univ l, rfl⟩
 
+  /- 47y — deck-independence, EXISTENCE half (left). Converse to 47x's unique half: because
+     `d ∘ leftPosition` is an injective map of the 50 left positions onto the left pile
+     `leftCards d`, every 25-card-subset `A` of the pile is the image of exactly one
+     25-position-set (its preimage). A uniform choice of 25 positions therefore induces a
+     uniform choice of 25 left cards, independent of the deck's position arrangement — the
+     distributional deck-independence needed for F3 item 3 (the membership-level mass). -/
+
+  /-- Every 25-card-subset of the left pile is the image of a 25-position-set (its
+      preimage under the injective left map); combined with 47x's unique half this is a
+      bijection between 25-position-sets and 25-card-subsets of the left pile. -/
+  theorem leftCardImage_has_preimage (d : Deck) (A : Finset (Fin 99))
+      (hAsub : A ⊆ leftCards d) (hAcard : A.card = 25) :
+      ∃ L : Finset (Fin 50), L.card = 25 ∧ L.image (fun l => d (leftPosition l)) = A := by
+    let f := fun (l : Fin 50) => d (leftPosition l)
+    have hf : Function.Injective f := d.injective.comp leftPosition_injective
+    have hleft : (Finset.univ : Finset (Fin 50)).image f = leftCards d := by
+      unfold leftCards
+      rfl
+    let L := (Finset.univ : Finset (Fin 50)).filter (fun l => f l ∈ A)
+    have hLimage : L.image f = A := by
+      apply Finset.ext
+      intro x
+      constructor
+      · -- x ∈ L.image f → x ∈ A
+        intro hx
+        rcases Finset.mem_image.mp hx with ⟨l, hl, rfl⟩
+        change l ∈ (Finset.univ : Finset (Fin 50)).filter (fun l => f l ∈ A) at hl
+        simp only [Finset.mem_filter] at hl
+        exact hl.2
+      · -- x ∈ A → x ∈ L.image f  (A ⊆ image f, so x = f l for some l, and then l ∈ L)
+        intro hx
+        have hsub : x ∈ (Finset.univ : Finset (Fin 50)).image f := by
+          rw [hleft]
+          exact hAsub hx
+        rcases Finset.mem_image.mp hsub with ⟨l, _, rfl⟩
+        apply Finset.mem_image.mpr
+        refine ⟨l, ?_, rfl⟩
+        change l ∈ (Finset.univ : Finset (Fin 50)).filter (fun l => f l ∈ A)
+        simp only [Finset.mem_filter]
+        exact ⟨Finset.mem_univ l, hx⟩
+    have hLcard : L.card = 25 := by
+      have hcard : (L.image f).card = L.card := Finset.card_image_of_injective L hf
+      calc
+        L.card = (L.image f).card := hcard.symm
+        _ = A.card := by simpa [hLimage]
+        _ = 25 := hAcard
+    exact ⟨L, hLcard, hLimage⟩
+
 
 end CommanderPhysicalExchange
 end Shufflemath
