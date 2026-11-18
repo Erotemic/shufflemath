@@ -864,5 +864,42 @@ theorem mu_x_constant_on_countFiber (x : CommanderState) (m m' : Membership)
         _ = Dist.mass μx m := by rw [Equiv.symm_apply_apply]
   exact h.symm
 
+/-- **Part (i) normalization bridge.**  The normalization `N_LR` of the post-exchange
+    membership law (`GSR.uniformDist exchangeChoice`) is exactly the Bernoulli--Laplace
+    transition denominator: the `(L, R)` choice space is the product of the 25-subset
+    spaces of the 50-card left pile and the 49-card right pile, so its cardinality is
+    `choose 50 25 * choose 49 25 = transitionDenominator 99 50 25`.  This is what lets
+    the LHS fiber-average of the `rawExchangeMembership_count` assembly be expressed in
+    the same `transitionWeight` normalization as the RHS `commanderExchange25`. -/
+theorem exchangeChoice_card_eq_transitionDenominator :
+    (Fintype.card exchangeChoice : Rat) =
+      (transitionDenominator 99 50 25 : Rat) := by
+  classical
+  -- the product choice space
+  have hProd : Fintype.card exchangeChoice =
+      Fintype.card {L : Finset (Fin 50) // L ∈ leftChoices} *
+      Fintype.card {R : Finset (Fin 49) // R ∈ rightChoices} := by
+    unfold exchangeChoice
+    simp only [Fintype.card_prod]
+  -- the subtype cards are the finset cards
+  have hSubL : Fintype.card {L : Finset (Fin 50) // L ∈ leftChoices} = (leftChoices).card := by
+    simp [Fintype.card_subtype, leftChoices, Finset.mem_powersetCard]
+  have hSubR : Fintype.card {R : Finset (Fin 49) // R ∈ rightChoices} = (rightChoices).card := by
+    simp [Fintype.card_subtype, rightChoices, Finset.mem_powersetCard]
+  -- each finset card is the corresponding binomial coefficient
+  have hLc : (leftChoices).card = Nat.choose 50 25 := by
+    unfold leftChoices
+    rw [Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
+  have hRc : (rightChoices).card = Nat.choose 49 25 := by
+    unfold rightChoices
+    rw [Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
+  -- transitionDenominator 99 50 25 = choose 50 25 * choose (99-50) 25 = choose 50 25 * choose 49 25
+  have hTd : (transitionDenominator 99 50 25 : Rat) =
+      (Nat.choose 50 25 * Nat.choose 49 25 : Rat) := by
+    unfold transitionDenominator
+    norm_num
+  rw [hProd, hSubL, hSubR, hLc, hRc, hTd]
+  simp [Nat.cast_mul]
+
 end CommanderMembershipExchange
 end Shufflemath
