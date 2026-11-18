@@ -341,6 +341,53 @@ theorem leftImg_disjoint_rightFull (d : Deck) (L : Finset (Fin 50)) :
   · intro hc
     exact absurd hc (by simp : ¬ c ∈ (∅ : Finset (Fin 99)))
 
+/-- The selected-right image is recoverable from the post-exchange left pile by
+    intersecting with the deck's full right-position card set (the left part is
+    disjoint from that set; the selected-right part already sits inside it). -/
+theorem newLeftCards_rightPart_deck (d : Deck) (L : Finset (Fin 50)) (R : Finset (Fin 49)) :
+    R.image (fun r => d (rightPosition r)) =
+      newLeftCards d L R ∩ (univ : Finset (Fin 49)).image (fun r => d (rightPosition r)) := by
+  have hAempty := leftImg_disjoint_rightFull d L
+  have hAemptyR : (univ : Finset (Fin 49)).image (fun r => d (rightPosition r)) ∩
+      ((univ : Finset (Fin 50)) \ L).image (fun l => d (leftPosition l)) = ∅ :=
+    (Finset.inter_comm _ _).symm.trans hAempty
+  have hrightSub : R.image (fun r => d (rightPosition r)) ⊆
+      (univ : Finset (Fin 49)).image (fun r => d (rightPosition r)) := by
+    intro c hc
+    rcases Finset.mem_image.mp hc with ⟨r, hr, hcr⟩
+    exact Finset.mem_image.mpr ⟨r, Finset.mem_univ r, hcr⟩
+  unfold newLeftCards
+  rw [Finset.inter_comm, Finset.inter_union_distrib_left, hAemptyR, Finset.empty_union]
+  exact (Finset.ext fun c => Iff.intro
+    (fun hc => Finset.mem_inter.mpr ⟨hrightSub hc, hc⟩)
+    (fun hc => (Finset.mem_inter.mp hc).2))
+
+/-- **Step 2 (unique half, full):** the map `(L, R) ↦ newLeftCards d L R` is injective
+    for a fixed deck `d`: equal post-exchange left piles force equal `L` and equal `R`.
+    This is the uniqueness half of the (L,R)↦T bijection of the physical exchange. -/
+theorem newLeftCards_injective (d : Deck) (L L' : Finset (Fin 50)) (R R' : Finset (Fin 49))
+    (h : newLeftCards d L R = newLeftCards d L' R') : L = L' ∧ R = R' := by
+  have hL : L = L' := newLeftCards_injective_L d L L' R R' h
+  have h2 : newLeftCards d L R = newLeftCards d L R' := by simpa [← hL] using h
+  have hpartR : R.image (fun r => d (rightPosition r)) =
+      newLeftCards d L R ∩ (univ : Finset (Fin 49)).image (fun r => d (rightPosition r)) :=
+    newLeftCards_rightPart_deck d L R
+  have hpartR' : R'.image (fun r => d (rightPosition r)) =
+      newLeftCards d L R' ∩ (univ : Finset (Fin 49)).image (fun r => d (rightPosition r)) :=
+    newLeftCards_rightPart_deck d L R'
+  have himg : R.image (fun r => d (rightPosition r)) = R'.image (fun r => d (rightPosition r)) := by
+    calc
+      _ = newLeftCards d L R ∩ (univ : Finset (Fin 49)).image (fun r => d (rightPosition r)) := hpartR
+      _ = newLeftCards d L R' ∩ (univ : Finset (Fin 49)).image (fun r => d (rightPosition r)) := by rw [h2]
+      _ = R'.image (fun r => d (rightPosition r)) := hpartR'.symm
+  have hR : R = R' :=
+    image_injective_eq (fun r => d (rightPosition r)) (by
+      intro r r' h
+      have hval : (rightPosition r).val = (rightPosition r').val := congrArg Fin.val (d.injective h)
+      have hrv : r.val = r'.val := by simp [rightPosition] at hval ⊢; omega
+      exact Fin.val_injective hrv) himg
+  exact ⟨hL, hR⟩
+
 /-- **Spec A2 core: stabilizer-invariance of the exchange, pointwise.** Relabeling the
     cards by a permutation `f` commutes with `newLeftCards`: the post-exchange left
     pile of the relabeled deck `d.trans f` is exactly the `f`-image of the original
