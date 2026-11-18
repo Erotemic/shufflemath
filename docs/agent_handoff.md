@@ -40,8 +40,19 @@ of `comp commanderExchange25 (det commanderLeftCount)` is
 `commanderStationary_is_stationary` + `commanderStationaryRun` (`f7976d2`) —
 the reversibility and hypergeometric fixed-point A3 ingredients. **47g:** the
 25-overlap preservation lemmas (`newMembership_overlap_25` et al., `9b5a45a`) in
-`CommanderPhysicalExchange.lean`. **Next: the physical membership-level mass
-identity (the "genuinely hard half") — start with the count-transition LHS
+`CommanderPhysicalExchange.lean`. **47v (this session): the F3 A3 transition kernel is
+PROVED in both forms** (0 `sorry`). (a) `_Probe47v.transitionNumerator_eq_fiberProduct
+(d : Deck) (n : Nat) : transitionNumerator 99 50 25 (leftOriginalCount d) n =
+# {(L, R) : (leftOriginalCount d - markedInLeft d L) + markedInRight d R = n}` — the
+marked/const-sub form, built from `fiberSum_extendsTo_range26` (the range-26 domain
+extension: the marked-left image ⊆ range 26, so the image-fiber sum equals the range-26
+sum) and `fiberSummand_eq_transitionIntegrand` (each range-26 fiber summand equals the
+Bernoulli-Laplace transition integrand). (b) `_Probe47u.perDeckBridge` (the physical
+`newLeftCards`-count form) is a clean two-lemma composition: `newLeftOriginalCount_eq`
+(physical → marked const-sub) ∘ the 47v kernel (marked → transition numerator). This
+completes the 47j counting-kernel goal: the per-deck A3 count mass equals
+`transitionWeight 99 50 25 (count x) n`. **Next: the physical membership-level mass
+identity** (the "genuinely hard half") — start with the count-transition LHS
 `comp (comp (fiberLaw project) rawExchangeMembership) (det membershipCount) =
 comp commanderExchange25 (det commanderLeftCount)`** (a multi-lemma development;
 see the 47f NEXT ACTION in "Exactly where to resume"). T3/T5 remain.) The
