@@ -787,5 +787,43 @@ theorem mu_x_map_invariance (x : CommanderState) (g : Deck)
         rw [h6_fiberLaw_fixed x g hgL]
     _ = μx := (h2).symm
 
+/-- The `hTrans` bridge for the A3 capstone `distUniform_ofInvariantTransitive`.
+
+`membershipFiber_transitive` gives, for any two equal-count memberships, a bare
+bijection `f : Fin 99 → Fin 99` (preserving `leftOrigSet`) whose *Set* image maps
+`m`'s fiber to `m'`'s.  This wraps that `f` as a `Deck` (`Equiv.ofBijective`) so the
+orbit map becomes exactly the `E`-language equiv `relabelMembership_equiv (g) g.bijective`
+that the capstone's `hTrans` slot requires — i.e. the transitivity of the deck-symmetry
+action on each membership-count fiber, in the `E` form `distUniform_ofInvariantTransitive`
+consumes. -/
+theorem membershipFiber_transitive_asEquiv (m m' : Membership)
+    (h : membershipCount m = membershipCount m') :
+    ∃ g : Deck, (g : Fin 99 → Fin 99) '' leftOrigSet = leftOrigSet ∧
+      (relabelMembership_equiv (g : Fin 99 → Fin 99) g.bijective) m = m' := by
+  obtain ⟨f, hf, hL, hImg⟩ := membershipFiber_transitive m m' h
+  have hf' : (Equiv.ofBijective f hf : Fin 99 → Fin 99) = f := rfl
+  refine ⟨Equiv.ofBijective f hf, ?_, ?_⟩
+  · simpa [hf'] using hL
+  · have hgoal : (relabelMembership_equiv (Equiv.ofBijective f hf : Fin 99 → Fin 99)
+        (Equiv.ofBijective f hf).bijective m) = m' := by
+      apply Subtype.ext
+      change m.1.image (Equiv.ofBijective f hf : Fin 99 → Fin 99) = m'.1
+      -- `(⇑(ofBijective f hf))` is definitionally `f`
+      change m.1.image f = m'.1
+      -- hImg (f''↑m.1 = ↑m'.1) is the Set-level image equality from membershipFiber_transitive
+      have hSet : f '' ↑m.1 = ↑m'.1 := by simpa only [hImg]
+      refine Finset.ext ?_
+      intro a
+      constructor
+      · intro hIn
+        -- a ∈ m.1.image f  ⟶  a ∈ ↑m'.1  ⟶  a ∈ m'.1
+        rw [← Finset.mem_coe, ← hSet, ← Finset.coe_image, Finset.mem_coe]
+        exact hIn
+      · intro hIn
+        -- a ∈ m'.1  ⟶  a ∈ ↑(m.1.image f)  ⟶  a ∈ m.1.image f
+        rw [← Finset.mem_coe, Finset.coe_image, hSet, Finset.mem_coe]
+        exact hIn
+    exact hgoal
+
 end CommanderMembershipExchange
 end Shufflemath
