@@ -15,49 +15,60 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-22 (A3 **part (ii) kernel equivariance**) — two more part (ii)
-results landed in the main library this session:
-- **`relabelMembership_equiv`** (`Shufflemath/CommanderMembershipOrbits.lean`,
-  `commit 89eb06c`): the deck-symmetry **`Equiv Membership ≃ Membership`** — the
-  `E : Set (Equiv Membership)` for `distUniform_ofInvariantTransitive`.
-- **`newMembership_conjugate`** (`Shufflemath/CommanderPhysicalExchange.lean`,
-  `commit 9f71265`): the **pointwise** kernel equivariance
-  `newMembership (d.trans g) L hL R hR = relabelMembership (g : Fin 99 → Fin 99)
-  g.bijective (newMembership d L hL R hR)` — the direct building block for the
-  distribution-level equivariance. (`CommanderPhysicalExchange` now imports
-  `CommanderMembershipOrbits`; no cycle — Orbits depends only on
-  Kernels/Permutation/FinsetCombinatorics.)
+**Updated:** 2026-11-24 (A3 **fiber-level invariance — general core**) — three
+milestones are now in the main library:
+- **`rawExchangeMembership_conjugate`** (`Shufflemath/CommanderPhysicalExchange.lean`,
+  `commit 6a45608`): the **distribution-level** kernel equivariance
+  `rawExchangeMembership (d.trans g) = (rawExchangeMembership d).map
+  (relabelMembership (g : Fin 99 → Fin 99) g.bijective)` (the exchange membership
+  law is equivariant under the deck-relabeling group). Its proof (right after the
+  `rawExchangeMembership` def) used `Convexity.StdSimplex.map_map` + `funext` + the
+  pointwise `newMembership_conjugate`.
+- **`hMembershipExchange_lhs_reduces`** (`Shufflemath/CommanderPhysicalExchange.lean`):
+  the premise's LHS reduces to
+  `comp (fiberLaw project project_surjective) rawExchangeMembership`, i.e. the
+  post-exchange membership law `μ_x = (·) x`.
+- **`fiberLaw_invariant_underFiberEquiv`**
+  (`Shufflemath/CommanderMembershipExchange.lean`, `commit 7cbc3e6`): the
+  **general** fiber-level invariance — the uniform project-fiber law
+  `fiberLaw observe h x` is fixed by any equiv `e` of the fiber space that commutes
+  with the observation (`∀ b, observe (e b) = observe b`), because `e` permutes the
+  fiber `{ b | observe b = x }` onto itself. Proved via `map_equiv_mass`
+  (`Dist.mass = .weights`) + `fiberLaw_mass`. This is the distributional "uniform is
+  invariant under the fiber's symmetry group" fact — the invariance input to
+  `distUniform_ofInvariantTransitive`.
 
-**Exactly where to resume: the distribution-level kernel equivariance
-`rawExchangeMembership_conjugate`** (place in `Shufflemath/CommanderPhysicalExchange.lean`
-right after the `rawExchangeMembership` def):
-```
-theorem rawExchangeMembership_conjugate (d g : Deck) :
-    rawExchangeMembership (d.trans g) =
-      (rawExchangeMembership d).map (relabelMembership (g : Fin 99 → Fin 99) g.bijective)
-```
-Reduction: `unfold rawExchangeMembership at *` (both sides become
-`(GSR.uniformDist exchangeChoice).map (fun c => newMembership · (c.1.1)
-(leftCard25 c.1.2) (c.2.1) (rightCard25 c.2.2))`); pull the nested `.map` into one,
-then reduce to the pointwise `newMembership_conjugate d g (c.1.1) (leftCard25 c.1.2)
-(c.2.1) (rightCard25 c.2.2)` by function extensionality.
-**Got stuck here (API caveat):** the raw `Convexity.StdSimplex.map` / `.map`
-notation is `@[deprecated]` (since 2026-08-29); the composition lemma is
-`map_comp_apply : map g (map f x) = map (g.comp f) x` (NOT a `map_map` named that
-way), and the `.map` notation's argument order (`(dist).map f`) differs from the raw
-`map f (dist)`. `Finite.lean` uses `Convexity.StdSimplex.map_map` (lines 261, 478)
-*without* warnings, so prefer that spelling. If `rw [Convexity.StdSimplex.map_map]`
-does not fire on `((μ).map f).map h`, inspect the goal after `unfold` (via a
-`?goal` hole in a scratch probe) and use whichever of `map_map`/`map_comp_apply`
-matches the actual `.map` spelling, then close `μ.map p = μ.map q` from the
-pointwise function equality (`congrArg (μ.map ·) h` or an explicit `change` to a
-common term — NOT `funext`, since a `Dist` is a `StdSimplex` struct, not a function).
-After that: (a) the **fiber-level invariance**
-`μ_x.map (relabelMembership_equiv f hf) = μ_x` for
-`μ_x = comp (fiberLaw project project_surjective) rawExchangeMembership x` (the
-uniform project-fiber law is invariant under `d ↦ d.trans g` when `g` preserves the
-source count `x`); then (b) feed it into `distUniform_ofInvariantTransitive` and the
-**A3 capstone** `hMembershipExchange`. **Deadline Wed 2026-11-24 23:59:59 EST.**
+**Exactly where to resume: the SPECIFIC post-exchange membership-law invariance
+`μ_x.map (relabelMembership_equiv f hf) = μ_x`** for
+`μ_x = comp (FiberDisintegration.fiberLaw project project_surjective)
+rawExchangeMembership x`. Place it in `Shufflemath/CommanderPhysicalExchange.lean`
+right after `hMembershipExchange_lhs_reduces` (the A3 capstone `hMembershipExchange`
+then follows by feeding this invariance + `distUniform_ofInvariantTransitive`).
+With the deck-equiv `e : Deck ≃ Deck` given by `e d = d.trans f` (a bijection), the
+proof composes pieces now in the library:
+  1. `(fiberLaw project h x).map e = fiberLaw project h x` by
+     **`fiberLaw_invariant_underFiberEquiv`**, needing `hE : ∀ d, project (d.trans f) = project d`;
+  2. `rawExchangeMembership (d.trans f) = (rawExchangeMembership d).map
+     (relabelMembership f f.bijective)` by **`rawExchangeMembership_conjugate`**;
+  3. push the exchange through the equiv: `(fiberLaw project h x).map
+     (rawExchangeMembership ∘ e) = ((fiberLaw project h x).map e).map
+     rawExchangeMembership` — the `.map`/`.join`/`.apply` associativity lives in
+     `Shufflemath/Finite.lean`; confirm the exact lemmas there (a `Dist.map` of a
+     kernel, then `.join`, then `.map` a function).
+**The one missing piece is `hE : ∀ d, project (d.trans f) = project d`** under
+`f '' leftOrigSet = leftOrigSet` (a deck map preserving the originally-left set, so
+it commutes with `project`). Since `project d = ⟨leftOriginalCount d - 1, _⟩`, this
+reduces (Subtype `ext` on the proof component) to
+**`leftOriginalCount (d.trans f) = leftOriginalCount d`**. A near-complete recipe
+is saved at `.pi-glla/47ak_leftOriginalCount_wip.lean`: reindex the 50 left positions
+`S := (Finset.univ : Finset (Fin 50))` to `leftOrigSet` via
+`hUnivImg : S.image leftPosition = leftOrigSet`; a left-position-preserving injective
+map keeps the `p := (fun x => (d x).val < 50)`-filtered-card invariant (`hCard`, via
+`Finset.filter_image` + `Finset.card_image_of_injective` + `Finset.image_comp`); the
+only finicky bit is the `Fin 99` proof-component equality in `hUnivImg` — close it
+with `rw [← leftOrigSet_eq_image]` then `Finset.ext` + `apply Fin.ext` +
+`simpa [leftPosition] using (Fin.ext.mp heq)` on each side. **Deadline
+Wed 2026-11-24 23:59:59 EST.**
 
 **Earlier (2026-11-22, part (ii) group action):**
 **Updated:** 2026-11-22 (A3 **part (ii) group action** session) — the
@@ -327,7 +338,13 @@ attempts, but is no longer the recommended route.
 
 ## Exactly where to resume
 
-### 47th session (continued) — **CURRENT RESUME POINT** (A3 count kernel + 50+49 partition fact committed)
+### 47th session (continued) — A3 count kernel + 50+49 partition fact (done; **superseded by the top resume section**)
+
+> The actual current resume point is the **top** "Exactly where to resume" section
+> above (the specific `μ_x` post-exchange membership-law invariance, whose one missing
+> piece is `leftOriginalCount (d.trans f) = leftOriginalCount d`). Everything in this
+> 47th-session-continued block is now **done** (A3 count kernel, 50+49 partition, the
+> two part-(ii) equivariances, and the general `fiberLaw_invariant_underFiberEquiv`).
 
 Two milestones landed this continuation of the 47th session:
 
