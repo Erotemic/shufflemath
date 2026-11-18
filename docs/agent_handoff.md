@@ -65,9 +65,23 @@ selected-right card-set determines the selected positions, via `image_injective_
 `newLeftCards_as_sdiff_union`, this makes the post-exchange membership
 `(leftCards d \ Lc) ∪ Rc` a function of the source membership `leftCards d` (and its
 complement = the right pile, since the deck is a permutation) and the chosen card-sets —
-independent of the deck's position arrangement. **Next: the position↔card *existence*
-half (each 25-card-subset of the left pile comes from exactly one 25-position-set) for
-the uniform distribution over new memberships, then F3 item 3 step 3 (point mass).**
+independent of the deck's position arrangement.
+
+**47y (next — the position↔card EXISTENCE half).** Converse to 47x: every 25-card-subset
+`A ⊆ leftCards d` is `L.image (d ∘ leftPosition)` for exactly one 25-position-set `L`
+(the preimage). Intended proof: `L := (univ : Finset (Fin 50)).filter (fun l => f l ∈ A)`
+with `f := d ∘ leftPosition`; `L.image f = A` by `Finset.ext` (injectivity +
+`A ⊆ image f`); `L.card = 25` by `Finset.card_image_of_injective f L hf`. **Friction hit
+this session (avoid repeating):** (1) `Finset.preimage` resolves to an injective-preimage
+overload with a different arg order — use `Finset.filter` instead; (2) `Finset.mem_filter`
+`.mp/.mpr` projections do not elaborate under `open Shufflemath` — use `simp` with
+`[Finset.mem_filter, Finset.mem_univ]` (drop `true_and` from an `only` set, which deadlocks);
+(3) the `rw` for `A ⊆ (univ).image f` from `hAsub : A ⊆ leftCards d` +
+`hleft : (univ).image f = leftCards d` must be `rw [hleft]` (forward, LHS `(univ).image f`
+→ RHS `leftCards d`), then `exact hAsub.mpr hx` — NOT `rw [← hleft]`. With both the left and
+right existence halves, the exchange is a uniform choice over 25-card-subsets (independent
+of arrangement), enabling F3 item 3 step 3 (point mass on the `|S∩T|=25` fiber) and the
+`hMembershipExchange` capstone.
 
 The
 2026-11-15
