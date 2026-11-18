@@ -160,4 +160,33 @@ theorem exchangePair_exists [Fintype α] [DecidableEq α] (S T : Finset α)
   exact hTdef
 
 
+
+
+/-- A subset `S ⊆ U` splits uniquely into its `M`-part `S ∩ M` and its
+    `M`-complement `S \ M`: the two pieces are disjoint, recombine to `S`, and
+    the `M`-complement lies in `U \ M` (when `M ⊆ U`). This is the `U`-
+    generalization of the marked/unmarked split behind `countFiberMemb`. -/
+theorem sdiff_inter_split {α : Type*} [DecidableEq α] (U M S : Finset α)
+    (hM : M ⊆ U) (hS : S ⊆ U) :
+    (S ∩ M) ∪ (S \ M) = S ∧ Disjoint (S ∩ M) (S \ M) ∧ S \ M ⊆ U \ M := by
+  refine ⟨?_, ?_, ?_⟩
+  · -- the two pieces recombine to `S`
+    ext z
+    simp only [Finset.mem_union, Finset.mem_inter, Finset.mem_sdiff]
+    tauto
+  · -- the two pieces are disjoint
+    rw [Finset.disjoint_iff_inter_eq_empty]
+    apply Finset.ext
+    intro z
+    apply Iff.intro
+    · intro hz
+      have hzM : z ∈ M := (Finset.mem_inter.mp (Finset.mem_inter.mp hz).1).2
+      have hznotM : z ∉ M := (Finset.mem_sdiff.mp (Finset.mem_inter.mp hz).2).2
+      contradiction
+    · intro hz
+      exact False.elim (Finset.notMem_empty z hz)
+  · -- the `M`-complement stays inside `U \ M`
+    rintro z hz
+    rcases Finset.mem_sdiff.mp hz with ⟨hz, hznotM⟩
+    exact Finset.mem_sdiff.mpr ⟨hS hz, hznotM⟩
 end FinsetCombinatorics
