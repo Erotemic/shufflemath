@@ -264,6 +264,10 @@ with the original) is the structural core of the 25/25 exchange — the `|S ∩ 
 fiber that steps 2–4 below are indexed by. Proven via a light `rw` (distributivity +
 `leftCards_disjoint_rightImage` + subset); a `Finset.ext`/`mem_union` case analysis
 on the union hit the 200000-heartbeat `whnf` timeout, so avoid that shape.
+**Session 47g close:** the 12-module Commander tranche builds clean and
+`./dev/verify_next_phase.sh` passes (37 tests OK). The next development is
+multi-lemma, so it starts fresh from the resume point below rather than being
+forced into this session's remaining budget.
 
 **NEXT ACTION — F3 item 3, the physical membership-level mass identity
 (the "genuinely hard half"; a multi-lemma development, not a single
