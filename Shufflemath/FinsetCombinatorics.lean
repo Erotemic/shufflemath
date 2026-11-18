@@ -82,7 +82,7 @@ theorem exchangePair_unique_B [Fintype α] [DecidableEq α]
 theorem exchangePair_unique_A [Fintype α] [DecidableEq α]
     (S T A B : Finset α)
     (hAsub : A ⊆ S) (hAcard : A.card = 25)
-    (hBcomp : B ⊆ Finset.univ \ S) (hBcard : B.card = 25)
+    (hBcomp : B ⊆ Finset.univ \ S) (_hBcard : B.card = 25)
     (hTdef : T = (S \ A) ∪ B) : A = S \ T := by
   have hBnoS (x) (hxB : x ∈ B) : x ∉ S := by
     have hxs : x ∈ Finset.univ \ S := by simpa using hBcomp hxB
@@ -167,7 +167,7 @@ theorem exchangePair_exists [Fintype α] [DecidableEq α] (S T : Finset α)
     the `M`-complement lies in `U \ M` (when `M ⊆ U`). This is the `U`-
     generalization of the marked/unmarked split behind `countFiberMemb`. -/
 theorem sdiff_inter_split {α : Type*} [DecidableEq α] (U M S : Finset α)
-    (hM : M ⊆ U) (hS : S ⊆ U) :
+    (_hM : M ⊆ U) (hS : S ⊆ U) :
     (S ∩ M) ∪ (S \ M) = S ∧ Disjoint (S ∩ M) (S \ M) ∧ S \ M ⊆ U \ M := by
   refine ⟨?_, ?_, ?_⟩
   · -- the two pieces recombine to `S`

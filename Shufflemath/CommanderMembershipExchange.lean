@@ -6,6 +6,7 @@ public import Shufflemath.CommanderPhysicalExchange
 public import Shufflemath.CommanderMembershipOrbits
 public import Shufflemath.BernoulliLaplace
 public import Shufflemath.FiberDisintegration
+public import Shufflemath.FinsetCombinatorics
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -567,6 +568,55 @@ theorem commanderExchange25_countMass (x : CommanderState) (c : Nat) :
         simp only [zero_mul, if_neg hk]
     _ = (if 1 ≤ c ∧ c ≤ 50 then transitionWeight 99 50 25 (commanderLeftCount x) c else 0) := by
       simp [K]
+
+/-!
+## A3 count half — left/right pile-count lemmas (F3 item 3, kernel instances)
+
+The post-exchange left pile carries `a` marked cards exactly when the chosen
+left 25-subset `L` holds `a` of the deck's marked left positions.  Counting the
+such `L` is a direct instance of the general binomial kernel
+`FinsetCombinatorics.powersetCard_markedContent`: choose `a` of the marked
+positions and `25 - a` of the unmarked ones.  The right-pile version is
+identical with the 49-position universe.
+-/ -- close doc section
+
+/-- The number of left 25-subsets `L` carrying exactly `a` marked cards equals
+    `choose (markedLeftPos d).card a * choose (50 - (markedLeftPos d).card)
+    (25 - a)`: the `a` marked cards come from the marked left positions, the
+    remaining `25 - a` from the unmarked ones.  Instance of
+    `powersetCard_markedContent` with `U = univ (Fin 50)`,
+    `M = markedLeftPos d`. -/
+theorem leftPileCount25 (d : CommanderPermutation.Deck) (a : Nat) (ha : a ≤ 25) :
+    (leftChoices.filter (fun L => markedInLeft d L = a)).card =
+      Nat.choose (markedLeftPos d).card a *
+      Nat.choose (50 - (markedLeftPos d).card) (25 - a) := by
+  have hSub : markedLeftPos d ⊆ Finset.univ := Finset.subset_univ (markedLeftPos d)
+  have hMark (L : Finset (Fin 50)) : markedInLeft d L = (L ∩ markedLeftPos d).card := by
+    rw [markedInLeft, Finset.inter_comm]
+  have hPred (L : Finset (Fin 50)) : markedInLeft d L = a ↔ (L ∩ markedLeftPos d).card = a := by
+    simpa [hMark L]
+  rw [leftChoices, Finset.filter_congr (fun L _ => hPred L)]
+  simpa using
+    FinsetCombinatorics.powersetCard_markedContent
+      (Finset.univ : Finset (Fin 50)) (markedLeftPos d) hSub 25 a ha
+
+/-- The number of right 25-subsets `R` carrying exactly `a` marked cards equals
+    `choose (markedRightPos d).card a * choose (49 - (markedRightPos d).card)
+    (25 - a)`.  Instance of `powersetCard_markedContent` with
+    `U = univ (Fin 49)`, `M = markedRightPos d`. -/
+theorem rightPileCount25 (d : CommanderPermutation.Deck) (a : Nat) (ha : a ≤ 25) :
+    (rightChoices.filter (fun R => markedInRight d R = a)).card =
+      Nat.choose (markedRightPos d).card a *
+      Nat.choose (49 - (markedRightPos d).card) (25 - a) := by
+  have hSub : markedRightPos d ⊆ Finset.univ := Finset.subset_univ (markedRightPos d)
+  have hMark (R : Finset (Fin 49)) : markedInRight d R = (R ∩ markedRightPos d).card := by
+    rw [markedInRight, Finset.inter_comm]
+  have hPred (R : Finset (Fin 49)) : markedInRight d R = a ↔ (R ∩ markedRightPos d).card = a := by
+    simpa [hMark R]
+  rw [rightChoices, Finset.filter_congr (fun R _ => hPred R)]
+  simpa using
+    FinsetCombinatorics.powersetCard_markedContent
+      (Finset.univ : Finset (Fin 49)) (markedRightPos d) hSub 25 a ha
 
 end CommanderMembershipExchange
 end Shufflemath
