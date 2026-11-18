@@ -418,6 +418,16 @@ route, not a theorem already in the tree.
 > `blDetailedBalance` across the two bridge theorems. This is one of the two A3
 > ingredients (the macro-kernel reversibility); the other is the stationary
 > count distribution (`commanderStationary_matches_blStationary` already committed).
+> **47e (hypergeometric invariance):** `commanderStationary_is_stationary` +
+> `commanderStationaryRun` committed (`f7976d2`, same file) — the third macro-kernel
+> A3 ingredient (fixed-point under the kernel).
+> **NEXT (the genuinely hard half):** the *physical* membership-level mass identity
+> — `rawExchangeMembership : FiniteKernel Deck Membership` has point mass
+> `1/(choose(50,25)·choose(49,25))` on the `|S∩T|=25` fiber, then `=
+> transitionWeight/F(y)` via the fiber `detailedBalance` + bridge — building toward
+> the `hMembershipExchange` capstone. `CommanderState = Fin 50` (a *count*) is
+> distinct from the physical `Membership = {S : Finset (Fin 99) // S.card=50}`.
+> Full step-by-step spec: `docs/agent_handoff.md` → "NEXT ACTION — F3 item 3".
 > **23rd–24th-session progress (Spec A2 core + A3 scaffold):**
 > `newLeftCards_conjugate` (`CommanderPhysicalExchange.lean`, commit `6ccae33`)
 > proves the **pointwise** equivariance of the post-exchange left set under any

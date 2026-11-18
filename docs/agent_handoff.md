@@ -244,7 +244,49 @@ is the membership-level mass identity via `BernoulliLaplaceFiber.lean`
 `transitionWeight/F(y)` and within-count uniformity, bypassing part (ii)).
 **47e:** `commanderDetailedBalance` committed (`e84fe7e`,
 `BernoulliLaplaceCommanderBridge.lean`) — reversibility of the macro kernel, one of
-the two A3 ingredients.
+the two A3 ingredients. **`commanderStationary_is_stationary` +
+`commanderStationaryRun` committed (`f7976d2`)** — the hypergeometric
+fixed-point/invariance ingredient.
+
+**NEXT ACTION — F3 item 3, the physical membership-level mass identity
+(the "genuinely hard half"; a multi-lemma development, not a single
+batch).** Target: `hMembershipExchange` (the F3 capstone in
+`CommanderMembershipExchange.lean`). Build toward it in this order:
+1. **Deck-independence**: `newMembership d L R` (and hence
+   `rawExchangeMembership d`) depends on `d` only through `membership d`
+   (i.e. through `markedLeftPos d` and `markedRightPos d`) — makes the
+   "membership transition" well-defined as a function of the source
+   membership `S`.
+2. **Deck-level `(L,R) ↦ T` bijection**: for fixed `d` with membership `S`,
+   the map over the `choose(50,25)·choose(49,25)` uniform choices is a
+   bijection onto `{T : Membership // |S ∩ T| = 25}` — the deck-level
+   instance of the abstract `(A,B)↦T` bijection already committed
+   (`exchangePair_unique_B/_A` + `exchangePair_exists`), with
+   `A = L ∩ markedLeftPos d`, `B` the marked cards entering, `T =
+   newMembership d L R`.
+3. **Point mass**: from (1)+(2), `rawExchangeMembership d` has mass
+   `1/(choose(50,25)·choose(49,25))` at each `T` on the `|S∩T|=25` fiber,
+   `0` off it.
+4. **Detailed-balance connection**: identify the overlap with
+   `transitionNumerator(99,50,50,25,·,·)` and use `BernoulliLaplaceFiber.lean`
+   `detailedBalance` + the commander bridge to write the mass as
+   `transitionWeight(...)/F(y)`, `F(z) = choose(50,z)·choose(49,50-z)`.
+5. **Capstone**: assemble `hMembershipExchange` (LHS already reduces via
+   `hMembershipExchange_lhs_reduces` to `comp (fiberLaw project)
+   rawExchangeMembership`).
+
+**Structural fact confirmed 47e:** `CommanderState = Fin 50` (a *count*
+state, `commanderLeftCount x = x.val+1`) is NOT the physical
+`Membership = {S : Finset (Fin 99) // S.card=50}`. The physical kernel is
+`rawExchangeMembership : FiniteKernel Deck Membership`
+(`CommanderPhysicalExchange.lean:376`), point map `newMembership d L R =
+⟨newLeftCards d L R, …⟩` (`:370`); no `FiniteKernel Membership Membership`
+exists yet. **Smallest tractable first lemma:** the 25-overlap preservation
+`|(membership d) ∩ (newMembership d L R).1| = 25` for a valid 25/25
+exchange (via `newLeftOriginalCount_eq` + the `markedLeftPos`/`Right` structure).
+**Gotchas:** default `simp`/`field_simp` recurse into `membership`/`leftCards`
+(`Equiv.Perm (Fin 99)` terms) — use `simp only` with explicit lemma lists; do
+not `native_decide` over `99!`.
 
 ### 45th session (2026-11-17) — prior resume point (bootstrap notes below stay in force for this VM)
 
