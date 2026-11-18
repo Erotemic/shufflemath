@@ -269,6 +269,21 @@ on the union hit the 200000-heartbeat `whnf` timeout, so avoid that shape.
 multi-lemma, so it starts fresh from the resume point below rather than being
 forced into this session's remaining budget.
 
+**47h:** step 2 "unique half" building blocks committed (`45dd4b7`,
+`Shufflemath/CommanderPhysicalExchange.lean`, purely additive after
+`newMembership_overlap_25`): **`image_injective_eq`** (injective `f` ⇒
+equal images ⇒ equal sets — the general recovery engine), **`newLeftCards_leftPart`**
+(the left-position part of the post-exchange pile `= newLeftCards d L R ∩
+leftCards d`, a deck-only RHS), **`newLeftCards_rightPart`** (the selected-right part
+`= newLeftCards d L R ∩ (R.image fR)`, a light RHS), and **`newLeftCards_injective_L`**
+(a fixed deck's left-position choice `L` is recovered from the post-exchange pile:
+equal piles ⇒ equal `L`). The **symmetric `R`-recovery and the full `(L,R)↦T`
+injectivity are deferred**: they need the deck-only right-region disjointness
+`leftCards d ∩ rightCards d = ∅` (a 47g-class heavy fact; its `univ`-indexed
+form overflows the 200000-heartbeat `whnf` limit). The 47g lesson stands: avoid
+`Finset.ext`/`mem_union` case analyses and `univ`-indexed image references in proof
+terms; use light `rw` (distributivity + subset/disjoint).
+
 **NEXT ACTION — F3 item 3, the physical membership-level mass identity
 (the "genuinely hard half"; a multi-lemma development, not a single
 batch).** Target: `hMembershipExchange` (the F3 capstone in
@@ -285,6 +300,9 @@ batch).** Target: `hMembershipExchange` (the F3 capstone in
    (`exchangePair_unique_B/_A` + `exchangePair_exists`), with
    `A = L ∩ markedLeftPos d`, `B` the marked cards entering, `T =
    newMembership d L R`.
+   **(47h: the `L`-recovery half is done — `newLeftCards_injective_L` proves equal
+   piles force equal `L`. The `R`-recovery and full `(L,R)` injectivity remain,
+   blocked on `leftCards d ∩ rightCards d = ∅`.)**
 3. **Point mass**: from (1)+(2), `rawExchangeMembership d` has mass
    `1/(choose(50,25)·choose(49,25))` at each `T` on the `|S∩T|=25` fiber,
    `0` off it.

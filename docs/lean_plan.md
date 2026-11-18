@@ -443,6 +443,17 @@ route, not a theorem already in the tree.
 > `CommanderState = Fin 50` (a *count*) is
 > distinct from the physical `Membership = {S : Finset (Fin 99) // S.card=50}`.
 > Full step-by-step spec: `docs/agent_handoff.md` → "NEXT ACTION — F3 item 3".
+> **47h-session progress (step 2 "unique half" building blocks):** in
+> `Shufflemath/CommanderPhysicalExchange.lean` (commit `45dd4b7`, additive after
+> `newMembership_overlap_25`): `image_injective_eq` (injective `f` ⇒ equal images ⇒
+> equal sets — the general recovery engine), `newLeftCards_leftPart` (the
+> left-position part of the post-exchange pile `= newLeftCards d L R ∩ leftCards d`),
+> `newLeftCards_rightPart` (the selected-right part `= newLeftCards d L R ∩
+> (R.image fR)`, a light RHS), and `newLeftCards_injective_L` (a fixed deck's `L` is
+> recovered from the post-exchange pile: equal piles ⇒ equal `L`). The symmetric
+> `R`-recovery / full `(L,R)↦T` injectivity is **deferred** — it needs the deck-only
+> right-region disjointness `leftCards d ∩ rightCards d = ∅` (a 47g-class heavy fact;
+> the `univ`-indexed form overflows the 200000-heartbeat `whnf` limit).
 > **23rd–24th-session progress (Spec A2 core + A3 scaffold):**
 > `newLeftCards_conjugate` (`CommanderPhysicalExchange.lean`, commit `6ccae33`)
 > proves the **pointwise** equivariance of the post-exchange left set under any
