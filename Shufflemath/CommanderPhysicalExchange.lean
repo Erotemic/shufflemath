@@ -144,13 +144,13 @@ theorem leftCards_disjoint_rightImage (d : Deck) (R : Finset (Fin 49)) :
 theorem newLeftCards_inter_leftCards (d : Deck) (L : Finset (Fin 50)) (R : Finset (Fin 49)) :
     leftCards d ∩ newLeftCards d L R =
       Finset.image (fun (l : Fin 50) => d (leftPosition l))
-        ((Finset.univ : Finset (Fin 50)) \ L) := by
+        ((univ : Finset (Fin 50)) \ L) := by
   classical
   have hA_sub : Finset.image (fun (l : Fin 50) => d (leftPosition l))
-      ((Finset.univ : Finset (Fin 50)) \ L) ⊆ leftCards d := by
+      ((univ : Finset (Fin 50)) \ L) ⊆ leftCards d := by
     intro c hc
     rcases Finset.mem_image.mp hc with ⟨l, hl, hcl⟩
-    have hl_univ : l ∈ (Finset.univ : Finset (Fin 50)) := (Finset.mem_sdiff.mp hl).1
+    have hl_univ : l ∈ (univ : Finset (Fin 50)) := (Finset.mem_sdiff.mp hl).1
     simpa [leftCards] using Finset.mem_image.mpr ⟨l, hl_univ, hcl⟩
   have hB_empty : leftCards d ∩
       Finset.image (fun (r : Fin 49) => d (rightPosition r)) R = ∅ :=
@@ -174,11 +174,121 @@ theorem newMembership_overlap_25 (d : Deck) (L : Finset (Fin 50)) (hL : L.card =
   rw [hm1, newLeftCards_inter_leftCards d L R]
   have hinj : Function.Injective (fun (l : Fin 50) => d (leftPosition l)) :=
     d.injective.comp leftPosition_injective
-  have hLsub : L ⊆ (Finset.univ : Finset (Fin 50)) := Finset.subset_univ _
+  have hLsub : L ⊆ (univ : Finset (Fin 50)) := Finset.subset_univ _
   rw [Finset.card_image_of_injective _ hinj, Finset.card_sdiff,
       Finset.inter_eq_left.mpr hLsub, hL]
-  have huniv : (Finset.univ : Finset (Fin 50)).card = 50 := by simp
+  have huniv : (univ : Finset (Fin 50)).card = 50 := by simp
   simp [huniv]
+
+/-! ## Step 2 — the deck-level position-choice map is injective
+
+For a *fixed* deck `d`, a position choice `(L, R)` is recoverable from the
+post-exchange left pile: the pile splits uniquely into its left-position cards
+(and its right-position cards), each part lying in a disjoint region, so equal
+piles force equal choices.  These lemmas are the "unique half" of the
+`deck-level (L,R) → T` bijection (5-step plan, step 2); they reuse the 47g
+disjointness facts.
+-/ 
+
+/-- For an injective map, equal images of two finite sets force the sets equal:
+    every element is recovered from its unique image. -/
+theorem image_injective_eq {α β} [DecidableEq α] [DecidableEq β] (f : α → β) (hf : Function.Injective f) {A B : Finset α}
+    (h : Finset.image f A = Finset.image f B) : A = B := by
+  apply Finset.ext
+  intro a
+  constructor
+  · intro ha
+    have hfa : f a ∈ Finset.image f A := Finset.mem_image_of_mem f ha
+    rw [h] at hfa
+    rcases Finset.mem_image.mp hfa with ⟨b, hb, hfb⟩
+    exact (hf hfb) ▸ hb
+  · intro ha
+    have hfa : f a ∈ Finset.image f B := Finset.mem_image_of_mem f ha
+    rw [← h] at hfa
+    rcases Finset.mem_image.mp hfa with ⟨b, hb, hfb⟩
+    exact (hf hfb) ▸ hb
+
+/-- The left-position part of the post-exchange pile is exactly the part lying
+    inside the original left pile: the selected-right part is disjoint from it, and
+    the unselected-left part sits inside it. -/
+theorem newLeftCards_leftPart (d : Deck) (L : Finset (Fin 50)) (R : Finset (Fin 49)) :
+    ((univ : Finset (Fin 50)) \ L).image (fun (l : Fin 50) => d (leftPosition l)) =
+      newLeftCards d L R ∩ leftCards d := by
+  classical
+  unfold newLeftCards
+  rw [Finset.inter_comm, Finset.inter_union_distrib_left]
+  have hAsub :
+      ((univ : Finset (Fin 50)) \ L).image (fun (l : Fin 50) => d (leftPosition l)) ⊆ leftCards d := by
+    intro c hc
+    rcases Finset.mem_image.mp hc with ⟨l, hl, hcl⟩
+    have hlU : l ∈ (univ : Finset (Fin 50)) := (Finset.mem_sdiff.mp hl).1
+    simpa [leftCards] using Finset.mem_image.mpr ⟨l, hlU, hcl⟩
+  have hBempty : leftCards d ∩ R.image (fun (r : Fin 49) => d (rightPosition r)) = ∅ :=
+    Finset.disjoint_iff_inter_eq_empty.mp (leftCards_disjoint_rightImage d R)
+  rw [Finset.inter_eq_right.mpr hAsub, hBempty]
+  simp
+
+/-- The right-position part of the post-exchange pile is exactly the part lying
+    inside the *selected* right-position cards: the unselected-left part is
+    disjoint from it, and the selected-right part is the whole intersection.
+    (Intersecting with the selected part, rather than the full right image,
+    keeps the disjointness reference light.  Since the selected part is itself a
+    subset of the pile, the intersection recovers it exactly.) -/
+theorem newLeftCards_rightPart (d : Deck) (L : Finset (Fin 50)) (R : Finset (Fin 49)) :
+    R.image (fun (r : Fin 49) => d (rightPosition r)) =
+      newLeftCards d L R ∩ R.image (fun (r : Fin 49) => d (rightPosition r)) := by
+  have hAemptyL : R.image (fun (r : Fin 49) => d (rightPosition r)) ∩
+      ((univ : Finset (Fin 50)) \ L).image (fun (l : Fin 50) => d (leftPosition l)) = ∅ := by
+    rw [Finset.inter_comm]
+    exact Finset.disjoint_iff_inter_eq_empty.mp (newLeftCards_parts_disjoint d L R)
+  unfold newLeftCards
+  rw [Finset.inter_comm, Finset.inter_union_distrib_left, hAemptyL]
+  simp
+
+/-- For a fixed deck `d`, the *left*-position choice `L` is recovered from the
+    post-exchange left pile: two choices giving the same pile have the same `L`
+    (the pile's left-position part is exactly `leftCards d`, which `d` labels
+    bijectively over the unselected left positions, so equal piles force equal
+    unselected-left sets, hence equal `L`).  The symmetric `R`-recovery, and the
+    full `(L, R) → T` injectivity, are the next steps (they need the deck-only
+    right-region disjointness). -/
+theorem newLeftCards_injective_L (d : Deck) (L L' : Finset (Fin 50)) (R R' : Finset (Fin 49)) :
+    newLeftCards d L R = newLeftCards d L' R' → L = L' := by
+  intro h
+  have hinjL : Function.Injective (fun (l : Fin 50) => d (leftPosition l)) :=
+    d.injective.comp leftPosition_injective
+  -- the left-position parts of the two piles coincide
+  have hLpart :
+      ((univ : Finset (Fin 50)) \ L).image (fun (l : Fin 50) => d (leftPosition l)) =
+        ((univ : Finset (Fin 50)) \ L').image (fun (l : Fin 50) => d (leftPosition l)) := by
+    rw [newLeftCards_leftPart d L R, h, ← newLeftCards_leftPart d L' R']
+  have hUL : ((univ : Finset (Fin 50)) \ L) = ((univ : Finset (Fin 50)) \ L') :=
+    image_injective_eq (fun (l : Fin 50) => d (leftPosition l)) hinjL hLpart
+  have hL : L = L' := by
+    apply Finset.ext
+    intro x
+    have hULx : (x ∈ ((univ : Finset (Fin 50)) \ L)) ↔ (x ∈ ((univ : Finset (Fin 50)) \ L')) := by
+      constructor
+      · intro hx; exact hUL ▸ hx
+      · intro hx; exact hUL.symm ▸ hx
+    have h1 : (x ∈ ((univ : Finset (Fin 50)) \ L)) ↔ ¬ (x ∈ L) := by
+      simp only [Finset.mem_sdiff, Finset.mem_univ, true_and]
+    have h2 : (x ∈ ((univ : Finset (Fin 50)) \ L')) ↔ ¬ (x ∈ L') := by
+      simp only [Finset.mem_sdiff, Finset.mem_univ, true_and]
+    constructor
+    · -- x ∈ L → x ∈ L'
+      intro hxL
+      by_contra hxnotL'
+      have hnotUL : ¬ (x ∈ ((univ : Finset (Fin 50)) \ L)) := fun h => (h1.mp h) hxL
+      have hnotUL' : ¬ (x ∈ ((univ : Finset (Fin 50)) \ L')) := fun h => hnotUL (hULx.mpr h)
+      exact hnotUL' (h2.mpr hxnotL')
+    · -- x ∈ L' → x ∈ L
+      intro hxL'
+      by_contra hxnotL
+      have hnotUL' : ¬ (x ∈ ((univ : Finset (Fin 50)) \ L')) := fun h => (h2.mp h) hxL'
+      have hnotUL : ¬ (x ∈ ((univ : Finset (Fin 50)) \ L)) := fun h => hnotUL' (hULx.mp h)
+      exact hnotUL (h1.mpr hxnotL)
+  exact hL
 
 /-- **Spec A2 core: stabilizer-invariance of the exchange, pointwise.** Relabeling the
     cards by a permutation `f` commutes with `newLeftCards`: the post-exchange left
@@ -393,8 +503,8 @@ what the `hMembershipExchange` intertwining law needs.
 -/ 
 
 -- The 25-element selected position sets, and the type of uniform (L,R) choices.
-abbrev leftChoices := powersetCard (25 : Nat) (Finset.univ : Finset (Fin 50))
-abbrev rightChoices := powersetCard (25 : Nat) (Finset.univ : Finset (Fin 49))
+abbrev leftChoices := powersetCard (25 : Nat) (univ : Finset (Fin 50))
+abbrev rightChoices := powersetCard (25 : Nat) (univ : Finset (Fin 49))
 abbrev exchangeChoice :=
   {L : Finset (Fin 50) // L ∈ leftChoices} × {R : Finset (Fin 49) // R ∈ rightChoices}
 
@@ -402,9 +512,9 @@ instance : Fintype exchangeChoice := inferInstance
 
 -- Two explicit 25-element subsets, witnesses that the choice types are nonempty.
 def left25 : Finset (Fin 50) :=
-  (Finset.univ : Finset (Fin 25)).image (Fin.castLEEmb (by omega))
+  (univ : Finset (Fin 25)).image (Fin.castLEEmb (by omega))
 def right25 : Finset (Fin 49) :=
-  (Finset.univ : Finset (Fin 25)).image (Fin.castLEEmb (by omega))
+  (univ : Finset (Fin 25)).image (Fin.castLEEmb (by omega))
 
 theorem left25_card : left25.card = 25 := by
   unfold left25
