@@ -2582,3 +2582,50 @@ sum-over-image = sum-over-range-26; then assemble `perDeckBridge` and the
 `transitionNumerator 99 50 25 x n` match. Promotion: fold the finished general lemmas
 (47s engine, 47p helpers) into a named module (e.g. `Shufflemath/FinsetPairCounting`) and
 the perDeckBridge into the BernoulliLaplace layer when it lands.
+
+## 2026-11-17 (cont, 2) — 47t: rightFilterGuarded (the last conceptual piece) builds
+
+### Done this turn
+`_Probe47t.rightFilterGuarded (x aL n)` — the guarded hypergeometric count of the
+right pile, now **built** (3210 jobs, no sorry). It counts
+`R ∈ (Fin 49).powersetCard 25` with `(x - aL) + markedInRight d R = n` and gives
+the 4-binomial right factor
+`choose (markedRightPos d).card (n-(x-aL)) * choose (49-(markedRightPos d).card) (25-(n-(x-aL)))`
+**exactly when the nested guards hold** (`x-aL ≤ n ∧ n-(x-aL) ≤ 25`) and `0`
+otherwise. The nested-`if` shape is term-for-term `transitionNumerator 99 50 25 x n`'s
+integrand's right half.
+
+Proof shape (the hard part): split the nested ite with `if_pos`/`if_neg` (NOT
+`simp`, which mis-normalizes `n-(x-aL) ≤ 25` to `n ≤ 25+(x-aL)` and breaks the
+ite-reduction). The `h1∧h2` branch reduces `(x-aL)+markedInRight=n ↔ markedInRight=bR`
+via a local `haddSub (c n) (hc : c ≤ n) (k) : c+k=n ↔ k=n-c` (proved by `omega`),
+then applies `powersetCard_markedContent`. The two `0`-branches show the filter is
+`∅` (`Finset.ext` + a `¬R ∈ filter` sub-proof + `simp [hnot]`), then `simp` for the
+card.
+
+### The perDeckBridge assembly — the ONLY thing left for the count half
+Now that 47s (const-sub engine) + 47p (left binomial) + 47t (guarded right factor)
++ `newLeftOriginalCount_eq` all exist, the capstone is pure assembly:
+```
+#(s ×ˢ t).filter (fun p => (newLeftCards d p.1 p.2 ∩ leftOrigSet).card = n)  [s=(Fin50).powersetCard25, t=(Fin49).powersetCard25, x=leftOriginalCount d]
+  = (via newLeftOriginalCount_eq)  #(s×ˢt).filter (fun p => (x - markedInLeft d p.1) + markedInRight d p.2 = n)
+  = (47s pairCountByConstSub, c=x)  ∑_{aL ∈ s.image (markedInLeft d)} #s.filter(markedInLeft d = aL) · #t.filter (fun R => (x-aL) + markedInRight d R = n)
+  = (47t rightFilterGuarded on the right factor)  ∑_{aL ∈ s.image f} #s.filter(f=aL) · [nested-if binomial(x aL n)]
+  = (domain ext: #s.filter(f=a)=0 for a∉s.image f; s.image f ⊆ range 26)  ∑_{a ∈ range 26} #s.filter(f=a) · [nested-if binomial(x a n)]
+  = (47p leftCountByMarked: #s.filter(f=a) = choose x a · choose (50-x)(25-a))  ∑_{a∈range26} [choose x a · choose (50-x)(25-a)] · [nested-if binomial]
+  = (markedRightPos_card: #(markedRightPos d) = 50 - x, so 49-# = x-1)  ∑_{a∈range26} [the 4 factors]
+  = transitionNumerator 99 50 25 x n  [by unfolding the definition]
+```
+**Confirmed** (this turn) that the codebase uses `transitionWeight 99 50 25 x y`
+(N=99, m=50, k=25) for the 25/25 exchange — so the numerator is `transitionNumerator
+99 50 25 x n` (5 args), NOT "99 50 50 25" (that was a typo in earlier 47o/47p
+comments). The 4 factors match exactly after `#(markedRightPos d) = 50 - x`.
+
+**Next (perDeckBridge in a new probe, e.g. `_Probe47u`):** write the `calc`/`rw` chain
+above. Two nontrivial sub-steps: (1) the domain extension `∑_{aL∈s.image f} = ∑_{a∈range26}`
+(prove `s.image (markedInLeft d) ⊆ range 26` and `#s.filter(f=a)=0 ⟺ a∉s.image f`, then
+`Finset.sum_image`/`sum_congr`); (2) the final `= transitionNumerator 99 50 25 x n` by
+`dsimp`/unfold of the definition + `simp` on the binomial factors (guarded by
+`Nat.choose` = 0 out of range, matching the nested `if`). Then `transitionWeight 99 50 25
+x n = transitionNumerator/transitionDenominator` gives the per-deck mass, fiber-average →
+`uniformFiber_intertwines`.
