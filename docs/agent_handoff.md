@@ -242,6 +242,9 @@ GPT-6 route's `exchangePair_exists` wall is now closed (commit `9b693f3`, with
 is the membership-level mass identity via `BernoulliLaplaceFiber.lean`
 `detailedBalance` + the `BernoulliLaplaceCommanderBridge` (gives the point mass
 `transitionWeight/F(y)` and within-count uniformity, bypassing part (ii)).
+**47e:** `commanderDetailedBalance` committed (`e84fe7e`,
+`BernoulliLaplaceCommanderBridge.lean`) — reversibility of the macro kernel, one of
+the two A3 ingredients.
 
 ### 45th session (2026-11-17) — prior resume point (bootstrap notes below stay in force for this VM)
 

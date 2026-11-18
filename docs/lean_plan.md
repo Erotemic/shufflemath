@@ -411,6 +411,13 @@ route, not a theorem already in the tree.
 > identity via `BernoulliLaplaceFiber.lean`'s `detailedBalance` + the
 > `BernoulliLaplaceCommanderBridge` (gives the point mass `= transitionWeight/F(y)`
 > and, as a consequence, within-count uniformity — bypassing part (ii)).
+> **47e-session progress (A3 ingredient — reversibility):** `commanderDetailedBalance`
+> is **committed** (`BernoulliLaplaceCommanderBridge.lean`, commit `e84fe7e`): the
+> Commander `commanderStationary` + `commanderExchange25` satisfy detailed balance
+> (`π(i) W(i,j) = π(j) W(j,i)`), a two-line transport of the general
+> `blDetailedBalance` across the two bridge theorems. This is one of the two A3
+> ingredients (the macro-kernel reversibility); the other is the stationary
+> count distribution (`commanderStationary_matches_blStationary` already committed).
 > **23rd–24th-session progress (Spec A2 core + A3 scaffold):**
 > `newLeftCards_conjugate` (`CommanderPhysicalExchange.lean`, commit `6ccae33`)
 > proves the **pointwise** equivariance of the post-exchange left set under any
