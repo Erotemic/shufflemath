@@ -35,8 +35,16 @@ the A3 *RHS* is committed in both its forms** — `commanderExchange25_mass` (th
 mass of `comp commanderExchange25 membershipLift`, `c276eda`), and
 `commanderExchange25_countMass` (the count-level companion: the mass at `(x, c)`
 of `comp commanderExchange25 (det commanderLeftCount)` is
-`transitionWeight 99 50 25 (count x) c` for feasible `c`, `a7fabd3`); next is the
-LHS counting core `rawExchangeMembership_count` (part (i)). T3/T5 remain.) The
+`transitionWeight 99 50 25 (count x) c` for feasible `c`, `a7fabd3`). **47e:**
+`commanderDetailedBalance` (`e84fe7e`) and
+`commanderStationary_is_stationary` + `commanderStationaryRun` (`f7976d2`) —
+the reversibility and hypergeometric fixed-point A3 ingredients. **47g:** the
+25-overlap preservation lemmas (`newMembership_overlap_25` et al., `9b5a45a`) in
+`CommanderPhysicalExchange.lean`. **Next: the physical membership-level mass
+identity (the "genuinely hard half") — start with the count-transition LHS
+`comp (comp (fiberLaw project) rawExchangeMembership) (det membershipCount) =
+comp commanderExchange25 (det commanderLeftCount)`** (a multi-lemma development;
+see the 47f NEXT ACTION in "Exactly where to resume"). T3/T5 remain.) The
 2026-11-15
 review + arbitrary-finite-deck roadmap pivoted the build to the **G1–G4
 generic finite-deck theory**, from which Commander A3 is a specialization.
@@ -248,6 +256,15 @@ the two A3 ingredients. **`commanderStationary_is_stationary` +
 `commanderStationaryRun` committed (`f7976d2`)** — the hypergeometric
 fixed-point/invariance ingredient.
 
+**47g:** `leftCards_disjoint_rightImage`, `newLeftCards_inter_leftCards`, and
+`newMembership_overlap_25` committed (`9b5a45a`,
+`Shufflemath/CommanderPhysicalExchange.lean`). The **25-overlap preservation**
+(`newMembership_overlap_25`: the post-exchange left pile shares exactly 25 cards
+with the original) is the structural core of the 25/25 exchange — the `|S ∩ T| = 25`
+fiber that steps 2–4 below are indexed by. Proven via a light `rw` (distributivity +
+`leftCards_disjoint_rightImage` + subset); a `Finset.ext`/`mem_union` case analysis
+on the union hit the 200000-heartbeat `whnf` timeout, so avoid that shape.
+
 **NEXT ACTION — F3 item 3, the physical membership-level mass identity
 (the "genuinely hard half"; a multi-lemma development, not a single
 batch).** Target: `hMembershipExchange` (the F3 capstone in
@@ -281,9 +298,15 @@ state, `commanderLeftCount x = x.val+1`) is NOT the physical
 `rawExchangeMembership : FiniteKernel Deck Membership`
 (`CommanderPhysicalExchange.lean:376`), point map `newMembership d L R =
 ⟨newLeftCards d L R, …⟩` (`:370`); no `FiniteKernel Membership Membership`
-exists yet. **Smallest tractable first lemma:** the 25-overlap preservation
-`|(membership d) ∩ (newMembership d L R).1| = 25` for a valid 25/25
-exchange (via `newLeftOriginalCount_eq` + the `markedLeftPos`/`Right` structure).
+exists yet. **Smallest tractable first lemma (DONE in 47g):** the 25-overlap preservation
+`|(membership d) ∩ (newMembership d L R).1| = 25` for a valid 25/25 exchange
+(`newMembership_overlap_25`). **Next concrete lemma:** the **count-transition LHS**
+`comp (comp (fiberLaw project) rawExchangeMembership) (det membershipCount) =
+comp commanderExchange25 (det commanderLeftCount)` (RHS already
+`commanderExchange25_countMass`): push the physical exchange to the macro *count*
+level and show its project-fiber average is the hypergeometric transition. This is
+more tractable than the full membership-level mass identity because it only tracks
+`membershipCount` (a `Fin 50` value), not the specific 50-card set.
 **Gotchas:** default `simp`/`field_simp` recurse into `membership`/`leftCards`
 (`Equiv.Perm (Fin 99)` terms) — use `simp only` with explicit lemma lists; do
 not `native_decide` over `99!`.

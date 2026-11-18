@@ -421,11 +421,26 @@ route, not a theorem already in the tree.
 > **47e (hypergeometric invariance):** `commanderStationary_is_stationary` +
 > `commanderStationaryRun` committed (`f7976d2`, same file) — the third macro-kernel
 > A3 ingredient (fixed-point under the kernel).
+> **47g-session progress (25-overlap preservation):** in
+> `Shufflemath/CommanderPhysicalExchange.lean` (commit `9b5a45a`):
+> `leftCards_disjoint_rightImage` (the original left pile is disjoint from the
+> selected-right-card part of `newLeftCards`), `newLeftCards_inter_leftCards` (the
+> post-exchange left pile intersects the original exactly in the unselected 25
+> left cards), and `newMembership_overlap_25` (for a valid 25/25 exchange, the
+> original and post-exchange left piles share exactly 25 cards — the `|S ∩ T| = 25`
+> fiber that the mass-identity steps are indexed by). Proven by a light `rw`
+> (distributivity + the disjointness helper + subset); a `Finset.ext`/`mem_union`
+> case analysis hit the 200000-heartbeat `whnf` timeout — avoid that shape.
 > **NEXT (the genuinely hard half):** the *physical* membership-level mass identity
 > — `rawExchangeMembership : FiniteKernel Deck Membership` has point mass
 > `1/(choose(50,25)·choose(49,25))` on the `|S∩T|=25` fiber, then `=
 > transitionWeight/F(y)` via the fiber `detailedBalance` + bridge — building toward
-> the `hMembershipExchange` capstone. `CommanderState = Fin 50` (a *count*) is
+> the `hMembershipExchange` capstone. Start with the **count-transition LHS**
+> `comp (comp (fiberLaw project) rawExchangeMembership) (det membershipCount) =
+> comp commanderExchange25 (det commanderLeftCount)` (RHS =
+> `commanderExchange25_countMass`): a multi-lemma development, more tractable than
+> the full membership-level mass because it only tracks `membershipCount`.
+> `CommanderState = Fin 50` (a *count*) is
 > distinct from the physical `Membership = {S : Finset (Fin 99) // S.card=50}`.
 > Full step-by-step spec: `docs/agent_handoff.md` → "NEXT ACTION — F3 item 3".
 > **23rd–24th-session progress (Spec A2 core + A3 scaffold):**
