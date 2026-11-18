@@ -166,5 +166,152 @@ theorem rightPos_iff_val (p : Fin 99) :
       simp only [rightPosition]
       omega⟩
 
+
+/-- The 50 left positions and the 49 right positions cover the full deck. -/
+theorem leftUniv50_union_rightUniv49_eq_univ :
+    leftUniv50 ∪ rightUniv49 = (Finset.univ : Finset (Fin 99)) := by
+  ext p
+  rw [Finset.mem_union]
+  constructor
+  · intro _
+    apply Finset.mem_univ
+  · intro _
+    by_cases hpv : p.val < 50
+    · left
+      simpa [leftPos_iff_val p] using hpv
+    · right
+      simp [rightPos_iff_val p]
+      omega
+
+/-- A position cannot be both a left position and a right position. -/
+theorem leftUniv50_disjoint_rightUniv49 :
+    Disjoint leftUniv50 rightUniv49 := by
+  rw [Finset.disjoint_left]
+  intro p hpL
+  have hlt : p.val < 50 := by simpa [leftPos_iff_val p] using hpL
+  by_contra hpR
+  have hge : 50 <= p.val := by simpa [rightPos_iff_val p] using hpR
+  omega
+
+/-- The left-position part of the total marked positions is exactly the image
+    of the marked left positions. -/
+theorem totalMarked_leftInter_eq_image :
+    (totalMarkedPos d) ∩ leftUniv50 = (markedLeftPos d).image leftPosition := by
+  ext p
+  constructor
+  · intro hp
+    have hif : p ∈ (totalMarkedPos d) ∩ leftUniv50 ↔
+        p ∈ totalMarkedPos d ∧ p ∈ leftUniv50 := Finset.mem_inter
+    rcases hif.mp hp with ⟨hp1, hp2⟩
+    rw [Finset.mem_image]
+    have hpv : p.val < 50 := by simpa [leftPos_iff_val p] using hp2
+    let l : Fin 50 := ⟨p.val, hpv⟩
+    have hpos : leftPosition l = p := by
+      apply Fin.ext
+      simp only [leftPosition, Fin.mk]
+      rfl
+    refine ⟨l, ?_, hpos⟩
+    simpa only [markedLeft_iff_inTotal d l, hpos] using hp1
+  · intro hp
+    simp only [Finset.mem_image] at hp
+    rcases hp with ⟨l, hl, heq⟩
+    rw [Finset.mem_inter]
+    constructor
+    · have htot : leftPosition l ∈ totalMarkedPos d := by
+        simpa [markedLeft_iff_inTotal d l] using hl
+      rwa [heq] at htot
+    · unfold leftUniv50
+      have hmimg : p ∈ (Finset.univ : Finset (Fin 50)).image leftPosition ↔
+          ∃ a ∈ (Finset.univ : Finset (Fin 50)), leftPosition a = p := Finset.mem_image
+      exact hmimg.mpr ⟨l, Finset.mem_univ _, heq⟩
+
+/-- The right-position part of the total marked positions is exactly the image
+    of the marked right positions. -/
+theorem totalMarked_rightInter_eq_image :
+    (totalMarkedPos d) ∩ rightUniv49 = (markedRightPos d).image rightPosition := by
+  ext p
+  constructor
+  · intro hp
+    have hif : p ∈ (totalMarkedPos d) ∩ rightUniv49 ↔
+        p ∈ totalMarkedPos d ∧ p ∈ rightUniv49 := Finset.mem_inter
+    rcases hif.mp hp with ⟨hp1, hp2⟩
+    rw [Finset.mem_image]
+    have hge : 50 <= p.val := by simpa [rightPos_iff_val p] using hp2
+    have hsub : p.val - 50 < 49 := by
+      have hlt99 : p.val < 99 := p.isLt
+      omega
+    let r : Fin 49 := ⟨p.val - 50, hsub⟩
+    have hpos : rightPosition r = p := by
+      apply Fin.ext
+      have hrval : r.val = p.val - 50 := by
+        unfold r
+        rfl
+      simp only [rightPosition, hrval]
+      omega
+    refine ⟨r, ?_, hpos⟩
+    simpa only [markedRight_iff_inTotal d r, hpos] using hp1
+  · intro hp
+    simp only [Finset.mem_image] at hp
+    rcases hp with ⟨r, hr, heq⟩
+    rw [Finset.mem_inter]
+    constructor
+    · have htot : rightPosition r ∈ totalMarkedPos d := by
+        simpa [markedRight_iff_inTotal d r] using hr
+      rwa [heq] at htot
+    · unfold rightUniv49
+      have hmimg : p ∈ (Finset.univ : Finset (Fin 49)).image rightPosition ↔
+          ∃ a ∈ (Finset.univ : Finset (Fin 49)), rightPosition a = p := Finset.mem_image
+      exact hmimg.mpr ⟨r, Finset.mem_univ _, heq⟩
+
+/-- The right pile holds `50 - leftOriginalCount d` originally-left cards: the
+    50 marked cards split between the 50 left positions and the 49 right
+    positions (conservation law). -/
+theorem markedRightPos_card :
+    (markedRightPos d).card = 50 - leftOriginalCount d := by
+  have hCover : leftUniv50 ∪ rightUniv49 = (Finset.univ : Finset (Fin 99)) :=
+    leftUniv50_union_rightUniv49_eq_univ
+  have hDisjLR : Disjoint leftUniv50 rightUniv49 := leftUniv50_disjoint_rightUniv49
+  have hDisjMR : Disjoint ((totalMarkedPos d) ∩ leftUniv50)
+      ((totalMarkedPos d) ∩ rightUniv49) := by
+    rw [Finset.disjoint_left]
+    intro p hML
+    have ifML : p ∈ (totalMarkedPos d) ∩ leftUniv50 ↔
+        p ∈ totalMarkedPos d ∧ p ∈ leftUniv50 := Finset.mem_inter
+    have hpL : p ∈ leftUniv50 := (ifML.mp hML).2
+    by_contra hMR
+    have ifMR : p ∈ (totalMarkedPos d) ∩ rightUniv49 ↔
+        p ∈ totalMarkedPos d ∧ p ∈ rightUniv49 := Finset.mem_inter
+    have hpR : p ∈ rightUniv49 := (ifMR.mp hMR).2
+    have hnotL : p ∉ leftUniv50 := (Finset.disjoint_right.mp hDisjLR) hpR
+    exact hnotL hpL
+  have hLeft : ((totalMarkedPos d) ∩ leftUniv50).card = (markedLeftPos d).card := by
+    rw [totalMarked_leftInter_eq_image]
+    exact Finset.card_image_of_injective (s := markedLeftPos d) (H := leftPosition_injective)
+  have hRight : ((totalMarkedPos d) ∩ rightUniv49).card = (markedRightPos d).card := by
+    rw [totalMarked_rightInter_eq_image]
+    exact Finset.card_image_of_injective (s := markedRightPos d) (H := rightPosition_injective)
+  have hA : 50 =
+      ((totalMarkedPos d) ∩ leftUniv50).card + ((totalMarkedPos d) ∩ rightUniv49).card := by
+    calc
+      50 = (totalMarkedPos d).card := by rw [← totalMarkedPos_card50]
+      _ = ((totalMarkedPos d) ∩ (leftUniv50 ∪ rightUniv49)).card := by
+        rw [hCover, Finset.inter_univ (totalMarkedPos d)]
+      _ = (((totalMarkedPos d) ∩ leftUniv50) ∪
+            ((totalMarkedPos d) ∩ rightUniv49)).card := by
+        rw [Finset.inter_union_distrib_left]
+      _ = ((totalMarkedPos d) ∩ leftUniv50).card +
+            ((totalMarkedPos d) ∩ rightUniv49).card := by
+        rw [Finset.card_union_of_disjoint hDisjMR]
+  have hSum : (markedLeftPos d).card + (markedRightPos d).card = 50 := by
+    simpa [hLeft, hRight] using hA.symm
+  have hGoal : (markedRightPos d).card = 50 - (markedLeftPos d).card := by
+    have h50 : 50 = (markedLeftPos d).card + (markedRightPos d).card := hSum.symm
+    have hCS : (markedLeftPos d).card + (markedRightPos d).card -
+        (markedLeftPos d).card = (markedRightPos d).card := by
+      exact Nat.add_sub_cancel_left (markedLeftPos d).card (markedRightPos d).card
+    rw [← h50] at hCS
+    exact hCS.symm
+  simpa only [← markedLeftPos_card d] using hGoal
+
 end _Probe47n
 end Shufflemath

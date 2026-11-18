@@ -2355,3 +2355,71 @@ mirrored) — discharging `hMembershipExchange` → the G1 main theorem → the 
 Vandermonde identity — the existing BL overlap-count lemma may bridge directly; keep all
 new work in `CommanderMembershipExchange.lean` and never import a `Commander*` module
 from `Shufflemath.FiniteDeck.*`.
+
+
+---
+
+### 47n — build-order item 3: per-deck fiber-count structural lemmas + count half DONE
+
+**This session: `Shufflemath/_Probe47n.lean` builds GREEN (all lemmas).** The file is
+a self-contained probe (imports `Shufflemath.FiberDisintegration` +
+`Shufflemath.BernoulliLaplace` only) that assembles the *structural* facts needed for
+the per-deck fiber count of `(L,R) ∈ leftChoices ×ˢ rightChoices` (build-order item 3),
+plus the **A3 count half** (conservation of the originally-left cards).
+
+**Definitions (all local to the probe):** `leftOrig50`/`rightOrig49` (the 50/49
+originally-left cards as `Finset (Fin 99)`), `leftPosition`/`rightPosition` (the
+position embeddings `Fin 50 → Fin 99` / `Fin 49 → Fin 99`), `leftUniv50`/
+`rightUniv49` (their full images), `totalMarkedPos d`
+(`= leftOrig50.image (d.symm)` — the 50 positions holding originally-left cards).
+
+**Structural lemmas (all building):**
+- `leftOrig50_disjoint_rightOrig49`, `leftUniv50_disjoint_rightUniv49`,
+  `leftUniv50_union_rightUniv49_eq_univ` (the 50 left + 49 right positions cover the deck).
+- `leftPosition_injective` / `rightPosition_injective`,
+  `leftOrig50_image_eq_leftUniv50` / `rightOrig49_image_eq_rightUniv49`.
+- `leftPos_iff_val` (`p ∈ leftUniv50 ↔ p.val < 50`),
+  `rightPos_iff_val` (`p ∈ rightUniv49 ↔ 50 ≤ p.val`),
+  `leftUniv50_disjoint_rightUniv49`.
+- `totalMarkedPos_card50` (`#(totalMarkedPos d) = 50`), `totalMarkedPos_sub_univ`,
+  `markedLeft_iff_inTotal` / `markedRight_iff_inTotal` (a marked position is in
+  `totalMarkedPos d` iff its pile-index card is in `leftOrig50`/`rightOrig49`).
+
+**Count half (the A3 conservation law) — DONE:**
+- `totalMarked_leftInter_eq_image` / `totalMarked_rightInter_eq_image`:
+  `(totalMarkedPos d) ∩ leftUniv50 = (markedLeftPos d).image leftPosition` (resp.
+  right). These are the set-level bridges that turn the pile-index counts into
+  position-image counts.
+- `markedRightPos_card` — **the A3 count half:** `#(markedRightPos d) =
+  50 - leftOriginalCount d`. Proof: the 50 marked positions split disjointly between
+  the left and right halves (`#L + #R = 50` via `inter_univ` +
+  `inter_union_distrib_left` + `card_union_of_disjoint`), each half's card is the
+  corresponding marked-pile-index count (`card_image_of_injective`), so
+  `#(markedLeftPos d) + #(markedRightPos d) = 50`, i.e.
+  `#(markedRightPos d) = 50 - #(markedLeftPos d)`.
+
+**Mathlib pitfalls hit (do not repeat):**
+- `Finset.mem_inter` / `Finset.mem_image` have **implicit** args, so `.mp`/`.mpr` on the
+  *unapplied* theorem fails ("Invalid projection"). Bind a `have hiff : <exact type>
+  := Finset.mem_inter` first (Lean fills the implicits), then `hif.mp`/`.mpr`.
+  `simp [Finset.mem_image] at h` and `rw [Finset.mem_inter]` DO work directly (the
+  tactic layer resolves the implicits).
+- `p ∈ s ∩ t` is **not** definitionally `p ∈ s ∧ p ∈ t` — use `Finset.mem_inter` (or the
+  `have` pattern above), never `hp.1`/`hp.2` on a `p ∈ s ∩ t` hypothesis.
+- `Finset.inter_univ (s)` / `inter_eq_left` have **explicit** `s` args — pass them.
+- `p.isLt : p.val < 99` is available on a `Fin 99` (use it for the `p.val - 50 < 49`
+  bound in the right-position embedding).
+
+**Next (item 3 completion → item 4):** the per-(L,R) count is
+`newLeftOriginalCount_eq` (`CommanderPhysicalExchange`): `(newLeftCards d L R ∩
+leftOrig50).card = leftOriginalCount d - markedInLeft d L + markedInRight d R` (with the
+A3 count half above pinning `#(markedRightPos d) = 50 - leftOriginalCount d`). For a deck
+with `x := leftOriginalCount d`, `xR := (markedRightPos d).card`, the number of
+`(L,R)` giving new count `n` is the 4-fold Vandermonde sum
+`∑_{aL} choose x aL · choose (50-x) (25-aL) · choose xR (n-x+aL) ·
+choose (49-xR) (25-n+x-aL)`, which equals `transitionNumerator 99 50 25 x n` (already
+proved in `BernoulliLaplaceGeneral`). The per-deck count mass then `= transitionWeight
+99 50 25 x n`, and item 5 fiber-averages it over the project fiber to match
+`commanderExchange25_countMass` (discharging `hMembershipExchange`). **Promote the probe
+lemmas to `Shufflemath/FiniteDeck/A3Count` (or keep as a named probe) when wiring into
+`CommanderMembershipExchange`; keep all `Commander*` in the non-FiniteDeck layer.**
