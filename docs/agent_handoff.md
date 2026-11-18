@@ -96,16 +96,34 @@ the image membership by `simp` of the L50-form equality then decomposes the expl
 existential + `g.injective`). Verified this session: a standalone module with
 `L50` + `leftOrigSet_eq_L50` + `hgL_L50` + `hGpart_fwd`/`hGpart_bwd`/`hGpart` builds
 clean (3205 jobs, exit 0). **Recipe saved at `.pi-glla/47ao_hGpart_wip.lean`**
-(copy it to `Shufflemath/_ProbeX.lean` and `lake build` to re-verify). **Remaining
-to `leftOriginalCount_conjugate`:** (1) `leftCards_conjugate : leftCards (d.trans g)
-= (leftCards d).image g` (trivially true; the `ext` close is Fin-50/Fin-99
-existential bookkeeping + `Equiv.trans_apply` for `(d.trans g) a = g (d a)`);
-(2) the final card step `#((leftCards d).image g ∩ leftOrigSet) = #(leftCards d ∩
-leftOrigSet)` via `hGpart` — the `ext` that *calls* `hGpart` re-reduces its L50 proof
-term and trips the heartbeat. Next moves: inline the two `hGpart` directions in the
-branches, or prove the card equality by a bijection `y ↦ g y` (surjectivity via
-`g.symm` + `hGpart.mpr`) with `Finset.card_bijection`, which may reduce more lightly.
-**Deadline Wed 2026-11-24 23:59:59 EST.**
+(copy it to `Shufflemath/_ProbeX.lean` and `lake build` to re-verify). **`hGpart` is now PROVEN and COMMITTED (49th session, `d6dc0dc`):** the
+`.pi-glla/47ao_hGpart_wip.lean` module (`L50` + `leftOrigSet_eq_L50` + `hgL_L50` +
+`hGf`/`hGb`/`hGpart`) compiles clean. Copy it to `Shufflemath/_ProbeX.lean` to reuse;
+`leftCards_conjugate` and the `ext`-based `hInt` are also assembled there.
+
+**Updated 2026-11-24 (49th session) — the FULL assembly is blocked by a GENUINE
+whnf explosion, NOT a tunable threshold.** The `hGpart` directions (`hGf`/`hGb`,
+both L50-routed) compile standalone and the → direction of the set-equality
+`hInt : (leftCards d).image g ∩ leftOrigSet = (leftCards d ∩ leftOrigSet).image g`
+compiles. But the ← direction of `hInt` (the branch that calls `hGf` to turn
+`y ∈ leftOrigSet` into `x = g y ∈ leftOrigSet`) **times out at `whnf` even with a
+local `set_option maxHeartbeats 2000000` (10× the default)** — so it is a real
+combinatorial blowup in `whnf` of the `L50` image
+(`(Finset.univ : Fin 50).image leftPosition`) nested inside `.image g` and cast
+through `hL : L50.image g = L50`, *in the deep `hInt` context* — not a threshold
+that a heartbeat raise can clear (and the → vs ← asymmetry is context-dependent,
+so more L50-image tweaking is unlikely to close it). Closest assembled form saved at
+`.pi-glla/47ax_leftOriginalCount_wip.lean`. **This is a PERFORMANCE wall (the
+statement is correct and all sub-lemmas compile individually); the fix is a
+representation change, not more force.** Next-session strategies, in order of
+promise: **(a) frameshift to `Fin 50`** — prove the card equality on the 50-element
+*index* set (both `leftCards d` and `leftOrigSet` are 50-card `Fin 50` images) with
+`g` as a `Fin 50` bijection, avoiding the `Fin 99` image `whnf` entirely; **(b)**
+prove `hInt` as its *own* compiled theorem (isolating the one heavy `whnf`) so the
+main proof only references it; **(c)** introduce a *light explicit* Finset for the
+50 left positions (not via `.image`) and prove `hGpart`/`hInt` against it, bridging
+back to the library `leftOrigSet` via `leftOrigSet_eq_L50`. **Deadline Wed
+2026-11-24 23:59:59 EST.**
 
 **Earlier (2026-11-22, part (ii) group action):**
 **Updated:** 2026-11-22 (A3 **part (ii) group action** session) — the
