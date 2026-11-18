@@ -459,6 +459,23 @@ route, not a theorem already in the tree.
 > and equal `R`), completing the unique half of the deck-level bijection (F3 item 3,
 > step 2). Next: step 1 (deck-independence), then step 3 (point mass) — see
 > `docs/agent_handoff.md`.
+> **51st-session progress (A3 `hTrans` bridge + part (ii) constancy):** in
+> `Shufflemath/CommanderMembershipExchange.lean`, the two remaining *inputs* to the
+> `hMembershipExchange` capstone are proved. **`membershipFiber_transitive_asEquiv`
+> (`de1d4b0`)** is the `hTrans` bridge — it wraps the bare bijection `f : Fin 99 → Fin 99`
+> from `membershipFiber_transitive` as a `Deck` (`Equiv.ofBijective`) so the orbit map is
+> exactly `relabelMembership_equiv (g) g.bijective`, the `E`-form equiv
+> `distUniform_ofInvariantTransitive` needs; its `.val`-field equality is a `Finset.ext`
+> iff bridged to the Set image equality via a direction-controlled `rw` chain
+> (`← Finset.mem_coe` / `← hSet` / `← Finset.coe_image` / `Finset.mem_coe`) — solving the
+> 48th/49th-session Finset/Set-coercion wall. **`mu_x_constant_on_countFiber`
+> (`0259ab2`)** is the part (ii) core — `μ_x` is constant on each membership-count fiber
+> (invariance + transitivity ⇒ equal mass on the orbit = the fiber); its `hConst` step
+> mirrors `distUniform_ofInvariantTransitive`'s own `hConst`.
+> **Next: part (i) count total** (`rawExchangeMembership_count`: LHS fiber-average
+> post-exchange *count* distribution = `commanderExchange25_countMass`), then combine
+> part (i)+(ii) to discharge `hMembershipExchange` and instantiate
+> `two_physical_perfect_exchanges_uniform_of_counts` (see `docs/agent_handoff.md`).
 > **50th-session progress (A3 within-count invariance, `67a4efc`):** in
 > `Shufflemath/CommanderMembershipExchange.lean`, four building blocks assembling the
 > *within-count* invariance the A3 capstone needs from `distUniform_ofInvariantTransitive`

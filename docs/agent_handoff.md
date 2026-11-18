@@ -15,10 +15,27 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-24 (A3 **50th session — `leftOriginalCount`/`project`
-conjugation: the 48th/49th-session `whnf` wall is SOLVED**) — the `μ_x`
-invariance's missing piece **`hE` is now in the main library**. New 50th-session
-additions (`Shufflemath/CommanderPhysicalExchange.lean`, end of module):
+**Updated:** 2026-11-24 (A3 **51st session — `hTrans` bridge + part (ii) constancy
+in the main library**) — the two remaining *inputs* to the `hMembershipExchange`
+capstone are now proved in `Shufflemath/CommanderMembershipExchange.lean`:
+- **`membershipFiber_transitive_asEquiv`** (`de1d4b0`): the **`hTrans` bridge** —
+  wraps the bare bijection `f : Fin 99 → Fin 99` from `membershipFiber_transitive`
+  as a `Deck` (`Equiv.ofBijective`) so the orbit map is exactly the `E`-language
+  equiv `relabelMembership_equiv (g) g.bijective` that `distUniform_ofInvariantTransitive`
+  needs. Solves the 48th/49th-session **Finset/Set-coercion wall**: the `.val`-field
+  equality `m.1.image f = m'.1` is a `Finset.ext` pointwise iff bridged to the Set
+  image equality `hImg` via a direction-controlled `rw` chain
+  (`← Finset.mem_coe` / `← hSet` / `← Finset.coe_image` / `Finset.mem_coe`) — the
+  iff direction on the first `mem_coe` was the previous session's blocker.
+- **`mu_x_constant_on_countFiber`** (`0259ab2`): **part (ii) core** — the
+  post-exchange membership law `μ_x` is *constant on each membership-count fiber*
+  (invariance `mu_x_map_invariance` + transitivity `membershipFiber_transitive_asEquiv`
+  force equal mass on the orbit, and the orbit is the count fiber). Its `hConst` step
+  mirrors `distUniform_ofInvariantTransitive`'s own `hConst`. Both lemmas build clean
+  (3211 jobs); the 37-test verify gate is green.
+
+**Prior 50th session** (A3 within-count invariance, `67a4efc`): `μ_x`
+invariance's missing piece **`hE`** is in the main library (`CommanderPhysicalExchange.lean`):
 - **`leftOriginalCount_conjugate`**: `(leftOrigSet).image g = leftOrigSet →
   leftOriginalCount (d.trans g) = leftOriginalCount d` — the long-blocked 48th/
   49th-session target, now compiling clean.
@@ -40,8 +57,29 @@ partition-preservation iff `hGpart` as a **standalone top-level theorem** — it
 reduction is never re-run in the deep context. Referencing a compiled theorem by
 name is cheap; the earlier failures (47ax `hGf`/`hGb` defs, 47az inline `hpart`)
 all **re-ran the heavy body at the call site**. A standalone reference module is
-`Shufflemath/_Probe47b0.lean`. **Next: assemble `μ_x.map (relabelMembership_equiv
-f hf) = μ_x`** (see "Exactly where to resume" below) — step 1 now unblocks.
+`Shufflemath/_Probe47b0.lean`.
+
+**Exactly where to resume: the A3 capstone `hMembershipExchange` — part (i) count
+total, then the full kernel equality.** Both *inputs* to the within-count
+uniformity (part (ii)) are now in the library: `mu_x_map_invariance` (invariance)
+and `membershipFiber_transitive_asEquiv` (transitivity / `hTrans`), and
+`mu_x_constant_on_countFiber` already combines them into the **within-fiber
+constancy**. The remaining steps to discharge `hMembershipExchange`:
+  1. **Part (i) — count total:** prove `rawExchangeMembership_count`,
+     `comp (comp (fiberLaw project project_surjective) rawExchangeMembership)
+     (deterministic membershipCount) =
+     comp commanderExchange25 (deterministic commanderLeftCount)`. The **RHS** is
+     already committed (`commanderExchange25_countMass`: mass at `(x, c)` is
+     `transitionWeight 99 50 25 (count x) c` for feasible `c`); the **LHS**
+     fiber-average post-exchange *count* distribution is the remaining step — the
+     counting core (`transitionNumerator = overlap_count`) is in
+     `BernoulliLaplaceGeneral` / `BernoulliLaplaceFiber`.
+  2. **Combine part (i) + part (ii):** for `m` in the `c`-fiber, `μ_x m` =
+     (part (i) count mass at `c`) / `#(c`-fiber`)`, where the divisor is
+     `membershipFiber_card`. This equals `hMembershipExchange_rhs_mass` at `(x, m)`,
+     so the kernel equality follows by `FiniteKernel.ext` (pointwise in `x`, `m`).
+  3. **Instantiate** `two_physical_perfect_exchanges_uniform_of_counts` with
+     `hMembershipExchange` discharged, closing F3.
 
 Prior fiber-level milestones, all still in the library:
 - **`rawExchangeMembership_conjugate`** (`Shufflemath/CommanderPhysicalExchange.lean`,
@@ -65,7 +103,8 @@ Prior fiber-level milestones, all still in the library:
   invariant under the fiber's symmetry group" fact — the invariance input to
   `distUniform_ofInvariantTransitive`.
 
-**Exactly where to resume: the A3 capstone `hMembershipExchange` itself.** The
+**[50th session — SUPERSEDED by the 51st-session resume above; kept for the assembly
+detail.]** The
 SPECIFIC post-exchange membership-law invariance `μ_x.map (relabelMembership_equiv f hf) = μ_x`
 for `μ_x = comp (FiberDisintegration.fiberLaw project project_surjective)
 rawExchangeMembership x` is now **DONE (50th session, `67a4efc`)** — committed in
