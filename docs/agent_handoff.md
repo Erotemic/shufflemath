@@ -299,6 +299,98 @@ function of the source membership `S` — the selected LEFT cards are a 25-subse
 `leftCards d`, so the choice is card-set-level, not position-level), then F3 item 3
 step 3 (point mass).
 
+**47j (this session): the A3 count half is reduced to one reusable counting
+kernel + a trivial fiber-average (analysis done; the kernel's Lean proof is the
+next concrete step).**
+
+The A3 count half is `rawExchangeMembership_count`:
+`comp (comp (fiberLaw project project_surjective) rawExchangeMembership)
+(det membershipCount) = comp commanderExchange25 (det commanderLeftCount)`.
+Both sides are `FiniteKernel CommanderState Nat`. The reduction:
+
+- **LHS at `(x, n)`** = the uniform fiber-average (over `fiberSet project x`,
+  weight `1/|fiber|` each) of the **per-deck** 25/25-exchange count mass. This
+  is just `apply_mass_eq_sum` twice + `fiberLaw_mass` + kernel associativity,
+  with the `det membershipCount` pushing a count indicator through.
+- **The per-deck count mass is count-invariant.** By `newLeftOriginalCount_eq`
+  (`(newLeftCards d L R ∩ leftOrigSet).card = (leftOriginalCount d -
+  markedInLeft d L) + markedInRight d R`), a deck `d` with count
+  `x = leftOriginalCount d` has post-exchange count `x - X + Y`, where
+  `X = markedInLeft d L` and `Y = markedInRight d R`. As `L` (a 25-subset of
+  the 50 left positions, of which `x` are marked) and `R` (a 25-subset of the
+  49 right positions, of which `50 - x` are marked, since the right pile holds
+  `50 - x` marked and `x - 1` unmarked) range uniformly, `X ~ HG(50, x, 25)`
+  and `Y ~ HG(49, 50 - x, 25)` — **functions of `x` only, independent of the
+  deck's internal arrangement**. So the per-deck count mass at `n` is the same
+  for every deck of count `x`.
+- **It equals `transitionWeight 99 50 25 x n`** (the 99-card
+  `BernoulliLaplace.lean` transition): the 5-arg `transitionNumerator
+  (99 50 25 x n)` is exactly the count of `(L, R)` grid choices landing on
+  count `n` — its four `choose` factors split as
+  `choose(x,a)·choose(50-x,25-a)` (`X = a`) times
+  `choose(50-x,b)·choose(x-1,25-b)` (`Y = b`) with `b = n - x + a`, matching
+  the `X` and `Y` hypergeometric counts. Dividing by
+  `transitionDenominator (99 50 25) = choose(50,25)·choose(49,25) =
+  #exchangeChoice` gives the per-deck mass.
+- **Conclusion:** the LHS fiber-average of a fiber-constant per-deck mass is
+  just that mass = `transitionWeight 99 50 25 (count x) n` = the RHS
+  (`commanderExchange25_countMass`, `a7fabd3`). The **only** remaining proof
+  content is the counting kernel below; everything after it is assembly.
+
+**The counting kernel — `powersetCard_markedContent`** (add to
+`Shufflemath/FinsetCombinatorics.lean`; the reusable foundation for both pile
+counts):
+
+    theorem powersetCard_markedContent {α : Type*} [Fintype α] [DecidableEq α]
+        (U M : Finset α) (hM : M ⊆ U) (k a : Nat) (ha : a ≤ k) :
+        (∑ S ∈ U.powersetCard k, if (S ∩ M).card = a then 1 else 0) =
+          Nat.choose M.card a * Nat.choose (U.card - M.card) (k - a)
+
+**Proof plan (union-bijection):** `X := U \ M`,
+`P := M.powersetCard a ×ˢ X.powersetCard (k - a)` (the **`×ˢ` /
+`Finset.product`** syntax — there is **no** `Finset.prod`), `f (A, B) :=
+A ∪ B`. Show (i) `A ∪ B` (for `A ⊆ M`, `B ⊆ X`, disjoint) is a `k`-subset of
+`U` with exactly `a` marked elements; (ii) every such `S` splits as
+`(S ∩ M) ∪ (S ∩ X)` with the right cards, so
+`{S ∈ U.powersetCard k // (S ∩ M).card = a} = f '' P`; (iii) `f` is injective
+on `P` (recovery `A = (A ∪ B) ∩ M`, `B = (A ∪ B) ∩ X`). Then
+`card (f '' P) = card P = choose(M.card, a) · choose(X.card, k - a)` by
+`Finset.card_image_of_injective` + `Finset.prod_card` +
+`Finset.card_powersetCard`, and `X.card = U.card - M.card` by
+`Finset.card_sdiff_of_subset`. The LHS sum is the cardinality of the filter by
+`Finset.sum_ite` + `Finset.sum_const`.
+
+**Mathlib name pitfalls hit in 47j (do not repeat):** `mem_powersetCard` is a
+`@[simp]` lemma — unfold a membership with `Finset.mem_powersetCard.mp h`
+(not `h.2.1` after a bare `simp at *`); there is **no**
+`Finset.mem_union_of_left`/`_of_right` — use `Finset.mem_union.mpr (Or.inl
+·)`/`(Or.inr ·)` or `simp [Finset.mem_union]`; there is **no**
+`Finset.sum_ones` — use `Finset.sum_const` (`∑ _x ∈ s, 1 = s.card`);
+`M` and `U \ M` are disjoint by `Finset.inter_sdiff_self`; `simp only [...]
+at * ⊢` is **not** valid syntax (the `⊢` after `at *` is rejected) — `rcases`
+the membership instead. A first implementation of the kernel hit six build
+iterations on exactly these names and was reverted; the statement and plan
+above are sound, only the name/rewrite details remain.
+
+**Build order to finish the A3 count half (after the kernel):**
+1. `leftPileCount25`: `#(L ∈ leftChoices, markedInLeft d L = a) =
+   choose(x, a)·choose(50 - x, 25 - a)` — kernel instance with
+   `U = (univ : Finset (Fin 50))`, `M = markedLeftPos d`, `x =
+   leftOriginalCount d`.
+2. `rightPileCount25`: `#(R ∈ rightChoices, markedInRight d R = b) =
+   choose(50 - x, b)·choose(x - 1, 25 - b)` — kernel instance with
+   `U = (univ : Finset (Fin 49))`, `M = markedRightPos d` (right pile has
+   `50 - x` marked, `x - 1` unmarked).
+3. `exchangeCountAt`: `#(c ∈ exchangeChoice, membershipCount (newMembership d
+   c.1.1 (leftCard25 c.1.2) c.2.1 (rightCard25 c.2.2)) = n) =
+   transitionNumerator 99 50 25 x n` — grid decomposition by `(a, b)` with
+   `n = x - a + b` + (1)+(2) + the `transitionNumerator` definition.
+4. `rawExchangeMembership_countMass` (per-deck): the per-deck count mass =
+   `(if 1 ≤ n ∧ n ≤ 50 then transitionWeight 99 50 25 x n else 0)` (`#grid =
+   transitionDenominator (99 50 25)`).
+5. **`rawExchangeMembership_count`** (the A3 count half): the fiber-average of
+   the fiber-constant per-deck mass = `commanderExchange25_countMass` (RHS).
+
 **NEXT ACTION — F3 item 3, step 1 (deck-independence):** show `newMembership d L R`
 (and hence `rawExchangeMembership d`) depends on `d` only through `membership d`
 (`markedLeftPos d`, `markedRightPos d`) — so the "membership transition" is well-defined
