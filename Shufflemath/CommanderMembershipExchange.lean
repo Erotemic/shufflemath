@@ -469,5 +469,90 @@ theorem hMembershipExchange_rhs_mass (x : CommanderState) (m : Membership) :
         rw [hL, hR]
         simp only [zero_mul]
 
+/-- The A3 RHS **count-mass**: the mass at `(x, c)` of the count distribution
+    `comp commanderExchange25 (deterministic commanderLeftCount)` — the
+    probability that a `commanderExchange25` step from macro state `x` lands on
+    a state of left count `c` — is the `commanderExchange25` transition weight
+    to `c`, and `0` for an infeasible count.  This is the count-level companion
+    of `hMembershipExchange_rhs_mass`: the macro count-fiber at a feasible `c`
+    has exactly one member (`commanderCountFiber_card`), so the fiber sum
+    collapses to `transitionWeight 99 50 25 (count x) c`. -/
+theorem commanderExchange25_countMass (x : CommanderState) (c : Nat) :
+    Dist.mass (FiniteKernel.comp commanderExchange25 (FiniteKernel.deterministic commanderLeftCount) x) c =
+      (if 1 ≤ c ∧ c ≤ 50 then transitionWeight 99 50 25 (commanderLeftCount x) c else 0) := by
+  classical
+  set K := transitionWeight 99 50 25 (commanderLeftCount x) c
+  set F := (Finset.univ : Finset CommanderState).filter (fun y => c = commanderLeftCount y)
+  -- (A) the per-y term is the fiber indicator times `K`.
+  have hVal (y : CommanderState) :
+      Dist.mass (commanderExchange25 x) y * Dist.mass (FiniteKernel.deterministic commanderLeftCount y) c =
+        (if c = commanderLeftCount y then K else 0) := by
+    by_cases hyc : c = commanderLeftCount y
+    · -- on the fiber: `count y = c`; the deterministic point mass is `1`.
+      have hcnt : commanderLeftCount y = c := hyc.symm
+      rw [FiniteKernel.deterministic, commanderExchange25_mass, Dist.mass_pointMass, hcnt]
+      -- now: TW (count x) c * (if c = c then 1 else 0) = (if c = c then K else 0)
+      simp [K]
+    · -- off the fiber: the deterministic point mass is `0`.
+      rw [FiniteKernel.deterministic, commanderExchange25_mass, Dist.mass_pointMass, ite_eq_right hyc, ite_eq_right hyc]
+      simp [mul_zero]
+  -- (B) the count fiber `{y // count y = c}` has the singleton-or-empty card.
+  have hCard : F.card = (if 1 ≤ c ∧ c ≤ 50 then 1 else 0) := by
+    have hF : F = (Finset.univ : Finset CommanderState).filter (fun y => commanderLeftCount y = c) := by
+      apply Finset.ext
+      intro y
+      simp [F, Finset.mem_filter, Finset.mem_univ]
+      tauto
+    rw [hF, commanderCountFiber_card]
+  calc
+    Dist.mass (FiniteKernel.comp commanderExchange25 (FiniteKernel.deterministic commanderLeftCount) x) c =
+        (∑ y : CommanderState, Dist.mass (commanderExchange25 x) y * Dist.mass (FiniteKernel.deterministic commanderLeftCount y) c) :=
+      apply_mass_eq_sum (commanderExchange25 x) (FiniteKernel.deterministic commanderLeftCount) c
+    _ = (∑ y : CommanderState, (if c = commanderLeftCount y then K else 0)) := by
+      apply Finset.sum_congr rfl
+      intro y _
+      exact hVal y
+    _ = (∑ y ∈ F, K) := by
+      -- swap the indicator for the fiber-membership test, then restrict to the fiber
+      have hIte (y : CommanderState) :
+          (if c = commanderLeftCount y then K else 0) = (if y ∈ F then K else 0) := by
+        by_cases hk : c = commanderLeftCount y
+        · -- c = count y  ⟹  y ∈ F; both ites take their `then` branch
+          have hmem : y ∈ F := by simp [F, Finset.mem_filter, Finset.mem_univ, hk]
+          rw [ite_eq_left hk, ite_eq_left hmem]
+        · -- c ≠ count y  ⟹  y ∉ F; both ites take their `else` branch
+          have hnot : y ∉ F := by
+            intro hmem
+            have hk' : c = commanderLeftCount y := by
+              simpa [F, Finset.mem_filter, Finset.mem_univ] using hmem
+            contradiction
+          rw [ite_eq_right hk, ite_eq_right hnot]
+      have h1 : (∑ y : CommanderState, (if c = commanderLeftCount y then K else 0)) =
+          (∑ y : CommanderState, (if y ∈ F then K else 0)) := by
+        apply Finset.sum_congr rfl
+        intro y _
+        exact hIte y
+      rw [h1]
+      have h2 : (∑ y : CommanderState, (if y ∈ F then K else 0)) =
+          (∑ y ∈ (Finset.univ : Finset CommanderState), (if y ∈ F then K else 0)) := rfl
+      rw [h2, ← Finset.sum_filter]
+      have hF2 : (Finset.univ : Finset CommanderState).filter (fun y => y ∈ F) = F := by
+        apply Finset.ext
+        intro y
+        simp [F, Finset.mem_filter, Finset.mem_univ]
+      rw [hF2]
+    _ = F.card * K := Finset.sum_const _
+    _ = (if 1 ≤ c ∧ c ≤ 50 then 1 else 0) * K := by rw [hCard, Nat.cast_ite]; rfl
+    _ = (if 1 ≤ c ∧ c ≤ 50 then K else 0) := by
+      by_cases hk : 1 ≤ c ∧ c ≤ 50
+      · have hL : ((if 1 ≤ c ∧ c ≤ 50 then 1 else 0) : Rat) = 1 := ite_eq_left hk
+        rw [hL]
+        simp only [one_mul, if_pos hk]
+      · have hL : ((if 1 ≤ c ∧ c ≤ 50 then 1 else 0) : Rat) = 0 := ite_eq_right hk
+        rw [hL]
+        simp only [zero_mul, if_neg hk]
+    _ = (if 1 ≤ c ∧ c ≤ 50 then transitionWeight 99 50 25 (commanderLeftCount x) c else 0) := by
+      simp [K]
+
 end CommanderMembershipExchange
 end Shufflemath
