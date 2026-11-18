@@ -460,8 +460,8 @@ route, not a theorem already in the tree.
 > step 2). Next: step 1 (deck-independence), then step 3 (point mass) — see
 > `docs/agent_handoff.md`.
 > **51st-session progress (A3 `hTrans` bridge, part (ii) constancy, part (i)
-> normalization):** in
-> `Shufflemath/CommanderMembershipExchange.lean`, three `hMembershipExchange` inputs
+> normalization + count connection):** in
+> `Shufflemath/CommanderMembershipExchange.lean`, four `hMembershipExchange` inputs
 > are proved. **`membershipFiber_transitive_asEquiv`
 > (`de1d4b0`)** is the `hTrans` bridge — it wraps the bare bijection `f : Fin 99 → Fin 99`
 > from `membershipFiber_transitive` as a `Deck` (`Equiv.ofBijective`) so the orbit map is
@@ -474,12 +474,16 @@ route, not a theorem already in the tree.
 > (invariance + transitivity ⇒ equal mass on the orbit = the fiber). **
 > `exchangeChoice_card_eq_transitionDenominator` (`a82673b`)** is the part (i)
 > normalization — `#exchangeChoice = choose 50 25 * choose 49 25 = transitionDenominator
-> 99 50 25`, so the raw-exchange law uses the BL transition-denominator normalization.
-> **Next: the part (i) inner-sum** `rawExchange_membershipCount_mass` (total mass of the
-> raw exchange into the `c`-fiber = `transitionNumerator (count x) c /
-> transitionDenominator 99 50 25`, via `newLeftCount_eq_transitionNumerator` + the
-> normalization), then the fiber-average collapse to `rawExchangeMembership_count`, then
-> combine with part (ii) to discharge `hMembershipExchange` (see `docs/agent_handoff.md`).
+> 99 50 25`. **`membershipCount_newMembership` (`1be4918`)** is the part (i) count
+> connection — `membershipCount (newMembership d L R …) =
+> (newLeftCards d L R ∩ leftOrigSet).card` (`dsimp [membershipCount, newMembership]`).
+> **Next: the part (i) inner-sum** `rawExchange_membershipCount_mass` (total mass of
+> the raw exchange into the `c`-fiber = `transitionNumerator (count x) c /
+> transitionDenominator 99 50 25`) — all counting inputs are now in the library; only
+> the Finsupp/measure bookkeeping remains (WIP skeleton `.pi-glla/52_innerSum_wip.lean`; avoid
+> `.map`-on-`Dist`, compute the fiber-sum as a `Finset.sum` over `exchangeChoice`). Then
+> the fiber-average collapse to `rawExchangeMembership_count`, then combine with part (ii)
+> to discharge `hMembershipExchange` (see `docs/agent_handoff.md`).
 > **50th-session progress (A3 within-count invariance, `67a4efc`):** in
 > `Shufflemath/CommanderMembershipExchange.lean`, four building blocks assembling the
 > *within-count* invariance the A3 capstone needs from `distUniform_ofInvariantTransitive`

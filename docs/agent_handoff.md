@@ -67,23 +67,27 @@ and `membershipFiber_transitive_asEquiv` (transitivity / `hTrans`), and
 constancy**. For **part (i)** the normalization bridge is now done:
 `exchangeChoice_card_eq_transitionDenominator` (`a82673b`) shows
 `#exchangeChoice = transitionDenominator 99 50 25`, so the raw-exchange
-normalization is the BL transition denominator. The remaining **specific next
-lemma** is the **inner-sum**:
+normalization is the BL transition denominator, and
+`membershipCount_newMembership` (`1be4918`) gives the count connection
+`membershipCount (newMembership d L R …) = (newLeftCards d L R ∩ leftOrigSet).card`
+(the `dsimp [membershipCount, newMembership]` one-liner). The remaining **specific
+next lemma** is the **inner-sum** (WIP skeleton at `.pi-glla/52_innerSum_wip.lean`):
   1. **Part (i) inner-sum — `rawExchange_membershipCount_mass`:** for a deck `d`
      and count `c`, the *total mass of the raw exchange into the `c`-fiber* equals
      the BL transition probability:
      `Σ_{m : membershipCount m = c} Dist.mass (rawExchangeMembership d) m
         = (transitionNumerator 99 50 25 (leftOriginalCount d) c : Rat)
           / (transitionDenominator 99 50 25 : Rat)`.
-     Proof: (a) `Dist.mass (rawExchangeMembership d) m` = the pushforward of
-     `GSR.uniformDist exchangeChoice` (mass `1 / #exchangeChoice` per `(L,R)`);
-     (b) summing over the `c`-fiber = `# {ch : membershipCount (newMembership d ch) = c} / #exchangeChoice`;
-     (c) `membershipCount (newMembership d ch) = (newLeftCards d … ∩ leftOrigSet).card`
-     (connect `membershipCount`'s def `(m.1 ∩ leftOrigSet).card` to
-     `newLeftOriginalCount_eq`); (d) that count =
-     `transitionNumerator 99 50 25 (leftOriginalCount d) c` by
-     **`newLeftCount_eq_transitionNumerator`** (`CommanderA3Kernel`); (e) normalize by
-     **`exchangeChoice_card_eq_transitionDenominator`**.
+     All the *counting* inputs are now in the library; only the Finsupp/measure
+     bookkeeping remains: (a) pushforward mass at `m` = the `(L,R)`-fiber sum
+     (the `CommanderLocalGSR.lean:205` pattern `simp [Convexity.StdSimplex.map,
+     Finsupp.mapDomain, Finsupp.sum_apply, Finsupp.single_apply]`); (b) fiber-sum →
+     preimage-sum; (c)+(d) preimage count = `transitionNumerator` via
+     `membershipCount_newMembership` + `newLeftOriginalCount_eq` +
+     `newLeftCount_eq_transitionNumerator`; (e) normalize by
+     `exchangeChoice_card_eq_transitionDenominator`.  AVOID `.map`-on-`Dist`
+     (it hit an instance-synthesis error); compute the fiber-sum as a
+     `Finset.sum` over `exchangeChoice` directly.
   2. **Part (i) fiber-average collapse:** the fiber-average over the project fiber of
      `x` of the (deck-independent) inner-sum is unchanged (`newLeftCount_deckIndependent`
      + `project_count`), giving `rawExchangeMembership_count` =
