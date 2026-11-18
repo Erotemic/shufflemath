@@ -30,11 +30,25 @@ namespace Shufflemath
         bijection `{x // f x ∈ S} ≃ {p : S, x // f x = p}` (the fiber product), which is
         the most robust form (no booleans, no biUnion lemma hunting).
 
-    NEXT SESSION: try the **fiber-product equiv** form — it avoids both dead ends:
-    `Fintype.card {x // f x ∈ S} = Fintype.card {p : S, x // f x = ↑p}` via the bijection
-    `x ↦ (⟨f x, f x ∈ S⟩, x)` / `⟨p, x⟩ ↦ x`, then reduce the RHS to the fiber sum via
-    `Fintype.card_subtype` / a product decomposition.  The A3 fiber mass then needs this
-    PLUS the subtype-product ↔ `leftChoices ×ˢ rightChoices` equiv (see
-    docs/agent_handoff.md "specific next lemma"). -/
+    NEXT SESSION: the **fiber-product sigma** form is the most robust, but its
+    crux is one lemma that has NO mathlib name I found:
+      * `hCard`: `{x // f x ∈ S} ≃ {t : ↥S × X // f t.2 = t.1.val}` (the bijection
+        `x ↦ (⟨f x, f x ∈ S⟩, x)` / `⟨t, ht⟩ ↦ (t.2, by rwa [← ht])`), then
+        `Fintype.card_congr hCard` (NOT `Fintype.card_bijection` — that name doesn't
+        exist; `Fintype.card_equiv` is about the card of the equivalence *group*,
+        not card-preservation-by-equiv).  The structure-literal `{p : ↥S, x : X // …}`
+        does NOT parse (comma after a `↥S` field); use the **product-subtype**
+        `{t : ↥S × X // f t.2 = t.1.val}` (single field, valid).
+      * `hSum` (the real double-count): `Fintype.card {t : ↥S × X // f t.2 = t.1.val}
+        = ∑ m ∈ S, Fintype.card {x // f x = m}`.  The product-subtype ≃ the sigma
+        `Σ (p : ↥S), {x // f x = p.val}`, and that sigma's card is the sum of the fiber
+        cards — but **`Fintype.card_sigma` / `card_subtype` are NOT in
+        Data/Fintype/Basic.lean** (grep came up empty).  So the sigma-card-as-sum is
+        either a simp-normalization of the Fintype instance (try `simp [Fintype.card]`
+        on `Σ (p : ↥S), {x // f x = p.val}` and see if it unfolds to the sum) or must
+        be proved by `Fintype.card_bijection`-style induction on the sigma.  After that,
+        `∑ p : ↥S, … = ∑ m ∈ S, …` via `Finset.sum_subtype` (`[DecidableEq Y]` and
+        `Finset.mem_coe` needed).
+    Both (A) biUnion and (B) indicator/`sum_ite` are dead ends (see above). -/
 
 end Shufflemath
