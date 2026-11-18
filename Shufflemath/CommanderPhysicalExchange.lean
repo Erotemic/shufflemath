@@ -5,6 +5,7 @@ public import Shufflemath.CommanderFiberCount
 public import Shufflemath.CommanderMembershipKernels
 public import Shufflemath.BernoulliLaplace
 public import Shufflemath.GSR
+public import Shufflemath.CommanderMembershipOrbits
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Fintype.Powerset
 public import Mathlib.Data.Fintype.Card
@@ -649,6 +650,20 @@ theorem rightCard25 {R : Finset (Fin 49)} (h : R ∈ rightChoices) : R.card = 25
 def newMembership (d : Deck) (L : Finset (Fin 50)) (hL : L.card = 25)
     (R : Finset (Fin 49)) (hR : R.card = 25) : Membership :=
   ⟨newLeftCards d L R, newLeftCards_card d L R hL hR⟩
+
+/-- The post-exchange membership is *equivariant* under the deck-relabeling group:
+    relabeling the deck by `g` before the physical exchange equals applying the
+    deck-relabeling `Equiv` to the post-exchange membership. Pointwise in the
+    `(L, R)` choice this is just `newLeftCards_conjugate` (the membership is a
+    Subtype, so equality is by the 50-card set). This is the kernel equivariance
+    behind the distribution invariance for the within-count uniformity (part (ii)
+    of the A3 `hMembershipExchange` assembly). -/
+theorem newMembership_conjugate (d g : Deck) (L : Finset (Fin 50)) (hL : L.card = 25)
+    (R : Finset (Fin 49)) (hR : R.card = 25) :
+    newMembership (d.trans g) L hL R hR =
+      relabelMembership (g : Fin 99 → Fin 99) g.bijective (newMembership d L hL R hR) := by
+  apply Subtype.ext
+  simpa only [newMembership, relabelMembership] using newLeftCards_conjugate g d L R
 
 -- The membership-level exchange law: pushforward of a uniform (L,R) choice to
 -- its post-exchange membership.
