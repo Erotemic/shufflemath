@@ -76,7 +76,36 @@ notation* (`s.image f`, `s.filter p`); and `Finset.univ.filter p` (as in the
 prove `hLHS`/`hRHS` as *set-card* equalities `# {x ∈ leftOrigSet | P x}` via
 `Finset.card_congr` + `leftOrigSet_eq_image` (avoids the filter/set-builder mismatch
 entirely), or bridge `#{i | p i} ↔ Finset.filter p S` explicitly.  **Deadline
-Wed 2026-11-24 23:59:59 EST.**
+Wed 2026-11-24 23:59:59 EST.** *(Superseded 2026-11-21: the true wall was a `whnf`
+explosion on the `Fin 99` filter form of `leftOrigSet`, not a filter/set-builder API
+mismatch — see the 2026-11-21 note below.)*
+
+**Updated 2026-11-21 (48th session) — the `hGpart` partition-preservation lemma
+now COMPILES; only the final assembly to `leftOriginalCount_conjugate` remains.**
+The blocker above was reframed: the real `whnf` wall is that the `Fin 99` *filter*
+form of `leftOrigSet` (`(Finset.univ : Fin 99).filter (·.val < 50)`) whnf-explodes
+on `.image g` operations (`rw`/`rcases`/`Finset.mem_image.mpr`) when `g : Equiv.Perm
+(Fin 99)` (200000-heartbeat `whnf` timeouts, even after raising the ceiling). The
+*light `Fin 50` image* form `L50 := (Finset.univ : Fin 50).image leftPosition` does
+not. Routing every heavy step through `L50` (a `simp` of `leftOrigSet_eq_L50` / the
+L50-form `hL` is cheap; the direct `leftOrigSet` is not) makes the **partition-
+preservation lemma compile**:
+`hGpart (d g) (hgL : (leftOrigSet).image g = leftOrigSet) (y) : y ∈ leftOrigSet ↔ g y ∈ leftOrigSet`
+(both directions: → forms the image membership via `Finset.mem_image.mpr`, ← builds
+the image membership by `simp` of the L50-form equality then decomposes the explicit
+existential + `g.injective`). Verified this session: a standalone module with
+`L50` + `leftOrigSet_eq_L50` + `hgL_L50` + `hGpart_fwd`/`hGpart_bwd`/`hGpart` builds
+clean (3205 jobs, exit 0). **Recipe saved at `.pi-glla/47ao_hGpart_wip.lean`**
+(copy it to `Shufflemath/_ProbeX.lean` and `lake build` to re-verify). **Remaining
+to `leftOriginalCount_conjugate`:** (1) `leftCards_conjugate : leftCards (d.trans g)
+= (leftCards d).image g` (trivially true; the `ext` close is Fin-50/Fin-99
+existential bookkeeping + `Equiv.trans_apply` for `(d.trans g) a = g (d a)`);
+(2) the final card step `#((leftCards d).image g ∩ leftOrigSet) = #(leftCards d ∩
+leftOrigSet)` via `hGpart` — the `ext` that *calls* `hGpart` re-reduces its L50 proof
+term and trips the heartbeat. Next moves: inline the two `hGpart` directions in the
+branches, or prove the card equality by a bijection `y ↦ g y` (surjectivity via
+`g.symm` + `hGpart.mpr`) with `Finset.card_bijection`, which may reduce more lightly.
+**Deadline Wed 2026-11-24 23:59:59 EST.**
 
 **Earlier (2026-11-22, part (ii) group action):**
 **Updated:** 2026-11-22 (A3 **part (ii) group action** session) — the
