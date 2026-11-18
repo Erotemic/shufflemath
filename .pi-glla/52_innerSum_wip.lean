@@ -32,6 +32,17 @@ module
 --        [newLeftOriginalCount_eq + newLeftCount_eq_transitionNumerator; the choice
 --         space leftChoices ×ˢ rightChoices is extensionally exchangeChoice]
 --   (v)  normalize # by exchangeChoice_card_eq_transitionDenominator.
+--
+-- 51st-session finding (de-risks step (i)): `rawExchangeMembership d` is
+-- `(GSR.uniformDist exchangeChoice).map (fun c => newMembership …)`, and `StdSimplex.map`
+-- is NOT a plain `Finsupp.map` — it carries the simplex constraints (total mass 1,
+-- nonnegativity). `dsimp [Dist.mass, Convexity.StdSimplex.map]` + `rw [Finsupp.mapDomain]`
+-- does NOT reduce the pushforward mass cleanly (leaves a `Finset` in a `ℚ`-typed hole:
+-- "has type Finset exchangeChoice but is expected to have ℚ"). Step (i) must either go
+-- through the `StdSimplex.weights` Finsupp explicitly, or (cleaner) compute the fiber-sum
+-- as a `Finset.sum` over `exchangeChoice` FROM SCRATCH (not via `rawExchangeMembership`'s
+-- `.map`):  Σ_{ch in univ} (1/#) * [membershipCount (memF ch) = c]  —  i.e. skip the
+-- membership-level pushforward entirely and count the (L,R) preimage directly.
 
 public import Shufflemath.CommanderMembershipExchange
 public import Shufflemath.CommanderA3Kernel
