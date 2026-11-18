@@ -290,6 +290,15 @@ R = R'` (proven via `newLeftCards_rightPart_deck` + `newLeftCards_injective_L` +
 half** of the deck-level `(L,R)↦T` bijection (F3 item 3, step 2; the existence half
 is the abstract `exchangePair_exists`).
 
+**47i (`d8b4abd`): first deck-independence lemma** — `newLeftCards_as_sdiff_union`:
+`newLeftCards d L R = (leftCards d \ L.image (d ∘ leftPosition)) ∪ R.image (d ∘
+rightPosition)` (via `Finset.image_sdiff` + deck injectivity). The post-exchange pile
+depends on `d` only through `leftCards d` and the chosen card-sets. **47i NEXT:** the
+full membership version (`newMembership` / `rawExchangeMembership` well-defined as a
+function of the source membership `S` — the selected LEFT cards are a 25-subset of
+`leftCards d`, so the choice is card-set-level, not position-level), then F3 item 3
+step 3 (point mass).
+
 **NEXT ACTION — F3 item 3, step 1 (deck-independence):** show `newMembership d L R`
 (and hence `rawExchangeMembership d`) depends on `d` only through `membership d`
 (`markedLeftPos d`, `markedRightPos d`) — so the "membership transition" is well-defined
