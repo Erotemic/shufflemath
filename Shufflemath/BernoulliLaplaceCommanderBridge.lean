@@ -19,6 +19,7 @@ module
 
 public import Shufflemath.BernoulliLaplace
 public import Shufflemath.BernoulliLaplaceGeneral
+public import Shufflemath.BernoulliLaplaceFiber
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -213,4 +214,21 @@ theorem commanderFirstModeFunc_concrete (i : CommanderState) :
   rw [← blFirstModeFactor_eq_firstModeFactor, commanderFirstMode_general_25]
   -- `leftCount (toBL i) = (toBL i).val`, so the two centered terms agree.
   simp [commanderLeftCount, commanderToBL]
+
+/-- Detailed balance (reversibility) of the Commander quarter-deck kernel:
+    the stationary distribution `commanderStationary` and the `commanderExchange25`
+    kernel satisfy `π(i) W(i, j) = π(j) W(j, i)` for every pair of macro states.
+    This is the general Bernoulli-Laplace `detailedBalance` (the fiber involution
+    `(S, A, B) ↦ (S \ A ∪ B, B, A)`) transported across the two bridge theorems.
+    Reversibility of the macro kernel is one of the two ingredients of the A3
+    membership-exchange discharge. -/
+theorem commanderDetailedBalance (i j : CommanderState) :
+    Dist.mass commanderStationary i * Dist.mass (commanderExchange25 i) j =
+      Dist.mass commanderStationary j * Dist.mass (commanderExchange25 j) i := by
+  rw [commanderStationary_matches_blStationary, commanderExchange25_matches_blExchange]
+  -- both sides are now the general BL stationary/kernel masses at the
+  -- Commander parameters; that is exactly `blDetailedBalance` applied to the
+  -- two transported states.
+  exact (BernoulliLaplaceGeneral.blDetailedBalance commanderBLParams
+      (commanderToBL i) (commanderToBL j))
 
