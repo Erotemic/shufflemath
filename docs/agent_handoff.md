@@ -346,6 +346,8 @@ counts):
         (∑ S ∈ U.powersetCard k, if (S ∩ M).card = a then 1 else 0) =
           Nat.choose M.card a * Nat.choose (U.card - M.card) (k - a)
 
+**REVISED primary approach (47j addendum) — REUSE the committed `countFiberMemb` machinery, do not re-prove it.** `Shufflemath/FiniteDeck/BLRefinement.lean` already contains `countFiberMemb_equiv N m r hm hr x` (a proven `Equiv`) between `{S : Membership N m // (S.1 ∩ markedSet N r hr).card = x.val}` and the marked/unmarked-split product `{p // p.1 ∈ (markedSet N r hr).powersetCard x.val ∧ p.2 ∈ (markedComp N r hr).powersetCard (m - x.val)}`, and `countFiberMemb_card` (`(countFiberMemb N m r hr x).card = choose r x.val * choose (N - r) (m - x.val)`). Both build. So prove `powersetCard_markedContent` by **adapting that `Equiv.mk f g` structure** to an arbitrary `(U, M)` with `M ⊆ U`: `f` splits `S ↦ (S ∩ M, S ∩ (U \ M))`, `g` recombines `(A, B) ↦ A ∪ B`, recovery `(A ∪ B) ∩ M = A` / `(A ∪ B) \ M = B`, and `g ∘ f = id` from `S = (S ∩ M) ∪ (S ∩ (U \ M))` (the `U`-generalization of the committed `markSplit`). This is the *proven-to-build* structure — the `×ˢ`/product/image/injectivity approach below (and the 47j implementation reverted against it) is the fiddly path to avoid. After the general kernel, both pile counts (1)+(2) are direct instances; alternatively (2a) reuse `countFiberMemb_card` for the canonical `markedSet` + a small permutation-invariance bridge. 
+
 **Proof plan (union-bijection):** `X := U \ M`,
 `P := M.powersetCard a ×ˢ X.powersetCard (k - a)` (the **`×ˢ` /
 `Finset.product`** syntax — there is **no** `Finset.prod`), `f (A, B) :=
