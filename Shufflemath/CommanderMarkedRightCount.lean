@@ -12,7 +12,7 @@ public import Mathlib.Tactic
 @[expose] public section
 
 namespace Shufflemath
-namespace _Probe47n
+namespace CommanderMarkedRightCount
 
 open CommanderPermutation
 open CommanderPhysicalExchange
@@ -313,5 +313,5 @@ theorem markedRightPos_card :
     exact hCS.symm
   simpa only [← markedLeftPos_card d] using hGoal
 
-end _Probe47n
+end CommanderMarkedRightCount
 end Shufflemath

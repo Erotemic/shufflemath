@@ -51,7 +51,8 @@ lake build \
   Shufflemath.CommanderMembershipKernels \
   Shufflemath.CommanderMembershipOrbits \
   Shufflemath.CommanderDeckGSR \
-  Shufflemath.CommanderPhysicalExchange
+  Shufflemath.CommanderPhysicalExchange \
+  Shufflemath.CommanderMarkedRightCount
 ./dev/verify_next_phase.sh
 ```
 
