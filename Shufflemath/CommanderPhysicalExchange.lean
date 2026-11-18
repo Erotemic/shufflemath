@@ -137,6 +137,32 @@ theorem leftCards_disjoint_rightImage (d : Deck) (R : Finset (Fin 49)) :
     have hne' : ¬ c ∈ (∅ : Finset (Fin 99)) := by simp
     exact False.elim (hne' h)
 
+/-- The left-position cards and the right-position cards of a deck are disjoint:
+    a card sits at exactly one position (the deck is a bijection), and the left
+    position set `{0,…,49}` is disjoint from the right position set `{50,…,98}`. -/
+theorem leftCards_disjoint_rightCards (d : Deck) :
+    Disjoint (leftCards d) ((univ : Finset (Fin 49)).image (fun r => d (rightPosition r))) := by
+  classical
+  rw [Finset.disjoint_iff_inter_eq_empty]
+  apply Finset.ext
+  intro c
+  constructor
+  · intro h
+    rcases Finset.mem_inter.mp h with ⟨hL, hR⟩
+    rcases Finset.mem_image.mp hL with ⟨l, _hl, hcl⟩
+    rcases Finset.mem_image.mp hR with ⟨r, _hr, hcr⟩
+    have heq : d (leftPosition l) = d (rightPosition r) := hcl.trans hcr.symm
+    have hne : leftPosition l ≠ rightPosition r := by
+      intro heq2
+      have hval : (leftPosition l).val = (rightPosition r).val := congrArg Fin.val heq2
+      have hL : (leftPosition l).val < 50 := by simp [leftPosition]
+      have hR : 50 ≤ (rightPosition r).val := by simp [rightPosition]
+      omega
+    exact False.elim (hne (d.injective heq))
+  · intro h
+    have hne' : ¬ c ∈ (∅ : Finset (Fin 99)) := by simp
+    exact False.elim (hne' h)
+
 /-- The post-exchange left pile shares exactly the unselected left cards with the
     original left pile: `newLeftCards`'s left-not-in-`L` image sits inside `leftCards`,
     and its right-card image is disjoint from `leftCards`, so the intersection is the
