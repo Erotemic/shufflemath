@@ -2423,3 +2423,113 @@ proved in `BernoulliLaplaceGeneral`). The per-deck count mass then `= transition
 `commanderExchange25_countMass` (discharging `hMembershipExchange`). **Promote the probe
 lemmas to `Shufflemath/FiniteDeck/A3Count` (or keep as a named probe) when wiring into
 `CommanderMembershipExchange`; keep all `Commander*` in the non-FiniteDeck layer.**
+
+
+## 47o milestone — count half done, per-deck bridge next (this session)
+
+**Done (part 1, committed):** the 47n count half is now a dedicated buildable
+module `Shufflemath/CommanderMarkedRightCount.lean`
+(`Shufflemath.CommanderMarkedRightCount`) with the conservation law
+`markedRightPos_card (d) : (markedRightPos d).card = 50 - leftOriginalCount d`
+plus its scaffolding (`totalMarkedPos`, `markedLeft_iff_inTotal`,
+`markedRight_iff_inTotal`, `totalMarked_leftInter_eq_image`,
+`totalMarked_rightInter_eq_image`, and the 50/49-image defs
+`leftOrig50`/`leftUniv50`/`rightUniv49`). Builds green (zero `sorry`/`admit`);
+wired into `dev/verify_next_phase.sh` and the `AGENTS.md` build list.
+`Shufflemath/_Probe47n` deleted (no module imported it). NOTE: the 99-filter
+(`leftOrigSet`) variant hit whnf timeouts, so the module uses the 50/49-image
+scaffolding that builds cleanly.
+
+**Next (part 2):** the per-deck Vandermonde bridge described in the preceding
+paragraph. Order: `newLeftOriginalCount_eq` -> count (L) by
+`markedInLeft d L` (`choose x aL * choose (50-x) (25-aL)`); mirror for R
+(`xR = #(markedRightPos d)`); 4-fold sum over `aL` =
+`transitionNumerator 99 50 25 (leftOriginalCount d) n`; per-deck mass =
+`transitionWeight`; fiber-average to `commanderExchange25_countMass`.
+
+
+## 47o part 2 in progress — per-deck Bernoulli-Laplace bridge
+
+**Proven (in `Shufflemath/_Probe47p.lean`, builds, no sorry):** the two
+per-deck binomial-count helpers, using `FinsetCombinatorics.powersetCard_markedContent`:
+- `leftCountByMarked aL (h : aL ≤ 25) : #(L ∈ (Fin 50).powersetCard 25, markedInLeft d L = aL)
+     = choose (leftOriginalCount d) aL * choose (50 - leftOriginalCount d) (25 - aL)`
+- `rightCountByMarked bR (h : bR ≤ 25) : #(R ∈ (Fin 49).powersetCard 25, markedInRight d R = bR)
+     = choose #(markedRightPos d) bR * choose (49 - #(markedRightPos d)) (25 - bR)`
+
+**Target theorem (next):**
+```
+perDeckBridge (n) :
+  #((Fin 50).powersetCard 25 ×ˢ (Fin 49).powersetCard 25)
+     .filter (fun p => (newLeftCards d p.1 p.2 ∩ leftOrigSet).card = n)
+  = transitionNumerator 99 50 50 25 (leftOriginalCount d) n
+```
+(r = 50 = total originally-left/"red" cards; k = 25; N = 99; m = 50.)
+
+**Remaining steps, in order:**
+1. General engine `pairCountBySum`: for `f : α→Nat`, `g : β→Nat`,
+   `#(s ×ˢ t).filter (f p.1 + g p.2 = n) = ∑_{a ∈ s.image f} #s.filter(f=a) * #t.filter(g = n-a)`
+   (partition the product set by the value of `f`; the `a`-parts are disjoint).
+2. Instantiate with `f = markedInLeft d`, `g = markedInRight d`, `s = (Fin 50).powersetCard 25`,
+   `t = (Fin 49).powersetCard 25`; use `newLeftOriginalCount_eq` to get the `f+g=n` condition.
+3. Substitute `leftCountByMarked`/`rightCountByMarked` (and `markedRightPos_card` so
+   `#(markedRightPos d) = 50 - x`).
+4. Show the resulting `∑_{aL} choose x aL * choose (50-x) (25-aL) * choose (50-x) (n-x+aL)
+   * choose (x-1) (25-n+x-aL)` equals `transitionNumerator 99 50 50 25 x n` by unfolding its
+   definition (the `if`-guards coincide with the zeros of `Nat.choose`).
+Keep all `Commander*` in the non-FiniteDeck layer; promote `_Probe47p` to a named module when done.
+
+## 2026-11-17 — 47q: pairCountBySum (the general by-sum engine) — done, next: perDeckBridge
+
+### Done: `pairCountBySum` (in `Shufflemath/_Probe47q.lean`)
+The combinatorial engine that 47p's helpers feed. General statement (no deck
+types — pure `Finset` combinatorics, so reusable):
+```
+#((s ×ˢ t).filter (fun p => f p.1 + g p.2 = n))
+  = ∑_{a ∈ s.image f}  #(s.filter (f = a)) * #(t.filter (a + g · = n))
+```
+Proved via three lemmas:
+- `fiber s t f g n a = s.filter(f=a) ×ˢ t.filter(a + g · = n)` — the `a`-fiber,
+  **subtraction-free** (this is the key design choice: `a + g y = n` avoids the
+  Nat-subtraction trap where `g y = n - a` is only equivalent when `a ≤ n`).
+- `filter_eq_biUnion` — the filtered product set = `⋃_{a ∈ s.image f} fiber a`
+  (a `Finset.ext` membership proof; forward uses the condition directly, reverse
+  unpacks the fiber product).
+- `fibers_pairwiseDisjoint` — different `a`-fibers are disjoint because
+  `s.filter(f=a)` and `s.filter(f=b)` are disjoint for `a≠b`
+  (`Finset.disjoint_product` + `Finset.disjoint_left`).
+- `pairCountBySum` — `rw [filter_eq_biUnion]`, `rw [Finset.card_biUnion]`
+  (the PairwiseDisjoint hypothesis gives `#bUnion = ∑ #parts`), then
+  `Finset.sum_congr` + `Finset.card_product`.
+All build (module `Shufflemath._Probe47q`, 4 declarations, 3209 jobs; combined
+with 47p + key modules 3214). **No sorry.**
+
+### Next: `perDeckBridge` (the actual 47o part-2 deliverable)
+Instantiate `pairCountBySum` for the deck:
+  `s = (Fin 50).powersetCard 25`, `t = (Fin 49).powersetCard 25`,
+  `f = markedInLeft d`, `g = markedInRight d`.
+Then each fiber count is a binomial product:
+  - `#(s.filter (markedInLeft d = a)) = leftCountByMarked a`  (47p)
+    `= choose(#M, a) * choose(50-#M, 25-a)`   (0 for a>25 via choose range)
+  - `#(t.filter (a + markedInRight d · = n)) = if a ≤ n then rightCountByMarked (n-a) else 0`  (47p)
+    `= if a ≤ n then choose(#M, n-a) * choose(49-#M, 25-(n-a)) else 0`
+So:
+  `#((s×ˢt).filter (markedInLeft d L + markedInRight d R = n))`
+    `= ∑_{a} [choose(#M,a)·choose(50-#M,25-a)] · [guarded right binomial]`
+**The ONE remaining structural lemma** to reach `transitionNumerator`:
+  `newLeftCards d n = (s ×ˢ t).filter (fun p => markedInLeft d p.1 + markedInRight d p.2 = n)`
+(or at least the `#·` equality). This is the 47n "fiber-pair ↔ newLeftCards"
+structural result (the hard part noted in 47n). Once it's proved, `perDeckBridge`
+is:
+  `transitionNumerator d n = ∑_{a ∈ (s.image (markedInLeft d))} …`
+matching the G2 per-deck Vandermonde RHS (with the `a ≤ n` guard absorbing the
+`b ≥ k-25` style out-of-range cases, since `choose` is 0 out of range).
+After that: `uniformFiber_intertwines` follows via `transitionCount_formula`
+(`transitionCount = transitionNumerator / #newLeftCards`, both sides).
+
+### Cleanup candidate
+`_Probe47p.lean` and `_Probe47q.lean` are both in-progress probe modules feeding
+`perDeckBridge`. When perDeckBridge lands, consider folding the finished
+general lemmas (`pairCountBySum` + its 3 helpers, and the 47p binomial helpers)
+into a proper named module (e.g. extend `CommanderPhysicalExchange.lean` or a
+new `Shufflemath/FinsetPairCounting.lean`).
