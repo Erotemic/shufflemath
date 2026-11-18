@@ -15,8 +15,11 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-18 (A3 **53rd session — part (i) normalization via a clean
-`apply_mass` route, landing the general `uniformPushforward_pointMass` lemma**).
+**Updated:** 2026-11-18 (A3 **54th session — cracked the double-count's missing lemma**:
+`Fintype.card_sigma` exists (`Data/Fintype/Defs.lean:161`), so the fiber-product route
+only needs its `right_inv` `HEq` fixed (or switch to `Finset.card_biUnion`, which
+exists). Point-mass + part (i) normalization done; the double-count is the last blocker
+to `rawExchange_membershipCount_mass`.)
 - **`uniformPushforward_pointMass`** (`Shufflemath/CommanderA3UniformPushforward.lean`,
   `e0b6ebe`): for a finite nonempty `X` and any `f : X → Y`,
   `Dist.mass ((GSR.uniformDist X).map f) y = (1/card X) · #{j : f j = y}`. This is
@@ -120,13 +123,23 @@ next lemma** is the **inner-sum** (WIP skeleton at `.pi-glla/52_innerSum_wip.lea
      bridge + `newLeftCount_eq_transitionNumerator`; (e) normalize by
      `exchangeChoice_card_eq_transitionDenominator` (`#exchangeChoice =
      transitionDenominator`).
-     **On (b) — the double-count:** do NOT use the `biUnion`/`card_biUnion` route
-     (the lemma name isn't in `Data/Finset/` and the `Pairwise`/subtype-sum shape is
-     fiddly) or the indicator/`sum_ite` route (there is no clean simp lemma for
-     `(s.filter p).card = ∑_{x∈s} [p x]`; `Finset.sum_ite` is the split-into-two-sums
-     form). Use the **fiber-product equiv** instead: `Fintype.card {x // f x ∈ S} =
-     Fintype.card {p : S, x // f x = ↑p}` via the bijection `x ↦ (⟨f x, f x ∈ S⟩, x)`
-     / `⟨p, x⟩ ↦ x` — no booleans, no biUnion.  WIP skeleton: `.pi-glla/53_fiberSum_wip.lean`.
+     **On (b) — the double-count (54th session, updated):** the 53rd session thought
+     no "sigma card = sum of fiber cards" lemma existed, but **it does —
+     `Fintype.card_sigma`** (a `@[simp]` lemma, `Data/Fintype/Defs.lean:161`:
+     `Fintype.card (Σ i, α i) = ∑ i, Fintype.card (α i)`; the 53rd grep only searched
+     `Basic.lean`, which is why it was missed).  So the fiber-product route is:
+     `Fintype.card {x // f x ∈ S} = Fintype.card (Σ (m : ↥S), {x // f x = m.val})`
+     (via the `Equiv` `toF ⟨x,hx⟩ = ⟨⟨f x,hx⟩, ⟨x,rfl⟩⟩` / `invF ⟨m,x⟩ = ⟨x.1, by…⟩`),
+     then `rw [Fintype.card_sigma]`.  **The ONLY remaining blocker** is the `right_inv`
+     second component, which is an **`HEq (≍)`** between two *propositionally*-equal
+     fiber types (`{y // f y = f (x.1)}` vs `{y // f y = m.val}`); `Subtype.ext rfl`
+     (an `Eq`) does not typecheck.  Two next paths, in preference order: (i) make that
+     second component an `Eq` by first transporting it into a common fiber type (use
+     `x.2 : f (x.1) = m.val`), then `rfl`; or (ii) **avoid the sigma/HEq entirely with
+     `Finset.card_biUnion`** (exists — used in `Slice.lean:152`): write the preimage as
+     the disjoint `biUnion` of the fibers `F m = univ.filter (f · = m)` over `m ∈ S` and
+     use `Finset.card_biUnion` + `Finset.sum_subtype_eq_sum_filter` (both exist).  Full
+     detail + the exact last-compiling probe: `.pi-glla/53_fiberSum_wip.lean` (54th section).
      **Concrete next step:** prove `rawExchange_membershipCount_mass` in
      `CommanderMembershipExchange.lean` = `rawExchangeMembership_pointMass` (the
      point-mass term) + the (b) fiber-product double-count + the (c)–(e) count

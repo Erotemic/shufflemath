@@ -12,6 +12,22 @@ phase notes are linked at the end; they do not override this plan. Read
 > in `@[expose]` sections, EOF scope auto-close). The math and proof content is
 > unchanged by this migration.
 
+> **54th session (2026-11-18) — A3 kernel, the double-count's missing lemma found.**
+> The active build is the **A3 kernel** (the `hMembershipExchange` capstone, per the
+> handoff; G1–G4 and F1/F2 are done). Point-mass (`rawExchangeMembership_pointMass`) and
+> part-(i) normalization (`uniformPushforward_pointMass`) are committed. The last blocker
+> to `rawExchange_membershipCount_mass` is the general fiber-sum / double-count
+> identity `∑ m ∈ S, #{x : f x = m} = #{x : f x ∈ S}`. The 54th session found the
+> missing tool: **`Fintype.card_sigma`** (`Data/Fintype/Defs.lean:161`, a `@[simp]`
+> lemma `Fintype.card (Σ i, α i) = ∑ i, Fintype.card (α i)`), which the 53rd session's
+> grep missed (it only searched `Basic.lean`). The fiber-product-`Equiv` route now works
+> except its `right_inv` second component, which is an **`HEq`** over two
+> *propositionally*-equal fiber types (`Subtype.ext rfl` is an `Eq`, so it does not
+> typecheck). Next: fix that `HEq` (transport into a common fiber type first), or
+> avoid the sigma entirely with **`Finset.card_biUnion`** (exists — `Slice.lean:152`).
+> Full detail + last-compiling probe: `.pi-glla/53_fiberSum_wip.lean` (54th section);
+> resume point: [`agent_handoff.md`](agent_handoff.md).
+
 ## Objective and model boundary
 
 Produce a theorem for a *specified finite physical protocol* on 99 individually
