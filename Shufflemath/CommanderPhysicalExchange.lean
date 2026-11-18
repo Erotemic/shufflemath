@@ -316,6 +316,31 @@ theorem newLeftCards_injective_L (d : Deck) (L L' : Finset (Fin 50)) (R R' : Fin
       exact hnotUL (h1.mpr hxnotL)
   exact hL
 
+/-- The unselected-left part of the post-exchange pile is disjoint from the deck's full
+    right-position card set: the left part sits in `leftCards d`, which is disjoint from
+    the right positions. -/
+theorem leftImg_disjoint_rightFull (d : Deck) (L : Finset (Fin 50)) :
+    ((univ : Finset (Fin 50)) \ L).image (fun l => d (leftPosition l)) ∩
+      (univ : Finset (Fin 49)).image (fun r => d (rightPosition r)) = ∅ := by
+  have hsub : ((univ : Finset (Fin 50)) \ L).image (fun l => d (leftPosition l)) ⊆ leftCards d := by
+    intro c hc
+    rcases Finset.mem_image.mp hc with ⟨l, hl, hcl⟩
+    have hlU : l ∈ (univ : Finset (Fin 50)) := (Finset.mem_sdiff.mp hl).1
+    simpa [leftCards] using Finset.mem_image.mpr ⟨l, hlU, hcl⟩
+  have hdis : leftCards d ∩ (univ : Finset (Fin 49)).image (fun r => d (rightPosition r)) = ∅ :=
+    Finset.disjoint_iff_inter_eq_empty.mp (leftCards_disjoint_rightCards d)
+  apply Finset.ext
+  intro c
+  constructor
+  · intro hc
+    rcases Finset.mem_inter.mp hc with ⟨hcL, hcR⟩
+    have hcLeftCards : c ∈ leftCards d := hsub hcL
+    have hboth : c ∈ leftCards d ∩ (univ : Finset (Fin 49)).image (fun r => d (rightPosition r)) :=
+      Finset.mem_inter.mpr ⟨hcLeftCards, hcR⟩
+    exact hdis ▸ hboth
+  · intro hc
+    exact absurd hc (by simp : ¬ c ∈ (∅ : Finset (Fin 99)))
+
 /-- **Spec A2 core: stabilizer-invariance of the exchange, pointwise.** Relabeling the
     cards by a permutation `f` commutes with `newLeftCards`: the post-exchange left
     pile of the relabeled deck `d.trans f` is exactly the `f`-image of the original
