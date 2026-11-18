@@ -42,13 +42,29 @@ generic T4 measure-half):
   - [DONE] `rawExchangeMembership_conjugate` — in the library (commit 6a45608).
   - [DONE] `fiberLaw_invariant_underFiberEquiv` — in the library (commit 7cbc3e6).
   - [TODO 1] `apply_deterministic_eq_map`: `apply μ (deterministic f) = μ.map f`,
-    a general `Finite.lean` map/join identity. Prove by `ext y` + the Finsupp
-    pushforward-sum simp set (`Finsupp.mapDomain, add_smul, Finsupp.sum_sum_index,
-    Finsupp.sum_smul_index, Finsupp.smul_sum`). The 47b1 probe reduced the LHS to
-    `Σ_{a, f a = y} μ a` cleanly; the one open step is to NOT over-reduce the RHS
-    `μ.map f` (drop `Convexity.StdSimplex.map` from the simp set so the RHS stays
-    `μ.map f`, then close `Σ_{a, f a = y} μ a = μ.map f` by the `map` pushforward
-    definition). Put it in `Finite.lean` next to `map_join_kernels`.
+    a general `Finite.lean` map/join identity.
+    **50th session — REDUCED.** `unfold apply deterministic; ext y` then
+    `simp [Shufflemath.Dist.pointMass, Convexity.StdSimplex.single, Finsupp.mapDomain,
+    Finsupp.mapDomain_apply, Finsupp.sum_apply', Finsupp.single_apply, ...]` leaves:
+      `(μ.weights.mapDomain (fun a => StdSimplex.single (f a))).sum (fun d w => w * d.weights y)
+       = μ.weights.mapDomain (fun a => StdSimplex.single (f a))`  -- NO, the RHS is below
+    Precisely, the residual goal is
+      `((μ.weights.sum fun a => Finsupp.single (StdSimplex.single (f a))).sum fun d w => w * d.weights y)
+       = μ.weights.sum fun a w => (Finsupp.single (f a) w) y`
+    i.e. LHS = the **join** mass at `y` (a *nested* Finsupp sum: over the
+    point-mass distributions, then their mass at y) and RHS = the **flat pushforward**
+    (`mapDomain f`-style). Both evaluate to `Σ_{a : α} μ a · (Finsupp.single (f a)) y`.
+    **The one remaining step** is the Finsupp **Fubini** rearrangement that flattens the
+    nested LHS sum into the flat RHS sum — `Finsupp.sum_sum` / `sum_sum_index` (cf.
+    `map_join_kernels`, which closes the analogous `(σ.join).map L` rearrangement with
+    `simp [Finsupp.mapDomain, add_smul, Finsupp.sum_sum_index, Finsupp.sum_smul_index,
+    Finsupp.smul_sum]`). NOTE: a *single* `simp` has not yet flattened it — the inner sum
+    has index type `StdSimplex β` while the outer has `α`, so the Fubini step must apply
+    `Finsupp.sum_sum` to the *nested* `((x.sum k).sum k')` form first. Next session: try
+    `dsimp [pointMass, StdSimplex.single]; rw [Finsupp.sum_sum]; simp [Finsupp.single_apply,
+    Finsupp.mapDomain, ite_mul]; ring`, or route through `map_join_kernels`/`join_join_kernels`.
+    (Also: `apply`/`deterministic` live in `Shufflemath.FiniteKernel`, not `Shufflemath.Finite`.)
+    Put the finished lemma in `Finite.lean` next to `map_join_kernels`.
   - [TODO 2] `comp_L_Mk_eq_comp_E_L`: kernel equality
     `comp L (det M) = comp (det (fun d => d.trans g)) L` for L =
     rawExchangeMembership, M = relabelMembership_equiv g g.bijective. Proof:
