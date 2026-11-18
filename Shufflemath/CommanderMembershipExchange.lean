@@ -825,5 +825,44 @@ theorem membershipFiber_transitive_asEquiv (m m' : Membership)
         exact hIn
     exact hgoal
 
+/-- **Part (ii) core — within-count constancy.**  The post-exchange membership law
+`μ_x := comp (fiberLaw project project_surjective) rawExchangeMembership x` is constant
+on each membership-count fiber: any two memberships with the same count carry equal
+mass.  This is the distributional form of the orbit argument — invariance under the
+deck-relabeling group (`mu_x_map_invariance`) plus transitivity of that action on the
+fiber (`membershipFiber_transitive_asEquiv`) force equal mass on the orbit, and the orbit
+*is* the count fiber.  Combined with the count-level total (part (i)) this yields the
+uniform mass `1 / #fiber` that discharges `hMembershipExchange`. -/
+theorem mu_x_constant_on_countFiber (x : CommanderState) (m m' : Membership)
+    (hmm : membershipCount m = membershipCount m') :
+    Dist.mass ((FiniteKernel.comp (fiberLaw project project_surjective) rawExchangeMembership) x) m =
+      Dist.mass ((FiniteKernel.comp (fiberLaw project project_surjective) rawExchangeMembership) x) m' := by
+  set μx := (FiniteKernel.comp (fiberLaw project project_surjective) rawExchangeMembership) x
+  -- transitivity: a leftOrigSet-preserving deck relabeling g maps m to m'
+  obtain ⟨g, hgL, hmap⟩ := membershipFiber_transitive_asEquiv m m' hmm
+  set e : Equiv Membership Membership := relabelMembership_equiv (g : Fin 99 → Fin 99) g.bijective
+  -- bridge Set-form (hgL) -> Finset-form "preserves leftOrigSet" for mu_x_map_invariance
+  have hLfin : (leftOrigSet).image (g : Fin 99 → Fin 99) = leftOrigSet := by
+    apply Finset.ext
+    intro a
+    constructor
+    · intro ha
+      rw [← Finset.mem_coe, ← hgL, ← Finset.coe_image, Finset.mem_coe]
+      exact ha
+    · intro ha
+      rw [← Finset.mem_coe, Finset.coe_image, hgL, Finset.mem_coe]
+      exact ha
+  have hInvar : (μx).map (↑e) = μx := mu_x_map_invariance x g hLfin
+  have hm : e m = m' := hmap
+  -- the hConst step of the orbit argument: invariance + transitivity => equal mass on the orbit
+  have h : Dist.mass μx m' = Dist.mass μx m := by
+    calc
+      Dist.mass μx m'
+        = Dist.mass μx (e m) := by rw [← hm]
+        _ = Dist.mass ((μx).map (↑e)) (e m) := by rw [hInvar]
+        _ = Dist.mass μx (e.symm (e m)) := by rw [map_equiv_mass]
+        _ = Dist.mass μx m := by rw [Equiv.symm_apply_apply]
+  exact h.symm
+
 end CommanderMembershipExchange
 end Shufflemath
