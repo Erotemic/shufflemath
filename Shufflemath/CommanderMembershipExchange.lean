@@ -348,5 +348,126 @@ theorem commanderCountFiber_card (c : Nat) :
     rw [hempty]
     simp
 
+/-!
+## The `hMembershipExchange` RHS pointwise mass (A3, count level)
+
+The RHS of the A3 is `comp commanderExchange25 membershipLift`: it transitions
+the macro count by the 25-card exchange, then lifts uniformly to the membership
+fiber of the new count.  At a source macro state `x` and a target membership
+`m` its mass is the `commanderExchange25` transition weight to `m`'s marked
+count, divided by that count's membership-fiber size.  Both halves of the A3
+proof (the count total and the within-count uniformity) reduce to this
+pointwise form.
+-/ -- close doc section
+
+/-- The 25-card exchange kernel's mass is exactly the rational
+    Bernoulli--Laplace transition weight between the two macro counts.  The
+    kernel is `ofRowStochastic` of `commanderExchange25Matrix`, whose entries
+    are those transition weights, so the matrix-recovery lemma gives the point
+    mass. -/
+@[simp]
+theorem commanderExchange25_mass (x y : CommanderState) :
+    Dist.mass (commanderExchange25 x) y =
+      transitionWeight 99 50 25 (commanderLeftCount x) (commanderLeftCount y) := by
+  change toMatrix commanderExchange25 x y = _
+  rw [commanderExchange25, toMatrix_ofRowStochastic, commanderExchange25Matrix]
+  rfl
+
+/-- The A3 RHS `comp commanderExchange25 membershipLift` puts, at a source macro
+    state `x` and a target membership `m`, the `commanderExchange25` transition
+    weight to `m`'s marked count divided by that count's membership-fiber size
+    (zero when `m`'s count is not a feasible macro count): the transition picks
+    the count, the lift distributes uniformly within it.  This is the
+    count-level half of the `hMembershipExchange` equality. -/
+theorem hMembershipExchange_rhs_mass (x : CommanderState) (m : Membership) :
+    Dist.mass (FiniteKernel.comp commanderExchange25 membershipLift x) m =
+      (if 1 ≤ membershipCount m ∧ membershipCount m ≤ 50
+        then transitionWeight 99 50 25 (commanderLeftCount x) (membershipCount m) /
+             (membershipFiberCount (membershipCount m) : Rat)
+        else 0) := by
+  classical
+  set k := membershipCount m
+  set c := transitionWeight 99 50 25 (commanderLeftCount x) k / (membershipFiberCount k : Rat)
+  set F := (Finset.univ : Finset CommanderState).filter (fun y => k = commanderLeftCount y)
+  -- (A) the product of the two point masses is the fiber indicator times `c`.
+  have hVal (y : CommanderState) :
+      Dist.mass (commanderExchange25 x) y * Dist.mass (membershipLift y) m =
+        (if k = commanderLeftCount y then c else 0) := by
+    by_cases hyk : k = commanderLeftCount y
+    · -- on the fiber: `count y = k`, so both point masses reduce to the
+      -- transition weight to `k` times the uniform fiber lift, which is `c`.
+      have hcnt : commanderLeftCount y = k := hyk.symm
+      rw [commanderExchange25_mass, membershipLift_mass, hcnt]
+      have hLc : membershipCount m = k := by simp [k]
+      have hRc : k = k := by rfl
+      rw [ite_eq_left hLc, ite_eq_left hRc]
+      -- now: TW (count x) k * (1 / fc k) = c,  with c := TW (count x) k / fc k
+      have hc : c =
+          (transitionWeight 99 50 25 (commanderLeftCount x) k) / (membershipFiberCount k : Rat) := rfl
+      rw [hc, one_div, div_eq_mul_inv]
+    · -- off the fiber: the lift assigns `0` mass to `m` from `y`.
+      have hnot : membershipCount m ≠ commanderLeftCount y := by
+        intro h
+        exact hyk h
+      rw [commanderExchange25_mass, membershipLift_mass, ite_eq_right hnot, ite_eq_right hyk]
+      simp [mul_zero]
+  -- (B) the fiber `{y // k = count y}` has the singleton-or-empty card.
+  have hCard : F.card = (if 1 ≤ k ∧ k ≤ 50 then 1 else 0) := by
+    have hF : F = (Finset.univ : Finset CommanderState).filter (fun y => commanderLeftCount y = k) := by
+      apply Finset.ext
+      intro y
+      simp [F, Finset.mem_filter, Finset.mem_univ]
+      tauto
+    rw [hF, commanderCountFiber_card]
+  calc
+    Dist.mass (FiniteKernel.comp commanderExchange25 membershipLift x) m =
+        (∑ y : CommanderState, Dist.mass (commanderExchange25 x) y * Dist.mass (membershipLift y) m) :=
+      apply_mass_eq_sum (commanderExchange25 x) membershipLift m
+    _ = (∑ y : CommanderState, (if k = commanderLeftCount y then c else 0)) := by
+      apply Finset.sum_congr rfl
+      intro y _
+      exact hVal y
+    _ = (∑ y ∈ F, c) := by
+      -- swap the indicator for the fiber-membership test, then restrict to the fiber
+      have hIte (y : CommanderState) :
+          (if k = commanderLeftCount y then c else 0) = (if y ∈ F then c else 0) := by
+        by_cases hk : k = commanderLeftCount y
+        · -- k = count y  ⟹  y ∈ F; both ites take their `then` branch
+          have hmem : y ∈ F := by simp [F, Finset.mem_filter, Finset.mem_univ, hk]
+          rw [ite_eq_left hk, ite_eq_left hmem]
+        · -- k ≠ count y  ⟹  y ∉ F; both ites take their `else` branch
+          have hnot : y ∉ F := by
+            intro hmem
+            have hk' : k = commanderLeftCount y := by
+              simpa [F, Finset.mem_filter, Finset.mem_univ] using hmem
+            contradiction
+          rw [ite_eq_right hk, ite_eq_right hnot]
+      have h1 : (∑ y : CommanderState, (if k = commanderLeftCount y then c else 0)) =
+          (∑ y : CommanderState, (if y ∈ F then c else 0)) := by
+        apply Finset.sum_congr rfl
+        intro y _
+        exact hIte y
+      rw [h1]
+      have h2 : (∑ y : CommanderState, (if y ∈ F then c else 0)) =
+          (∑ y ∈ (Finset.univ : Finset CommanderState), (if y ∈ F then c else 0)) := rfl
+      rw [h2, ← Finset.sum_filter]
+      have hF2 : (Finset.univ : Finset CommanderState).filter (fun y => y ∈ F) = F := by
+        apply Finset.ext
+        intro y
+        simp [F, Finset.mem_filter, Finset.mem_univ]
+      rw [hF2]
+    _ = F.card * c := Finset.sum_const _
+    _ = (if 1 ≤ k ∧ k ≤ 50 then 1 else 0) * c := by rw [hCard, Nat.cast_ite]; rfl
+    _ = (if 1 ≤ k ∧ k ≤ 50 then c else 0) := by
+      by_cases hk : 1 ≤ k ∧ k ≤ 50
+      · have hL : ((if 1 ≤ k ∧ k ≤ 50 then 1 else 0) : Rat) = 1 := ite_eq_left hk
+        have hR : ((if 1 ≤ k ∧ k ≤ 50 then c else 0) : Rat) = c := ite_eq_left hk
+        rw [hL, hR]
+        simp only [one_mul]
+      · have hL : ((if 1 ≤ k ∧ k ≤ 50 then 1 else 0) : Rat) = 0 := ite_eq_right hk
+        have hR : ((if 1 ≤ k ∧ k ≤ 50 then c else 0) : Rat) = 0 := ite_eq_right hk
+        rw [hL, hR]
+        simp only [zero_mul]
+
 end CommanderMembershipExchange
 end Shufflemath
