@@ -459,6 +459,23 @@ route, not a theorem already in the tree.
 > and equal `R`), completing the unique half of the deck-level bijection (F3 item 3,
 > step 2). Next: step 1 (deck-independence), then step 3 (point mass) — see
 > `docs/agent_handoff.md`.
+> **53rd-session progress (A3 part (i) normalization, general form, `e0b6ebe`):**
+> `Shufflemath/CommanderA3UniformPushforward.lean` proves
+> **`uniformPushforward_pointMass`** — for a finite nonempty `X` and any
+> `f : X → Y`, `Dist.mass ((GSR.uniformDist X).map f) y = (1/card X) · #{j : f j = y}`
+> — the A3 part (i) normalization in *fully general* form, plus the pure-`Finset`
+> helper **`sumConstIte`**. The route *sidesteps the 52nd-session `.map`-on-`Dist` /
+> `Finsupp.mapDomain` rabbit hole entirely*: pushforward `= apply U (deterministic f)`
+> (`apply_deterministic_eq_map`) → `apply_mass` opens the `Fintype` sum → each summand
+> is `GSR.mass_uniformDist j` **as a term** (not `rw`/`simp` — re-unfolding
+> `GSR.uniformDist`'s total-mass proof was the earlier heartbeat blocker) times the
+> deterministic point mass (`Dist.mass_pointMass`), directional `ite`s reconciled by
+> `if_congr`, sum collapsed by `mul_sum` + `Finset.sum_boole`. Since
+> `rawExchangeMembership d` *is* `(GSR.uniformDist exchangeChoice).map (…)` (its own
+> def), the lemma applies to it directly. **Next:** `rawExchange_membershipCount_mass`
+> = apply this to `rawExchangeMembership d`, then the fiber-sum → preimage-count
+> double-count + `newLeftCount_eq_transitionNumerator` +
+> `exchangeChoice_card_eq_transitionDenominator` bridges (see `docs/agent_handoff.md`).
 > **51st-session progress (A3 `hTrans` bridge, part (ii) constancy, part (i)
 > normalization + count connection):** in
 > `Shufflemath/CommanderMembershipExchange.lean`, four `hMembershipExchange` inputs

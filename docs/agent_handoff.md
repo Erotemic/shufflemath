@@ -15,6 +15,26 @@
 
 # Agent handoff: next Shufflemath task
 
+**Updated:** 2026-11-18 (A3 **53rd session — part (i) normalization via a clean
+`apply_mass` route, landing the general `uniformPushforward_pointMass` lemma**).
+- **`uniformPushforward_pointMass`** (`Shufflemath/CommanderA3UniformPushforward.lean`,
+  `e0b6ebe`): for a finite nonempty `X` and any `f : X → Y`,
+  `Dist.mass ((GSR.uniformDist X).map f) y = (1/card X) · #{j : f j = y}`. This is
+  the **A3 part (i) normalization** in fully general form, and it *sidesteps the
+  52nd-session `.map`-on-`Dist` / `Finsupp.mapDomain` rabbit hole entirely*: the
+  route is pushforward `= apply U (deterministic f)` (`apply_deterministic_eq_map`)
+  → `apply_mass` opens the `Fintype` sum → each summand is
+  `GSR.mass_uniformDist j` **used as a term** (not `rw`/`simp` — re-unfolding
+  `GSR.uniformDist`'s expensive total-mass proof was the earlier heartbeat blocker)
+  times the deterministic point mass (`Dist.mass_pointMass`), with the two
+  directional `ite`s reconciled by `if_congr`; the sum collapses by `mul_sum` +
+  `Finset.sum_boole` to `(1/card) · #{j : f j = y}`. The companion pure-`Finset`
+  helper **`sumConstIte`** (`∑ x, c · 1_p x = c · #{x : p x}`) is in the same file.
+  Because `rawExchangeMembership d` *is* `(GSR.uniformDist exchangeChoice).map (…)`
+  (its own def, line 670), this general lemma applies to it **directly** — no `apply`
+  or `.map`-on-`Dist` construction is needed. Added to `dev/verify_next_phase.sh`;
+  full tranche builds, 37 python tests green.
+
 **Updated:** 2026-11-24 (A3 **51st session — `hTrans` bridge + part (ii) constancy
 in the main library**) — the two remaining *inputs* to the `hMembershipExchange`
 capstone are now proved in `Shufflemath/CommanderMembershipExchange.lean`:
@@ -78,16 +98,24 @@ next lemma** is the **inner-sum** (WIP skeleton at `.pi-glla/52_innerSum_wip.lea
      `Σ_{m : membershipCount m = c} Dist.mass (rawExchangeMembership d) m
         = (transitionNumerator 99 50 25 (leftOriginalCount d) c : Rat)
           / (transitionDenominator 99 50 25 : Rat)`.
-     All the *counting* inputs are now in the library; only the Finsupp/measure
-     bookkeeping remains: (a) pushforward mass at `m` = the `(L,R)`-fiber sum
-     (the `CommanderLocalGSR.lean:205` pattern `simp [Convexity.StdSimplex.map,
-     Finsupp.mapDomain, Finsupp.sum_apply, Finsupp.single_apply]`); (b) fiber-sum →
-     preimage-sum; (c)+(d) preimage count = `transitionNumerator` via
-     `membershipCount_newMembership` + `newLeftOriginalCount_eq` +
-     `newLeftCount_eq_transitionNumerator`; (e) normalize by
-     `exchangeChoice_card_eq_transitionDenominator`.  AVOID `.map`-on-`Dist`
-     (it hit an instance-synthesis error); compute the fiber-sum as a
-     `Finset.sum` over `exchangeChoice` directly.
+     **Step (a) is now done** by the 53rd-session `uniformPushforward_pointMass`
+     (`e0b6ebe`): since `rawExchangeMembership d = (GSR.uniformDist
+     exchangeChoice).map (newMembership d ·)` (its own def), the point mass at `m`
+     is `(1/#exchangeChoice) · #{j : exchangeChoice | newMembership d (j as (L,R)) =
+     m}` — **no `.map`-on-`Dist` construction, no Finsupp bookkeeping** (the 52nd
+     session's `StdSimplex.map`/`Finsupp.mapDomain` route is superseded).
+     What remains: (b) fiber-sum → preimage-sum, i.e.
+     `Σ_{m : count m = c} #{j : F j = m} = #{j : count (F j) = c}` (the double-count
+     over the exchange choices, where `F j = newMembership d (j as (L,R))` and
+     `count (F j) = (newLeftCards d j ∩ leftOrigSet).card` via
+     `membershipCount_newMembership`); (c)+(d) that preimage count =
+     `transitionNumerator` via the `exchangeChoice ≃ leftChoices ×ˢ rightChoices`
+     bridge + `newLeftCount_eq_transitionNumerator`; (e) normalize by
+     `exchangeChoice_card_eq_transitionDenominator` (`#exchangeChoice =
+     transitionDenominator`).
+     **Concrete next step:** prove `rawExchange_membershipCount_mass` in
+     `CommanderMembershipExchange.lean` by applying `uniformPushforward_pointMass`
+     to `rawExchangeMembership d` and doing the (b)–(e) bridges.
   2. **Part (i) fiber-average collapse:** the fiber-average over the project fiber of
      `x` of the (deck-independent) inner-sum is unchanged (`newLeftCount_deckIndependent`
      + `project_count`), giving `rawExchangeMembership_count` =
