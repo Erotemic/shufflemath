@@ -672,6 +672,37 @@ noncomputable def rawExchangeMembership : FiniteKernel Deck Membership := by
   exact (GSR.uniformDist exchangeChoice).map
     (fun c => newMembership d c.1.1 (leftCard25 c.1.2) c.2.1 (rightCard25 c.2.2))
 
+/-- The exchange membership law is *equivariant* under the deck-relabeling group,
+    at the distribution level: the membership law after the exchange starting
+    from a deck relabeled by `g` equals the `g`-relabeling of the membership law
+    from the original deck. This is the distribution-level form of
+    `newMembership_conjugate` (the pointwise kernel equivariance): after `unfold`
+    both sides are `map`s of the same uniform `(L, R)` choice law, so `map_map`
+    pulls the two `.map`s into one and the two `map`-arguments are equal by
+    function extensionality down to `newMembership_conjugate`. This is the kernel
+    equivariance that makes the within-count uniformity (part (ii) of the A3
+    `hMembershipExchange` assembly) invariant under the count-preserving deck
+    symmetries. -/
+theorem rawExchangeMembership_conjugate (d g : Deck) :
+    rawExchangeMembership (d.trans g) =
+      (rawExchangeMembership d).map (relabelMembership (g : Fin 99 → Fin 99) g.bijective) := by
+  unfold rawExchangeMembership at *
+  rw [Convexity.StdSimplex.map_map]
+  change (GSR.uniformDist exchangeChoice).map
+      (fun c : exchangeChoice =>
+        newMembership (d.trans g) (c.1.1) (leftCard25 c.1.2) (c.2.1) (rightCard25 c.2.2)) =
+    (GSR.uniformDist exchangeChoice).map
+      (fun c : exchangeChoice => (relabelMembership (g : Fin 99 → Fin 99) g.bijective)
+        (newMembership d (c.1.1) (leftCard25 c.1.2) (c.2.1) (rightCard25 c.2.2)))
+  have hAB :
+      (fun c : exchangeChoice =>
+        newMembership (d.trans g) (c.1.1) (leftCard25 c.1.2) (c.2.1) (rightCard25 c.2.2)) =
+      (fun c : exchangeChoice => (relabelMembership (g : Fin 99 → Fin 99) g.bijective)
+        (newMembership d (c.1.1) (leftCard25 c.1.2) (c.2.1) (rightCard25 c.2.2))) := by
+    funext c
+    exact newMembership_conjugate d g (c.1.1) (leftCard25 c.1.2) (c.2.1) (rightCard25 c.2.2)
+  simpa [hAB]
+
 -- The deck-level exchange kernel: membership-level exchange followed by the
 -- uniform membership-fiber lift.
 noncomputable def rawExchange : FiniteKernel Deck Deck :=
