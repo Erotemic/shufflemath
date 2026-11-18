@@ -264,7 +264,55 @@ attempts, but is no longer the recommended route.
 
 ## Exactly where to resume
 
-### 47th session — **CURRENT RESUME POINT** (T4 measure-half count-fiber machinery committed, `19d964d`)
+### 47th session (continued) — **CURRENT RESUME POINT** (A3 count kernel + 50+49 partition fact committed)
+
+Two milestones landed this continuation of the 47th session:
+
+1. **The A3 count kernel is DONE** (`48e601b`, `Shufflemath/CommanderA3Count.lean`).
+   `a3CountKernel` proves the pointwise count identity: the fiber-averaged
+   post-exchange membership count equals the `commanderExchange25` transition
+   (the A3 counting half, part (i)). The LHS core `rawExchangeMembership_count`
+   is a *pointwise* identity (the 47s per-deck bridge `newLeftOriginalCount_eq`
+   is the engine: each deck's post-exchange original-card count is exactly
+   `transitionNumerator`, the 47v kernel proving numerator = `transitionWeight`
+   = `commanderTransitionWeight`). The fiber average is then a plain `simp` +
+   `map_mul`. `./dev/verify_next_phase.sh` passes 37 tests.
+
+2. **The 50+49 deck-position partition is proven** (`_Probe47ad.lean`, targeted
+   build green): `leftCards_union_rightCards_univ` (`leftCards d ∪ rightCards d
+   = univ`), `leftCards_disjoint_rightCards'`, and `univ_sdiff_leftCards_eq_rightCards`
+   (`univ \ leftCards = rightCards`). **Key finding:** the per-element
+   `Equiv.Perm (Fin 99)` surjectivity route (one-element-at-a-time onto the
+   image) triggers **WHNF timeouts** even at high heartbeats; the **cardinality
+   route** (subset + equal size via `card_image_of_injective` +
+   `card_union_of_disjoint` + `card_sdiff_of_disjoint`) is the robust one. Keep
+   that recipe for the next lemmas.
+
+**Next concrete action — the surjectivity onto the 25-overlap fiber**,
+`newMembership_surjective_onto_fiber (d) (T) (hT : (membership d).1 ∩ T.1).card = 25
+: ∃ L (hL : L.card = 25) R (hR : R.card = 25), newMembership d L hL R hR = T`,
+in `_Probe47ad.lean` (the body was essentially working there this session — it was
+removed only because the 4-binder `∃` statement hit a parse error:
+`type expected, got (Membership : outParam …)` at the `:` after the `hT` binder;
+likely an `abbrev`/multi-line-signature parse quirk — try re-adding it with the
+binders on one line or as an `exchangeChoice`-typed existential). The body: `A =
+T.1 ∩ leftCards` (25 cards, the 25 left cards of `T`), `Lsel = leftCards \ A` (`L`
+is its `leftCardImage_has_preimage`), `B = T.1 ∩ rightCards` (25 cards — the 50+49
+partition gives `|B| = 50 − 25 = 25` via a disjoint `T.1` split + `omega`), `R` is
+`B`'s `rightCardImage_has_preimage`; then `newLeftCards d L R = A ∪ B = T.1` via
+`newLeftCards_as_sstdiff_union` + `Finset.union_inter_distrib_left`. Once green,
+this + `newLeftCards_injective` (47h) + `newMembership_overlap_25` make the
+`(L,R)↦newMembership` map a **bijection onto the fiber**, so the uniform choice
+pushes forward to the uniform fiber law (the A3 point-mass statement).
+
+**Then** — the A3 point-mass/measure bridge in `Shufflemath/CommanderMembershipExchange.lean`
+(prove `comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25
+membershipLift`), using `map_equiv_mass` + the count kernel + the surjectivity.
+Then promote the partition lemmas + surjectivity from the probe to a named module
+(`CommanderDeckPartition.lean` or into `CommanderPhysicalExchange.lean`).
+
+**Below — the earlier (47th-session) T4-count-fiber-machinery note, kept for the
+historical breakdown; its "next action" (the count kernel) is now DONE above.**
 
 The T4 *measure* half's count-fiber machinery is **DONE and committed**
 (`19d964d`, `Shufflemath/FiniteDeck/BLRefinement.lean`): `countFiberMemb` (the
