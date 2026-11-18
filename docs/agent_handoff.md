@@ -65,12 +65,19 @@ Prior fiber-level milestones, all still in the library:
   invariant under the fiber's symmetry group" fact — the invariance input to
   `distUniform_ofInvariantTransitive`.
 
-**Exactly where to resume: the SPECIFIC post-exchange membership-law invariance
-`μ_x.map (relabelMembership_equiv f hf) = μ_x`** for
-`μ_x = comp (FiberDisintegration.fiberLaw project project_surjective)
-rawExchangeMembership x`. Place it in `Shufflemath/CommanderPhysicalExchange.lean`
-right after `hMembershipExchange_lhs_reduces` (the A3 capstone `hMembershipExchange`
-then follows by feeding this invariance + `distUniform_ofInvariantTransitive`).
+**Exactly where to resume: the A3 capstone `hMembershipExchange` itself.** The
+SPECIFIC post-exchange membership-law invariance `μ_x.map (relabelMembership_equiv f hf) = μ_x`
+for `μ_x = comp (FiberDisintegration.fiberLaw project project_surjective)
+rawExchangeMembership x` is now **DONE (50th session, `67a4efc`)** — committed in
+`Shufflemath/CommanderMembershipExchange.lean` as `mu_x_map_invariance`, assembled from
+`deckRelabel` (the `Equiv Deck Deck` form of `d ↦ d.trans g`), `h6_fiberLaw_fixed`, and
+`comp_L_detM_eq_comp_detE_L` (the 7-step kernel-monad calc; `apply_deterministic_eq_map`
+`a9839fd` supplies the monad unit). **Next: the A3 capstone** — feed `mu_x_map_invariance`
++ `distUniform_ofInvariantTransitive` to show the LHS law is group-uniform (part (i)), then
+prove the LHS=RHS equality (part (iii)) to close `hMembershipExchange`. (The invariance lives
+in `CommanderMembershipExchange.lean`, not the blueprint's `CommanderPhysicalExchange.lean`;
+it compiles there with `Equiv.trans`/`Equiv.symm`/`Equiv.coe_ofBijective` spelled explicitly, so
+the blueprint's `.trans` dot-notation concern did not materialize.)
 With the deck-equiv `e : Deck ≃ Deck` given by `e d = d.trans f` (a bijection), the
 proof composes pieces now in the library:
   1. `(fiberLaw project h x).map e = fiberLaw project h x` by
@@ -79,13 +86,13 @@ proof composes pieces now in the library:
      (relabelMembership f f.bijective)` by **`rawExchangeMembership_conjugate`**;
   3. push the exchange through the equiv: the `.map`/`.join`/`.apply`/`comp`
      associativity (in `Shufflemath/Finite.lean`: `apply_comp`, `comp_assoc`).
-**[50th session] The full 7-step `calc` assembly is now BLUEPRINTED** at
+**[50th session] The full 7-step `calc` assembly is now DONE (committed `67a4efc` as `mu_x_map_invariance` in `CommanderMembershipExchange.lean`)** — it was BLUEPRINTED at
 `.pi-glla/47b1_membership_invariance_wip.lean` (out of the build graph). It composes:
 `μ_x.map M = apply μ (det M) [apply_deterministic_eq_map] = apply (apply (K x) L) (det M)
 = apply (K x) (comp L (det M)) [apply_comp] = apply (K x) (comp (det e) L)
 [comp_L_Mk_eq_comp_E_L, via rawExchangeMembership_conjugate] = apply (apply (K x) (det e)) L
 [apply_comp] = apply (K x) L [step 1: fiberLaw_invariant_underFiberEquiv + project_conjugate]
-= μ_x`. Two lemmas remain to prove, then the `calc` fills in:
+= μ_x`. **Both lemmas below are now proven** (`apply_deterministic_eq_map` = `a9839fd`; `comp_L_Mk_eq_comp_E_L` = `comp_L_detM_eq_comp_detE_L` in `67a4efc`); the `calc` is committed:
   (1) **`apply_deterministic_eq_map`** (put in `Finite.lean`): `apply μ (deterministic f) =
       μ.map f` — `ext y` + the Finsupp pushforward-sum simp set; the 47b1 probe already
       reduced the LHS to `Σ_{a, f a = y} μ a`, the only open step is not over-reducing the

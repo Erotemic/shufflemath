@@ -459,6 +459,20 @@ route, not a theorem already in the tree.
 > and equal `R`), completing the unique half of the deck-level bijection (F3 item 3,
 > step 2). Next: step 1 (deck-independence), then step 3 (point mass) — see
 > `docs/agent_handoff.md`.
+> **50th-session progress (A3 within-count invariance, `67a4efc`):** in
+> `Shufflemath/CommanderMembershipExchange.lean`, four building blocks assembling the
+> *within-count* invariance the A3 capstone needs from `distUniform_ofInvariantTransitive`
+> (part (ii) — the stabilizer side of the orbit-stabilizer uniformity argument): `deckRelabel`
+> (the deck relabeling `d ↦ d.trans g` as an `Equiv Deck Deck`, proved injective/surjective via
+> `Equiv.ext` + `g.injective`/`g.apply_symm_apply`), `h6_fiberLaw_fixed` (a uniform `project` fiber
+> law is fixed by the *deterministic* deck-relabeling kernel — a two-line `apply_deterministic_eq_map`
+> + `fiberLaw_invariant_underFiberEquiv` + `project_conjugate` transport), `comp_L_detM_eq_comp_detE_L`
+> (kernel-composition equivariance `comp L (det M) = comp (det E) L`, both sides reducing to
+> `rawExchangeMembership (d.trans g)`), and `mu_x_map_invariance` — the 7-step kernel-monad calc
+> (`apply_deterministic_eq_map` unit → `apply_comp` associativity → the comp-equivariance →
+> `h6_fiberLaw_fixed` → back) showing the post-exchange membership law at fiber `x` is fixed by the
+> `leftOrigSet`-preserving deck relabeling `g`. This is the within-count invariance input; the LHS
+> group-uniformity (part (i)) and the LHS=RHS equality (part (iii)) still stand.
 > **23rd–24th-session progress (Spec A2 core + A3 scaffold):**
 > `newLeftCards_conjugate` (`CommanderPhysicalExchange.lean`, commit `6ccae33`)
 > proves the **pointwise** equivariance of the post-exchange left set under any
