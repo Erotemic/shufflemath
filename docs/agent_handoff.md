@@ -15,8 +15,35 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** 2026-11-24 (A3 **fiber-level invariance — general core**) — three
-milestones are now in the main library:
+**Updated:** 2026-11-24 (A3 **50th session — `leftOriginalCount`/`project`
+conjugation: the 48th/49th-session `whnf` wall is SOLVED**) — the `μ_x`
+invariance's missing piece **`hE` is now in the main library**. New 50th-session
+additions (`Shufflemath/CommanderPhysicalExchange.lean`, end of module):
+- **`leftOriginalCount_conjugate`**: `(leftOrigSet).image g = leftOrigSet →
+  leftOriginalCount (d.trans g) = leftOriginalCount d` — the long-blocked 48th/
+  49th-session target, now compiling clean.
+- **`project_conjugate`** (the **`hE`**): `(leftOrigSet).image f = leftOrigSet →
+  project (d.trans f) = project d` — the exact premise step 1 of the `μ_x`
+  invariance assembly needs (`fiberLaw_invariant_underFiberEquiv`).
+- **`hGpart`** (standalone theorem, both directions) + the light `origLeft_L50` /
+  `leftOrigSet_eq_L50` / `hgL_L50` helpers it rides on.
+
+**The wall is gone.** The 48th/49th diagnosis: the `Fin 99` *filter* form of
+`leftOrigSet` whnf-explodes on `.image g` (200000-heartbeat timeouts, even at 2M).
+The fix is the **frameshift to the 50-element index set** (strategy (a)): (1) route
+every heavy image step through the light `Fin 50` *image* form
+`origLeft_L50 := (Finset.univ : Fin 50).image leftPosition`; (2) prove the
+partition-preservation iff `hGpart` as a **standalone top-level theorem** — its
+`whnf` cost is paid **once, at its own compilation** (module builds 3224 jobs, exit
+0, full 37-test suite green); (3) in the final filter-card assembly, **reference
+`hGpart` by name** (a single `hGpart d g hgL (d (leftPosition i))`) so the expensive
+reduction is never re-run in the deep context. Referencing a compiled theorem by
+name is cheap; the earlier failures (47ax `hGf`/`hGb` defs, 47az inline `hpart`)
+all **re-ran the heavy body at the call site**. A standalone reference module is
+`Shufflemath/_Probe47b0.lean`. **Next: assemble `μ_x.map (relabelMembership_equiv
+f hf) = μ_x`** (see "Exactly where to resume" below) — step 1 now unblocks.
+
+Prior fiber-level milestones, all still in the library:
 - **`rawExchangeMembership_conjugate`** (`Shufflemath/CommanderPhysicalExchange.lean`,
   `commit 6a45608`): the **distribution-level** kernel equivariance
   `rawExchangeMembership (d.trans g) = (rawExchangeMembership d).map
@@ -55,7 +82,11 @@ proof composes pieces now in the library:
      rawExchangeMembership` — the `.map`/`.join`/`.apply` associativity lives in
      `Shufflemath/Finite.lean`; confirm the exact lemmas there (a `Dist.map` of a
      kernel, then `.join`, then `.map` a function).
-**The one missing piece is `hE : ∀ d, project (d.trans f) = project d`** under
+**RESOLVED (50th session)** — the missing `hE` is now `project_conjugate` in
+`CommanderPhysicalExchange.lean` (reducing to `leftOriginalCount_conjugate`),
+proved by the frameshift strategy summarized at the top. *(Original analysis kept
+below for reference.)* **The one missing piece was `hE : ∀ d, project (d.trans f) =
+project d`** under
 `f '' leftOrigSet = leftOrigSet` (a deck map preserving the originally-left set, so
 it commutes with `project`). Since `project d = ⟨leftOriginalCount d - 1, _⟩`, this
 reduces (Subtype `ext` on the proof component) to
