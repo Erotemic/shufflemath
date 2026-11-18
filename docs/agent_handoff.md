@@ -64,21 +64,36 @@ total, then the full kernel equality.** Both *inputs* to the within-count
 uniformity (part (ii)) are now in the library: `mu_x_map_invariance` (invariance)
 and `membershipFiber_transitive_asEquiv` (transitivity / `hTrans`), and
 `mu_x_constant_on_countFiber` already combines them into the **within-fiber
-constancy**. The remaining steps to discharge `hMembershipExchange`:
-  1. **Part (i) — count total:** prove `rawExchangeMembership_count`,
-     `comp (comp (fiberLaw project project_surjective) rawExchangeMembership)
-     (deterministic membershipCount) =
-     comp commanderExchange25 (deterministic commanderLeftCount)`. The **RHS** is
-     already committed (`commanderExchange25_countMass`: mass at `(x, c)` is
-     `transitionWeight 99 50 25 (count x) c` for feasible `c`); the **LHS**
-     fiber-average post-exchange *count* distribution is the remaining step — the
-     counting core (`transitionNumerator = overlap_count`) is in
-     `BernoulliLaplaceGeneral` / `BernoulliLaplaceFiber`.
-  2. **Combine part (i) + part (ii):** for `m` in the `c`-fiber, `μ_x m` =
+constancy**. For **part (i)** the normalization bridge is now done:
+`exchangeChoice_card_eq_transitionDenominator` (`a82673b`) shows
+`#exchangeChoice = transitionDenominator 99 50 25`, so the raw-exchange
+normalization is the BL transition denominator. The remaining **specific next
+lemma** is the **inner-sum**:
+  1. **Part (i) inner-sum — `rawExchange_membershipCount_mass`:** for a deck `d`
+     and count `c`, the *total mass of the raw exchange into the `c`-fiber* equals
+     the BL transition probability:
+     `Σ_{m : membershipCount m = c} Dist.mass (rawExchangeMembership d) m
+        = (transitionNumerator 99 50 25 (leftOriginalCount d) c : Rat)
+          / (transitionDenominator 99 50 25 : Rat)`.
+     Proof: (a) `Dist.mass (rawExchangeMembership d) m` = the pushforward of
+     `GSR.uniformDist exchangeChoice` (mass `1 / #exchangeChoice` per `(L,R)`);
+     (b) summing over the `c`-fiber = `# {ch : membershipCount (newMembership d ch) = c} / #exchangeChoice`;
+     (c) `membershipCount (newMembership d ch) = (newLeftCards d … ∩ leftOrigSet).card`
+     (connect `membershipCount`'s def `(m.1 ∩ leftOrigSet).card` to
+     `newLeftOriginalCount_eq`); (d) that count =
+     `transitionNumerator 99 50 25 (leftOriginalCount d) c` by
+     **`newLeftCount_eq_transitionNumerator`** (`CommanderA3Kernel`); (e) normalize by
+     **`exchangeChoice_card_eq_transitionDenominator`**.
+  2. **Part (i) fiber-average collapse:** the fiber-average over the project fiber of
+     `x` of the (deck-independent) inner-sum is unchanged (`newLeftCount_deckIndependent`
+     + `project_count`), giving `rawExchangeMembership_count` =
+     `commanderExchange25_countMass` (the count-level equality).
+  3. **Combine part (i) + part (ii):** for `m` in the `c`-fiber, `μ_x m` =
      (part (i) count mass at `c`) / `#(c`-fiber`)`, where the divisor is
      `membershipFiber_card`. This equals `hMembershipExchange_rhs_mass` at `(x, m)`,
-     so the kernel equality follows by `FiniteKernel.ext` (pointwise in `x`, `m`).
-  3. **Instantiate** `two_physical_perfect_exchanges_uniform_of_counts` with
+     so the kernel equality `hMembershipExchange` follows by `FiniteKernel.ext`
+     (pointwise in `x`, `m`).
+  4. **Instantiate** `two_physical_perfect_exchanges_uniform_of_counts` with
      `hMembershipExchange` discharged, closing F3.
 
 Prior fiber-level milestones, all still in the library:
