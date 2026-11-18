@@ -2533,3 +2533,52 @@ After that: `uniformFiber_intertwines` follows via `transitionCount_formula`
 general lemmas (`pairCountBySum` + its 3 helpers, and the 47p binomial helpers)
 into a proper named module (e.g. extend `CommanderPhysicalExchange.lean` or a
 new `Shufflemath/FinsetPairCounting.lean`).
+
+## 2026-11-17 (cont) — 47r/47s engine family + the perDeckBridge matching is fully worked out
+
+### Done this turn (both build, 3209 jobs each, no sorry)
+Two more forms of the partition-by-first-coordinate engine, completing the family:
+- `_Probe47r.pairCountByAffine` — count of `(x,y)∈s×ˢt` with `g y = c + f x`.
+- `_Probe47s.pairCountByConstSub` — count of `(x,y)∈s×ˢt` with `(c - f x) + g y = n`.
+**47s is the one the per-deck target needs**: after `newLeftOriginalCount_eq`
+(`(newLeftCards d L R ∩ leftOrigSet).card = (x - markedInLeft d L) + markedInRight d R`,
+`x = leftOriginalCount d`), the target filter `(newLeftCards d L R ∩ leftOrigSet).card = n`
+becomes exactly `(x - markedInLeft d L) + markedInRight d R = n` — the 47s form with
+`c = x`, `f = markedInLeft d`, `g = markedInRight d`. The fiber keeps `g` as a raw filter
+(`(c-a) + g y = n`), never solved for `g y`, so there is **no** Nat-subtraction-solvability
+trap. 47q (sum) and 47r (affine) are the other two forms — kept as a reusable family.
+
+### The perDeckBridge matching — FULLY worked out (next step, should be tractable)
+Target: `#(s ×ˢ t).filter (fun p => (newLeftCards d p.1 p.2 ∩ leftOrigSet).card = n)`
+with `s = (Fin 50).powersetCard 25`, `t = (Fin 49).powersetCard 25`, `x = leftOriginalCount d`.
+Chain:
+1. `newLeftOriginalCount_eq` (exists, `CommanderPhysicalExchange:530`) rewrites the filter
+   to `#(s×ˢt).filter (fun p => (x - markedInLeft d p.1) + markedInRight d p.2 = n)`.
+2. `pairCountByConstSub` (47s, c=x) → `∑_{aL ∈ s.image (markedInLeft d)} #s.filter(f=aL) · #t.filter (fun R => (x-aL) + markedInRight d R = n)`.
+3. For `aL ∈ s.image f`: `aL ≤ 25` (markedInLeft ≤ 25). `#s.filter(f=aL) = leftCountByMarked aL = choose x aL · choose (50-x) (25-aL)` (47p).
+4. `#t.filter (fun R => (x-aL) + markedInRight d R = n) = if x-aL ≤ n then rightCountByMarked (n-(x-aL)) else 0`.
+   **This `if`-split lemma is the one piece left to prove**: when `x-aL ≤ n`,
+   `(x-aL)+bR=n ⟺ bR=n-(x-aL)`; when `x-aL > n` the LHS count is 0. Then
+   `rightCountByMarked (n-(x-aL)) = choose xR (n-x+aL) · choose (49-xR) (25-n+x-aL)` (47p).
+5. **The crux (why it works):** `xR = #(markedRightPos d) = 50 - x` (by
+   `markedRightPos_card`, `CommanderMarkedRightCount`), so `49 - xR = x - 1`. Substituting,
+   my per-deck product is
+   `choose x aL · choose (50-x) (25-aL) · choose (50-x) (n-x+aL) · choose (x-1) (25-n+x-aL)`.
+   Unfold `transitionNumerator (N m k x y)` (`BernoulliLaplace.lean:26`, N=99,m=50,k=25,y=n):
+   it sums `a∈range 26` of `choose x a · choose (m-x) (k-a) · choose (m-x) b · choose ((N-m)-(m-x)) (k-b)`
+   with `b = y-(x-a) = n-x+a`, guarded by `x-a ≤ y` and `b ≤ k`. With m-x=50-x and
+   (N-m)-(m-x) = 49-50+x = x-1, **its 4 factors are identical to mine**; the guards
+   `x-a ≤ n` and `b ≤ k(=25)` are exactly my `if x-aL ≤ n` and `Nat.choose`'s 0-out-of-range.
+   The sum over `aL ∈ s.image (markedInLeft d)` equals the sum over `a ∈ range 26` because
+   `#s.filter(f=a) = 0` for `a > 25` (empty fiber) and every `a ∈ range 26` with nonzero
+   fiber is in `s.image`.
+6. Hence target `= transitionNumerator 99 50 25 (leftOriginalCount d) n`. Then
+   `transitionWeight 99 50 25 x n = transitionNumerator / transitionDenominator` gives the
+   per-deck mass, and fiber-averaging matches `commanderExchange25_countMass` (discharging
+   `hMembershipExchange`) → `uniformFiber_intertwines` via `transitionCount_formula`.
+
+**Remaining to execute (in order):** (4) the `if x-aL ≤ n` guard-split lemma; the
+sum-over-image = sum-over-range-26; then assemble `perDeckBridge` and the
+`transitionNumerator 99 50 25 x n` match. Promotion: fold the finished general lemmas
+(47s engine, 47p helpers) into a named module (e.g. `Shufflemath/FinsetPairCounting`) and
+the perDeckBridge into the BernoulliLaplace layer when it lands.
