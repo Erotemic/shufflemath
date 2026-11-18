@@ -104,6 +104,13 @@ next lemma** is the **inner-sum** (WIP skeleton at `.pi-glla/52_innerSum_wip.lea
      is `(1/#exchangeChoice) · #{j : exchangeChoice | newMembership d (j as (L,R)) =
      m}` — **no `.map`-on-`Dist` construction, no Finsupp bookkeeping** (the 52nd
      session's `StdSimplex.map`/`Finsupp.mapDomain` route is superseded).
+     **The concrete-exchange instance is now also in the library:**
+     `rawExchangeMembership_pointMass` (`Shufflemath/CommanderA3ExchangePushforward.lean`,
+     `0bf218a`) applies that general lemma to `rawExchangeMembership d`'s own `.map`
+     def (`dsimp [rawExchangeMembership]; apply uniformPushforward_pointMass (fun c =>
+     newMembership d c.1.1 (leftCard25 c.1.2) c.2.1 (rightCard25 c.2.2)) m`) — the
+     exchange's point mass at `m` is `(1/#exchangeChoice) · #{j : newMembership d
+     j.1.1 (leftCard25 j.1.2) j.2.1 (rightCard25 j.2.2) = m}`.
      What remains: (b) fiber-sum → preimage-sum, i.e.
      `Σ_{m : count m = c} #{j : F j = m} = #{j : count (F j) = c}` (the double-count
      over the exchange choices, where `F j = newMembership d (j as (L,R))` and
@@ -113,9 +120,19 @@ next lemma** is the **inner-sum** (WIP skeleton at `.pi-glla/52_innerSum_wip.lea
      bridge + `newLeftCount_eq_transitionNumerator`; (e) normalize by
      `exchangeChoice_card_eq_transitionDenominator` (`#exchangeChoice =
      transitionDenominator`).
+     **On (b) — the double-count:** do NOT use the `biUnion`/`card_biUnion` route
+     (the lemma name isn't in `Data/Finset/` and the `Pairwise`/subtype-sum shape is
+     fiddly) or the indicator/`sum_ite` route (there is no clean simp lemma for
+     `(s.filter p).card = ∑_{x∈s} [p x]`; `Finset.sum_ite` is the split-into-two-sums
+     form). Use the **fiber-product equiv** instead: `Fintype.card {x // f x ∈ S} =
+     Fintype.card {p : S, x // f x = ↑p}` via the bijection `x ↦ (⟨f x, f x ∈ S⟩, x)`
+     / `⟨p, x⟩ ↦ x` — no booleans, no biUnion.  WIP skeleton: `.pi-glla/53_fiberSum_wip.lean`.
      **Concrete next step:** prove `rawExchange_membershipCount_mass` in
-     `CommanderMembershipExchange.lean` by applying `uniformPushforward_pointMass`
-     to `rawExchangeMembership d` and doing the (b)–(e) bridges.
+     `CommanderMembershipExchange.lean` = `rawExchangeMembership_pointMass` (the
+     point-mass term) + the (b) fiber-product double-count + the (c)–(e) count
+     bridges (`membershipCount_newMembership` → the `exchangeChoice ≃ leftChoices ×ˢ
+     rightChoices` equiv → `newLeftCount_eq_transitionNumerator` →
+     `exchangeChoice_card_eq_transitionDenominator`).
   2. **Part (i) fiber-average collapse:** the fiber-average over the project fiber of
      `x` of the (deck-independent) inner-sum is unchanged (`newLeftCount_deckIndependent`
      + `project_count`), giving `rawExchangeMembership_count` =

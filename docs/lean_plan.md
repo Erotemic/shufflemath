@@ -459,7 +459,8 @@ route, not a theorem already in the tree.
 > and equal `R`), completing the unique half of the deck-level bijection (F3 item 3,
 > step 2). Next: step 1 (deck-independence), then step 3 (point mass) — see
 > `docs/agent_handoff.md`.
-> **53rd-session progress (A3 part (i) normalization, general form, `e0b6ebe`):**
+> **53rd-session progress (A3 part (i) normalization, general + concrete, `e0b6ebe` +
+> `0bf218a`):**
 > `Shufflemath/CommanderA3UniformPushforward.lean` proves
 > **`uniformPushforward_pointMass`** — for a finite nonempty `X` and any
 > `f : X → Y`, `Dist.mass ((GSR.uniformDist X).map f) y = (1/card X) · #{j : f j = y}`
@@ -470,12 +471,17 @@ route, not a theorem already in the tree.
 > is `GSR.mass_uniformDist j` **as a term** (not `rw`/`simp` — re-unfolding
 > `GSR.uniformDist`'s total-mass proof was the earlier heartbeat blocker) times the
 > deterministic point mass (`Dist.mass_pointMass`), directional `ite`s reconciled by
-> `if_congr`, sum collapsed by `mul_sum` + `Finset.sum_boole`. Since
-> `rawExchangeMembership d` *is* `(GSR.uniformDist exchangeChoice).map (…)` (its own
-> def), the lemma applies to it directly. **Next:** `rawExchange_membershipCount_mass`
-> = apply this to `rawExchangeMembership d`, then the fiber-sum → preimage-count
-> double-count + `newLeftCount_eq_transitionNumerator` +
-> `exchangeChoice_card_eq_transitionDenominator` bridges (see `docs/agent_handoff.md`).
+> `if_congr`, sum collapsed by `mul_sum` + `Finset.sum_boole`. Then
+> **`Shufflemath/CommanderA3ExchangePushforward.lean`** applies it to the concrete
+> exchange: **`rawExchangeMembership_pointMass`** — `Dist.mass (rawExchangeMembership d)
+> m = (1/#exchangeChoice) · #{j : exchangeChoice | newMembership d j.1.1 (leftCard25
+> j.1.2) j.2.1 (rightCard25 j.2.2) = m}` (via `dsimp [rawExchangeMembership]; apply
+> uniformPushforward_pointMass`). **Next:** the fiber-sum double-count
+> `Σ_{m : count m = c} #{j : F j = m} = #{j : count (F j) = c}` — use the **fiber-product
+> equiv** (NOT `biUnion`/`sum_ite`; see `.pi-glla/53_fiberSum_wip.lean`) — then the
+> `exchangeChoice ≃ leftChoices ×ˢ rightChoices` equiv + `newLeftCount_eq_transitionNumerator`
+> + `exchangeChoice_card_eq_transitionDenominator` bridges give
+> `rawExchange_membershipCount_mass` (see `docs/agent_handoff.md`).
 > **51st-session progress (A3 `hTrans` bridge, part (ii) constancy, part (i)
 > normalization + count connection):** in
 > `Shufflemath/CommanderMembershipExchange.lean`, four `hMembershipExchange` inputs
