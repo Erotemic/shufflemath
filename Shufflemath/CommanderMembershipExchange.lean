@@ -95,12 +95,26 @@ and `count := commanderLeftCount`.  The identity therefore splits:
 * `membershipFiber_card` — `# {m // count m = k} = membershipFiberCount k`.
 * `membershipLift_count` — `comp membershipLift (det membershipCount) =
   det commanderLeftCount` (the lift projects back to its count).
+* `commanderExchange25_mass` — `commanderExchange25 x y`'s mass is the exact
+  `transitionWeight 99 50 25 (count x) (count y)` (the `ofRowStochastic` bridge).
+* `hMembershipExchange_rhs_mass` — A3 **part (i) RHS**: the mass at `(x, m)` of
+  `comp commanderExchange25 membershipLift` is
+  `transitionWeight (count x) (count m) / membershipFiberCount (count m)` for
+  feasible `count m`, else `0` (the fiber average is deck-independent).
+* `commanderExchange25_countMass` — the **count-level** A3 RHS: the mass at
+  `(x, c)` of `comp commanderExchange25 (det commanderLeftCount)` is
+  `transitionWeight (count x) c` for feasible `c`, else `0` (the count fiber is a
+  singleton, so the fiber sum collapses with no division).
 
 ### Next concrete lemmas
 1. **`rawExchangeMembership_count`** (part i, count total): prove
        `comp (comp (fiberLaw project project_surjective) rawExchangeMembership)
           (deterministic membershipCount) =
          comp commanderExchange25 (deterministic commanderLeftCount)`.
+       **RHS committed** (`commanderExchange25_countMass`: the mass at `(x, c)` is
+       `transitionWeight 99 50 25 (count x) c` for feasible `c`); the **LHS** fiber-
+       average post-exchange count distribution is the remaining step (deck-
+       independent given the source count).
 2. **`hMembershipExchange`** (the capstone): assemble (1) + part (ii) into the
        full kernel equality, then instantiate
        `two_physical_perfect_exchanges_uniform_of_counts`.

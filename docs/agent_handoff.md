@@ -29,12 +29,15 @@ count-fiber machinery is now COMPLETE** — `countFiberMemb` (a `Finset` over
 in the library (`countInPile` L426 = `⟨countInPileVal, countInPile_admissible⟩`
 + `countInPile_val`/`_countFiber`), so the 46th note's projection item is done.
 **New resume point: the Commander F3 A3 discharge by instantiation at
-(99, 50, 50, 25)** (in `Shufflemath/CommanderMembershipExchange.lean`). **47b:
-the A3 *RHS count-mass* is committed** — `commanderExchange25_mass` (the
-`commanderExchange25` transition bridge) and `hMembershipExchange_rhs_mass`
-(pointwise mass of `comp commanderExchange25 membershipLift`, commit `c276eda`);
-next is the LHS counting core `rawExchangeMembership_count` (part (i)). T3/T5
-remain.) The 2026-11-15
+(99, 50, 50, 25)** (in `Shufflemath/CommanderMembershipExchange.lean`). **47b/47c:
+the A3 *RHS* is committed in both its forms** — `commanderExchange25_mass` (the
+`commanderExchange25` transition bridge), `hMembershipExchange_rhs_mass` (pointwise
+mass of `comp commanderExchange25 membershipLift`, `c276eda`), and
+`commanderExchange25_countMass` (the count-level companion: the mass at `(x, c)`
+of `comp commanderExchange25 (det commanderLeftCount)` is
+`transitionWeight 99 50 25 (count x) c` for feasible `c`, `a7fabd3`); next is the
+LHS counting core `rawExchangeMembership_count` (part (i)). T3/T5 remain.) The
+2026-11-15
 review + arbitrary-finite-deck roadmap pivoted the build to the **G1–G4
 generic finite-deck theory**, from which Commander A3 is a specialization.
 **Done:** P0/Commit A (native_decide → `.symm`); **G1** complete
@@ -226,12 +229,14 @@ averaged, is the `commanderExchange25` transition; (ii) within-count uniformity
 — conditioned on landing count `c`, the membership is uniform over the `c`-fiber
 (equivariance + transitivity). Supporting ingredients already exist
 (`map_equiv_mass`, `distUniform_ofInvariantTransitive`, `membershipFiber_card`,
-`membershipLift_count`, `commanderCountFiber_card`, and the 47b **RHS
-count-mass** `commanderExchange25_mass` + `hMembershipExchange_rhs_mass` —
-the pointwise mass of `comp commanderExchange25 membershipLift`); read that
-module's doc-comment for the assembly plan. The **next concrete lemma is the
-LHS counting core `rawExchangeMembership_count`** (part (i)): the fiber-average
-post-exchange `membershipCount` equals the `commanderExchange25` transition.
+`membershipLift_count`, `commanderCountFiber_card`, and the **A3 RHS** —
+`commanderExchange25_mass`, `hMembershipExchange_rhs_mass` (`c276eda`, the
+pointwise mass of `comp commanderExchange25 membershipLift`), and
+`commanderExchange25_countMass` (`a7fabd3`, the count-level companion)); read
+that module's doc-comment for the assembly plan. The **next concrete lemma is
+the LHS counting core `rawExchangeMembership_count`** (part (i)): the
+fiber-average post-exchange `membershipCount` equals the `commanderExchange25`
+transition (RHS already `commanderExchange25_countMass`).
 
 ### 45th session (2026-11-17) — prior resume point (bootstrap notes below stay in force for this VM)
 
