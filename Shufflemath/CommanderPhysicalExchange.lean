@@ -109,6 +109,77 @@ theorem newLeftCards_card (d : Deck) (L : Finset (Fin 50)) (R : Finset (Fin 49))
   rw [Finset.card_sdiff, Finset.inter_eq_left.mpr hLsub, hL, hR]
   norm_num
 
+/-- The original left pile is disjoint from the selected-right-card part of the
+    post-exchange pile: a left-position card can never coincide with a right-position
+    card under a bijective deck map.  (Same argument as `newLeftCards_parts_disjoint`,
+    but with the whole left image rather than the unselected part.) -/
+theorem leftCards_disjoint_rightImage (d : Deck) (R : Finset (Fin 49)) :
+    Disjoint (leftCards d)
+      (Finset.image (fun (r : Fin 49) => d (rightPosition r)) R) := by
+  classical
+  rw [Finset.disjoint_iff_inter_eq_empty]
+  apply Finset.ext
+  intro c
+  constructor
+  · intro h
+    rcases Finset.mem_inter.mp h with ⟨hL, hR⟩
+    rcases Finset.mem_image.mp hL with ⟨l, _hl, hcl⟩
+    rcases Finset.mem_image.mp hR with ⟨r, _hr, hcr⟩
+    have heq : d (leftPosition l) = d (rightPosition r) := hcl.trans hcr.symm
+    have hne : leftPosition l ≠ rightPosition r := by
+      intro heq2
+      have hval : (leftPosition l).val = (rightPosition r).val := congrArg Fin.val heq2
+      have hL : (leftPosition l).val < 50 := by simp [leftPosition]
+      have hR : 50 ≤ (rightPosition r).val := by simp [rightPosition]
+      omega
+    exact False.elim (hne (d.injective heq))
+  · intro h
+    have hne' : ¬ c ∈ (∅ : Finset (Fin 99)) := by simp
+    exact False.elim (hne' h)
+
+/-- The post-exchange left pile shares exactly the unselected left cards with the
+    original left pile: `newLeftCards`'s left-not-in-`L` image sits inside `leftCards`,
+    and its right-card image is disjoint from `leftCards`, so the intersection is the
+    unselected-left part. -/
+theorem newLeftCards_inter_leftCards (d : Deck) (L : Finset (Fin 50)) (R : Finset (Fin 49)) :
+    leftCards d ∩ newLeftCards d L R =
+      Finset.image (fun (l : Fin 50) => d (leftPosition l))
+        ((Finset.univ : Finset (Fin 50)) \ L) := by
+  classical
+  have hA_sub : Finset.image (fun (l : Fin 50) => d (leftPosition l))
+      ((Finset.univ : Finset (Fin 50)) \ L) ⊆ leftCards d := by
+    intro c hc
+    rcases Finset.mem_image.mp hc with ⟨l, hl, hcl⟩
+    have hl_univ : l ∈ (Finset.univ : Finset (Fin 50)) := (Finset.mem_sdiff.mp hl).1
+    simpa [leftCards] using Finset.mem_image.mpr ⟨l, hl_univ, hcl⟩
+  have hB_empty : leftCards d ∩
+      Finset.image (fun (r : Fin 49) => d (rightPosition r)) R = ∅ :=
+    Finset.disjoint_iff_inter_eq_empty.mp (leftCards_disjoint_rightImage d R)
+  rw [newLeftCards, Finset.inter_union_distrib_left,
+      Finset.inter_eq_right.mpr hA_sub, hB_empty]
+  simp
+
+/-- **25-overlap preservation (the structural core of a 25/25 exchange).** Exchanging
+    25 positions out of each pile leaves the post-exchange left pile sharing exactly
+    25 cards with the original left pile: the 25 unselected left cards stay, and the
+    25 selected right cards are all new cards.  This is the membership-level statement
+    underlying the Bernoulli-Laplace `25`-card swap and a building block for both the
+    count-transition and within-count-uniformity halves of the A3 membership-exchange
+    discharge. -/
+theorem newMembership_overlap_25 (d : Deck) (L : Finset (Fin 50)) (hL : L.card = 25)
+    (R : Finset (Fin 49)) (_hR : R.card = 25) :
+    ((membership d).1 ∩ newLeftCards d L R).card = 25 := by
+  classical
+  have hm1 : (membership d).1 = leftCards d := membership_leftCards d
+  rw [hm1, newLeftCards_inter_leftCards d L R]
+  have hinj : Function.Injective (fun (l : Fin 50) => d (leftPosition l)) :=
+    d.injective.comp leftPosition_injective
+  have hLsub : L ⊆ (Finset.univ : Finset (Fin 50)) := Finset.subset_univ _
+  rw [Finset.card_image_of_injective _ hinj, Finset.card_sdiff,
+      Finset.inter_eq_left.mpr hLsub, hL]
+  have huniv : (Finset.univ : Finset (Fin 50)).card = 50 := by simp
+  simp [huniv]
+
 /-- **Spec A2 core: stabilizer-invariance of the exchange, pointwise.** Relabeling the
     cards by a permutation `f` commutes with `newLeftCards`: the post-exchange left
     pile of the relabeled deck `d.trans f` is exactly the `f`-image of the original
