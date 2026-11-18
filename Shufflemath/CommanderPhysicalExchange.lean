@@ -694,6 +694,20 @@ theorem hMembershipExchange_lhs_reduces :
   simp only [FiniteKernel.comp_assoc, rawExchange_membership_pushforward,
       membershipLift_localLift_eq_fiberLaw]
 
+  /- 47i — first step of F3 item 3, item 1 (deck-independence): the post-exchange left
+     pile `newLeftCards d L R` depends on the deck `d` only through `leftCards d` (the
+     membership's left pile) and the two chosen card-sets. The unselected-left part is
+     the deck's left pile minus the selected-left cards (`image_sdiff` via deck
+     injectivity); the selected-right part is unchanged. -/
+  theorem newLeftCards_as_sdiff_union (d : Deck) (L : Finset (Fin 50)) (R : Finset (Fin 49)) :
+      newLeftCards d L R = (leftCards d \ L.image (fun l => d (leftPosition l))) ∪
+        R.image (fun r => d (rightPosition r)) := by
+    unfold newLeftCards
+    unfold leftCards
+    rw [Finset.image_sdiff (f := fun l => d (leftPosition l)) _ _
+        (d.injective.comp leftPosition_injective)]
+
+
 end CommanderPhysicalExchange
 end Shufflemath
 end
