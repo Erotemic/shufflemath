@@ -290,26 +290,97 @@ Two milestones landed this continuation of the 47th session:
 
 **Next concrete action — the surjectivity onto the 25-overlap fiber**,
 `newMembership_surjective_onto_fiber (d) (T) (hT : (membership d).1 ∩ T.1).card = 25
-: ∃ L (hL : L.card = 25) R (hR : R.card = 25), newMembership d L hL R hR = T`,
-in `_Probe47ad.lean` (the body was essentially working there this session — it was
-removed only because the 4-binder `∃` statement hit a parse error:
-`type expected, got (Membership : outParam …)` at the `:` after the `hT` binder;
-likely an `abbrev`/multi-line-signature parse quirk — try re-adding it with the
-binders on one line or as an `exchangeChoice`-typed existential). The body: `A =
-T.1 ∩ leftCards` (25 cards, the 25 left cards of `T`), `Lsel = leftCards \ A` (`L`
-is its `leftCardImage_has_preimage`), `B = T.1 ∩ rightCards` (25 cards — the 50+49
-partition gives `|B| = 50 − 25 = 25` via a disjoint `T.1` split + `omega`), `R` is
-`B`'s `rightCardImage_has_preimage`; then `newLeftCards d L R = A ∪ B = T.1` via
-`newLeftCards_as_sstdiff_union` + `Finset.union_inter_distrib_left`. Once green,
-this + `newLeftCards_injective` (47h) + `newMembership_overlap_25` make the
-`(L,R)↦newMembership` map a **bijection onto the fiber**, so the uniform choice
-pushes forward to the uniform fiber law (the A3 point-mass statement).
+: ∃ L (hL : L.card = 25) R (hR : R.card = 25), newMembership d L hL R hR = T`.
+**Place it in `Shufflemath/CommanderMembershipExchange.lean`** (or
+`CommanderPhysicalExchange.lean`), NOT a `_Probe*` scratch file: in a scratch file
+the bare `Membership` resolves to **Mathlib's `Membership` typeclass**
+(`outParam (Type u) → …`) instead of the `Shufflemath` abbrev, and
+`Shufflemath.Membership` is reported unknown (an `@[expose]`/import-order subtlety).
+In `CommanderMembershipExchange.lean` the bare `Membership` resolves correctly
+(it already uses `∑ m : Membership, …`). The body (developed and checked piece
+by piece this session — it only failed on that name-resolution point, every
+sub-lemma built green):
 
-**Then** — the A3 point-mass/measure bridge in `Shufflemath/CommanderMembershipExchange.lean`
-(prove `comp (fiberLaw project) rawExchangeMembership = comp commanderExchange25
-membershipLift`), using `map_equiv_mass` + the count kernel + the surjectivity.
-Then promote the partition lemmas + surjectivity from the probe to a named module
-(`CommanderDeckPartition.lean` or into `CommanderPhysicalExchange.lean`).
+```lean
+theorem newMembership_surjective_onto_fiber (d : Deck) (T : Membership)
+    (hT : ((membership d).1 ∩ T.1).card = 25) :
+    ∃ (L : Finset (Fin 50)) (hL : L.card = 25) (R : Finset (Fin 49))
+      (hR : R.card = 25), newMembership d L hL R hR = T := by
+  classical
+  have hm1 : (membership d).1 = leftCards d := membership_leftCards d
+  set A := T.1 ∩ leftCards d
+  have hAcard : A.card = 25 := by
+    have h : (membership d).1 ∩ T.1 = T.1 ∩ (membership d).1 := Finset.inter_comm _ _
+    rw [← h, hm1] at hT
+    simpa using hT
+  have hAsub : A ⊆ leftCards d := Finset.inter_subset_right _ _
+  set Lsel := leftCards d \ A
+  have hLsub : Lsel ⊆ leftCards d := Finset.sdiff_subset_left _ _
+  have hLcard : Lsel.card = 25 := by
+    rw [Finset.card_sdiff_of_subset hAsub, leftCards_card d, hAcard]
+    norm_num
+  obtain ⟨L, hL, hLimg⟩ : ∃ L : Finset (Fin 50), L.card = 25 ∧
+      L.image (fun l => d (leftPosition l)) = Lsel :=
+    leftCardImage_has_preimage d Lsel hLsub hLcard
+  set B := T.1 ∩ rightCards d
+  have hBsub : B ⊆ rightCards d := Finset.inter_subset_right _ _
+  have hBcard : B.card = 25 := by
+    unfold B
+    have hU : leftCards d ∪ rightCards d = (Finset.univ : Finset (Fin 99)) :=
+      leftCards_union_rightCards_univ d
+    have hdisj : Disjoint (leftCards d) (rightCards d) := leftCards_disjoint_rightCards' d
+    have hTsplit : T.1 = (T.1 ∩ leftCards d) ∪ (T.1 ∩ rightCards d) := by
+      rw [← Finset.inter_univ, hU, Finset.inter_union_distrib_left]
+    have hdisjT : Disjoint (T.1 ∩ leftCards d) (T.1 ∩ rightCards d) := by
+      rw [Finset.disjoint_iff_inter_eq_empty, Finset.ext, iff_self]
+      intro x
+      by_contra hx
+      simp only [Finset.mem_inter] at hx ⊢
+      have hmem : x ∈ leftCards d ∩ rightCards d := Finset.mem_inter.mpr ⟨hx.1.2, hx.2.2⟩
+      simpa [Finset.disjoint_iff_inter_eq_empty.mp hdisj] using hmem
+    have hsum : (T.1 ∩ leftCards d).card + (T.1 ∩ rightCards d).card = T.1.card := by
+      rw [← hTsplit, Finset.card_union_of_disjoint hdisjT]
+    rw [hAcard, T.2] at hsum
+    omega
+  obtain ⟨R, hR, hRimg⟩ : ∃ R : Finset (Fin 49), R.card = 25 ∧
+      R.image (fun r => d (rightPosition r)) = B :=
+    rightCardImage_has_preimage d B (by simpa [rightCards] using hBsub) hBcard
+  refine ⟨L, hL, R, hR, ?_⟩
+  subst hLimg hRimg
+  have hnew : newLeftCards d L R = T.1 := by
+    have hAunion : leftCards d \ (leftCards d \ A) = A := by
+      rw [Finset.sdiff_sdiff, Finset.inter_sdiff_eq_empty _ _]
+      simpa using hAsub
+    have hAB : A ∪ B = T.1 := by
+      unfold A B
+      have hU : leftCards d ∪ rightCards d = (Finset.univ : Finset (Fin 99)) :=
+        leftCards_union_rightCards_univ d
+      rw [Finset.union_inter_distrib_left, hU, Finset.inter_univ]
+    calc
+      newLeftCards d L R = (leftCards d \ L.image (fun l => d (leftPosition l))) ∪
+          R.image (fun r => d (rightPosition r)) :=
+        newLeftCards_as_sdiff_union d L R
+      _ = A ∪ B := by simpa [hLimg, hRimg, hAunion]
+      _ = T.1 := hAB
+  unfold newMembership
+  subst hnew
+  exact Subtype.ext (by rfl)
+```
+
+**Note:** `leftCards_union_rightCards_univ`, `leftCards_disjoint_rightCards'`, and
+`univ_sdiff_leftCards_eq_rightCards` live in `_Probe47ad.lean` — if the
+surjectivity goes into `CommanderMembershipExchange.lean`, first promote those
+three partition lemmas into a named module (e.g. `CommanderPhysicalExchange.lean`
+where `leftCards`/`rightCards` are defined) so the surjectivity can see them.
+Once green, this + `newLeftCards_injective` (47h) + `newMembership_overlap_25`
+make the `(L,R)↦newMembership` map a **bijection onto the fiber**, so the
+uniform choice pushes forward to the uniform fiber law (the A3 point-mass
+statement).
+
+**Then** — the A3 point-mass/measure bridge in
+`Shufflemath/CommanderMembershipExchange.lean` (prove `comp (fiberLaw project)
+rawExchangeMembership = comp commanderExchange25 membershipLift`), using
+`map_equiv_mass` + the count kernel + the surjectivity.
 
 **Below — the earlier (47th-session) T4-count-fiber-machinery note, kept for the
 historical breakdown; its "next action" (the count kernel) is now DONE above.**
