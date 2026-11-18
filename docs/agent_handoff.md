@@ -15,6 +15,24 @@
 
 # Agent handoff: next Shufflemath task
 
+**Updated:** 2026-11-22 (A3 **part (ii) group action** session) — the
+**deck-symmetry group action on memberships** is now in the main library
+(`Shufflemath/CommanderMembershipOrbits.lean`, commit `89eb06c`):
+`relabelMembership f hf M` (apply a bijective deck map `f` to a 50-card
+membership), `relabelMembership_count` (a deck map fixing the left pile as a
+set preserves the membership count), and `relabelMembership_equiv
+: Membership ≃ Membership` (the relabel is a **bijection** on the membership
+fiber — injective + surjective — hence an `Equiv`). This is the `E
+: Set (Equiv Membership)` element for `distUniform_ofInvariantTransitive`.
+**This is the assembly-plan part (ii) path** (orbitMap transitivity +
+`newLeftCards_conjugate` equivariance → invariance → within-fiber uniformity),
+which is the *correct* next route to the A3 capstone `hMembershipExchange` —
+prefer it over the older 25-overlap-surjectivity detour (still valid, still in
+below, but not on this critical path). **Next concrete action: the invariance
+lemma** — the LHS post-exchange membership distribution is invariant under
+`relabelMembership_equiv` (via `newLeftCards_conjugate` + `map_equiv_mass`);
+see "Exactly where to resume" → "47th session (continued)" item 3.
+
 **Updated:** 2026-11-22 (A3 **count kernel** session) — the F3 A3 **count half is
 now in the main library**: `Shufflemath/CommanderA3Kernel.lean` proves
 `newLeftCount_eq_transitionNumerator` (the post-exchange count of `(L,R)` pairs
@@ -288,7 +306,42 @@ Two milestones landed this continuation of the 47th session:
    `card_union_of_disjoint` + `card_sdiff_of_disjoint`) is the robust one. Keep
    that recipe for the next lemmas.
 
-**Next concrete action — the surjectivity onto the 25-overlap fiber**,
+3. **The deck-symmetry group action on memberships is committed** (item in
+   `Shufflemath/CommanderMembershipOrbits.lean`, `89eb06c`, build green at
+   3208 jobs): `relabelMembership f hf M := ⟨M.1.image f, card-preserved⟩` (apply
+   a bijective deck map to the 50-card set), `relabelMembership_count` (a deck
+   map fixing the left pile as a set preserves `membershipCount`),
+   `relabelMembership_injective` / `_surjective` (the relabel is a bijection on
+   the membership fiber), and `relabelMembership_equiv : Membership ≃ Membership`
+   (via `Equiv.ofBijective`). **This is the `E` for part (ii).** The transitivity
+   witness `membershipFiber_transitive` (already in this file) supplies, for any
+   two same-count `m m'`, a bijective `f` with `f '' leftOrigSet = leftOrigSet`
+   and `f '' m.1 = m'.1`; combining it with `relabelMembership_equiv` gives
+   `∃ e ∈ E, e m = m'` — the `hTrans` for `distUniform_ofInvariantTransitive`.
+
+**Next concrete action — the invariance lemma (part (ii), step A3)**,
+`postExchangeMembership_invariant` (new file `Shufflemath/CommanderA3Kernel.lean`
+or a fresh `Shufflemath/CommanderMembershipInvariance.lean`): for a fixed source
+macro state `x`, the LHS post-exchange membership distribution
+`μ_x := comp (fiberLaw project project_surjective) rawExchangeMembership x` is
+**invariant under every `relabelMembership_equiv f hf`**, i.e.
+`μ_x.map (relabelMembership_equiv f hf) = μ_x`, for any bijective deck map `f`.
+Proof: push the equivariance `newLeftCards_conjugate` (`newLeftCards (d.trans f) L R
+= (newLeftCards d L R).image f`) through the fiber average — the relabel `f`
+permutes the deck-fiber and the `(L,R)`-choice space by an `Equiv`, so
+`map_equiv_mass` carries the pushed kernel to an equal one. Concretely you need
+(1) the deck-fiber bijection `d ↦ d.trans f` over the source count-fiber (it is
+involutive/bijective), and (2) the `(L,R)`-choice space is carried to itself by
+`f` (or shown mass-preserving). **Build the count-level bridge first** (the
+`membershipCount` is preserved by `relabelMembership_count`, already proved),
+then the full kernel equality. Once invariance is in, part (ii) = apply
+`distUniform_ofInvariantTransitive` with `S =` the `c`-fiber, `E =`
+`{relabelMembership_equiv f hf | hf, hfL}`, `hTrans` from
+`membershipFiber_transitive`, to get `mass μ_x m = 1 / #fiber` for `m` in the
+`c`-fiber; that equals the RHS `hMembershipExchange_rhs_mass` and discharges
+`hMembershipExchange`.
+
+**Alternate (older) next action — the surjectivity onto the 25-overlap fiber**,
 `newMembership_surjective_onto_fiber (d) (T) (hT : (membership d).1 ∩ T.1).card = 25
 : ∃ L (hL : L.card = 25) R (hR : R.card = 25), newMembership d L hL R hR = T`.
 **Place it in `Shufflemath/CommanderMembershipExchange.lean`** (or
