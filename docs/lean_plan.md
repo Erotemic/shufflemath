@@ -450,10 +450,13 @@ route, not a theorem already in the tree.
 > left-position part of the post-exchange pile `= newLeftCards d L R ∩ leftCards d`),
 > `newLeftCards_rightPart` (the selected-right part `= newLeftCards d L R ∩
 > (R.image fR)`, a light RHS), and `newLeftCards_injective_L` (a fixed deck's `L` is
-> recovered from the post-exchange pile: equal piles ⇒ equal `L`). The symmetric
-> `R`-recovery / full `(L,R)↦T` injectivity is **deferred** — it needs the deck-only
-> right-region disjointness `leftCards d ∩ rightCards d = ∅` (a 47g-class heavy fact;
-> the `univ`-indexed form overflows the 200000-heartbeat `whnf` limit).
+> recovered from the post-exchange pile: equal piles ⇒ equal `L`); **`cbc61e8`** —
+> `leftCards_disjoint_rightCards` (a deck's left-position and right-position cards are
+> disjoint — the key fact the `R`-recovery was blocked on); **`a5abd2b`** —
+> `leftImg_disjoint_rightFull` (the unselected-left part is disjoint from the deck's
+> full right-position set). The **`newLeftCards_injective` capstone** (the full
+> `(L,R)↦T` injectivity) is the next step — its recipe is in
+> `docs/agent_handoff.md` → "NEXT ACTION (47h close)".
 > **23rd–24th-session progress (Spec A2 core + A3 scaffold):**
 > `newLeftCards_conjugate` (`CommanderPhysicalExchange.lean`, commit `6ccae33`)
 > proves the **pointwise** equivariance of the post-exchange left set under any

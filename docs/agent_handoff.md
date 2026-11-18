@@ -269,20 +269,39 @@ on the union hit the 200000-heartbeat `whnf` timeout, so avoid that shape.
 multi-lemma, so it starts fresh from the resume point below rather than being
 forced into this session's remaining budget.
 
-**47h:** step 2 "unique half" building blocks committed (`45dd4b7`,
-`Shufflemath/CommanderPhysicalExchange.lean`, purely additive after
-`newMembership_overlap_25`): **`image_injective_eq`** (injective `f` ⇒
-equal images ⇒ equal sets — the general recovery engine), **`newLeftCards_leftPart`**
-(the left-position part of the post-exchange pile `= newLeftCards d L R ∩
-leftCards d`, a deck-only RHS), **`newLeftCards_rightPart`** (the selected-right part
-`= newLeftCards d L R ∩ (R.image fR)`, a light RHS), and **`newLeftCards_injective_L`**
+**47h:** step 2 "unique half" building blocks committed, all in
+`Shufflemath/CommanderPhysicalExchange.lean` (purely additive after
+`newMembership_overlap_25`), all build clean: **`45dd4b7`** — `image_injective_eq`
+(injective `f` ⇒ equal images ⇒ equal sets — the general recovery engine),
+`newLeftCards_leftPart` (the left-position part of the post-exchange pile `=
+newLeftCards d L R ∩ leftCards d`), `newLeftCards_rightPart` (the selected-right part
+= newLeftCards d L R ∩ (R.image fR)`, a light RHS), `newLeftCards_injective_L`
 (a fixed deck's left-position choice `L` is recovered from the post-exchange pile:
-equal piles ⇒ equal `L`). The **symmetric `R`-recovery and the full `(L,R)↦T`
-injectivity are deferred**: they need the deck-only right-region disjointness
-`leftCards d ∩ rightCards d = ∅` (a 47g-class heavy fact; its `univ`-indexed
-form overflows the 200000-heartbeat `whnf` limit). The 47g lesson stands: avoid
-`Finset.ext`/`mem_union` case analyses and `univ`-indexed image references in proof
-terms; use light `rw` (distributivity + subset/disjoint).
+equal piles ⇒ equal `L`); **`cbc61e8`** — `leftCards_disjoint_rightCards` (a deck's
+left-position and right-position cards are disjoint — a card sits at one position;
+**the key fact the `R`-recovery was blocked on**); **`a5abd2b`** —
+`leftImg_disjoint_rightFull` (the unselected-left part is disjoint from the deck's
+full right-position set).
+
+**NEXT ACTION (47h close) — the `newLeftCards_injective` capstone (item 2 below):**
+the **only** remaining step for the full `(L,R)↦T` injectivity. Recipe: (a) prove
+`newLeftCards_rightPart_deck : R.image fR = newLeftCards d L R ∩ (univ:Fin49).image
+fR` via `Finset.ext` + targeted `simp only [Finset.mem_inter, Finset.mem_union,
+Finset.mem_image, Finset.mem_sdiff, Finset.mem_univ]` to unfold the membership, then
+case-split the union and use `leftImg_disjoint_rightFull` to kill the left case
+(leaving `c ∈ rightImg = R.image fR`); **(47g risk: the `simp` on the 49-element
+rightFull may overflow the `whnf` limit — if so, use the `rw`-sequence variant:
+`unfold newLeftCards; rw [inter_comm, <distributivity>, inter_comm,
+leftImg_disjoint_rightFull, empty_union]`, which the light `newLeftCards_rightPart`
+proved works.)** (b) Then `newLeftCards_injective`: `hL :=
+newLeftCards_injective_L d L L' R R' h`; `h2 : newLeftCards d L R = newLeftCards d L R'
+:= by simpa [← hL] using h`; `himg : R.image fR = R'.image fR := by calc` (via
+`hpartR`, `h2`, `hpartR'.symm`, both `newLeftCards_rightPart_deck` calls using `L`);
+`R = R' := image_injective_eq R R' (fun r => d (rightPosition r)) (fun r _ _ h => by
+`d.injective h` → `rightPosition r = rightPosition t` → `congrArg Fin.val` →
+`simp [rightPosition]` gives `50+r.val = 50+t.val` → `omega` gives `r.val = t.val` →
+`simpa` gives `r = t`) himg`. **Then resume F3 item 3** as before (count-transition
+LHS / membership mass identity).
 
 **NEXT ACTION — F3 item 3, the physical membership-level mass identity
 (the "genuinely hard half"; a multi-lemma development, not a single
@@ -300,9 +319,10 @@ batch).** Target: `hMembershipExchange` (the F3 capstone in
    (`exchangePair_unique_B/_A` + `exchangePair_exists`), with
    `A = L ∩ markedLeftPos d`, `B` the marked cards entering, `T =
    newMembership d L R`.
-   **(47h: the `L`-recovery half is done — `newLeftCards_injective_L` proves equal
-   piles force equal `L`. The `R`-recovery and full `(L,R)` injectivity remain,
-   blocked on `leftCards d ∩ rightCards d = ∅`.)**
+   **(47h: the `L`-recovery (`newLeftCards_injective_L`) and the deck-only
+   disjointness facts (`leftCards_disjoint_rightCards`, `leftImg_disjoint_rightFull`)
+   are committed — see the 47h close above; the `R`-recovery + full `(L,R)`
+   injectivity (`newLeftCards_injective`) is the immediate next step.)**
 3. **Point mass**: from (1)+(2), `rawExchangeMembership d` has mass
    `1/(choose(50,25)·choose(49,25))` at each `T` on the `|S∩T|=25` fiber,
    `0` off it.
