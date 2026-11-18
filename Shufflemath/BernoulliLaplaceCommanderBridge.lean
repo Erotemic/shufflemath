@@ -20,6 +20,7 @@ module
 public import Shufflemath.BernoulliLaplace
 public import Shufflemath.BernoulliLaplaceGeneral
 public import Shufflemath.BernoulliLaplaceFiber
+public import Shufflemath.Markov
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -231,4 +232,19 @@ theorem commanderDetailedBalance (i j : CommanderState) :
   -- two transported states.
   exact (BernoulliLaplaceGeneral.blDetailedBalance commanderBLParams
       (commanderToBL i) (commanderToBL j))
+
+/-- The Commander stationary (hypergeometric) distribution is a fixed point of the
+    `commanderExchange25` kernel: one exchange step leaves it unchanged. This is the
+    generic `stationary_of_detailedBalance` applied to `commanderDetailedBalance` —
+    the invariance ingredient of the A3 membership-exchange discharge. -/
+theorem commanderStationary_is_stationary :
+    Stationary commanderStationary commanderExchange25 := by
+  exact stationary_of_detailedBalance commanderStationary commanderExchange25
+    (fun i j => commanderDetailedBalance i j)
+
+/-- The Commander stationary distribution is fixed by any number of exchange steps
+    (iterating the one-step fixed point). -/
+theorem commanderStationaryRun (n : Nat) :
+    FiniteKernel.run commanderExchange25 n commanderStationary = commanderStationary := by
+  exact stationary_run n commanderStationary commanderExchange25 commanderStationary_is_stationary
 
