@@ -898,6 +898,85 @@ theorem membershipFiber_transitive (m m' : Membership) (h : membershipCount m = 
   refine ⟨orbitMap m m' h, ⟨orbitMap_injective m m' h, orbitMap_surjective m m' h⟩,
     orbitMap_imageLeft m m' h, orbitMap_imageM1 m m' h⟩
 
+/-!
+## The deck-symmetry group acting on memberships (F3 part (ii), step A2)
+
+A bijective relabeling of the 99 card identities permutes the 50-card membership
+sets. We package this family of relabelings as `Equiv Membership` elements — the
+`E` needed by `distUniform_ofInvariantTransitive`.  Invariance of the
+post-exchange membership law under these relabelings (step A3, via
+`newLeftCards_conjugate`) together with their transitivity on each count fiber
+(`membershipFiber_transitive`) yields within-fiber uniformity.
+-/ 
+
+/-- Relabel a membership by a bijective map of the card identities. -/
+noncomputable def relabelMembership (f : Fin 99 → Fin 99) (hf : Function.Bijective f)
+    (M : Membership) : Membership :=
+  ⟨M.1.image f, (Finset.card_image_of_injective M.1 hf.injective).trans M.2⟩
+
+theorem relabelMembership_image (f : Fin 99 → Fin 99) (hf : Function.Bijective f)
+    (M : Membership) : (relabelMembership f hf M).1 = M.1.image f := rfl
+
+/-- The relabel preserves the count: a deck map fixing the left pile as a set
+    keeps the number of initially-left cards fixed. -/
+theorem relabelMembership_count (f : Fin 99 → Fin 99) (hf : Function.Bijective f)
+    (hfL : f '' leftOrigSet = leftOrigSet) (M : Membership) :
+    membershipCount (relabelMembership f hf M) = membershipCount M := by
+  unfold membershipCount
+  have hLeft : leftOrigSet.image f = leftOrigSet :=
+    Finset.coe_inj.mp (by rw [Finset.coe_image]; exact hfL)
+  have hI : (M.1 ∩ leftOrigSet).image f = (M.1.image f) ∩ (leftOrigSet.image f) := by
+    simpa only [Finset.image] using Finset.image_inter (s₁ := M.1) (s₂ := leftOrigSet) hf.injective
+  have hEqRev : (M.1 ∩ leftOrigSet).image f = (M.1.image f) ∩ leftOrigSet := by
+    calc
+      (M.1 ∩ leftOrigSet).image f = (M.1.image f) ∩ (leftOrigSet.image f) := hI
+      _ = (M.1.image f) ∩ leftOrigSet := by rw [hLeft]
+  calc
+    ((M.1.image f) ∩ leftOrigSet).card = ((M.1 ∩ leftOrigSet).image f).card := by rw [hEqRev.symm]
+    _ = (M.1 ∩ leftOrigSet).card :=
+      by rw [Finset.card_image_of_injective (M.1 ∩ leftOrigSet) hf.injective]
+
+theorem relabelMembership_injective (f : Fin 99 → Fin 99) (hf : Function.Bijective f)
+    : Function.Injective (relabelMembership f hf) := by
+  intro A B h
+  have hImg : A.1.image f = B.1.image f := by
+    simpa only [relabelMembership_image] using congrArg (fun X : Membership => X.1) h
+  refine Subtype.ext ?_
+  apply Finset.ext
+  intro c
+  constructor
+  · intro hc
+    have hcA : f c ∈ A.1.image f := Finset.mem_image_of_mem f hc
+    have hcB : f c ∈ B.1.image f := hImg ▸ hcA
+    rcases (Finset.mem_image.mp hcB) with ⟨b, hb, hfb⟩
+    exact (hf.injective hfb) ▸ hb
+  · intro hc
+    have hcB : f c ∈ B.1.image f := Finset.mem_image_of_mem f hc
+    have hcA : f c ∈ A.1.image f := hImg.symm ▸ hcB
+    rcases (Finset.mem_image.mp hcA) with ⟨b, hb, hfb⟩
+    exact (hf.injective hfb) ▸ hb
+
+theorem relabelMembership_surjective (f : Fin 99 → Fin 99) (hf : Function.Bijective f)
+    : Function.Surjective (relabelMembership f hf) := by
+  intro M
+  set P : Finset (Fin 99) := (M.1 : Finset (Fin 99)).preimage f (hf.injective.injOn)
+  have hImg : P.image f = M.1 := by simpa only [P] using Finset.image_preimage_of_bijective M.1 hf
+  have hCard : P.card = 50 := by
+    have hStep : P.card = (P.image f).card := (Finset.card_image_of_injective P hf.injective).symm
+    calc
+      P.card = (P.image f).card := hStep
+      _ = M.1.card := by rw [hImg]
+      _ = 50 := M.2
+  refine ⟨⟨P, hCard⟩, ?_⟩
+  refine Subtype.ext ?_
+  simpa only [relabelMembership_image] using hImg
+
+/-- The relabeling of the membership fiber by a bijective deck map is a
+    permutation of the membership type. -/
+noncomputable def relabelMembership_equiv (f : Fin 99 → Fin 99) (hf : Function.Bijective f)
+    : Equiv Membership Membership :=
+  Equiv.ofBijective (relabelMembership f hf)
+    ⟨relabelMembership_injective f hf, relabelMembership_surjective f hf⟩
 
 end Shufflemath
 end
