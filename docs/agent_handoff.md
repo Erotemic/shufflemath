@@ -64,10 +64,18 @@ is saved at `.pi-glla/47ak_leftOriginalCount_wip.lean`: reindex the 50 left posi
 `S := (Finset.univ : Finset (Fin 50))` to `leftOrigSet` via
 `hUnivImg : S.image leftPosition = leftOrigSet`; a left-position-preserving injective
 map keeps the `p := (fun x => (d x).val < 50)`-filtered-card invariant (`hCard`, via
-`Finset.filter_image` + `Finset.card_image_of_injective` + `Finset.image_comp`); the
-only finicky bit is the `Fin 99` proof-component equality in `hUnivImg` — close it
-with `rw [← leftOrigSet_eq_image]` then `Finset.ext` + `apply Fin.ext` +
-`simpa [leftPosition] using (Fin.ext.mp heq)` on each side. **Deadline
+`Finset.filter_image` + `Finset.card_image_of_injective` + `Finset.image_comp`).
+**The `Fin 99` proof-component equality in `hUnivImg` is SOLVED**
+(`apply Fin.ext; simp only [leftPosition]` — same as `leftPosition_injective`).
+**The REAL remaining blocker (verified 2026-11-20)** is a Mathlib API mismatch:
+`Finset.filter p s` / `Finset.image f s` are *function-first* (f/p first, Finset 2nd);
+the theorems `filter_image`/`image_comp`/`card_image_of_injective` are stated in *dot
+notation* (`s.image f`, `s.filter p`); and `Finset.univ.filter p` (as in the
+`leftOriginalCount` def) reduces to a *set-builder* `#{i | p i}`, so a naive
+`change` to the `Finset.filter (P ∘ f) S` form does **not** fire.  **Cleanest fix**:
+prove `hLHS`/`hRHS` as *set-card* equalities `# {x ∈ leftOrigSet | P x}` via
+`Finset.card_congr` + `leftOrigSet_eq_image` (avoids the filter/set-builder mismatch
+entirely), or bridge `#{i | p i} ↔ Finset.filter p S` explicitly.  **Deadline
 Wed 2026-11-24 23:59:59 EST.**
 
 **Earlier (2026-11-22, part (ii) group action):**
