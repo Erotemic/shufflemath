@@ -55,7 +55,21 @@ completes the 47j counting-kernel goal: the per-deck A3 count mass equals
 identity** (the "genuinely hard half") — start with the count-transition LHS
 `comp (comp (fiberLaw project) rawExchangeMembership) (det membershipCount) =
 comp commanderExchange25 (det commanderLeftCount)`** (a multi-lemma development;
-see the 47f NEXT ACTION in "Exactly where to resume"). T3/T5 remain.) The
+see the 47f NEXT ACTION in "Exactly where to resume"). T3/T5 remain.)
+
+**47x** (this session): **deck-independence, unique half** (`CommanderPhysicalExchange`)
+— `leftPosCard_image_injective` / `rightPosCard_image_injective` (the selected-left /
+selected-right card-set determines the selected positions, via `image_injective_eq` and
+`d.injective.comp {left,right}Position_injective`) and `newLeftCards_leftPart_in_leftPile`
+(the selected-left cards sit in the left pile). Together with 47i's
+`newLeftCards_as_sdiff_union`, this makes the post-exchange membership
+`(leftCards d \ Lc) ∪ Rc` a function of the source membership `leftCards d` (and its
+complement = the right pile, since the deck is a permutation) and the chosen card-sets —
+independent of the deck's position arrangement. **Next: the position↔card *existence*
+half (each 25-card-subset of the left pile comes from exactly one 25-position-set) for
+the uniform distribution over new memberships, then F3 item 3 step 3 (point mass).**
+
+The
 2026-11-15
 review + arbitrary-finite-deck roadmap pivoted the build to the **G1–G4
 generic finite-deck theory**, from which Commander A3 is a specialization.

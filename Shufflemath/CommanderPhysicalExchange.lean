@@ -707,6 +707,43 @@ theorem hMembershipExchange_lhs_reduces :
     rw [Finset.image_sdiff (f := fun l => d (leftPosition l)) _ _
         (d.injective.comp leftPosition_injective)]
 
+  /- 47x — deck-independence, unique half (left and right). The deck is a permutation
+     of the 99 cards, so the left positions map the 50 left positions bijectively onto
+     the left pile `leftCards d` and the right positions onto the right pile (the
+     complement). An injective map's image determines its source set (`image_injective_eq`),
+     so the card-set at the selected positions determines the position-set. This lets the
+     exchange be reparameterized by card-sets rather than positions, making the post-
+     exchange membership a function of the source membership (the left pile) alone. -/
+
+  /-- The selected-left card-set determines the selected-left positions: the left pile
+      is `leftCards d`, and two 25-position choices give the same selected-left cards
+      only if they are the same positions. -/
+  theorem leftPosCard_image_injective (d : Deck) (L L' : Finset (Fin 50))
+      (h : L.image (fun l => d (leftPosition l)) = L'.image (fun l => d (leftPosition l))) :
+      L = L' :=
+    image_injective_eq (fun l => d (leftPosition l)) (d.injective.comp leftPosition_injective) h
+
+  /-- The selected-right card-set determines the selected-right positions: the right
+      pile is the complement of `leftCards d`, and two 25-position choices give the same
+      selected-right cards only if they are the same positions. -/
+  theorem rightPosCard_image_injective (d : Deck) (R R' : Finset (Fin 49))
+      (h : R.image (fun r => d (rightPosition r)) = R'.image (fun r => d (rightPosition r))) :
+      R = R' :=
+    image_injective_eq (fun r => d (rightPosition r)) (d.injective.comp rightPosition_injective) h
+
+  /-- The selected-left cards sit in the left pile, so the post-exchange membership
+      `(leftCards d \ Lc) ∪ Rc` (from `newLeftCards_as_sdiff_union`) is built purely from
+      the source membership `leftCards d` and the chosen card-sets — never from the
+      deck's position arrangement. The selected-right cards are disjoint from the left
+      pile (`leftImg_disjoint_rightFull`). -/
+  theorem newLeftCards_leftPart_in_leftPile (d : Deck) (L : Finset (Fin 50)) :
+      L.image (fun l => d (leftPosition l)) ⊆ leftCards d := by
+    unfold leftCards
+    intro x hx
+    rcases Finset.mem_image.mp hx with ⟨l, hl, rfl⟩
+    apply Finset.mem_image.mpr
+    exact ⟨l, Finset.mem_univ l, rfl⟩
+
 
 end CommanderPhysicalExchange
 end Shufflemath
