@@ -27,6 +27,7 @@ lake build \
   Shufflemath.CommanderMembershipExchange \
   Shufflemath.CommanderA3Count \
   Shufflemath.CommanderA3Kernel \
+  Shufflemath.CommanderA3UniformPushforward \
   Shufflemath.CommanderMarkedRightCount \
   Shufflemath.CommanderLocalGSR \
   Shufflemath.CommanderDeckGSR
