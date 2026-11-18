@@ -2629,3 +2629,67 @@ above. Two nontrivial sub-steps: (1) the domain extension `∑_{aL∈s.image f} 
 `Nat.choose` = 0 out of range, matching the nested `if`). Then `transitionWeight 99 50 25
 x n = transitionNumerator/transitionDenominator` gives the per-deck mass, fiber-average →
 `uniformFiber_intertwines`.
+
+## 2026-11-17 (cont, 3) — 47u: perDeckBridge skeleton builds; htodo is the sole remaining step
+
+### State
+`_Probe47u.lean` (untracked WIP — **do not commit until `htodo` is proved**; it carries
+one `sorry`) builds (3215 jobs). The `perDeckBridge` assembly is 2/3 complete and
+**proven**:
+
+- `hfilt`/`hstep1`: the physical count
+  `#(s50 ×ˢ t49).filter (fun p => (newLeftCards d p.1 p.2 ∩ leftOrigSet).card = n)`
+  `= #(s50 ×ˢ t49).filter (fun p => (x - markedInLeft d p.1) + markedInRight d p.2 = n)`,
+  `x = leftOriginalCount d`. Proof: `Finset.ext` + `simp [mem_filter]` +
+  `rw [newLeftOriginalCount_eq d p.1 p.2]` (the `let`-unfolding of `x/f/g` closes the
+  `↔` goal).
+- `hstep2`: that const-sub count `= (s50.image (markedInLeft d)).sum (fun a =>
+  #s50.filter(markedInLeft d · = a) * #t49.filter (fun R => (x - a) + markedInRight d R = n))`,
+  via `47s pairCountByConstSub s50 t49 (markedInLeft d) (markedInRight d) x n`.
+- `imageF_subset_range26` (private, proven): `s50.image (markedInLeft d) ⊆ range 26`,
+  via `Finset.mem_image.mp` + `mem_powersetCard` + `card_mono` + `omega`.
+
+**Remaining (`htodo`, the one `sorry`):**
+```
+(s50.image f).sum (fun a => #s50.filter(f=a) * #t49.filter (fun R => (x-a)+g R = n))
+  = transitionNumerator 99 50 25 x n
+```
+
+### How to finish htodo (worked out this session — the 4 factors match exactly)
+`transitionNumerator 99 50 25 x n` unfolds to
+`(range 26).sum (fun a => let r := x-a; if r ≤ n then (let b := n-r; if b ≤ 25 then
+  choose x a * choose (50-x)(25-a) * choose (50-x) b * choose (x-1)(25-b) else 0) else 0)`,
+where `(N-m)-(m-x) = (99-50)-(50-x) = x-1`. Prove htodo by:
+1. **Domain extension** (the only non-mechanical part):
+   `(s50.image f).sum H = (range 26).sum H`, `H a = #s50.filter(f=a) * #t49.filter(...)`.
+   Route: `= (range 26).sum (fun a => if a ∈ s50.image f then H a else 0)` (subset
+   extension, `s50.image f ⊆ range 26`) `= (range 26).sum H` (`Finset.sum_congr` + the
+   fact `#s50.filter(f=a) = 0` when `a ∉ s50.image f`, i.e. `a ∈ s50.image f ↔
+   #s50.filter(f=a) > 0`). Decompose `range 26 = (s50.image f) ⊔ (range 26 \ s50.image f)`
+   (disjoint, via the subset lemma) and note the integrand is `0` on the complement.
+2. **Integrand match** for `a ∈ range 26` (`Finset.sum_congr`): the integrand's 4 factors
+   `= H a`, because
+   - `#s50.filter(f=a) = leftCountByMarked (47p) = choose x a * choose (50-x)(25-a)`
+     (first two factors; `a ≤ 25` since `a ∈ range 26`); and
+   - `#t49.filter((x-a)+g·=n) = rightFilterGuarded (47t) x a n` = the nested-if with
+     `choose (markedRightPos d).card (n-(x-a)) * choose (49-(markedRightPos d).card)
+     (25-(n-(x-a)))`; substitute `markedRightPos_card` (`#(markedRightPos d) = 50 - x`)
+     to get `choose (50-x)(n-(x-a)) * choose (x-1)(25-(n-(x-a)))` (last two factors).
+   The guard structure (`x-a ≤ n`, then `n-(x-a) ≤ 25`) is exactly `rightFilterGuarded`'s
+   nested `if`, so the whole nested-if matches.
+3. Unfold `transitionNumerator 99 50 25 x n` (`dsimp`) and close with `simp`/`omega`
+   (the `choose`-out-of-range = 0 lemmas make the guarded `0`-branches line up).
+
+After htodo: `perDeckBridge` is proved. Then in `uniformFiber_intertwines`
+(`CommanderMembershipExchange.lean`, currently `hMembershipExchange` premise + `sorry`),
+use `haveI : HasCommanderFiberCounts (exchange25) d := by  ...` deriving the per-deck
+`fiberCount (exchange25) d n` equality from `perDeckBridge` + `transitionWeight =
+numerator/denominator`, to discharge `hMembershipExchange` and close the F5 capstone
+(then the G4 fiber-average `uniformFiber_intertwines`).
+
+### Files
+- `Shufflemath/_Probe47u.lean` — the WIP perDeckBridge (untracked; has one `sorry`).
+- Proven building blocks it assembles: `_Probe47s` (pairCountByConstSub), `_Probe47p`
+  (leftCountByMarked), `_Probe47t` (rightFilterGuarded), `CommanderPhysicalExchange.lean`
+  (newLeftOriginalCount_eq, line ~530), `CommanderMarkedRightCount.lean`
+  (markedRightPos_card, line 269), `BernoulliLaplace.lean` (transitionNumerator, line 26).
