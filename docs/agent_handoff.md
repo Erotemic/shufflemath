@@ -283,25 +283,19 @@ left-position and right-position cards are disjoint — a card sits at one posit
 `leftImg_disjoint_rightFull` (the unselected-left part is disjoint from the deck's
 full right-position set).
 
-**NEXT ACTION (47h close) — the `newLeftCards_injective` capstone (item 2 below):**
-the **only** remaining step for the full `(L,R)↦T` injectivity. Recipe: (a) prove
-`newLeftCards_rightPart_deck : R.image fR = newLeftCards d L R ∩ (univ:Fin49).image
-fR` via `Finset.ext` + targeted `simp only [Finset.mem_inter, Finset.mem_union,
-Finset.mem_image, Finset.mem_sdiff, Finset.mem_univ]` to unfold the membership, then
-case-split the union and use `leftImg_disjoint_rightFull` to kill the left case
-(leaving `c ∈ rightImg = R.image fR`); **(47g risk: the `simp` on the 49-element
-rightFull may overflow the `whnf` limit — if so, use the `rw`-sequence variant:
-`unfold newLeftCards; rw [inter_comm, <distributivity>, inter_comm,
-leftImg_disjoint_rightFull, empty_union]`, which the light `newLeftCards_rightPart`
-proved works.)** (b) Then `newLeftCards_injective`: `hL :=
-newLeftCards_injective_L d L L' R R' h`; `h2 : newLeftCards d L R = newLeftCards d L R'
-:= by simpa [← hL] using h`; `himg : R.image fR = R'.image fR := by calc` (via
-`hpartR`, `h2`, `hpartR'.symm`, both `newLeftCards_rightPart_deck` calls using `L`);
-`R = R' := image_injective_eq R R' (fun r => d (rightPosition r)) (fun r _ _ h => by
-`d.injective h` → `rightPosition r = rightPosition t` → `congrArg Fin.val` →
-`simp [rightPosition]` gives `50+r.val = 50+t.val` → `omega` gives `r.val = t.val` →
-`simpa` gives `r = t`) himg`. **Then resume F3 item 3** as before (count-transition
-LHS / membership mass identity).
+**47h capstone DONE (`1c7b46e`): `newLeftCards_injective`** — the full
+`(L,R)↦T` **injectivity**: `newLeftCards d L R = newLeftCards d L' R' → L = L' ∧
+R = R'` (proven via `newLeftCards_rightPart_deck` + `newLeftCards_injective_L` +
+`image_injective_eq` with the `Fin.val_injective` bridge). This completes the **unique
+half** of the deck-level `(L,R)↦T` bijection (F3 item 3, step 2; the existence half
+is the abstract `exchangePair_exists`).
+
+**NEXT ACTION — F3 item 3, step 1 (deck-independence):** show `newMembership d L R`
+(and hence `rawExchangeMembership d`) depends on `d` only through `membership d`
+(`markedLeftPos d`, `markedRightPos d`) — so the "membership transition" is well-defined
+as a function of the source membership `S`. Then step 3 (point mass on the
+`|S∩T|=25` fiber). See the numbered build order below.
+
 
 **NEXT ACTION — F3 item 3, the physical membership-level mass identity
 (the "genuinely hard half"; a multi-lemma development, not a single
@@ -319,10 +313,9 @@ batch).** Target: `hMembershipExchange` (the F3 capstone in
    (`exchangePair_unique_B/_A` + `exchangePair_exists`), with
    `A = L ∩ markedLeftPos d`, `B` the marked cards entering, `T =
    newMembership d L R`.
-   **(47h: the `L`-recovery (`newLeftCards_injective_L`) and the deck-only
-   disjointness facts (`leftCards_disjoint_rightCards`, `leftImg_disjoint_rightFull`)
-   are committed — see the 47h close above; the `R`-recovery + full `(L,R)`
-   injectivity (`newLeftCards_injective`) is the immediate next step.)**
+   **(47h DONE: the full `(L,R)↦T` injectivity `newLeftCards_injective` is committed
+   (`1c7b46e`) — the unique half of the deck-level bijection. Next: step 1
+   (deck-independence), then step 3 (point mass).)**
 3. **Point mass**: from (1)+(2), `rawExchangeMembership d` has mass
    `1/(choose(50,25)·choose(49,25))` at each `T` on the `|S∩T|=25` fiber,
    `0` off it.

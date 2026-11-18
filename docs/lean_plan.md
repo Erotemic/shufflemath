@@ -454,9 +454,11 @@ route, not a theorem already in the tree.
 > `leftCards_disjoint_rightCards` (a deck's left-position and right-position cards are
 > disjoint — the key fact the `R`-recovery was blocked on); **`a5abd2b`** —
 > `leftImg_disjoint_rightFull` (the unselected-left part is disjoint from the deck's
-> full right-position set). The **`newLeftCards_injective` capstone** (the full
-> `(L,R)↦T` injectivity) is the next step — its recipe is in
-> `docs/agent_handoff.md` → "NEXT ACTION (47h close)".
+> full right-position set); **`1c7b46e`** — **`newLeftCards_injective`** (the capstone:
+> the full `(L,R)↦T` **injectivity** — equal post-exchange left piles force equal `L`
+> and equal `R`), completing the unique half of the deck-level bijection (F3 item 3,
+> step 2). Next: step 1 (deck-independence), then step 3 (point mass) — see
+> `docs/agent_handoff.md`.
 > **23rd–24th-session progress (Spec A2 core + A3 scaffold):**
 > `newLeftCards_conjugate` (`CommanderPhysicalExchange.lean`, commit `6ccae33`)
 > proves the **pointwise** equivariance of the post-exchange left set under any
