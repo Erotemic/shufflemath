@@ -792,6 +792,45 @@ theorem hMembershipExchange_lhs_reduces :
         _ = 25 := hAcard
     exact ⟨L, hLcard, hLimage⟩
 
+  /-- 47y-right: every 25-card-subset of the right pile is the image of exactly one
+      25-position-set (the 49 right positions). The exact mirror of the left existence
+      half, completing the bijection between 25-position-subsets and 25-card-subsets for
+      BOTH piles that the A3 kernel (`s50` × `t49`, both `powersetCard 25`) needs for the
+      membership-level deck-independence of F3 item 3. -/
+  theorem rightCardImage_has_preimage (d : Deck) (A : Finset (Fin 99))
+      (hAsub : A ⊆ (Finset.univ : Finset (Fin 49)).image (fun r => d (rightPosition r)))
+      (hAcard : A.card = 25) :
+      ∃ R : Finset (Fin 49), R.card = 25 ∧ R.image (fun r => d (rightPosition r)) = A := by
+    let f := fun (r : Fin 49) => d (rightPosition r)
+    have hf : Function.Injective f := d.injective.comp rightPosition_injective
+    let R := (Finset.univ : Finset (Fin 49)).filter (fun r => f r ∈ A)
+    have hRimage : R.image f = A := by
+      apply Finset.ext
+      intro x
+      constructor
+      · -- x ∈ R.image f → x ∈ A
+        intro hx
+        rcases Finset.mem_image.mp hx with ⟨r, hr, rfl⟩
+        change r ∈ (Finset.univ : Finset (Fin 49)).filter (fun r => f r ∈ A) at hr
+        simp only [Finset.mem_filter] at hr
+        exact hr.2
+      · -- x ∈ A → x ∈ R.image f  (A ⊆ right pile = image f, so x = f r for some r, then r ∈ R)
+        intro hx
+        have hsub : x ∈ (Finset.univ : Finset (Fin 49)).image f := hAsub hx
+        rcases Finset.mem_image.mp hsub with ⟨r, _, rfl⟩
+        apply Finset.mem_image.mpr
+        refine ⟨r, ?_, rfl⟩
+        change r ∈ (Finset.univ : Finset (Fin 49)).filter (fun r => f r ∈ A)
+        simp only [Finset.mem_filter]
+        exact ⟨Finset.mem_univ r, hx⟩
+    have hRcard : R.card = 25 := by
+      have hcard : (R.image f).card = R.card := Finset.card_image_of_injective R hf
+      calc
+        R.card = (R.image f).card := hcard.symm
+        _ = A.card := by simpa [hRimage]
+        _ = 25 := hAcard
+    exact ⟨R, hRcard, hRimage⟩
+
 
 end CommanderPhysicalExchange
 end Shufflemath
