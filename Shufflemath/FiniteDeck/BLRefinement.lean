@@ -1,6 +1,7 @@
 module
 public import Shufflemath.FiniteDeck.TwoPile
 public import Shufflemath.BernoulliLaplaceGeneral
+public import Shufflemath.FiberDisintegration
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Card
@@ -1441,6 +1442,83 @@ theorem uniformFiber_intertwines (p : BernoulliLaplaceGeneral.ExchangeAdmissible
     countFiberMemb_nonempty p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN x
   rw [hSum]
   field_simp [hPos.ne']
+
+/-! ### The fiber-uniform membership lift (G4 kernel half)
+
+The "uniform count-fiber membership" kernel: from a `BLState` count it
+resamples uniformly over the marked-count fiber. Together with
+`subsetExchangeKernel` (T3) and `blExchangeKernel` it is the material for
+the G4 macro-intertwining kernel equality
+`uniform count-fiber >> subsetExchange = blExchange >> uniform count-fiber`,
+the theorem that discharges the Commander A3 by instantiation.
+-/
+
+/-- A membership has marked count `x.val` iff it lies in the `countFiberMemb`
+    finset (the `countInPile` projection spelled out). -/
+theorem countInPile_countFiberMemb
+    (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (x : BernoulliLaplaceGeneral.BLState p.N p.m p.r) (S : Membership p.N p.m) :
+    (countInPile p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN S).val = x.val ↔
+      S ∈ countFiberMemb p.N p.m p.r p.hrN x := by
+  simp [countInPile_val, countInPileVal, countFiberMemb,
+    Finset.mem_filter, Finset.mem_univ, true_and]
+
+/-- The univ-filter by `countInPile`-count is exactly `countFiberMemb`. -/
+theorem uniformCountFiber_univFilter
+    (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (x : BernoulliLaplaceGeneral.BLState p.N p.m p.r) :
+    (Finset.univ : Finset (Membership p.N p.m)).filter
+      (fun S => (countInPile p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN S).val = x.val) =
+      countFiberMemb p.N p.m p.r p.hrN x := by
+  ext S
+  simpa using countInPile_countFiberMemb p x S
+
+/-- The fiber-uniform membership lift: from a `BLState` count `x` it
+    resamples uniformly among the memberships whose marked count is `x.val`,
+    zero elsewhere. The denominator is the proven choose-product fiber card
+    (`countFiberMemb_card`), so normalisation is a pure finite-cardinality
+    computation (the F2 `membershipLift` pattern, generalized to arbitrary
+    `N m r`). The "uniform count-fiber membership" half of the G4
+    macro-intertwining kernel equality. -/
+noncomputable def uniformCountFiberMembership
+    (p : BernoulliLaplaceGeneral.ExchangeAdmissible) :
+    FiniteKernel (BernoulliLaplaceGeneral.BLState p.N p.m p.r)
+                (Membership p.N p.m) := by
+  let hr := p.hrN
+  let hm := Nat.le_of_lt p.hmn
+  refine fun x => Dist.ofFun
+    (fun S : Membership p.N p.m =>
+      if (countInPile p.N p.m p.r hm hr S).val = x.val
+      then 1 / (↑(countFiberMemb p.N p.m p.r hr x).card : Rat)
+      else 0)
+    ?_ ?_
+  · -- nonnegativity
+    intro S
+    split_ifs <;> positivity
+  · -- total mass 1: the univ-filter over the `x`-fiber has exactly `#fiber`
+    --   members, each of mass `1 / #fiber`, so the sum is `#fiber / #fiber`.
+    calc
+      (∑ S : Membership p.N p.m,
+        if (countInPile p.N p.m p.r hm hr S).val = x.val
+        then 1 / (↑(countFiberMemb p.N p.m p.r hr x).card : Rat) else 0) =
+        (∑ S ∈ (Finset.univ : Finset (Membership p.N p.m)),
+          if (countInPile p.N p.m p.r hm hr S).val = x.val
+          then 1 / (↑(countFiberMemb p.N p.m p.r hr x).card : Rat) else 0) := by
+        rfl
+      _ = ((Finset.univ.filter
+              (fun S => (countInPile p.N p.m p.r hm hr S).val = x.val)).card : Rat) *
+          (1 / (↑(countFiberMemb p.N p.m p.r hr x).card : Rat)) := by
+        rw [FiberDisintegration.sum_if_constant
+            (Finset.univ : Finset (Membership p.N p.m))
+            (fun S => (countInPile p.N p.m p.r hm hr S).val = x.val)
+            (1 / (↑(countFiberMemb p.N p.m p.r hr x).card : Rat))]
+      _ = ((countFiberMemb p.N p.m p.r hr x).card : Rat) *
+          (1 / (↑(countFiberMemb p.N p.m p.r hr x).card : Rat)) := by
+        rw [uniformCountFiber_univFilter p x]
+      _ = 1 := by
+        have hpos : 0 < (countFiberMemb p.N p.m p.r hr x).card :=
+          countFiberMemb_nonempty p.N p.m p.r (Nat.le_of_lt p.hmn) hr x
+        field_simp [hpos.ne']
 
 end FiniteDeck
 end Shufflemath
