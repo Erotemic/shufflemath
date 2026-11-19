@@ -59,7 +59,14 @@
   (CommanderPhysicalExchange), `CommanderA3Kernel` (`leftChoices_eq_s50` — **private**, so bridge via
   `newLeftCount_eq_transitionNumerator` which already folds it in), and `_Probe47v` (`transitionNumerator_eq_
   fiberProduct`, `s50`, `t49`). `leftOrigSet` is in `CommanderFiberCount` (no sub-namespace); `FinsetCombinatorics.*`
-  qualified; `Finset.card_product` not `card_prod`.
+  qualified; `Finset.card_product` not `card_prod`. **Wall evidence (70th session, `_ProbeA3Univ.lean`):**
+  the RAW `(leftChoices ×ˢ rightChoices).card = leftChoices.card * rightChoices.card` is CLEAN (`Finset.card_product`,
+  compiles) — that is the 47v side; but the `Fintype.univ` of the SUBTYPE `{L // L ∈ leftChoices}` (and hence of
+  `exchangeChoice`) RECURSES when expanded or computed to a product (the `Fintype` instance is `inferInstance`; its
+  univ is not the clean base Finset), and composing f1∘f2∘f3 into one `calc` also recurses. So the bijection in the
+  route above must stay at the Finset level and *construct* each `s50 ×ˢ t49` membership from the clean subtype pieces
+  (`leftChoices_eq_s50` / `Finset.mem_product.mpr`) — it must never unfold `a ∈ Fintype.univ` nor re-introduce a
+  `Fintype.card` of the subtype.
 - **A3 part (i) count-mass bridge** — the 56th-session A3 part-(i) target
   `rawExchange_membershipCount_mass` is 95% complete (the (a)+(b) core was already done; this session
   closed two more sub-steps). The 4th calc step (fiber-sum → preimage-card) now CLOSES with targeted
