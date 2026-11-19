@@ -6,6 +6,7 @@ public import Shufflemath.FiniteDeck.BLRefinement
 public import Shufflemath.BernoulliLaplaceGeneral
 public import Shufflemath.FiberDisintegration
 public import Shufflemath.Finite
+public import Shufflemath.PhysicalExchangeReduction
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Tactic
@@ -212,6 +213,94 @@ theorem hK (p : BernoulliLaplaceGeneral.ExchangeAdmissible) :
     rw [← FiniteKernel.apply, FiniteKernel.apply_deterministic_eq_map]
   rw [hLHS, localLift_project_map p m]
   dsimp only [FiniteKernel.deterministic, FiniteKernel.identity]
+
+/-- The macro count `countInPile` is constant on the support of
+  `uniformCountFiberMembership x` (that distribution lives on the `x`-th
+  count-fiber), so pushing it through `countInPile` is the point mass at `x`.
+  This is the `hU` core for the recovery. -/
+theorem ucfm_countInPile_map (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (x : BernoulliLaplaceGeneral.BLState p.N p.m p.r) :
+    (uniformCountFiberMembership p x).map
+      (fun m : Membership p.N p.m => countInPile p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN m) =
+      Dist.pointMass x := by
+  let hm := Nat.le_of_lt p.hmn
+  let hr := p.hrN
+  apply map_const_on_support
+    (mu := uniformCountFiberMembership p x) (f := fun m : Membership p.N p.m => countInPile p.N p.m p.r hm hr m) (c := x)
+  intro j hj
+  -- hj : nonzero mass ⟹ countInPileVal j = x.val (the UCFM support is the x-th count-fiber).
+  have hval : countInPileVal p.N p.m p.r hm hr j = x.val := by
+    by_contra hne
+    rw [uniformCountFiberMembership_mass_ite p x j] at hj
+    simp [hne] at hj
+  refine Subtype.ext ?_
+  simp only [countInPile_val, hval]
+
+/-- Pushing `uniformCountFiberMembership` through the deterministic `countInPile`
+  equals the identity on macrostates: the `hU` half of the recovery. -/
+theorem hU (p : BernoulliLaplaceGeneral.ExchangeAdmissible) :
+    FiniteKernel.comp (uniformCountFiberMembership p)
+      (FiniteKernel.deterministic
+        (fun m : Membership p.N p.m => countInPile p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN m)) =
+    FiniteKernel.identity := by
+  let hm := Nat.le_of_lt p.hmn
+  let hr := p.hrN
+  classical
+  funext x
+  have hLHS : FiniteKernel.comp (uniformCountFiberMembership p)
+      (FiniteKernel.deterministic (fun m : Membership p.N p.m => countInPile p.N p.m p.r hm hr m)) x =
+      (uniformCountFiberMembership p x).map
+        (fun m : Membership p.N p.m => countInPile p.N p.m p.r hm hr m) := by
+    dsimp only [FiniteKernel.comp]
+    rw [← FiniteKernel.apply, FiniteKernel.apply_deterministic_eq_map]
+  rw [hLHS, ucfm_countInPile_map p x, FiniteKernel.identity]
+  rfl
+
+/-- The **recovery** hypothesis for `run_tv_eq_macro_of_membership_exchange`:
+  macro-lifting then perfect-local resampling, read back through the deck→macro
+  `project`, is the identity on macrostates.  Follows from associativity plus the
+  two halves `hK` and `hU`.  (The `hrecover` required by G2.10's framework.) -/
+theorem hrecover (p : BernoulliLaplaceGeneral.ExchangeAdmissible) :
+    FiniteKernel.comp
+      (FiniteKernel.comp (uniformCountFiberMembership p)
+        (localLift p.N p.m (Nat.le_of_lt p.hmn)))
+      (FiniteKernel.deterministic (project p)) = FiniteKernel.identity := by
+  rw [FiniteKernel.comp_assoc, hK p, hU p]
+
+/-- **G2.10 headline.**  For any Bernoulli-Laplace parameters, the total
+  variation between two *physical* perfect-exchange steps (perfect local
+  resampling sandwiched around the physical exchange) run from a macrostate,
+  and the macrostate stationary law, equals the total variation between the
+  corresponding two steps of the Bernoulli-Laplace *macro* chain from that
+  macrostate.  This is the two-step, two-physical-exchanges version of the
+  G4 macro-intertwining, proven purely from the membership-exchange kernel
+  equality `hMembershipExchange_kernel` (G2.8) and the recovery `hrecover` —
+  no deck fiber counts are needed.  (99-card instantiation: `p` the 11-pile
+  admissible, `x0` the segregated state.) -/
+theorem two_physical_perfect_exchanges_uniform
+    (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (x0 : BernoulliLaplaceGeneral.BLState p.N p.m p.r) (n : Nat) :
+    Dist.tv
+      (FiniteKernel.run
+          (PhysicalExchangeReduction.exchangeThenLocalReset
+            (membership p.N p.m (Nat.le_of_lt p.hmn))
+            (localLift p.N p.m (Nat.le_of_lt p.hmn)) (rawExchange p)) n
+          (FiniteKernel.apply (Dist.pointMass x0)
+            (FiniteKernel.comp (uniformCountFiberMembership p)
+              (localLift p.N p.m (Nat.le_of_lt p.hmn)))))
+      (FiniteKernel.apply (BernoulliLaplaceGeneral.blStationaryDist p)
+          (FiniteKernel.comp (uniformCountFiberMembership p)
+            (localLift p.N p.m (Nat.le_of_lt p.hmn)))) =
+      Dist.tv
+        (FiniteKernel.run (BernoulliLaplaceGeneral.blExchangeKernel p) n (Dist.pointMass x0))
+        (BernoulliLaplaceGeneral.blStationaryDist p) := by
+  let hm := Nat.le_of_lt p.hmn
+  exact PhysicalExchangeReduction.run_tv_eq_macro_of_membership_exchange
+    (macroLift := uniformCountFiberMembership p) (localLift := localLift p.N p.m hm)
+    (membership := membership p.N p.m hm) (exchange := rawExchange p)
+    (macroK := BernoulliLaplaceGeneral.blExchangeKernel p) (project := project p)
+    (hrecover := hrecover p) (hMembershipExchange := hMembershipExchange_kernel p)
+    (Dist.pointMass x0) (BernoulliLaplaceGeneral.blStationaryDist p) n
 
 end FiniteDeck
 end Shufflemath
