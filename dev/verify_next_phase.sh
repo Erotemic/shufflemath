@@ -30,6 +30,7 @@ lake build \
   Shufflemath.CommanderA3UniformPushforward \
   Shufflemath.CommanderA3ExchangePushforward \
   Shufflemath.CommanderA3Mass \
+  Shufflemath.CommanderA3ExchangeCard \
   Shufflemath.CommanderMarkedRightCount \
   Shufflemath.CommanderLocalGSR \
   Shufflemath.CommanderDeckGSR
