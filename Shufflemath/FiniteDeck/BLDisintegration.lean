@@ -160,5 +160,41 @@ theorem apply_blStationary_ucfm_locallift_eq_uniformDeck :
   exact FiberDisintegration.marginal_comp_fiber_eq_uniform (membership p.N p.m hm)
     (membership_surjective p.N p.m hm)
 
+/-- **G2.9 / G2.13 headline (deck-uniform target, generic).**  For any
+  Bernoulli-Laplace parameters and any number of steps `n`, the total variation
+  between `n` *physical* perfect-exchange steps (perfect-local resample around the
+  physical exchange) run from a macrostate `x0` on the **full deck**, and the
+  **uniform distribution on the whole deck** (`GSR.uniformDist (Deck p.N)`), equals
+  the total variation between the corresponding `n` steps of the Bernoulli-Laplace
+  *macro* chain from `x0` and its stationary law.  The 99-card instantiations are
+  `n = 2` (G2.9) and `n = 3` (G2.13).
+
+  This is the deck-uniform-target form of the G2.10 headline
+  (`two_physical_perfect_exchanges_uniform`), whose lifted target
+  `apply (blStationaryDist) (comp UCFM localLift)` is *exactly* the deck uniform by
+  `apply_blStationary_ucfm_locallift_eq_uniformDeck`.  So it is the G2.10 headline
+  with that target substituted — and, crucially, the substitution goes through the
+  *membership* disintegration recovery, avoiding the `project_surjective` wall that
+  blocks the 99-card `hfactor` route (`project : Deck → BLState` is not onto). -/
+theorem two_physical_perfect_exchanges_uniform_deck
+    (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (x0 : BernoulliLaplaceGeneral.BLState p.N p.m p.r) (n : Nat) :
+    Dist.tv
+      (FiniteKernel.run
+          (PhysicalExchangeReduction.exchangeThenLocalReset
+            (membership p.N p.m (Nat.le_of_lt p.hmn))
+            (localLift p.N p.m (Nat.le_of_lt p.hmn)) (rawExchange p)) n
+          (FiniteKernel.apply (Dist.pointMass x0)
+            (FiniteKernel.comp (uniformCountFiberMembership p)
+              (localLift p.N p.m (Nat.le_of_lt p.hmn)))))
+      (GSR.uniformDist (Deck p.N)) =
+      Dist.tv
+        (FiniteKernel.run (BernoulliLaplaceGeneral.blExchangeKernel p) n (Dist.pointMass x0))
+        (BernoulliLaplaceGeneral.blStationaryDist p) := by
+  -- The deck-uniform target is exactly the G2.10 lifted target (the bridge), so
+  -- the goal is the G2.10 headline with that target renamed.
+  rw [← apply_blStationary_ucfm_locallift_eq_uniformDeck p]
+  exact two_physical_perfect_exchanges_uniform p x0 n
+
 end FiniteDeck
 end Shufflemath
