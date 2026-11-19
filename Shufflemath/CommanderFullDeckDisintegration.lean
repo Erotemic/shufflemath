@@ -4,6 +4,9 @@ public import Shufflemath.CommanderFiberWitness
 public import Shufflemath.CommanderFiberMembership
 public import Shufflemath.FiberDisintegration
 public import Shufflemath.PhysicalExchangeReduction
+public import Shufflemath.CommanderMembershipKernels
+public import Shufflemath.CommanderPhysicalExchange
+public import Shufflemath.CommanderA3KernelLaw
 
 @[expose] public section
 
@@ -224,6 +227,40 @@ theorem commander_uniform_disintegration_unconditional :
       (FiberDisintegration.fiberLaw project project_surjective) =
     GSR.uniformDist Deck :=
   commander_uniform_disintegration commander_fiber_counts
+
+/-!
+## F3 item 3: the physical-perfect two-exchange TV law, with the membership-exchange
+hypothesis discharged.
+
+`two_physical_perfect_exchanges_uniform_of_counts` is stated *generically*: it takes
+the membership map, the two-layer lift, the deck-level exchange kernel, and — crucially
+— the law that reading the membership after the physical exchange equals the macro
+count-exchange followed by the uniform membership lift (`hMembershipExchange`).  This
+corollary supplies the **concrete** objects and discharges that hypothesis with the
+proved `hMembershipExchange_kernel` (the A3 membership-exchange kernel law), leaving
+no premise: two real perfect-local exchanges drive the deck to the exact macro-state
+TV against the uniform 99! permutation law.
+-/
+theorem two_physical_perfect_exchanges_uniform_unconditional :
+    Dist.tv
+      (FiniteKernel.run
+        (PhysicalExchangeReduction.exchangeThenLocalReset
+          CommanderMembershipKernels.membership
+          CommanderMembershipKernels.localLift
+          CommanderPhysicalExchange.rawExchange) 2
+        (FiniteKernel.apply (Dist.pointMass commanderSegregatedState)
+          (FiberDisintegration.fiberLaw project project_surjective)))
+      (GSR.uniformDist Deck) =
+      (12255318415559330995522631403472464258192877 /
+        4933350368865509640837610315994582805439728012 : Rat) :=
+  two_physical_perfect_exchanges_uniform_of_counts commander_fiber_counts
+    (membership := CommanderMembershipKernels.membership)
+    (membershipLift := CommanderMembershipKernels.membershipLift)
+    (localLift := CommanderMembershipKernels.localLift)
+    (hLocalRecovers := CommanderMembershipKernels.localLift_preserves_membership)
+    (hfactor := CommanderMembershipKernels.membershipLift_localLift_eq_fiberLaw)
+    (rawExchange := CommanderPhysicalExchange.rawExchange)
+    (hMembershipExchange := hMembershipExchange_kernel)
 
 end CommanderFullDeckDisintegration
 end Shufflemath

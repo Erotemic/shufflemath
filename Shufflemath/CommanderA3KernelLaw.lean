@@ -87,5 +87,34 @@ theorem hMembershipExchange (x : CommanderState) (m : Membership) :
   -- the RHS ite is feasible (1 ≤ count ≤ 50), so it collapses to its then-branch
   simp [hfeas1, hfeas2]
 
+/-!
+## The kernel-level witness — `hMembershipExchange_kernel`
+
+The `hMembershipExchange` hypothesis of the F3 statement
+(`two_physical_perfect_exchanges_uniform_of_counts`) is a **kernel** equality
+(both sides are `CommanderState → Membership` kernels).  It is exactly the
+pointwise law `hMembershipExchange` above lifted to kernels: the left-hand side
+reduces (by `hMembershipExchange_lhs_reduces`) to pushing the uniform
+*project-fiber* deck law through the membership-level exchange — which is
+precisely `mu_x` — and `hMembershipExchange` says `mu_x` and
+`comp commanderExchange25 membershipLift` agree pointwise, so the two kernels
+are equal (extensionality via `StdSimplex.weights_inj` + `Finsupp.ext`, the same
+idiom as `membershipLift_localLift_eq_fiberLaw`).
+-/
+theorem hMembershipExchange_kernel :
+    FiniteKernel.comp
+      (FiniteKernel.comp (FiniteKernel.comp membershipLift localLift) rawExchange)
+      (FiniteKernel.deterministic membership) =
+      FiniteKernel.comp commanderExchange25 membershipLift := by
+  rw [hMembershipExchange_lhs_reduces]
+  funext x
+  apply (Convexity.StdSimplex.weights_inj
+      (f := (FiniteKernel.comp (fiberLaw project project_surjective) rawExchangeMembership) x)
+      (g := (FiniteKernel.comp commanderExchange25 membershipLift) x)).mp
+  apply Finsupp.ext
+  intro m
+  rw [← Dist.mass, ← Dist.mass]
+  exact hMembershipExchange x m
+
 end Shufflemath
 end
