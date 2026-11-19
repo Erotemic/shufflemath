@@ -1845,5 +1845,78 @@ theorem g4LHS_mass_sum (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x : Ber
   simp [ha, hd, mul_inv_cancel, one_mul, mul_one]
   <;> rfl
 
+-- ── G4 capstone RHS mass-sum collapse (ported from _ProbeG4RHS) ──
+/-- G4 capstone RHS sum collapse: `∑_y (blExchangeKernel x)(y)·(uniformCountFiberMembership y)(S)`
+    = `transitionNumerator (x.val → c) / (#fiber(c)·D)` where `c = countInPileVal S` and
+    `D = BernoulliLaplaceGeneral.transitionDenominator`.  `BLState` is a subtype of `Nat`, so the
+    sum runs over the admissible-count interval; the `ite` (on the decidable `c = y.val`) keeps
+    only the single count `c`, and because a `BLState` is unique per count the surviving fiber is
+    the singleton `⟨c, _⟩`, so the sum collapses to one term. -/
+theorem g4RHS_mass_sum (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x : BernoulliLaplaceGeneral.BLState p.N p.m p.r) (S : Membership p.N p.m) :
+    (∑ y : BernoulliLaplaceGeneral.BLState p.N p.m p.r,
+      (BernoulliLaplaceGeneral.blExchangeKernel p x).mass y * (uniformCountFiberMembership p y).mass S) =
+      (BernoulliLaplaceGeneral.transitionNumerator p.N p.m p.r p.k x.val
+         (countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN S) : Rat) /
+        ((BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k : Rat) *
+          ↑(countFiberMemb p.N p.m p.r p.hrN
+              (⟨countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN S,
+                countInPile_admissible p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN S⟩)).card) := by
+  set c := countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN S
+  set hc := countInPile_admissible p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN S
+  set yc := (⟨c, hc⟩ : BernoulliLaplaceGeneral.BLState p.N p.m p.r)
+  set D := (BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k : Rat)
+  set FC := (countFiberMemb p.N p.m p.r p.hrN yc).card
+  let A := fun (y : BernoulliLaplaceGeneral.BLState p.N p.m p.r) =>
+      BernoulliLaplaceGeneral.transitionWeight p.N p.m p.r p.k x.val y.val /
+        ↑(countFiberMemb p.N p.m p.r p.hrN y).card
+  have hcval : yc.val = c := rfl
+  have hFCpos : 0 < FC := countFiberMemb_nonempty p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN yc
+  set Un := (Finset.univ : Finset (BernoulliLaplaceGeneral.BLState p.N p.m p.r))
+  -- work in the `Finset.univ` (= admissible-count) representation of the Fintype sum
+  change (∑ y ∈ Un, (BernoulliLaplaceGeneral.blExchangeKernel p x).mass y * (uniformCountFiberMembership p y).mass S) = _
+  -- the fiber `{y ∈ univ // c = y.val}` is the singleton `{yc}` (a `BLState` is unique per count)
+  have hFiber : Un.filter (fun y => c = y.val) = {yc} := by
+    apply Finset.ext
+    intro y
+    constructor
+    · intro hf
+      have hval : c = y.val := (Finset.mem_filter.mp hf).2
+      have hyeq : y = yc := Subtype.ext (hval.symm.trans hcval.symm)
+      exact (Finset.mem_singleton.mpr hyeq)
+    · intro hs
+      have hyeq : y = yc := (Finset.mem_singleton.mp hs)
+      have hval : c = y.val := ((congrArg (·.val) hyeq).trans hcval).symm
+      exact (Finset.mem_filter.mpr ⟨Finset.mem_univ _, hval⟩)
+  -- (1) mass bodies; the product telescopes to `ite(c = y.val, A y, 0)`
+  have h1 : (∑ y ∈ Un, (BernoulliLaplaceGeneral.blExchangeKernel p x).mass y * (uniformCountFiberMembership p y).mass S) =
+      (∑ y ∈ Un, ite (c = y.val) (A y) 0) := by
+    rw [Finset.sum_congr rfl]
+    intro y hmem
+    rw [blExchangeKernel_mass, uniformCountFiberMembership_mass_ite]
+    by_cases h : c = y.val
+    · simp [h, c]
+      dsimp only [A]
+      <;> try field_simp
+    · simp [h, c]
+      <;> try ring
+  -- (2) the ite-weighted sum → the singleton fiber `{yc}` → one term
+  have h2 : (∑ y ∈ Un, ite (c = y.val) (A y) 0) = A yc := by
+    dsimp only [Un]
+    rw [Finset.sum_ite]
+    <;> (try (intro _; exact True.intro))
+    <;> (try (simp only [Finset.sum_const_zero, add_zero]))
+    <;> (try (rw [hFiber]))
+    <;> (try (exact (Finset.sum_singleton A yc)))
+  -- (3) the surviving term  (`yc.val = c` definitionally, so this is `rfl` after unfolding `A`, `FC`)
+  have hA : A yc = BernoulliLaplaceGeneral.transitionWeight p.N p.m p.r p.k x.val c / ↑FC := by
+    dsimp only [A, FC]
+  have hDpos : 0 < BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k :=
+      BernoulliLaplaceGeneral.transitionDenominator_pos p
+  rw [h1, h2, hA, BernoulliLaplaceGeneral.transitionWeight]
+  dsimp only [D]
+  field_simp [hFCpos.ne', hDpos.ne']
+  <;> simp only [c]
+  <;> try ring_nf
+
 end FiniteDeck
 end Shufflemath

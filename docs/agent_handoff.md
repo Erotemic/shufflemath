@@ -15,6 +15,30 @@
 
 # Agent handoff: next Shufflemath task
 
+**Updated:** (G4 **63rd session — `g4RHS_mass_sum` committed; BOTH LHS+RHS mass formulas
+now done; the reversible-flow identity is next**). The G4 **RHS mass-sum collapse** is
+proved and in `Shufflemath/FiniteDeck/BLRefinement.lean` (builds clean, 3223 jobs; full
+tranche 3214 jobs):
+`∑_y (blExchangeKernel p x) y · (uniformCountFiberMembership p y) S
+   = TN(x.val → c) / (D · #fiber(c))`  where `c = countInPileVal S`, `D = transitionDenominator`.
+The long-standing **`Finset.sum_ite` / singleton-fiber** blocker is solved: the fiber
+`{y ∈ univ // c = y.val}` is the singleton `{⟨c, _⟩}` (a `BLState` is unique per count), so
+after `rw [Finset.sum_ite]` the surviving fiber-sum collapses to one term via
+`Finset.sum_singleton`; the only side-goal is the trivial decidable-pred condition
+`y ∈ Un → True` (`intro _; exact True.intro`). The mass-body product telescopes to
+`ite(c = y.val, transitionWeight/FC_y, 0) = A y` (Rat division is definitional, so the
+pos-case is `dsimp` + `rfl`; the neg case is `0 = 0`).
+With this, **both** G4 mass formulas are in the library: LHS `g4LHS_mass_sum`
+(`∑_j (UCFM x) j·(SE j) S = TN(c, x.val)/(#fiber(x)·D)`, `dc20848`) and RHS
+`g4RHS_mass_sum` (this session). **Exactly where to resume:** the **reversible-flow
+(detailed-balance) identity** — the "genuinely hard half" — which ties the two sides into
+the `hMembershipExchange` kernel equality:
+`TN(c, x.val)·#fiber(c) = TN(x.val, c)·#fiber(x)`
+(equivalently `comp (comp (fiberLaw project) rawExchangeMembership) (det membershipCount) =
+comp commanderExchange25 (det commanderLeftCount)` at the count level). See
+`docs/planning/proof-strategies/2026-11-18-g4-macro-intertwining-plan.md`. The scratch
+probe `Shufflemath/_ProbeG4RHS.lean` is deleted (extracted into BLRefinement).
+
 **Updated:** 2026-11-18 (A3 **54th session — cracked the double-count's missing lemma**:
 `Fintype.card_sigma` exists (`Data/Fintype/Defs.lean:161`), so the fiber-product route
 only needs its `right_inv` `HEq` fixed (or switch to `Finset.card_biUnion`, which
