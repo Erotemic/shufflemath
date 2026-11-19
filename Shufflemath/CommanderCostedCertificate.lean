@@ -7,6 +7,11 @@ public import Shufflemath.Perturbation
 public import Shufflemath.TotalVariation
 public import Shufflemath.CommanderPermutation
 public import Shufflemath.BernoulliLaplace
+public import Shufflemath.FiberDisintegration
+public import Shufflemath.PhysicalExchangeReduction
+public import Shufflemath.CommanderMembershipKernels
+public import Shufflemath.CommanderPhysicalExchange
+public import Shufflemath.CommanderFullDeckDisintegration
 public import Shufflemath.GSR
 public import Mathlib.Tactic
 
@@ -92,6 +97,45 @@ theorem macroCountExchange_costedCertificate :
     rfl
     (Dist.pointMass commanderSegregatedState)
     (GSR.uniformDist CommanderState)
+
+/-! The full-deck finite-GSR certificate, recursion-free. -/
+
+/-- One costed physical perfect-exchange "round" (an exchange followed by the
+    within-pile local reset) on the full 99-card permutation space. -/
+noncomputable def f5PhysOp : CostedKernel Deck :=
+  ⟨PhysicalExchangeReduction.exchangeThenLocalReset
+      CommanderMembershipKernels.membership
+      CommanderMembershipKernels.localLift
+      CommanderPhysicalExchange.rawExchange, 1, by norm_num⟩
+
+/-- **F5 full-deck certificate (recursion-free).**  Model = the 99-card
+    permutation space `Deck`; action class = exchange; the concrete two-round
+    physical perfect-exchange protocol (segregated start → uniform 99! target);
+    total cost `2`.  The terminal TV is bounded above by its **exact** value
+    (the F3 discharge, `two_physical_perfect_exchanges_uniform_unconditional`),
+    stated here without touching the `errorBudget`/Dobrushin machinery, which
+    recurses at elaboration over the 99! `Finset.univ`.  No minimum-cost /
+    optimality claim is made. -/
+theorem f5FullDeck_certificate :
+    ActionKind.exchange = .exchange ∧
+    0 ≤ protocolCost [f5PhysOp, f5PhysOp] ∧
+    Dist.tv
+      (FiniteKernel.run
+        (PhysicalExchangeReduction.exchangeThenLocalReset
+          CommanderMembershipKernels.membership
+          CommanderMembershipKernels.localLift
+          CommanderPhysicalExchange.rawExchange) 2
+        (FiniteKernel.apply (Dist.pointMass commanderSegregatedState)
+          (FiberDisintegration.fiberLaw project project_surjective)))
+      (GSR.uniformDist Deck)
+      ≤ (12255318415559330995522631403472464258192877 /
+        4933350368865509640837610315994582805439728012 : Rat) := by
+  have hEq :=
+    Shufflemath.CommanderFullDeckDisintegration.two_physical_perfect_exchanges_uniform_unconditional
+  have hCost :=
+    protocolCost_nonneg ([f5PhysOp, f5PhysOp] : List (CostedKernel Deck))
+  refine ⟨rfl, ⟨hCost, ?_⟩⟩
+  exact le_of_eq hEq
 
 end Shufflemath
 end
