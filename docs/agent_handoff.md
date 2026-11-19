@@ -36,12 +36,19 @@
 > **(5) F4.2 WALL CRACKED — full-deck non-degenerate F5 landed, recursion-free, in a new module `Shufflemath/TelescopeF5.lean`.** The wall that blocked the full-deck non-degenerate F5 for many sessions: `errorBudget`/`dobrushinCoeff`/`kernelDiscrepancy` are `max'`-over-univ computations that recurse at *elaboration* when instantiated over `Deck = Equiv.Perm (Fin 99)` (99! elements). The crack: prove the F5 bound **without ever unfolding that machinery**. Three theorems: `compList_telescope_2step_le_2` (abstract, kernel-variable: any 2-kernel chain is within TV `2` of any other 2-kernel chain — from `weightedTelescope_2step` + the structural `kernelDiscrepancy_le_one`/`dobrushinCoeff_le_one` bounds, no univ instantiated); `telescopeTV_le_idealPlusTwo` (the non-degenerate F5 sufficient-TV bound in 2-step form: any 2-step protocol's TV to a target ≤ `2` + a reference 2-step protocol's TV — via `Dist.tv_triangle`); and `f5FullDeck_nondegenerate` (the **concrete full-deck** instance: physical `rawExchange` chain vs oracle `idealExchange25 hsurj` chain, segregated start → uniform 99! target, TV ≤ `2` + oracle-TV). No optimality claim; the `2` budget is genuinely non-vanishing. The key realization: the F5 *statement* only contains `Dist.tv` of `compList` chains + a `Rat` constant — never the `kernelDiscrepancy`/`dobrushinCoeff`/`errorBudget` terms — so it elaborates cleanly over the 99! space (same pattern as the already-building `two_physical_perfect_exchanges_uniform_*`).
 > **Tranche green: 3234 jobs, 37 tests pass.** (Note the Lean 4.34 `module` system exposes each module's theorems under `Shufflemath.<Module>.<thm>` — e.g. `Shufflemath.CommanderPermutation.Deck`; reference across modules by full path or `open` the module namespace.)
 >
-> **Next (session 82):** **G2 is now 8/13 rows generic** (G2.10 landed session 82; the rest: disintegration,
-> counting, kernel-algebra, fiber-intertwining). **5 rows remain 99-card-only**: the 2/3-exchange TV (G2.3/5),
-> G2.9, G2.13. **Top priority next:** G2.9 / G2.13 (the physical / two-physical-perfect-exchange TV) or G2.3/5
-> (2/3-exchange TV) — all should now build on the same recovery-based `run_tv_eq_macro_of_membership_exchange`
-> framework G2.10 uses (see the G2.10 DONE note above for the assembly idiom). Secondary: F4.2 n-step `TV ≤ n`
-> (fiddly elaboration), F4.2 deck-level GSR lift, and the open qwen-review engineering items (Q1/Q2/Q4/Q5/Q9, R4 handoff reorganization).
+> **Next (session 83):** **G2 is now 11/13 rows generic** (G2.3/5 landed session 83, `7ae899e`:
+> the generic *oracle* 2/3-exchange TV headline `A3KernelLaw.two_oracle_exchanges_uniform`, a
+> one-line `OracleRefinement.run_tv_eq_macro` on the same `hrecover` as the G2.10 physical headline
+> — the **TV-equality form**, which needs no deck fiber counts and no deck-level surjectivity
+> (false generically: `project : Deck → BLState` is not onto `BLState`).
+> **2 rows remain 99-card-only:** G2.9 / G2.13 (the physical-perfect-exchange **deck-uniform-target** TV:
+> TV against `GSR.uniformDist Deck` = exact rational). Both are **surjectivity-blocked generically** —
+> the 99-card `hfactor` (`comp lift = fiberLaw project`) needs `project_surjective`, which fails.
+> **Top priority next:** G2.9 / G2.13 via a route that avoids the wall — either the Membership-level
+> disintegration (`membership : Deck → Membership N m` IS surjective) or a direct mass-formula proof that
+> `apply (blStationaryDist p) (comp (UCFM p) localLift) = GSR.uniformDist (Deck p.N)` pointwise, fed into
+> the G2.10 TV-equality headline. Secondary: F4.2 n-step `TV ≤ n` (fiddly elaboration), F4.2 deck-level GSR lift,
+> and the open qwen-review engineering items (Q1/Q2/Q4/Q5/Q9, R4 handoff reorganization).
 
 ### G2 execution plan (G2.8 → G2.10) — STATUS: G2.8 DONE, G2.10 **DONE** (session 82, committed `11f099f` + `ff34501`)
 
