@@ -15,7 +15,29 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** (G4 **67th session — A3 part-(i) count-mass bridge: 4th calc step + `hP` predicate equality now CLOSE; the final Fintype-card bridge is a general lemma** — `rawExchange_membershipCount_mass` 95% in `.pi-glla/66b_a3count_wip.lean`).
+**Updated:** (G4 **68th session — A3 part (i) COMPLETE: the general `fintypeCard_subtypeCongr` lemma + the `rawExchange_membershipCount_mass` count-mass bridge are committed; next is the A3 capstone `hMembershipExchange`**).
+
+- **A3 part (i) count-mass bridge — COMPLETE (68th session):** the 56th-session target
+  `rawExchange_membershipCount_mass` is now **proved and committed** in `Shufflemath/CommanderA3Mass.lean`.
+  The 67th session had closed all but the final Fintype-card bridge — the wall: the two subtypes
+  `{j // F j ∈ S}` and `{j // Q j}` are `Iff`-equal (`hP`) but not definitionally equal, so `rfl` / `congr`
+  / a Membership-context `Equiv` all recursed or type-mismatched. **The clean fix:** a *general* lemma,
+  proved in the shallow `Shufflemath/FinsetCombinatorics.lean`,
+  `fintypeCard_subtypeCongr : (∀ a, P a ↔ Q a) → Fintype.card {a // P a} = Fintype.card {a // Q a}`
+  (built as a subtype `Equiv` whose injectivity/surjectivity close by `Subtype.ext; rfl` — shallow, no
+  `Membership`-Finset reduction) and applied here with `hP`. The full calc chain: point-mass
+  (`rawExchangeMembership_pointMass`) → indicator → fiber-sum (`Finset.sum_filter`) → preimage-card
+  (`fiberSum_eq_preimageCard`) → Fintype-card bridge (`fintypeCard_subtypeCongr`). `CommanderA3Mass`
+  is now in the `dev/verify_next_phase.sh` build list and the tranche stays green (37 tests).
+
+- **Exactly where to resume (68th session): the A3 capstone `hMembershipExchange` (F3-b gate).**
+  Part (i) (count-total: `rawExchange_membershipCount_mass`) and part (ii) (within-count uniformity:
+  `mu_x_constant_on_countFiber`) are both done. Per the capstone plan (the A3 section below): (1) the
+  fiber-average collapse `rawExchangeMembership_count = commanderExchange25_countMass`
+  (`newLeftCount_deckIndependent` + `project_count`); (2) **combine** — for `m` in the `c`-fiber, `μ_x m`
+  = (part (i) count mass at `c`) / `membershipFiber_card`, which equals `hMembershipExchange_rhs_mass`
+  at `(x, m)`, so the kernel equality `hMembershipExchange` follows by `FiniteKernel.ext` (pointwise in
+  `x, m`); (3) instantiate `two_physical_perfect_exchanges_uniform_of_counts`.
 
 - **A3 part (i) count-mass bridge** — the 56th-session A3 part-(i) target
   `rawExchange_membershipCount_mass` is 95% complete (the (a)+(b) core was already done; this session

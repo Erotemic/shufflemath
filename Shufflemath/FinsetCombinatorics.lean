@@ -4,6 +4,7 @@ public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Finset.SDiff
+public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Set.Card
 public import Mathlib.Data.Finset.Union
@@ -379,5 +380,19 @@ theorem fiberSum_eq_preimageCard {X : Type*} [Fintype X] [DecidableEq X]
       apply Finset.sum_congr rfl
       intro m _
       rw [hFiber]
+
+/-- The Fintype-card bridge: two subtypes of a finite type with extensionally-equal predicates
+    (forall a, P a <-> Q a) are in bijection, hence their Fintype-cards agree.  Proved here, in
+    this shallow module, so it can be applied in deep contexts (e.g. the A3 count-mass bridge) without
+    re-running the reduction that a Membership-context subtype `Equiv` would trigger. -/
+theorem fintypeCard_subtypeCongr {α : Type*} [Fintype α] (P Q : α → Prop)
+    [DecidablePred P] [DecidablePred Q] (h : ∀ a, P a ↔ Q a) :
+    Fintype.card {a : α // P a} = Fintype.card {a : α // Q a} := by
+  let e : {a : α // P a} ≃ {a : α // Q a} :=
+    ⟨fun x => ⟨x.1, (h x.1).mp x.2⟩,
+     fun x => ⟨x.1, (h x.1).mpr x.2⟩,
+     by intro x; apply Subtype.ext; rfl,
+     by intro x; apply Subtype.ext; rfl⟩
+  exact Fintype.card_congr e
 
 end FinsetCombinatorics
