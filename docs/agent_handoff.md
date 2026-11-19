@@ -15,24 +15,15 @@
 
 # Agent handoff: next Shufflemath task
 
-> **⚠ 76th session — RESUME HERE (A3 capstone `mu_x_countFiberTotal`: h3 + h4 are the two `sorry`s; the f4 count-bridge is CRACKED & committed).**
-> **This session (76th): confirmed the 75th f4 crack is solid** (tranche builds, 37 tests green, no `sorry` in the tranche) **and isolated the exact next blocker for h3.**
+> **⚠ 76th session — RESUME HERE (A3 capstone `mu_x_countFiberTotal`: **h3 BRIDGE CRACKED & committed** this session — `sum_filter_eq_sum_ite` (filter-sum = ite-0-sum) is proven, sorry-free, building in `_ProbeA3Cap4b.lean`; **only h4** (constant extraction: `μ_x` independent of `x`) remains a `sorry`).**
+> **This session (76th): confirmed the 75th f4 crack is solid** (tranche builds, 37 tests green, no `sorry` in the tranche) **and CRACKED h3** — proved `sum_filter_eq_sum_ite` by `Finset.induction` (base = ∅; insert case splits `by_cases P a`, uses `Finset.filter_insert P a u` + `Finset.sum_insert` + `if_pos`/`if_neg` + `zero_add`, then the IH).
 > **h3's missing piece is `cFiberMass_eq_iteMass`** — the identity that the h3 target's LHS
 > `∑ m' ∈ cFiber c, Dist.mass (rawExchangeMembership d) m'` (a sum over the `cFiber c` Finset)
 > equals the **ite-0-guarded** form `∑ m : Membership, (if membershipCount m = c then Dist.mass (rawExchangeMembership d) m else 0)`
 > that `CommanderA3Mass.rawExchange_membershipCount_mass` (part (i), already committed) states.
 > I.e. **`cFiberMass_eq_iteMass` = the filter-sum = ite-0-sum reduction** (my WIP probe
 > `Shufflemath/_ProbeA3Cap4b.lean`, theorem `sum_filter_eq_sum_ite`).
-> **FINDING (corrects the 73rd note):** there is **NO** off-the-shelf `Finset.sum_ite` / `sum_filter`
-> lemma for this (grepped all of Mathlib.Data.Finset), and `simp` / `ring_norm` do **not** close it.
-> The clean route (same machinery as the now-committed f4 crack `a3_countBridge`) is the
-> **Fintype/subtype equinumerosity** between `Membership (s.filter P)` and `{ x : Membership s | P x.val }`
-> (give each fiber subtype an explicit `Fintype.subtype` instance; keep predicates `abbrev`s so the
-> `powersetCard` univ is never computed; the `@Fintype.card`/`card_congr` instance args must be the
-> **inline** `Fintype.subtype …` term, not a `def` wrapper). Alternative: specialize `β := Rat`
-> (the only capstone instantiation) — then `∑ x ∈ t, (0 : Rat) = 0` normalizes and the simpler
-> disjoint-union proof (`hS`/`hDisj`/`hA`/`h0`, all proven in the WIP probe) closes the last step.
-> **Once `cFiberMass_eq_iteMass` lands, h3 assembles as:**
+> **CRACKED this session (76th):** the reduction is proved by a direct `Finset.induction` on the base Finset (NOT the disjoint-union decomposition, which hits the `∑ zeros = 0` nsmul-normalization wall that `simp`/`ring_norm`/`nsmul_zero` don't discharge for a general `[AddCommMonoid β]`). **Critical gotcha:** use a SINGLE `[AddCommMonoid β]` instance — a separate `[Zero β]` creates a second `0` that breaks `zero_add`. `sum_filter_eq_sum_ite` is committed in `Shufflemath/_ProbeA3Cap4b.lean` (sorry-free, builds). **Next (h3):** assemble in `Shufflemath/_ProbeA3Capstone.lean` via `rw [sum_filter_eq_sum_ite, CommanderA3Mass.rawExchange_membershipCount_mass, a3_countBridge, exchangeChoice_card_eq_transitionDenominator]` + unfold `Dist.transitionWeight`; **then h4:** `μ_x` is the constant `1/#U`, independent of `x`.
 > ```
 > rw [cFiberMass_eq_iteMass, rawExchange_membershipCount_mass]   --  (1/#EC)·#{j : EC // count(newMembership d j)=c}
 > rw [a3_countBridge d c]                                       --  =  (1/#EC)·transitionNumerator (leftOriginalCount d) c   (the 75th f4 crack, _ProbeA3Cap4.lean)
