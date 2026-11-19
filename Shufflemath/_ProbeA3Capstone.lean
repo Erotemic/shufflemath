@@ -94,9 +94,12 @@ theorem mu_x_countFiberTotal (x : CommanderState) (c : Nat) :
   have h1 : (∑ m' ∈ cFiber c, Dist.mass (mu_x x) m') =
       ∑ m' ∈ cFiber c, ∑ d : Deck,
         Dist.mass (fiberLaw project project_surjective x) d * Dist.mass (rawExchangeMembership d) m' := by
-    -- WIP wall #0: unfold `comp`/`apply` and apply `apply_mass` to write
-    --   (mu_x x).mass m'  =  ∑ d, (fiberLaw x).mass d · (rawExchange d).mass m'.
-    sorry
+    -- (h1) unfold `comp`/`apply` (definitionally equal: comp K L x = ((K x).map L).join = apply (K x) L)
+    --   and apply `apply_mass` to write (mu_x x).mass m' = ∑ d, (fiberLaw x).mass d · (rawExchange d).mass m'.
+    apply Finset.sum_congr rfl
+    intro m' _
+    rw [mu_x, FiniteKernel.comp, ← FiniteKernel.apply]
+    rw [FiniteKernel.apply_mass]
   -- (2) Fubini: pull the fiberLaw weight out of the c-fiber sum.
   --     WIP wall #1: the two-index swap  ∑ m' ∈ S, ∑ d, w d · f m' d  =  ∑ d, w d · ∑ m' ∈ S, f m' d.
   have h2 : (∑ m' ∈ cFiber c, ∑ d : Deck,

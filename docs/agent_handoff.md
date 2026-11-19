@@ -26,13 +26,14 @@
 > c / membershipFiberCount c = hMembershipExchange_rhs_mass`. **Current state —
 > `Shufflemath/_ProbeA3Capstone.lean` (compiles):** `mu_x_fiberSum` **PROVEN** (`mu_x` constant on each
 > count fiber ⇒ its c-fiber total = `membershipFiberCount c` × the point mass); `mu_x_countFiberTotal`
-> **decomposed** into h1 (comp-mass via `apply_mass`), h2 (Fubini sum-swap), h3 (the count-fiber
+> **decomposed** into h1 (comp-mass via `apply_mass` — **PROVEN**), h2 (Fubini sum-swap), h3 (the count-fiber
 > **equinumerosity** — the one deep wall: `#{j : exchangeChoice // count(newMembership d j) = c} =
 > transitionNumerator (leftOriginalCount d) c`, via `exchangeChoice_equiv_lr` +
 > `count_exchangeChoice_eq_markedCount` + `newLeftOriginalCount_eq` + `newLeftCount_eq_transitionNumerator`
 > + `#EC = transitionDenominator`), h4 (constant-extraction on the project fiber), h5 (**PROVEN**: fiberLaw
 > is a probability, sums to 1); the `calc` assembly is verified against the h1–h5 forms. **NEXT session:**
-> prove h1, h2, h4 (the three mechanical walls) in `_ProbeA3Capstone.lean`, then h3 (the deep
+> prove h2 (Fubini) and h4 (constant-extraction) (the two remaining mechanical walls) in `_ProbeA3Capstone.lean`,
+> then h3 (the deep
 > equinumerosity), then **assemble `hMembershipExchange` in `CommanderMembershipExchange.lean`** (a short
 > `calc` chaining `mu_x_fiberSum`, `mu_x_countFiberTotal`, `hMembershipExchange_rhs_mass`), then discharge
 > `two_physical_perfect_exchanges_uniform_of_counts`, then **F5** (the arbitrary-finite-deck capstone).
