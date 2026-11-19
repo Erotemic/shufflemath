@@ -60,6 +60,13 @@ phase notes are linked at the end; they do not override this plan. Read
 > (n=3) instantiations. Remaining 99-card-only: discharge the *specific* conditional
 > `two_physical_perfect_exchanges_uniform_of_counts` (still carries the `hfactor` wall)
 > by instantiating the generic deck headline for the 99-card admissible.
+> **G1 edge cases DONE (`f3fc08f`):** new module `Shufflemath/FiniteDeck/G1EdgeCases`
+> (imports only the generic G1 modules `TwoPile`/`TwoPileFiber` + Mathlib — no
+> `Commander*`) records that the boundary parameter values are well-formed and
+> non-degenerate: `#(Deck 0) = 1`, `#(Membership N 0) = 1`, `#(Membership N N) = 1`,
+> `#(Membership 0 0) = 1` — the goal's G1 edge-case acceptance item. **Remaining
+> item 4:** T2 (generic `Membership N m` histogram-fiber = `choose r marked · choose
+> (N-r) unmarked`) and T3-to-BL (`count ∘ subsetExchange = blExchange N m r k`).
 
 ## Objective and model boundary
 
