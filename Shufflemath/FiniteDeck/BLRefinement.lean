@@ -1946,6 +1946,60 @@ theorem g4hDB (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
   have hrev := (BernoulliLaplaceGeneral.fiberSum_eq p y.val x.val hymem).symm
   rw [hfwd, BernoulliLaplaceGeneral.fiberSum_swap p x.val y.val hxlo hylo, hrev]
 
+/-- **G4 capstone — the macro-intertwining / kernel-equality.**  Pushing the
+    uniform count-fiber measure forward through the microscopic subset-exchange
+    kernel equals pushing it forward through the macro Bernoulli--Laplace exchange
+    kernel (then through the uniform count-fiber again):
+    `uniformCountFiberMembership ⊳ subsetExchangeMembershipKernel =
+    blExchangeKernel ⊳ uniformCountFiberMembership`.
+
+    Pointwise this is `g4LHS_mass_sum = g4RHS_mass_sum`: both sides collapse to a
+    `transitionNumerator` ratio, and the residual equality is the detailed-balance
+    bridge `g4hDB` (the two-level sums reduce by `apply_mass`).  This discharges
+    the Commander A3 physical-exchange discharge by specialization at the 99-card
+    parameters. -/
+theorem g4MacroIntertwining (p : BernoulliLaplaceGeneral.ExchangeAdmissible) :
+    Shufflemath.FiniteKernel.comp (uniformCountFiberMembership p)
+        (subsetExchangeMembershipKernel p) =
+      Shufflemath.FiniteKernel.comp (BernoulliLaplaceGeneral.blExchangeKernel p)
+        (uniformCountFiberMembership p) := by
+  funext x
+  unfold Shufflemath.FiniteKernel.comp
+  ext S
+  change
+    Dist.mass (Shufflemath.FiniteKernel.apply (uniformCountFiberMembership p x)
+          (subsetExchangeMembershipKernel p)) S =
+      Dist.mass (Shufflemath.FiniteKernel.apply (BernoulliLaplaceGeneral.blExchangeKernel p x)
+          (uniformCountFiberMembership p)) S
+  rw [Shufflemath.FiniteKernel.apply_mass (uniformCountFiberMembership p x)
+         (subsetExchangeMembershipKernel p) S,
+      Shufflemath.FiniteKernel.apply_mass (BernoulliLaplaceGeneral.blExchangeKernel p x)
+         (uniformCountFiberMembership p) S]
+  -- Both sides are now the two-level sums = the LHS of g4LHS / g4RHS_mass_sum.
+  rw [g4LHS_mass_sum p x S, g4RHS_mass_sum p x S]
+  set c := countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN S
+  set hc := countInPile_admissible p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN S
+  set yc : BernoulliLaplaceGeneral.BLState p.N p.m p.r := ⟨c, hc⟩
+  set D := (BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k : Rat)
+  set Fx := ↑(countFiberMemb p.N p.m p.r p.hrN x).card
+  set Fy := ↑(countFiberMemb p.N p.m p.r p.hrN yc).card
+  have hD : D ≠ 0 := by
+    dsimp only [D]
+    exact Nat.cast_ne_zero.mpr (BernoulliLaplaceGeneral.transitionDenominator_pos p).ne'
+  have hFx : Fx ≠ 0 := by
+    dsimp only [Fx]
+    exact Nat.cast_ne_zero.mpr (countFiberMemb_nonempty p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN x).ne'
+  have hFy : Fy ≠ 0 := by
+    dsimp only [Fy]
+    exact Nat.cast_ne_zero.mpr (countFiberMemb_nonempty p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN yc).ne'
+  field_simp [hD, hFx, hFy]
+  -- After clearing the common denominator D the goal is
+  -- `↑(TN c x) * Fy = Fx * ↑(TN x c)`, the cast of `g4hDB p x yc`.
+  have h := congrArg (fun n : Nat => (n : Rat)) (g4hDB p x yc)
+  simp only [Nat.cast_mul] at h
+  rw [mul_comm]
+  exact h.symm
+
 /-- A symmetric-card-exchange is symmetric: two `m`-subsets `S`, `T` of an `N`-deck
     exchange exactly `k` cards in each direction iff the reverse pair does.  This is
     the seed of the reversible-flow / detailed-balance identity for the
