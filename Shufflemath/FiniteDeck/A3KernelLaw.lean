@@ -90,6 +90,20 @@ theorem hMembershipExchange_lhs_reduces (p : BernoulliLaplaceGeneral.ExchangeAdm
     rw [← FiniteKernel.comp_assoc, hBD, FiniteKernel.comp_id_left]
   simp only [hBD, hBK, FiniteKernel.comp_assoc, FiniteKernel.comp_id_right]
 
+-- The deck → macro projection: read the deck's membership, then the marked-card
+-- count in the left pile (the Bernoulli-Laplace macro count).  Factors through
+-- `membership` (project d = countInPile (membership d)).  This is the `project`
+-- of the generic `run_tv_eq_macro_of_membership_exchange` (G2.10); note it lands
+-- in `BLState N m r`, whose *range* is a proper sub-set of `{x // x ≤ N}` (the
+-- count is bounded by `m`, `r`, `N`), so a generic `project` is not surjective
+-- onto all of `BLState` — the headline uses the recovery-based framework
+-- (`hrecover`), not the `fiberLaw project` route.
+noncomputable def project (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (d : Deck p.N) :
+    BernoulliLaplaceGeneral.BLState p.N p.m p.r := by
+  let hm := Nat.le_of_lt p.hmn
+  let hr := p.hrN
+  exact countInPile p.N p.m p.r hm hr (membership p.N p.m hm d)
+
 /-- G2.8: the generic A3 kernel law.  The membership-level effect of the
   deck-level physical exchange, after the macro lift, equals the macro
   exchange kernel after the macro lift — exactly `g4MacroIntertwining` (G4)

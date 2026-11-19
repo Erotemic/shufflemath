@@ -38,34 +38,69 @@
 >
 > **Next (session 80):** **G2 is 7/13 rows already generic** (disintegration, counting, kernel-algebra, fiber-intertwining — see the manifest); **6 rows remain 99-card-only**: the 2/3-exchange TV (G2.3/5), the A3 kernel law (G2.8), and the physical / two-physical-perfect-exchange TV (G2.9/10/13). **Top priority: G2.10 — the generic two-physical-perfect-exchanges identity (objective item 3)** — build it on the type-generic `FiberDisintegration.marginal_comp_fiber_eq_uniform` + the `(N,m,k)` `blExchange` kernel + a **generic A3 kernel law (G2.8)** (generalize `hMembershipExchange_kernel` to arbitrary `N,m,r,k`; `BLRefinement.uniformFiber_intertwines` already gives the count-fiber half). All building blocks are in place. Secondary: F4.2 n-step `TV ≤ n` (fiddly elaboration), F4.2 deck-level GSR lift, and the open qwen-review engineering items (Q1/Q2/Q4/Q5/Q9, R4 handoff reorganization).
 
-### G2 execution plan (G2.8 → G2.10)
+### G2 execution plan (G2.8 → G2.10) — STATUS: G2.8 DONE, G2.10 fully scoped
 
-Port `Shufflemath/CommanderA3KernelLaw.hMembershipExchange_kernel` to arbitrary
-`(N,m,r,k)`. The 99-card law states:
-`membershipLift ∘ localLift ∘ rawExchange ∘ deterministic membership = commanderExchange25 ∘ membershipLift`,
-closed by `hMembershipExchange_lhs_reduces` (LHS → uniform project-fiber pushforward `mu_x`) +
-kernel extensionality (`StdSimplex.weights_inj` + `Finsupp.ext`) + the pointwise A3 law `hMembershipExchange`.
+**G2.8 (generic A3 kernel law) — DONE, committed (`9181bff`).** In `Shufflemath/FiniteDeck/A3KernelLaw.lean`:
+`localLift (N m) hm := fiberLaw (membership N m hm) (membership_surjective …)` (deck-level perfect-local
+resample); `rawExchange p := (det membership) ⊳ (subsetExchangeMembershipKernel p) ⊳ localLift`; and
+`hMembershipExchange_kernel p : (UCFM ⊳ localLift ⊳ rawExchange) ⊳ det membership = blExchangeKernel ⊳ UCFM`
+— proven as `hMembershipExchange_lhs_reduces` (pure associativity + the perfect-local idempotence
+`localLift ⊳ det membership = id`) + `g4MacroIntertwining` (G4). This is the generic
+`hMembershipExchange` hypothesis the G2.10 headline needs. (Generic `membership_surjective` — fiber
+inhabited via `fiberCount = m!·(N−m)!` — is `4a5fa5a`; the 99-card `membershipLift` = `BLRefinement.uniformCountFiberMembership`, already generic.)
 
-**Already generic (reuse, do not rebuild):**
-- `TwoPile.membership (N m) (hm) : Deck N → Membership N m` (the observation `observe`).
-- `FiberDisintegration.{fiberLaw, marginalLaw, marginal_comp_fiber_eq_uniform}` — type-generic
-  (`observe := membership`); gives `localLift` and the disintegration.
-- `BernoulliLaplaceGeneral.blExchangeKernel (p : ExchangeAdmissible)` — the generic count-exchange
-  (analog of `commanderExchange25`).
-- `FiniteDeck/SubsetExchange.subsetExchangeKernel_*` — the generic physical-exchange count kernel.
-- `BLRefinement.{uniformFiber_intertwines, blExchangeKernel_mass, subsetExchangeMembershipKernel_mass, yMoves_card_eq_transitionNumerator, countFiber_card}` — the count-fiber counting half.
+**G2.10 (generic two-physical-perfect-exchanges) — the remaining headline; FULLY SCOPED below.**
 
-**To build (99-card-only gaps):**
-1. Generic `membershipLift (N m r k)` : count-state → uniform membership-fiber kernel
-   (analog of `CommanderMembershipKernels.membershipLift`; = `fiberLaw membership` at the count level).
-2. Generic Deck-level `rawExchange (N m)` : `FiniteKernel (Deck N) (Deck N)` (analog of
-   `CommanderPhysicalExchange.rawExchange`; the 25-position subset exchange, = `subsetExchange` at deck level).
-3. Generic pointwise A3 law `hMembershipExchange (N m r k)` : `mu_x = blExchange ∘ membershipLift`
-   (port `CommanderA3KernelLaw.hMembershipExchange`, reusing `BLRefinement` count-fiber counting).
-4. Assemble the generic `hMembershipExchange_kernel`, then the G2.10 two-physical-perfect-exchanges TV.
+> **Key realization (session 80):** the 99-card headline
+> (`CommanderFullDeckDisintegration.two_physical_perfect_exchanges_uniform_unconditional`) is assembled on
+> `run_tv_eq_macro` + `fiberLaw project`, which needs **`project : Deck → macro` to be surjective** — true
+> for the 99-card (`CommanderState = Fin 50` = the full left-count range) but **false generically**
+> (`BLState N m r = {x // x ≤ N}` ⊋ the projection's actual range `max(0,m−(N−r))…min(m,r)`). Instead use
+> the **recovery-based** framework `PhysicalExchangeReduction.run_tv_eq_macro_of_membership_exchange`
+> (`:111`), which needs only `hrecover : comp (macroLift ⊳ localLift) (det project) = id` — the
+> **count-preservation recovery** (holds without surjectivity) — plus `hMembershipExchange` (= G2.8, done).
 
-Target module: `Shufflemath/FiniteDeck/A3KernelLaw.lean` (new) or `BLRefinement`. Probe-first
-per the standing rules; commit per lemma.
+**Assemble (once a–c below are in place):**
+```
+theorem two_physical_perfect_exchanges_uniform
+    (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x0 : BLState p.N p.m p.r) (n : Nat) :
+    Dist.tv (FiniteKernel.run (PhysicalExchangeReduction.exchangeThenLocalReset
+        (membership p.N p.m hm) (localLift p.N p.m hm) (rawExchange p)) n
+        (FiniteKernel.apply (Dist.pointMass x0) (uniformCountFiberMembership p)))
+      (FiniteKernel.apply (Dist.pointMass x0) (blExchangeKernel p ⧉ n)) =
+      Dist.tv (run (blExchangeKernel p) n (pointMass x0)) (apply (pointMass x0) (blExchangeKernel p ⧉ n)) := by
+  exact run_tv_eq_macro_of_membership_exchange
+    (macroLift := uniformCountFiberMembership p) (localLift := localLift p.N p.m hm)
+    (membership := membership p.N p.m hm) (exchange := rawExchange p) (macroK := blExchangeKernel p)
+    (project := project p) (hrecover := hrecover p) (hMembershipExchange := hMembershipExchange_kernel p)
+    x0 n
+```
+(needs `[Fintype (BLState N m r)] [Fintype (Deck N)] [DecidableEq …]` — all available; `hm := Nat.le_of_lt p.hmn`).
+
+**Remaining bricks (build in this order; all mass/cardinality, mirror the 99-card idioms):**
+(a) **`project`** — **DONE** (`A3KernelLaw.lean`, committed): `project p d = countInPile p.N p.m p.r
+    hm hr (membership p.N p.m hm d)` (factors through `membership`).
+(b) **`project_fiber_card`**: `Fintype.card {d : Deck p.N // project p d = x} =
+    (countFiberMemb p.N p.m p.r (p.hrN) x).card · fiberCount p.N p.m hm`. Prove via `Fintype.card_congr`
+    (the f4 route): `{d // countInPile (membership d) = x} ≈ countFiberMemb(x) × (membership-fiber)`
+    using `Fintype.subtype_card` + `Fintype.card_product` + `countFiberMemb_equiv` (`BLRefinement:1209`).
+(c) **`hrecover`**: `comp (comp (uniformCountFiberMembership p) (localLift p.N p.m hm))
+    (det (project p)) = identity` — **mass arithmetic** mirroring
+    `CommanderMembershipKernels.membershipLift_localLift_eq_fiberLaw:502` (target `identity`, not `fiberLaw project`):
+    `funext x` → `StdSimplex.weights_inj` + `Finsupp.ext`; LHS mass at `z` =
+    `∑ d, [countInPile(membership d)=x / #countFiberMemb(x)] · (1/fiberCount) · [project d = z]`
+    (from `apply_pointMass` + `apply_comp` + `apply_deterministic_eq_map`/`apply_mass`,
+    `UCFM_mass_ite` `BLRefinement:1711` + `fiberLaw_mass`, the `[membership d = m]` selector collapsing the
+    `∑ m`); with `project d = countInPile (membership d)`: `z = x` → `= #decks-with-count-x · 1/#countFiberMemb(x) · 1/fiberCount = 1`
+    (by (b)); `z ≠ x` → `0`; RHS `= [x = z]`.
+(d) **TV target (only if an exact value is wanted)**: the macro 2-step TV
+    `Dist.tv (run (blExchangeKernel p) 2 (pointMass x0)) (apply (pointMass x0) (blExchangeKernel p ⧉ 2))` —
+    mirror `commander_tv_after_two_semantic` (`BernoulliLaplace:683`) with generic `blExchangeKernel`/`blStationary`.
+    (For a *bound* rather than an exact value, the framework's RHS suffices as-is.)
+
+Target module: `Shufflemath/FiniteDeck/A3KernelLaw.lean` (extend; keep the `@[expose] public section`).
+Probe-first per the standing rules; commit per lemma. Verify with
+`lake build Shufflemath.FiniteDeck.A3KernelLaw` (NOT in `dev/verify_next_phase.sh` — FiniteDeck is a separate build).
 >
 > **⚠ 77th session — F3 item 3 (the A3 `hMembershipExchange` kernel law) is COMPLETE and in the library.** Three commits: (1) `a6352be` (76th) proved the A3 capstone count bridge `mu_x_countFiberTotal`; (2) `b7f975e` **cycle-broke** the import graph by moving `exchangeChoice_card_eq_transitionDenominator` into a new *lower* module `Shufflemath/CommanderA3ExchangeCard.lean` (no CME dep); (3) **`c553c02` landed the kernel law in a proper library module `Shufflemath/CommanderA3KernelLaw.lean`** (in the active tranche), proving `hMembershipExchange`: for every source macrostate `x` and membership `m`, the raw-exchange pushforward `mu_x x` puts the same mass at `m` as the `commanderExchange25 ∘ membershipLift` kernel. A `Membership` is a 50-subset of the 99-card deck (50 left-orig + 49 right-orig), so `1 ≤ count ≤ 50` always (pigeonhole) — the feasibility `ite` in `hMembershipExchange_rhs_mass` is always true, and the law = `transitionWeight / membershipFiberCount` from `mu_x_countFiberTotal` + `mu_x_fiberSum`. Full tranche green (3232 jobs, 37 tests pass). ⚠ `Shufflemath/CommanderA3Count.lean` is a **SEPARATE pre-existing module** (the "A3 count half": `leftUnmarkedCardCount`) — do **NOT** overwrite it.
 >
