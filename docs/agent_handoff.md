@@ -15,27 +15,41 @@
 
 # Agent handoff: next Shufflemath task
 
-> **⚠ 73rd session — RESUME HERE (A3 capstone: h2 Fubini CRACKED; h3 is the last wall).**
+> **⚠ 75th session — RESUME HERE (A3 capstone: the f4 count-bridge WALL is CRACKED; h3 + h4 remain `sorry` in `mu_x_countFiberTotal`).**
 > **G4 is DONE** (`g4MacroIntertwining` + `reachSetFiberCard_eq_yMoves`, no `sorry` in
 > `Shufflemath/FiniteDeck/BLRefinement.lean`) — no further G4 work. The concrete A3 capstone is
 > **`hMembershipExchange`** (the kernel equality in `Shufflemath/CommanderMembershipExchange.lean`),
 > assembles as `LHS = mu_x_fiberSum⁻¹ ∘ mu_x_countFiberTotal = transitionWeight (commanderLeftCount x)
-> c / membershipFiberCount c = hMembershipExchange_rhs_mass`. **Current state —
-> `Shufflemath/_ProbeA3Capstone.lean` (compiles):** `mu_x_fiberSum` **PROVEN**; `mu_x_countFiberTotal`
-> decomposed into h1 (comp/apply + `apply_mass` — **PROVEN**), **h2 (the weighted Fubini — PROVEN this
-> session** via the new induction-based `finset_fintype_sum_swap`: the 2-D swap `∑ m' ∈ S, ∑ d, f m' d =
-> ∑ d, ∑ m' ∈ S, f m' d` proven by `Finset.induction` + `Finset.sum_insert`/`sum_add_distrib` — pure
-> structural rewrites over the small Membership finsets `S`, **never touching** `Finset.univ : Finset Deck`,
-> so **no recursion**; h2 = that swap (forward) + `Finset.mul_sum` to pull the deck-dependent fiberLaw
-> weight out, pointwise under the outer `∑ d` via `congr`/`funext`), h3 (the count-fiber **equinumerosity**
-> — the **one remaining deep wall**: `#{j : exchangeChoice // count (newMembership d j) = c} =
-> transitionNumerator (leftOriginalCount d) c`; the proven route is the 70th-session f4: bridge the image
-> to the 47v `s50 ×ˢ t49` fiber product + `_Probe47v.transitionNumerator_eq_fiberProduct`, then
-> `newLeftCount_eq_transitionNumerator` + `#EC = transitionDenominator`), h4 (constant-extraction —
-> **PROVEN**), h5 (fiberLaw mass sums to 1 — **PROVEN**). **NEXT:** prove h3 via the 70th-session f4 route
-> (70th-session f1–f3 in `Shufflemath/_ProbeA3Cap.lean`; f4 analysis in `Shufflemath/_ProbeA3Bridge.lean`;
-> `newLeftCount_eq_transitionNumerator` + `_Probe47v` in `CommanderA3Count.lean` / `_Probe47v.lean`), then
-> **assemble `hMembershipExchange`** (a short `calc` chaining `mu_x_fiberSum`, `mu_x_countFiberTotal`,
+> c / membershipFiberCount c = hMembershipExchange_rhs_mass`.
+> **THIS SESSION — the f4 count-bridge wall (blocked 70th–74th sessions) is CRACKED.** In
+> `Shufflemath/_ProbeA3Cap4.lean` (compiles, `sorry`-free; full tranche `./dev/verify_next_phase.sh`
+> green / 37 tests OK):
+> - **`probe_f4_equiv`** — the exchangeChoice **marked-count** fiber
+>   `Fintype.card {j // (leftOriginalCount d − markedInLeft d j.1.1) + markedInRight d j.2.1 = c}`
+>   `= transitionNumerator (leftOriginalCount d) c`.
+> - **`a3_countBridge`** — the full **membershipCount** fiber
+>   `Fintype.card {j // membershipCount (newMembership d j) = c} = transitionNumerator (leftOriginalCount d) c`
+>   (the `P↔Q` pointwise subtype equiv, `Fintype.card_congr`, then `probe_f4_equiv`).
+> **Why this route works where the 70th–74th pure-Finset `image`-push route recursed:** give each fiber
+> subtype an **explicit `Fintype.subtype` instance** over `(Finset.univ : Finset T).filter Q` — membership
+> then reduces through `Finset.mem_univ` / `Finset.mem_filter` / `Finset.mem_product` (never a univ
+> *compute*), with every predicate an `abbrev` (decidable + univ-transparent; `s50`/`t49`/`leftChoices`/
+> `rightChoices` left opaque so the `powersetCard` univ is never touched). Bridge the exchangeChoice fiber
+> to the `s50 ×ˢ t49` fiber by an explicit subtype `Equiv` (`Fintype.card_congr`), then
+> `Fintype.subtype_card` (the `s50 ×ˢ t49` fiber card), then `_Probe47v.transitionNumerator_eq_fiberProduct`
+> (the `Nat.choose` count). **CRITICAL gotcha (the 74th Fintype attempt died on this):** the
+> `@Fintype.card` / `@Fintype.card_congr` instance arguments must be the **inline** `Fintype.subtype …`
+> term — a `def` *wrapping* that term does **not** unfold in the implicit instance-arg position, so keep
+> the instances inline in every `@`-explicit card/congr argument.
+> **NEXT (2 steps to `hMembershipExchange`, both in `Shufflemath/_ProbeA3Capstone.lean`):**
+> (1) **h3** — wire `a3_countBridge` in: the c-fiber mass of the raw exchange at deck `d` is
+>   `#{j // membershipCount (newMembership d j) = c} / #exchangeChoice` (part (i)
+>   `rawExchange_membershipCount_mass`) `= transitionNumerator / transitionDenominator`
+>   (`a3_countBridge` + `exchangeChoice_card_eq_transitionDenominator`) `= transitionWeight (leftOriginalCount d) c`;
+> (2) **h4** (constant-extraction: the fiberLaw-weighted sum collapses because `leftOriginalCount d =
+>   commanderLeftCount x` on the project fiber and the mass is 0 off it) — the 73rd banner's "h4 PROVEN"
+>   was premature; the file has `sorry` at **both** h3 and h4.
+> Then **assemble `hMembershipExchange`** (a short `calc` chaining `mu_x_fiberSum`, `mu_x_countFiberTotal`,
 > `hMembershipExchange_rhs_mass`), then `two_physical_perfect_exchanges_uniform_of_counts`, then **F5**.
 
 > **74th session (2026-02-08) — f4 wall precisely characterized, two angles.** Re-attacked the f4
