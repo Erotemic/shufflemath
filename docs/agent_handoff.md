@@ -15,6 +15,46 @@
 
 # Agent handoff: next Shufflemath task
 
+**Updated:** (G4 **66th session — A3 part-(i) count-mass bridge: (a)+(b) combinatorial core DONE, one final Lean-mechanics step open** — `rawExchange_membershipCount_mass` WIP saved to `.pi-glla/56_rawExchangeMembership_count_wip.lean`).
+
+- **A3 part (i) count-mass bridge** — the 56th-session A3 part-(i) target
+  `rawExchange_membershipCount_mass` (per the 56th-session 4-step plan) is 95% written in
+  `.pi-glla/56_rawExchangeMembership_count_wip.lean`.  State:
+  - **(a) point mass → fiber count** — `hA`:
+    `(if count m = c then (rawExchangeMembership d) m else 0) = (1/#EC) · (if count m = c then
+    Fintype.card {j // F j = m} : Rat) else 0)`, via
+    `CommanderA3ExchangePushforward.rawExchangeMembership_pointMass` + `Fintype.card_subtype`
+    (Finset-filter card ↔ Fintype-card fiber).  DONE.
+  - **`if` indicator → the `c`-fiber `S`** and **`← mul_sum`** (factor `1/#EC` out of the sum) and
+    **`Finset.sum_filter`** (univ-sum with the `c`-indicator = sum over the `c`-fiber `S`).  DONE.
+  - **(b) fiber sum = preimage** — `FinsetCombinatorics.fiberSum_eq_preimageCard` (+ `Nat.cast_sum` /
+    `congrArg` for the Nat→Rat bridge) = `Fintype.card {j // F j ∈ S}`.  DONE.
+  - **Only remaining step (c)**: reduce `F j ∈ S` (`S` = the `c`-fiber) to
+    `membershipCount (newMembership d j…) = c` and close.  **`dsimp [F, S, …]; rfl` recurses**
+    because `F` = `newMembership` is a deep def (`addMembership` over `Finset.succImage` / `mem`).
+    The WIP banner gives the exact close: `congr 1` +
+    `funext j; simp only [F, S, Finset.mem_filter, Finset.mem_univ]` (a *shallow* `set F` let-reduction,
+    never unfolding `newMembership`'s body), then `Fintype.card_congr` / `congrArg`.
+    **This is a one-step fix, not a new theorem.**
+  - **Extraction target: `CommanderA3ExchangePushforward.lean`** (NOT
+    `CommanderMembershipExchange.lean` — that would be an import cycle, since
+    `CommanderA3ExchangePushforward` already imports `CommanderMembershipExchange`).  After it lands,
+    plug into the A3 part-(i) fiber-average / `transitionNumerator` reconciliation (steps 2–3 of the
+    56th plan) and toward `hMembershipExchange`.
+- **Note:** the 65th block's "resume at 66th" suggested the G4→concrete wiring; the 66th was instead
+  assigned the A3 part-(i) count-mass bridge (per the session task).  The G4→concrete + F5 path
+  (`docs/planning/proof-strategies/2026-11-18-g4-macro-intertwining-plan.md`) remains available as an
+  alternative next thread.  No new *library* lemmas this session (the 65th membership-lift bridge
+  `9b8ce3e` is still the last library commit); the only new tracked artifact is the WIP file.
+  Full tranche green.
+
+- **Exactly where to resume (67th session):** open `.pi-glla/56_rawExchangeMembership_count_wip.lean`,
+  apply the final-step fix from its banner (`congr 1` + shallow `funext`/`simp` on the predicate,
+  then `Fintype.card_congr`), confirm it compiles, and **extract the lemma into
+  `Shufflemath/CommanderA3ExchangePushforward.lean`** (delete the WIP file; add the lemma after
+  `rawExchangeMembership_pointMass`).  Then continue A3 part (i) (the fiber average / `transitionNumerator`
+  reconciliation) and the `hMembershipExchange` capstone in `CommanderMembershipExchange.lean`.
+
 **Updated:** (G4 **65th session — membership-lift identification bridge committed**: the concrete `membershipLift` / `membershipCount` / `membershipFiberCount` are the general `uniformCountFiberMembership` / `countInPile` / `countFiberMemb` at `(99, 50)`).
 
 - **The membership-level concrete↔general bridge is proven** — 5 lemmas landed in
