@@ -2,6 +2,7 @@ module
 
 public import Shufflemath.GSR
 public import Shufflemath.Finite
+public import Shufflemath.FinsetCombinatorics
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -10,6 +11,7 @@ namespace Shufflemath
 
 open FiniteKernel
 open Finset
+open FinsetCombinatorics
 
 /-- The pull-out-constant, boole-ify a finite sum of a constant times an
     indicator:
@@ -54,5 +56,45 @@ theorem uniformPushforward_pointMass
     rw [← Finset.mul_sum univ (fun j => (if f j = y then (1 : Rat) else 0)) c]
     rw [Finset.sum_boole]
   rw [hCount]
+
+/- **A3 normalization, count-fiber event form (general).** The total mass a
+    uniform-pushforward `law = (uniformDist X).map f` puts on a finite event
+    `S : Finset Y` is `(1 / card X) · #{x | f x ∈ S}`: each of the `card X`
+    equally-weighted source points lands in the preimage of `S` or not.
+
+    The event `S` must live in a *finite* codomain `Y` (here `Membership` in the
+    Commander application); the count predicate (`f x ∈ S`) is the event, not the
+    (infinite) `Nat` count, which keeps the `Fintype` hypotheses intact.  This is
+    the sum-over-the-fiber form of `uniformPushforward_pointMass` and the generic
+    engine behind the 99-card exchange's membership-count law. -/
+theorem uniformPushforward_eventMass
+    {X Y : Type*} [Fintype X] [Fintype Y] [Nonempty X] [DecidableEq X] [DecidableEq Y]
+    (f : X → Y) (S : Finset Y) :
+    (∑ y ∈ S, Dist.mass ((GSR.uniformDist X).map f) y) =
+      (Fintype.card X : Rat)⁻¹ * (Fintype.card {x : X // f x ∈ S} : Rat) := by
+  classical
+  -- the double-count, as a Rat equality, from the committed (Nat) fiberSum
+  have hFiber : (∑ y ∈ S, (#{x ∈ univ | f x = y} : Rat)) =
+      (Fintype.card {x : X // f x ∈ S} : Rat) := by
+    classical
+    have hPer (y : Y) : (#{x ∈ univ | f x = y} : ℕ) = Fintype.card {x : X // f x = y} := by
+      simpa [Fintype.card_subtype] using rfl
+    have hNat : (∑ y ∈ S, #{x ∈ univ | f x = y}) = Fintype.card {x : X // f x ∈ S} := by
+      rw [Finset.sum_congr rfl fun y _ => hPer y, ← fiberSum_eq_preimageCard Y f S]
+    rw [← Nat.cast_sum, hNat]
+  -- the mass sum = (1/#X) · (count of the preimage of the event), by point-mass + double-count
+  let c : Rat := (Fintype.card X : Rat)⁻¹
+  have hPoint (y : Y) : Dist.mass ((GSR.uniformDist X).map f) y =
+      c * (#{x ∈ univ | f x = y} : Rat) := uniformPushforward_pointMass f y
+  have h1 : (∑ y ∈ S, Dist.mass ((GSR.uniformDist X).map f) y) =
+      ∑ y ∈ S, (c * (#{x ∈ univ | f x = y} : Rat)) :=
+    Finset.sum_congr rfl (fun y _ => hPoint y)
+  have h2 : (∑ y ∈ S, (c * (#{x ∈ univ | f x = y} : Rat))) =
+      c * (∑ y ∈ S, (#{x ∈ univ | f x = y} : Rat)) := by
+    simp [Finset.mul_sum, Finset.sum_mul, mul_comm]
+  have h3 : c * (∑ y ∈ S, (#{x ∈ univ | f x = y} : Rat)) =
+      c * (Fintype.card {x : X // f x ∈ S} : Rat) := by
+    rw [hFiber]
+  exact h1.trans (h2.trans h3)
 
 end Shufflemath
