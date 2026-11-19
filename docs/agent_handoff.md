@@ -43,14 +43,24 @@
 > one-line `OracleRefinement.run_tv_eq_macro` on the same `hrecover` as the G2.10 physical headline
 > — the **TV-equality form**, which needs no deck fiber counts and no deck-level surjectivity
 > (false generically: `project : Deck → BLState` is not onto `BLState`).
-> **2 rows remain 99-card-only:** G2.9 / G2.13 (the physical-perfect-exchange **deck-uniform-target** TV:
-> TV against `GSR.uniformDist Deck` = exact rational). Both are **surjectivity-blocked generically** —
-> the 99-card `hfactor` (`comp lift = fiberLaw project`) needs `project_surjective`, which fails.
-> **Top priority next:** G2.9 / G2.13 via a route that avoids the wall — either the Membership-level
-> disintegration (`membership : Deck → Membership N m` IS surjective) or a direct mass-formula proof that
-> `apply (blStationaryDist p) (comp (UCFM p) localLift) = GSR.uniformDist (Deck p.N)` pointwise, fed into
-> the G2.10 TV-equality headline. Secondary: F4.2 n-step `TV ≤ n` (fiddly elaboration), F4.2 deck-level GSR lift,
-> and the open qwen-review engineering items (Q1/Q2/Q4/Q5/Q9, R4 handoff reorganization).
+> **G2.9 / G2.13 (deck-uniform target) — generic route DONE (this session).**
+> The **generic** headline `two_physical_perfect_exchanges_uniform_deck` (in
+> `Shufflemath/FiniteDeck/BLDisintegration`) is proved: for any
+> `ExchangeAdmissible p`, macrostate `x0`, and step count `n`,
+> `TV(run (physical 2..n-exchange chain, lifted to the deck) n (lifted x0),
+> GSR.uniformDist (Deck N)) = TV(run (blExchangeKernel) n (x0), blStationaryDist)`
+> — the 99-card G2.9 (n=2) / G2.13 (n=3) are the instantiations. It is the G2.10
+> headline with its lifted target renamed to `GSR.uniformDist` via the new bridge
+> `apply_blStationary_ucfm_locallift_eq_uniformDeck` (= the G3 disintegration
+> `bernoulliLaplace_disintegration` composition), i.e. the *membership-based*
+> route that avoids the `project_surjective` wall. **Remaining 99-card-only:** the
+> 99-card *specific* conditional headline `two_physical_perfect_exchanges_uniform_of_counts`
+> (still carries the `hfactor : comp membershipLift localLift = fiberLaw project`
+> premise, unprovable generically); instantiating the *generic* deck headline for
+> the 99-card admissible (membership/UCFM/localLift, not the commander `project`)
+> is the open packaging step. Secondary: F4.2 n-step `TV ≤ n` (fiddly elaboration),
+> F4.2 deck-level GSR lift, and the open qwen-review engineering items
+> (Q1/Q2/Q4/Q5/Q9, R4 handoff reorganization).
 
 ### G2 execution plan (G2.8 → G2.10) — STATUS: G2.8 DONE, G2.10 **DONE** (session 82, committed `11f099f` + `ff34501`)
 
@@ -84,6 +94,18 @@ inhabited via `fiberCount = m!·(N−m)!` — is `4a5fa5a`; the 99-card `members
 >   `n` steps of the Bernoulli-Laplace macro chain.  Assembled via
 >   `run_tv_eq_macro_of_membership_exchange` using `hrecover` + `hMembershipExchange_kernel` (G2.8) —
 >   no deck fiber counts needed.
+
+> **G2.9 / G2.13 — DONE (generic, this session, `5fd84ac` + `de7638a`):** the **deck-uniform-target**
+>   headline `two_physical_perfect_exchanges_uniform_deck` (in
+>   `Shufflemath/FiniteDeck/BLDisintegration`) proves `TV(run (physical 2..n-exchange chain, lifted to
+>   the deck) n (lifted x0), GSR.uniformDist (Deck N)) = TV(run (blExchangeKernel) n (x0),
+>   blStationaryDist)` for **any** `n` (99-card G2.9 = n=2, G2.13 = n=3).  It is the G2.10 headline with
+>   its lifted target `apply (blStationaryDist) (comp (UCFM) localLift)` renamed to `GSR.uniformDist`
+>   via the bridge `apply_blStationary_ucfm_locallift_eq_uniformDeck` (= the G3 `bernoulliLaplace_disintegration`
+>   composition) — the membership-based route that avoids the `project_surjective` wall.  The 99-card
+>   *specific* conditional headline `two_physical_perfect_exchanges_uniform_of_counts` still carries the
+>   `hfactor : comp membershipLift localLift = fiberLaw project` premise (the wall); instantiating the
+>   *generic* deck headline for the 99-card admissible is the remaining 99-card packaging step.
 
 <details><summary>(original session-80/81 scope — resolved above)</summary>
 

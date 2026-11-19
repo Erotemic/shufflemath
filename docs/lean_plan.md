@@ -46,10 +46,20 @@ phase notes are linked at the end; they do not override this plan. Read
 > A3KernelLaw counting-core lemmas (committed `30d49e3`): `countFiber`,
 > `countFiberMemb`, `countInPileVal`, `countFiber_blStationary`, `membershipCount`,
 > `deckCard_eq_membershipFiber`, and the `blLo`/`blHi` bounds.
-> **Next:** move `bernoulliLaplace_disintegration` from the probe into
-> `BLRefinement.lean` (its natural home) once the A3KernelLaw exports are wired into
-> BLRefinement's import; then assemble the 2/3-exchange TV headline (G2.10) and the
-> generic oracle-exchange TV headline (G2.3/G2.5) on the now-proved counting core.
+> **Next (session 92, 2026-12-16) — G2.9/G2.13 deck-uniform-target DONE (generic).**
+> `bernoulliLaplace_disintegration` is promoted to the first-class module
+> `Shufflemath/FiniteDeck/BLDisintegration` (`52fbdc9`). On top of it, the **bridge**
+> `apply_blStationary_ucfm_locallift_eq_uniformDeck` (`5fd84ac`) proves
+> `apply (blStationaryDist p) (comp (UCFM p) localLift) = GSR.uniformDist (Deck p.N)`
+> (by `← apply_comp` + the LHS `blStationary_ucfm_eq_marginalMembership` + the
+> `FiberDisintegration.marginal_comp_fiber_eq_uniform` recovery — the membership-based
+> route that avoids the `project_surjective` wall). And the **generic G2.9/G2.13
+> headline** `two_physical_perfect_exchanges_uniform_deck` (`de7638a`) proves, for any
+> `n`, `TV(run (physical 2..n-exchange, lifted) n (lifted x0), GSR.uniformDist (Deck N)) =
+> TV(run (blExchangeKernel) n (x0), blStationaryDist)` — the 99-card G2.9 (n=2) / G2.13
+> (n=3) instantiations. Remaining 99-card-only: discharge the *specific* conditional
+> `two_physical_perfect_exchanges_uniform_of_counts` (still carries the `hfactor` wall)
+> by instantiating the generic deck headline for the 99-card admissible.
 
 ## Objective and model boundary
 
