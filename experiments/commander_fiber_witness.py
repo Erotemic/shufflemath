@@ -9,10 +9,18 @@ All probabilities are exact Fractions. No 99! permutations are enumerated.
 """
 from __future__ import annotations
 
+import os
+import sys
 from collections import Counter
 from fractions import Fraction
 from itertools import combinations
 from math import comb
+
+# Make the `experiments` package importable when this file is run directly
+# (`python3 experiments/commander_fiber_witness.py`), so the
+# `from experiments.full_deck_oracle import ...` below resolves regardless of
+# the caller's working directory.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from experiments.full_deck_oracle import (
     fiber_decks,
