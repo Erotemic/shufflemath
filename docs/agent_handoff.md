@@ -49,30 +49,41 @@
   `Finset.mem_prod`), (b) predicate bridge `membershipCount (newMembership d L R) =
   (newLeftCards d L R ∩ leftOrigSet).card` (`membershipCount_newMembership` / `newLeftOriginalCount_eq`),
   (c) `newLeftCount_eq_transitionNumerator` (`(leftChoices ×ˢ rightChoices).filter (…)`'s card =
-  `transitionNumerator`). **CRITICAL recursion diagnosis (THREE walls, all at maxRecDepth 4000):**
+  `transitionNumerator`). **Recursion diagnosis (FOUR walls, all at maxRecDepth 4000 — the 99-card
+  powerset types are too big for Fintype-card computation):**
   (1) `Fintype.card` of the *named* Fintype `exchangeChoice` and `Finset.card` of the *concrete*
   Finset `leftChoices ×ˢ rightChoices` both elaborate fine (the target statement compiles; this is
   why `newLeftCount_eq_transitionNumerator` counts over `(leftChoices ×ˢ rightChoices).filter …`).
   (2) `Fintype.card` of the **anonymous** product `{p : Finset (Fin 50) × Finset (Fin 49) // …}`
-  recurses — never restate the count over the raw product. (3) **Newly found this session:** the
-  *statement-legal* `Fintype.card {p : ↑(leftChoices ×ˢ rightChoices) // …}` (a Finset-subtype whose
-  `Fintype` comes from `Finset.fintype`) also **recurses in the PROOF** (`unfold Fintype.card;
-  simp [Fintype.card, Finset.fintype, …]` forces the anonymous-product reduction). So the proof must
-  never instantiate a `Fintype` on `↑(leftChoices ×ˢ rightChoices)` either.
-  **Refined route (both ends concrete Finsets):** LHS = `Fintype.card {j : exchangeChoice // P j}`
-  → (named-Fintype, should be non-recursive) `Finset.card (Finset.univ (j : exchangeChoice) | P j)`;
-  RHS = the concrete `Finset.card ((leftChoices ×ˢ rightChoices).filter P')`; bridge the two **Finsets**
-  by the bijection `exchangeChoice ≃ ↑(leftChoices ×ˢ rightChoices)` (`exchangeChoice_equiv_lr` +
-  `Finset.mem_prod`), pushing `P j = (membershipCount (newMembership d j.1.1 …) = c) ↔
-  P' p = ((newLeftCards d p.1 p.2 ∩ leftOrigSet).card = c)` (`membershipCount_newMembership`), then
-  `newLeftCount_eq_transitionNumerator`. **First probe to run next session:** does
-  `Fintype.card {j : exchangeChoice // P j} = Finset.card (Finset.univ (j : exchangeChoice) | P j)`
-  close without recursion (it uses only the named Fintype, so it should)?
-  **Imports that work** (in the probe): `FinsetCombinatorics`, `BernoulliLaplace`, `CommanderPermutation`
-  (`leftOriginalCount`), `CommanderA3Kernel` (`newLeftCount_eq_transitionNumerator`,
+  recurses — never restate the count over the raw product.
+  (3) `Fintype.card` of the Finset-subtype `{p : ↑(leftChoices ×ˢ rightChoices) // …}` (whose
+  `Fintype` comes from `Finset.fintype`) recurses in the PROOF (`unfold Fintype.card;
+  simp [Finset.fintype, …]` forces the anonymous-product reduction).
+  (4) **Found this session:** even the *named*-Fintype bridge `Fintype.card {j : exchangeChoice // P j}
+  = Finset.card (Finset.univ (j : exchangeChoice) | P j)` recurses under `simp [Fintype.card,
+  Finset.fintype]` (simp over-expands `Fintype.univ`/`card_univ` of the powerset Fintype).
+  **The escape (route, next session):** every wall is triggered by *computing* a `Fintype.card` from
+  the default elaborated instance on a huge type.  The fix is to use `Fintype/Card.lean`'s
+  *instance-specific* lemmas, which state the card without expanding the default instance: `Fintype.card_ofFinset`
+  / `Fintype.card_of_subtype` / `Fintype.card_subtype` give `Fintype.card (ofFinset s H …) = Finset.card s`
+  for `H : x ∈ s ↔ P x`.  So: LHS `Fintype.card {j : exchangeChoice // P j}` = (instance-independence,
+  `Fintype.card_unique`/`Fintype.card_eq` — a single `rw`, NOT `simp`) `Fintype.card (ofFinset
+  (Finset.univ.filter P) (mem_filter_univ))` = (card_ofFinset) `Finset.card (Finset.univ (j : exchangeChoice) | P j)`;
+  then push that **Finset** by the bijection `exchangeChoice ≃ ↑(leftChoices ×ˢ rightChoices)`
+  (`exchangeChoice_equiv_lr` + `Finset.mem_prod`) to `Finset.card ((leftChoices ×ˢ rightChoices).filter P')`,
+  `P' p = (newLeftCards d p.1 p.2 ∩ leftOrigSet).card = c` (`membershipCount_newMembership`);
+  then `= transitionNumerator 99 50 25 (leftOriginalCount d) c` (`newLeftCount_eq_transitionNumerator`).
+  **First probe to run next session:** does the instance-independence step
+  `Fintype.card {j : exchangeChoice // P j} = Fintype.card (ofFinset (Finset.univ.filter P) (mem_filter_univ))`
+  close by a single `rw [Fintype.card_unique]`/`Fintype.card_eq` (no `simp`)?  If yes, the rest is
+  Finset bookkeeping. **`imports that work** (all in `namespace Shufflemath`; `CommanderFiberCount`
+  has NO sub-namespace so `leftOrigSet` is used unqualified; `FinsetCombinatorics.*` qualified;
+  `Finset.card_product`, NOT `card_prod`): `FinsetCombinatorics`, `BernoulliLaplace`,
+  `CommanderPermutation` (`leftOriginalCount`), `CommanderA3Kernel` (`newLeftCount_eq_transitionNumerator`,
   `newLeftCount_deckIndependent`), `CommanderMembershipKernels` (`membershipCount`),
   `CommanderMembershipExchange` (`membershipCount_newMembership`), `CommanderPhysicalExchange`
   (`newMembership`, `newLeftCards`, `leftChoices`/`rightChoices`, `leftCard25`/`rightCard25`),
+  `CommanderA3ExchangePushforward` (`exchangeChoice_equiv_lr`).
   `CommanderFiberCount` (`leftOrigSet`); all in `namespace Shufflemath`, `FinsetCombinatorics.*`
   qualified, and `Finset.card_product` (not `card_prod`) for the prod card.
 
