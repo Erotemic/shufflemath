@@ -15,7 +15,7 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** (A3 **69th session — the 4 count-bridge recursion walls are BROKEN**: `Fintype.card_of_subtype` gives the crux non-recursively; the chain `Fintype.card {j // P j} = Finset.card (univ | Q)` is proven in `_ProbeA3Cap.lean`; only the product-space equiv-push + `newLeftCount_eq_transitionNumerator` remain, then `hMembershipExchange` and F5).
+**Updated:** (A3 **70th session — the count bridge is proven up to the image push.** In `Shufflemath/_ProbeA3Cap.lean`: f1 `Fintype.card {j // P j} = Finset.card (univ | P)` via `Fintype.card_of_subtype`; f2 `= Finset.card (univ | Q)` via predicate-congruence (`Finset.ext` + `congrArg Finset.card`; both univ-filter predicates reduce to the *same* `P j` once membership is simplified); f3 `= Finset.card ((univ | Q).image projLR)` via `Finset.card_image_of_injOn` on the standalone injection. All three compile in ISOLATION (non-recursive). **The last step (f4)** — equating that image to `(leftChoices ×ˢ rightChoices).filter (newLeftCards-count = c)` (= `transitionNumerator` via `newLeftCount_eq_transitionNumerator`) — needs a pointwise `Finset.ext`, which **recurses** on the exchangeChoice ×ˢ-of-`powersetCard` univ when an element is ∃-bound (`rw`/`simpa` of `a ∈ Fintype.univ` has **no** simp lemma reducing it to `True`; `Finset.mem_univ` does not exist). **Route forward:** do NOT bridge to the raw `×ˢ`-filter (recurses); bridge the image to the **47v `s50 ×ˢ t49` fiber product** (clean `powersetCard 25` membership via `Finset.mem_powersetCard`) and use `_Probe47v.transitionNumerator_eq_fiberProduct`, which computes the same card *combinatorially* (`Nat.choose`, no univ compute) — that is how `newLeftCount_eq_transitionNumerator` already avoids the recursion. Then `hMembershipExchange` and F5. Committed `f5a785d`.)
 
 - **A3 part (i) count-mass bridge — COMPLETE (68th session):** the 56th-session target
   `rawExchange_membershipCount_mass` is now **proved and committed** in `Shufflemath/CommanderA3Mass.lean`.
@@ -30,34 +30,36 @@
   (`fiberSum_eq_preimageCard`) → Fintype-card bridge (`fintypeCard_subtypeCongr`). `CommanderA3Mass`
   is now in the `dev/verify_next_phase.sh` build list and the tranche stays green (37 tests).
 
-- **Exactly where to resume (69th session): the A3-capstone count bridge `exchangeCount_preimage_eq_transitionNumerator`**
-  (WIP at `Shufflemath/_ProbeA3Cap.lean`). Part (i) (`rawExchange_membershipCount_mass`) and part (ii)
-  (`mu_x_constant_on_countFiber`) are done; this lemma + `newLeftCount_deckIndependent` give the
-  fiber-average collapse `rawExchangeMembership_count = commanderExchange25_countMass` feeding
-  `hMembershipExchange`. **THE 4 RECURSION WALLS ARE BROKEN (69th session):** the crux
-  `Fintype.card {j : exchangeChoice // p j} = Finset.card (Finset.univ (j : exchangeChoice) | p)`
-  closes **non-recursively** via `Fintype.card_of_subtype` (Mathlib `Data/Fintype/Card.lean`, proof
-  `rw [← subtype_card s H]; congr!` — an *instance* bridge, never a `Fintype.univ` compute; the earlier
-  `simp [Fintype.card, Finset.fintype]` / `unfold Fintype.card` recurse). **Proven and compiling**
-  (`probe_countBridge_preEquiv`): `Fintype.card {j // P j} = Finset.card (Finset.univ (j : exchangeChoice) | Q)`
-  where `P j = membershipCount (newMembership d ...) = c` and `Q j = (leftOriginalCount d - markedInLeft d
-  j.1.1) + markedInRight d j.2.1 = c` — via `fintypeCard_subtypeCongr` (P↔Q, from
-  `count_exchangeChoice_eq_markedCount`, structural) then `Fintype.card_of_subtype`.
-  **ONLY remaining step:** push that Finset to the product space and apply
-  `newLeftCount_eq_transitionNumerator`.  Route: the univ-filter over `exchangeChoice` ≃ (the bijection
-  `j ↦ (j.1.1, j.2.1)`, i.e. `exchangeChoice_equiv_lr` to the direct-and `{p // p.1 ∈ leftChoices ∧
-  p.2 ∈ rightChoices}`, whose univ is a filter on the **small 2450-element** `Fin 50 × Fin 49`, NOT the
-  powerset) equals `Finset.card (Finset.univ (x : Fin 50 × Fin 49) | (x.1 ∈ leftChoices ∧ x.2 ∈ rightChoices
-  ∧ markedCount x = c))` = `Finset.card ((leftChoices ×ˢ rightChoices).filter (fun p => (newLeftCards d p.1
-  p.2 ∩ leftOrigSet).card = c))` (by `Finset.mem_product` — pointwise, non-recursive) =
-  `transitionNumerator 99 50 25 (leftOriginalCount d) c` (`newLeftCount_eq_transitionNumerator`).  Try
-  `Finset.card_image_ofInjective` (injective `j ↦ (j.1.1, j.2.1)`) for the push, or `Finset.card_congr` after
-  the univ=product `Finset.ext` bridge; test it does NOT recurse. **Imports that work:** as in the
-  `68th` list, plus `CommanderA3ExchangePushforward` (`exchangeChoice_equiv_lr`),
-  `CommanderMembershipExchange` (`count_exchangeChoice_eq_markedCount`), `CommanderPermutation`
-  (`markedInLeft`/`markedInRight`), and `newLeftOriginalCount_eq` (CommanderPhysicalExchange).
-  (`leftOrigSet` is in `CommanderFiberCount`, no sub-namespace; `FinsetCombinatorics.*` qualified;
-  `Finset.card_product` not `card_prod`.)
+- **Exactly where to resume (70th session): the f4 last step of the A3-capstone count bridge**
+  (WIP at `Shufflemath/_ProbeA3Cap.lean`, f1–f3 committed). Part (i) (`rawExchange_membershipCount_mass`)
+  and part (ii) (`mu_x_constant_on_countFiber`) are done; this lemma + `newLeftCount_deckIndependent`
+  give the fiber-average collapse `rawExchangeMembership_count = commanderExchange25_countMass` feeding
+  `hMembershipExchange`. **f1–f3 are PROVEN and compile in isolation** (see the `Updated:` header for the
+  exact forms): `Fintype.card {j // P j} = Finset.card (univ | Q) = Finset.card ((univ | Q).image projLR)`.
+  **f4 (the remaining step):** show `Finset.card ((univ | Q).image projLR) = transitionNumerator 99 50 25
+  (leftOriginalCount d) c`. Two blockers found this session: (a) a pointwise `Finset.ext` between the
+  image and `(leftChoices ×ˢ rightChoices).filter (newLeftCards-count = c)` **recurses** on the
+  exchangeChoice product Fintype univ when an element is ∃-bound (the ×ˢ of the two `powersetCard 25`
+  subtypes; `a ∈ Fintype.univ` has no simp lemma → the 2^50 sublists compute); (b) even COMPOSING f1∘f2∘f3
+  into one `calc` recurses (the `Fintype.card {j // …}` and the image in one goal force the univ compute),
+  so f1/f2/f3 must stay separate lemmas and f4 must re-derive the count **without** a `Finset.ext` on the
+  exchangeChoice side. **The proven route (mirror `newLeftCount_eq_transitionNumerator`):** bridge the
+  image's count to the **47v `s50 ×ˢ t49` fiber product** — `_Probe47v.s50 = (Finset.univ : Finset (Fin 50)).
+  powersetCard 25 = leftChoices` (and `t49 = rightChoices`; `leftChoices_eq_s50` / `rightChoices_eq_t49` in
+  `CommanderA3Kernel`) — whose membership is the *clean* `Finset.mem_powersetCard` (`L ⊆ Fin 50 ∧ L.card = 25`,
+  no sublists compute) — and apply `_Probe47v.transitionNumerator_eq_fiberProduct d c`, which computes
+  `(s50 ×ˢ t49).filter (markedCount = c)).card = transitionNumerator` via `Nat.choose` (combinatorial,
+  non-recursive). Concretely: prove `Finset.card ((univ | Q).image projLR) = ((s50 ×ˢ t49).filter
+  (fun p => (leftOriginalCount d - markedInLeft d p.1) + markedInRight d p.2 = c)).card` **by a bijection whose
+  forward/backward *construct* `s50 ×ˢ t49`-membership from the individual clean memberships** (via
+  `Finset.mem_product.mpr` + `leftChoices_eq_s50` / `rightChoices_eq_t49`, NOT by checking `a ∈ Fintype.univ`),
+  then `= transitionNumerator` by `_Probe47v.transitionNumerator_eq_fiberProduct`. **Imports:** as the 68th list,
+  plus `CommanderA3ExchangePushforward` (`exchangeChoice_equiv_lr`), `CommanderMembershipExchange` (`count_
+  exchangeChoice_eq_markedCount`), `CommanderPermutation` (`markedInLeft`/`markedInRight`), `newLeftOriginalCount_eq`
+  (CommanderPhysicalExchange), `CommanderA3Kernel` (`leftChoices_eq_s50` — **private**, so bridge via
+  `newLeftCount_eq_transitionNumerator` which already folds it in), and `_Probe47v` (`transitionNumerator_eq_
+  fiberProduct`, `s50`, `t49`). `leftOrigSet` is in `CommanderFiberCount` (no sub-namespace); `FinsetCombinatorics.*`
+  qualified; `Finset.card_product` not `card_prod`.
 - **A3 part (i) count-mass bridge** — the 56th-session A3 part-(i) target
   `rawExchange_membershipCount_mass` is 95% complete (the (a)+(b) core was already done; this session
   closed two more sub-steps). The 4th calc step (fiber-sum → preimage-card) now CLOSES with targeted
