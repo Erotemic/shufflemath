@@ -8,16 +8,19 @@ namespace Shufflemath
 namespace FiniteDeck
 open BernoulliLaplaceGeneral
 
-/-- G4 capstone (WIP skeleton, session 59). The pointwise-mass equality
-`mass (comp (UCFM) (SE) x) S = mass (comp (blExchangeKernel) (UCFM) x) S`,
-reduced via `funext; unfold comp; ext S`. The three sub-lemmas to fill:
-  hLHS : LHS mass at S = transitionNumerator c x.val / (#fiber x * D)
-         (via apply_mass_finsupp + the UCFM/SE mass bodies + reachSetFiberCard_eq_yMoves)
-  hRHS : RHS mass at S = transitionNumerator x.val c / (#fiber c * D)
-         (via apply_mass_finsupp + mass_blExchangeKernel + UCFM mass at S)
-  hDB  : #fiber x * transitionNumerator(x.val,c) = #fiber c * transitionNumerator(c,x.val)
-         (via detailedBalance + countFiber_blStationary + transitionWeight_def)
-  close: rw [hLHS, hRHS, <-hDB]; ring_nf
+/- G4 capstone (WIP, session 59). Kernel-composition equality, reduced to the mass
+level. KEY recipe (the step that was blocking the hLHS/hRHS decomposition):
+  funext x; unfold FiniteKernel.comp; ext S;
+  change <explicit `apply`-form mass equality>;   -- `.map.join` (from unfold) is defeq to `apply`
+  rw [Shufflemath.FiniteKernel.apply_mass]         -- LHS mass -> ∑_j mass (UCFM x) j * mass (SE j) S
+After the `rw`, the LHS is the two-level sum and the RHS is `mass (apply (blExchangeKernel p x)
+(UCFM p)) S`. Remaining work (one `sorry` here):
+  (a) expand the LHS summands (UCFM/SE mass bodies) + collapse via
+      reachSetFiberCard_eq_yMoves / markedCountChange / countFiber_blStationary to
+      transitionNumerator c x.val / (#(fiber x) * D);
+  (b) RHS: rw [apply_mass] again + mass_blExchangeKernel + UCFM-mass-at-S ->
+      transitionNumerator x.val c / (#(fiber c) * D);
+  (c) close with the detailedBalance fiber-swap.
 -/
 theorem g4MacroIntertwining (p : ExchangeAdmissible) :
     FiniteKernel.comp (uniformCountFiberMembership p) (subsetExchangeMembershipKernel p)
@@ -26,8 +29,9 @@ theorem g4MacroIntertwining (p : ExchangeAdmissible) :
   unfold FiniteKernel.comp
   ext S
   change
-    Dist.mass ((uniformCountFiberMembership p x).map (subsetExchangeMembershipKernel p)).join S =
-      Dist.mass ((blExchangeKernel p x).map (uniformCountFiberMembership p)).join S
+    Dist.mass (FiniteKernel.apply (uniformCountFiberMembership p x) (subsetExchangeMembershipKernel p)) S =
+      Dist.mass (FiniteKernel.apply (blExchangeKernel p x) (uniformCountFiberMembership p)) S
+  rw [Shufflemath.FiniteKernel.apply_mass]
   sorry
 
 end FiniteDeck
