@@ -15,6 +15,24 @@
 
 # Agent handoff: next Shufflemath task
 
+> **⚠ 71st session — RESUME HERE (supersedes the 70th-session f4 route below).** The A3
+> **f4 count-bridge wall is confirmed from BOTH candidate routes.** The 70th-session route
+> (bridge the image to the 47v `s50 ×ˢ t49` fiber product) **also recurses**: the image side of
+> the equality is `∃ j : exchangeChoice, j ∈ Fintype.univ.exchangeChoice ∧ …`, and
+> `exchangeChoice` is a Fintype **subtype** whose `Fintype.univ` membership has *no* simp lemma
+> (it computes the 2^50 powerset sublists). Every `Equiv`/card-bridge between `exchangeChoice`
+> and the `s50 ×ˢ t49` powersetCard recurses at a subtype-membership subgoal; the 68th-session
+> `fintypeCard_subtypeCongr` only works *within one base type*, and the two sides here have
+> **different** base types. **Do not keep grinding f4.** **Resume at the generic G4 capstone**
+> `uniformCount_intertwines_subsetExchange` (`Shufflemath/FiniteDeck/BLRefinement.lean`,
+> arbitrary `N,m,r,k`, over `Finset.univ : Finset (Fin N)` — no powersetCard-subtype Fintype,
+> hence no recursion): its single new lemma `reachSetFiberCard_eq_yMoves` is **already PROVEN**
+> (`BLRefinement.lean:1624`); the capstone assembles it with `detailedBalance` and is the
+> "honest discharger." Then specialize to `(99,50,50,25)` for the A3, then `hMembershipExchange`,
+> then F5. Plan: `docs/planning/proof-strategies/2026-11-18-g4-macro-intertwining-plan.md`;
+> full f4 wall analysis: `Shufflemath/_ProbeA3Bridge.lean` (WIP, compiling). The 70th-session
+> f1–f3 remain committed in `Shufflemath/_ProbeA3Cap.lean` for reference but are blocked.
+
 **Updated:** (A3 **70th session — the count bridge is proven up to the image push.** In `Shufflemath/_ProbeA3Cap.lean`: f1 `Fintype.card {j // P j} = Finset.card (univ | P)` via `Fintype.card_of_subtype`; f2 `= Finset.card (univ | Q)` via predicate-congruence (`Finset.ext` + `congrArg Finset.card`; both univ-filter predicates reduce to the *same* `P j` once membership is simplified); f3 `= Finset.card ((univ | Q).image projLR)` via `Finset.card_image_of_injOn` on the standalone injection. All three compile in ISOLATION (non-recursive). **The last step (f4)** — equating that image to `(leftChoices ×ˢ rightChoices).filter (newLeftCards-count = c)` (= `transitionNumerator` via `newLeftCount_eq_transitionNumerator`) — needs a pointwise `Finset.ext`, which **recurses** on the exchangeChoice ×ˢ-of-`powersetCard` univ when an element is ∃-bound (`rw`/`simpa` of `a ∈ Fintype.univ` has **no** simp lemma reducing it to `True`; `Finset.mem_univ` does not exist). **Route forward:** do NOT bridge to the raw `×ˢ`-filter (recurses); bridge the image to the **47v `s50 ×ˢ t49` fiber product** (clean `powersetCard 25` membership via `Finset.mem_powersetCard`) and use `_Probe47v.transitionNumerator_eq_fiberProduct`, which computes the same card *combinatorially* (`Nat.choose`, no univ compute) — that is how `newLeftCount_eq_transitionNumerator` already avoids the recursion. Then `hMembershipExchange` and F5. Committed `f5a785d`.)
 
 - **A3 part (i) count-mass bridge — COMPLETE (68th session):** the 56th-session target
@@ -30,7 +48,7 @@
   (`fiberSum_eq_preimageCard`) → Fintype-card bridge (`fintypeCard_subtypeCongr`). `CommanderA3Mass`
   is now in the `dev/verify_next_phase.sh` build list and the tranche stays green (37 tests).
 
-- **Exactly where to resume (70th session): the f4 last step of the A3-capstone count bridge**
+- **Exactly where to resume (70th session, SUPERSEDED — see 71st-session note above): the f4 last step of the A3-capstone count bridge**
   (WIP at `Shufflemath/_ProbeA3Cap.lean`, f1–f3 committed). Part (i) (`rawExchange_membershipCount_mass`)
   and part (ii) (`mu_x_constant_on_countFiber`) are done; this lemma + `newLeftCount_deckIndependent`
   give the fiber-average collapse `rawExchangeMembership_count = commanderExchange25_countMass` feeding
