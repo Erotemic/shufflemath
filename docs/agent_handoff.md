@@ -82,6 +82,17 @@ name is cheap; the earlier failures (47ax `hGf`/`hGb` defs, 47az inline `hpart`)
 all **re-ran the heavy body at the call site**. A standalone reference module is
 `Shufflemath/_Probe47b0.lean`.
 
+**G4 generic-kernel status (56th session):** the fiber-uniform membership kernel
+`uniformCountFiberMembership` is now in `BLRefinement` (commit `8343334`) — the
+"uniform count-fiber membership" half of the G4 macro-intertwining kernel equality
+(the roadmap "discharge Commander A3 by instantiation" route). Next on the *generic*
+route: the `subsetExchangeMembershipKernel` wrapper (Membership to Membership, over
+`subsetExchangeKernel`) plus the full kernel equality
+`uniformCountFiberMembership comp subsetExchangeMembershipKernel = blExchangeKernel comp uniformCountFiberMembership`
+(pointwise-mass; see `/tmp/note_g4_kernel_eq.md` and the G4 row of the theorem
+manifest). The concrete 99,50,50,25 route below is the parallel path to the same
+A3 discharge.
+
 **Exactly where to resume: the A3 capstone `hMembershipExchange` — part (i) count
 total, then the full kernel equality.** Both *inputs* to the within-count
 uniformity (part (ii)) are now in the library: `mu_x_map_invariance` (invariance)
