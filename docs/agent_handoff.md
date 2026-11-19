@@ -98,6 +98,53 @@ theorem two_physical_perfect_exchanges_uniform
     mirror `commander_tv_after_two_semantic` (`BernoulliLaplace:683`) with generic `blExchangeKernel`/`blStationary`.
     (For a *bound* rather than an exact value, the framework's RHS suffices as-is.)
 
+**⚠ Session-81 update — the crux is a single clean lemma: `map_const_on_support`.**
+A 99-card-style mass expansion for (c) `hrecover` recurses on the double fiberLaw sum
+(the f4-style wall). Instead, the whole `hrecover` reduces to **one** generic lemma, which
+then makes `hrecover` a 2-line `comp`-algebra application:
+
+```lean
+/-- A distribution pushed forward by a function constant `c` on its positive-mass support
+  is the point mass at `c`. -/
+theorem map_const_on_support [Fintype α] [Fintype β] [DecidableEq β]
+    (mu : Dist α) (f : α → β) (c : β)
+    (h : ∀ y, Dist.mass mu y ≠ 0 → f y = c) : mu.map f = Dist.pointMass c
+```
+
+**Why it closes `hrecover`.** Two applications + `comp_assoc`:
+- `hK`: `comp (localLift) (det (project)) = det (fun m => countInPile (membership m))`. By
+  `apply_pointMass`+`apply_comp`+`apply_deterministic_eq_map`, LHS at `m` =
+  `(localLift m).map project`; `localLift m` is supported on `membership⁻¹(m)` (`fiberLaw_mass`),
+  and on it `project = countInPile (membership ·) = countInPile m` (const) → `map_const_on_support`.
+- `hU`: `comp (UCFM) (det (countInPile …)) = identity`. Same: `(UCFM x).map (countInPile …)`;
+  `UCFM x` is supported on `{d // countInPile (membership d) = x}` (`UCFM_mass_ite`,
+  `BLRefinement:1711`), where `countInPile · = x` (const) → `map_const_on_support` = `pointMass x`.
+- `hrecover`: `comp (comp (UCFM) (localLift)) (det project) = comp UCFM (comp localLift (det project))`
+  (`comp_assoc`) `= comp UCFM (det (countInPile …))` (`hK`) `= identity` (`hU`).
+
+**Proof skeleton (self-contained below; the `by_cases`/`sum_congr` details mirror the 99-card):**
+`apply (Convexity.StdSimplex.weights_inj (f := mu.map f) (g := pointMass c)).mp` →
+`Finsupp.ext` → `intro z` → `rw [← Dist.mass, ← Dist.mass]` → `classical` →
+`rw [← FiniteKernel.apply_deterministic_eq_map, FiniteKernel.apply_mass]` (→ `∑ j, mass j · (det f j).mass z`).
+Goal form after `apply_mass`: **`∑ j, mu.mass j · (det f j).mass z = (pointMass c).mass z`**.
+Then `by_cases hz : c = z`; in each branch a `Finset.sum_congr` pointwise rewrite (by the support
+hypothesis `h`, `f j = c` on the support) + `Dist.sum_mass` (= 1) / `simp` (0) +
+`Dist.mass_pointMass` for the RHS. Confirmed: `Dist.mass_pointMass` is `@[simp]`;
+`simp [hz, eq_comm]` (hz : c=z or c≠z) reduces `(if c = z then 1 else 0 : Rat)` correctly in
+both cases (verified in a standalone probe).
+**Remaining friction (the only thing blocking the build):** the inner ite reduction —
+reducing `(pointMass (f j)).mass z` to `if f j = z then 1 else 0` — did not fire via
+`rw [Dist.mass_pointMass]` NOR `simp [Dist.mass_pointMass, …]` (the `Dist.mass` def / `.mass`
+dot-notation vs `mass_pointMass`'s `mass` LHS don't unify; `dsimp [Dist.mass]` alone didn't
+bridge it either). **Try, in order:** (1) `simp [Dist.pointMass, Dist.mass, Finsupp.single_apply, eq_comm]`
+(`pointMass = StdSimplex.single`, a `Finsupp.single` — `single_apply` gives the ite directly);
+(2) a `conv` block targeting just the `.mass` subterm; (3) prove a helper
+`pointMass_mass_ite [DecidableEq β] (x y : β) : Dist.mass (pointMass x) y = (if x = y then 1 else 0 : Rat)`
+as a fresh `@[simp]` lemma (by `rw [pointMass]`, `Finsupp.single_apply`) and add it to the simp set.
+The `by_cases`-branch `Finset.sum_congr` rewrites use `h j h0` (h0 : mass j ≠ 0) to set `f j = c`, then
+`simp [hz, eq_comm, mul_one/mul_zero]`. Once `map_const_on_support` builds, `hrecover` +
+`two_physical_perfect_exchanges_uniform` (the headline) follow directly from the skeleton above.
+
 Target module: `Shufflemath/FiniteDeck/A3KernelLaw.lean` (extend; keep the `@[expose] public section`).
 Probe-first per the standing rules; commit per lemma. Verify with
 `lake build Shufflemath.FiniteDeck.A3KernelLaw` (NOT in `dev/verify_next_phase.sh` — FiniteDeck is a separate build).
