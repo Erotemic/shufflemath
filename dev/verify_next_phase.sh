@@ -33,6 +33,7 @@ lake build \
   Shufflemath.CommanderA3KernelLaw \
   Shufflemath.CommanderA3ExchangeCard \
   Shufflemath.CommanderCostedCertificate \
+  Shufflemath.TelescopeF5 \
   Shufflemath.CommanderMarkedRightCount \
   Shufflemath.CommanderLocalGSR \
   Shufflemath.CommanderDeckGSR
