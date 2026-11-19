@@ -2,6 +2,7 @@ module
 
 public import Shufflemath.FiniteDeck.TwoPile
 public import Shufflemath.FiniteDeck.Fiber
+public import Shufflemath.FiniteDeck.TwoPileFiber
 public import Shufflemath.FiniteDeck.BLRefinement
 public import Shufflemath.BernoulliLaplaceGeneral
 public import Shufflemath.FiberDisintegration
@@ -343,6 +344,75 @@ theorem two_oracle_exchanges_uniform
     (hrecover := hrecover p)
     (macroK := BernoulliLaplaceGeneral.blExchangeKernel p)
     (Dist.pointMass x0) (BernoulliLaplaceGeneral.blStationaryDist p) n
+
+/-! ## G2.9 / G2.13: the deck-level disintegration counting core
+
+The final 99-card headline `two_physical_perfect_exchanges_uniform_deck` (G2.9/G2.13) is
+blocked only by the deck-level disintegration
+`apply (blStationaryDist p) (comp (UCFM p) (localLift)) = GSR.uniformDeck p.N`, which the
+`marginal_comp_fiber_eq_uniform` route cannot give directly because `project` (the BLState
+observation of a deck) is **not** surjective.  The workaround: disintegrate through the
+**surjective** `membership : Deck → Membership` observation instead, which reduces the
+deck-level statement to two pure finite-counting facts below.
+
+- `countFiber_eq_countFiberMemb` — the raw `countFiber` (a `Finset` of bare `m`-subsets with
+  marked count `x`) and the typed `countFiberMemb` (a `Finset` of `Membership`, i.e. the same
+  subsets with their size proof) have the same size; each has the exact choose-product count
+  `choose r x * choose (N-r) (m-x)`, so they are equal.
+- `deckCard_eq_membershipFiber` — the permutation space partitions into the membership fibers
+  (`fiberSum_eq_permCard`) and every fiber has the same size `m!·(N-m)!` (`fibersEqual` +
+  `fiberSet_card` + `fiberCount`), so `#Deck = #Membership · (m!·(N-m)!)`.
+-/ 
+
+/-- The raw and typed count-fibers of marked count `x.val` have equal size (both are the
+    choose-product `choose r x * choose (N-r) (m-x)`). -/
+theorem countFiber_eq_countFiberMemb (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (hm : p.m ≤ p.N) (hr : p.r ≤ p.N) (x : BernoulliLaplaceGeneral.BLState p.N p.m p.r) :
+    (countFiber p.N p.m p.r hm hr x.val).card = (countFiberMemb p.N p.m p.r hr x).card := by
+  have hxm : x.val ≤ p.m := (Nat.le_min.mp x.2.2).1
+  rw [countFiber_card p.N p.m p.r hm hr x.val hxm, countFiberMemb_card p.N p.m p.r hm hr x]
+
+/-- The deck space is the product of the membership space and a single membership fiber:
+    `#Deck = #Membership · (m!·(N-m)!)` (the per-fiber size is constant, so any fiber `A`
+    may be used for the factor). -/
+theorem deckCard_eq_membershipFiber (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (hm : p.m ≤ p.N) (A : Membership p.N p.m) :
+    Fintype.card (Deck p.N) =
+      Fintype.card (Membership p.N p.m) * Fintype.card (FibType p.N p.m hm A) := by
+  classical
+  have hSum : Fintype.card (Deck p.N) =
+      (pileSet p.N p.m).sum (fun S => (fiberSetPile p.N p.m hm S).card) :=
+    fiberSum_eq_permCard p.N p.m hm
+  have hAll : ∀ S ∈ pileSet p.N p.m,
+      (fiberSetPile p.N p.m hm S).card = Fintype.card (FibType p.N p.m hm A) := by
+    intro S hS
+    have hSm : S.card = p.m := by
+      rw [pileSet, Finset.mem_powersetCard] at hS
+      exact hS.2
+    calc (fiberSetPile p.N p.m hm S).card
+        = (fiberSet p.N p.m hm ⟨S, hSm⟩).card := rfl
+      _ = Fintype.card (FibType p.N p.m hm ⟨S, hSm⟩) := fiberSet_card p.N p.m hm ⟨S, hSm⟩
+      _ = Fintype.card (FibType p.N p.m hm A) := fibersEqual p.N p.m hm ⟨S, hSm⟩ A
+  have hSumConst : (pileSet p.N p.m).sum (fun S => Fintype.card (FibType p.N p.m hm A)) =
+      (pileSet p.N p.m).card * Fintype.card (FibType p.N p.m hm A) := by
+    rw [Finset.sum_const]
+    simp
+  have hPile : (pileSet p.N p.m).card = Nat.choose p.N p.m := by
+    rw [pileSet, Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
+  have hMemCard : Fintype.card (Membership p.N p.m) = Nat.choose p.N p.m :=
+    membershipCount p.N p.m hm
+  have hH : Fintype.card (Equiv.Perm (Fin p.N)) =
+      Fintype.card (Membership p.N p.m) * Fintype.card (FibType p.N p.m hm A) := by
+    calc Fintype.card (Equiv.Perm (Fin p.N))
+        = (pileSet p.N p.m).sum (fun S => (fiberSetPile p.N p.m hm S).card) := by rw [hSum]
+      _ = (pileSet p.N p.m).sum (fun S => Fintype.card (FibType p.N p.m hm A)) :=
+        Finset.sum_congr rfl (fun S hS => hAll S hS)
+      _ = (pileSet p.N p.m).card * Fintype.card (FibType p.N p.m hm A) := by rw [hSumConst]
+      _ = Nat.choose p.N p.m * Fintype.card (FibType p.N p.m hm A) := by rw [hPile]
+      _ = Fintype.card (Membership p.N p.m) * Fintype.card (FibType p.N p.m hm A) := by rw [hMemCard]
+  have hDeck : Fintype.card (Deck p.N) = Fintype.card (Equiv.Perm (Fin p.N)) := rfl
+  rw [hDeck]
+  exact hH
 
 end FiniteDeck
 end Shufflemath
