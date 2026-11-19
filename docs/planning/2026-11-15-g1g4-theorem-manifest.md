@@ -18,14 +18,18 @@ remaining generalization.**
   `countFiber_blStationary`, `countFiber_transitive`, `countInPile_*`,
   `yMoves_card_eq_transitionNumerator`, … The "Commander A3 as an instance"
   row is the F3 discharge above.
-* **G2 — remaining.** The arbitrary-deck `hasFiberCounts` /
-  `uniformDisintegration` / 2/3-exchange **TV** theorems are **not yet stated
-  as single generic theorems**: the disintegration and TV identities exist for
-  the 99-card deck, and the generic *count-fiber* machinery (`BLRefinement`)
-  and the Fintype-free *kernel algebra* (`Shufflemath/Finite`: `apply_deterministic_eq_map`,
-  `comp_assoc`, `run_succ`, `run_compPow`, `distProduct*`) are already
-  parameterized. Closing G2 is a bounded refactor of the 99-card disintegration
-  + 2/3-exchange theorems to arbitrary `N,m,r`.
+* **G2 — PARTIAL.** The **disintegration / counting / kernel-algebra /
+  fiber-intertwining layer is already generic**: `FiberDisintegration` is fully
+  type-generic (`marginal_comp_fiber_eq_uniform`, `stationary_disintegrates_of_mass`,
+  `fiberLaw_recovers` — any finite `β`), `FiniteDeck/{Fiber,SubsetExchange,BLRefinement}`
+  are `(N,m[,k,r])`-parameterized (fiber counts, `subsetExchangeKernel`/`blExchange`
+  kernels, `uniformFiber_intertwines`), `CommanderMembershipExchange.distUniform_ofInvariantTransitive`
+  is type-generic, and `Shufflemath/Finite` carries the Fintype-free kernel algebra.
+  **Six rows remain 99-card-only:** the 2/3-exchange TV (G2.3/5), the A3 kernel
+  law (G2.8), and the physical / two-physical-perfect-exchange TV (G2.9/10/13).
+  The headline **G2.10** (generic two-physical-perfect-exchanges, objective item 3)
+  is the top next task; it needs the generic A3 kernel law (G2.8) as a prerequisite,
+  and all its building blocks are already in place.
 
 This is the theorem manifest (the plan's *source → target* map). The
 **target-name column** below is the original plan's proposed naming; the
@@ -53,27 +57,37 @@ file needed for G1).
 
 ### G2. Generic finite-deck versions (arbitrary `N, m, r, k` parameters)
 
-**Status: REMAINING.** Target module: new `Shufflemath/Finite.lean` (or extend
-`Shufflemath/FiniteDeck/`). The Fintype-free kernel algebra (`Shufflemath/Finite`)
-and the generic count-fiber machinery (`Shufflemath/FiniteDeck/BLRefinement`,
-already `(N,m,r,k)`-parameterized) are in place; the disintegration + 2/3-exchange
-**TV** theorems below are the remaining 99-card → `N,m,r` refactor.
+**Status: PARTIAL** — the disintegration / counting / kernel-algebra / fiber-
+intertwining layer is **already generic**; the 2/3-exchange and
+physical-perfect-exchange **TV** theorems remain 99-card-only. Target modules:
+the **fully type-generic** `Shufflemath/FiberDisintegration` (works for *any*
+finite `β`, not just the 99-card deck), the `(N,m[,k,r])`-parameterized
+`Shufflemath/FiniteDeck/{Fiber, SubsetExchange, BLRefinement}`, and the
+Fintype-free kernel algebra `Shufflemath/Finite`.
 
-| # | Target theorem (generic finite deck) | Source theorem to derive it from | Status |
+| # | Target theorem (generic) | Realized by (existing declaration) | Status |
 |---|---|---|---|
-| 1 | `hasFiberCounts (N m r k)` (`HasFiberCounts`) | `CommanderFiberCount` (99-card) + `Fintype.card_perm` / `Finset.card` generic versions | REMAINING (99-card only) |
-| 2 | `uniformDisintegration (N m r k)` | `FiberDisintegration.fiberLaw` (99-card) + G2.1 + generic stationary law | REMAINING (99-card only) |
-| 3 | `twoExchangeUniform (N m r k)` | G2.2 + G2.4 count-exchange + generic TV + `run` | REMAINING (99-card only) |
-| 4 | `countExchangeKernel (N m r k)` | `BernoulliLaplaceGeneral` count-transition + generic membership (needs `Membership (N m)`) | REMAINING (99-card only) |
-| 5 | `threeExchangeUniform (N m r k)` | G2.3 + one more count-exchange | REMAINING (99-card only) |
-| 6 | `fiberCountEq (N m r k)` | `CommanderFiberMembership.fiberSet_card` (99-card) + generic Fintype card | REMAINING (99-card only) |
-| 7 | `uniformPushforwardEq (N m r k)` | G2.6 + `Finite.apply_deterministic_eq_map` (Fintype-free, in `Shufflemath/Finite`) | REMAINING (99-card only) |
-| 8 | `membershipExchangeLaw (N m r k)` | G2.4 + generic membership (needs `Membership (N m)`) | REMAINING (99-card only) |
-| 9 | `physicalTwoExchange (N m r k)` | G2.3 + G2.8 + generic `FiberLifting` + `PhysicalExchangeReduction` | REMAINING (99-card only) |
-| 10 | `twoPhysicalPerfectUniform (N m r k)` | G2.9 + `FiberDisintegration.fiberLaw` + `TotalVariation.tv_subadditive` | REMAINING (99-card only) |
-| 11 | `uniformFiberIntertwines (N m r k)` | G2.8 + G2.10 + `FiberDisintegration` | REMAINING (99-card only) |
-| 12 | `distUniformOfInvariantTransitive (N m r k)` | G2.11 + `TotalVariation.distUniform_ofInvariantTransitive` (99-card) + generic `membershipFiber_transitive` | REMAINING (99-card only) |
-| 13 | `physicalThreeExchange (N m r k)` | G2.10 + one more count-exchange | REMAINING (99-card only) |
+| 1 | `hasFiberCounts` (fiber-card counting) | `FiniteDeck/Fiber.fiberSet_card`, `fiberSum_eq_permCard`, `fiberCount` | **DONE (generic)** |
+| 2 | `uniformDisintegration` (marginal × uniform-fiber = uniform) | `FiberDisintegration.marginal_comp_fiber_eq_uniform`, `stationary_disintegrates_of_mass` (type-generic) | **DONE (generic)** |
+| 3 | `twoExchangeUniform` (2-exchange TV) | — (99-card: `two_oracle_exchanges_uniform`) | **REMAINING** |
+| 4 | `countExchangeKernel` | `FiniteDeck/SubsetExchange.subsetExchangeKernel_*`, `BLRefinement.blExchangeKernel_mass` | **DONE (generic)** |
+| 5 | `threeExchangeUniform` (3-exchange TV) | — (99-card: `three_oracle_exchanges_uniform`) | **REMAINING** |
+| 6 | `fiberCountEq` | `FiniteDeck/Fiber.fiberSet_card`, `fiberSum_eq_permCard` | **DONE (generic)** |
+| 7 | `uniformPushforwardEq` | `FiberDisintegration.fiberLaw_recovers` (type-generic) | **DONE (generic)** |
+| 8 | `membershipExchangeLaw` (A3 kernel law) | partial: `BLRefinement.uniformFiber_intertwines` (count-fiber); full law is 99-card `CommanderA3KernelLaw.hMembershipExchange_kernel` | **REMAINING** |
+| 9 | `physicalTwoExchange` | — (99-card: `two_physical_perfect_exchanges_uniform_of_counts`) | **REMAINING** |
+| 10 | `twoPhysicalPerfectUniform` ← **headline (objective item 3)** | — (99-card: `two_physical_perfect_exchanges_uniform_unconditional`) | **REMAINING** |
+| 11 | `uniformFiberIntertwines` | `BLRefinement.uniformFiber_intertwines` | **DONE (generic)** |
+| 12 | `distUniformOfInvariantTransitive` | `CommanderMembershipExchange.distUniform_ofInvariantTransitive` (type-generic) | **DONE (generic)** |
+| 13 | `physicalThreeExchange` | — (99-card: `three_physical_perfect_exchanges_uniform_unconditional`) | **REMAINING** |
+
+**Remaining (6 rows):** G2.3/5 (generic 2/3-exchange TV), G2.8 (generic A3
+kernel law), G2.9/10/13 (generic physical / two-physical-perfect-exchange TV).
+The headline **G2.10** — the generic two-physical-perfect-exchanges identity
+(objective item 3) — is the top priority; it needs the generic A3 kernel law
+(G2.8) as a prerequisite. The building blocks are all in place: type-generic
+disintegration, `(N,m,k)` count-exchange + `blExchange` kernels, generic fiber
+counts, and the type-generic `distUniform_ofInvariantTransitive`.
 
 ---
 
