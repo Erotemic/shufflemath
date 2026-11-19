@@ -293,10 +293,23 @@ Add exactly one line: `public import Shufflemath.BernoulliLaplaceFiber` after th
 - **`_ProbeG4.lean` is now capstone-only** (27 lines): it keeps
   `uniformFiber_intertwines` (the kernel-equality capstone, still `sorry`) as the next unit,
   importing BLRefinement for the bridge lemma.
-- **NEXT (session 59+): the capstone `uniformFiber_intertwines`** — the full G4 kernel equality.
-  Assemble per the "Assembly of the theorem" + capstone sections above: `finKernels_eq` on `x,S`,
-  reduce each `comp` side to the single-`x`/single-`S` fiber contribution, use
-  `reachSetFiberCard_eq_yMoves` + `yMoves_card_eq_transitionNumerator` on the LHS,
-  `transitionNumerator_eq_transitionDenom_mul_card` (detailed balance) + `#fiber x = #fiber c`
-  on the RHS. BLRefinement does NOT `open FiniteKernel`, so the capstone must write
-  `FiniteKernel.comp` (or the pushforward names) fully-qualified, or `open FiniteKernel` locally.
+- **NEXT (session 59+): the G4 kernel-equality CAPSTONE.** IMPORTANT: the name
+  `uniformFiber_intertwines` is ALREADY taken (BLRefinement:1420, a proven
+  macrostate-kernel = pushforward result) — the capstone is a DIFFERENT theorem,
+  the `comp`-equality of the two kernel defs, staged in `_ProbeG4.lean` as
+  `g4MacroIntertwining` (elaborates, body `sorry`):
+    `FiniteKernel.comp (uniformCountFiberMembership p) (subsetExchangeMembershipKernel p)
+     = FiniteKernel.comp (blExchangeKernel p) (uniformCountFiberMembership p)`
+  Both sides are `FiniteKernel (BLState p.N p.m p.r) (Membership p.N p.m)`; this is the doc's
+  `uniform count-fiber >> subsetExchange = blExchange >> uniform count-fiber` (BLRefinement:1453).
+  - `uniformCountFiberMembership` (BLRefinement:1484) and `subsetExchangeMembershipKernel`
+    (BLRefinement:1531) are the two halves; `blExchangeKernel` is BernoulliLaplaceGeneral:1043.
+  - Proof sketch (pointwise in (x, T)): LHS = (1/#fiber x)(1/D)#(fiber-x targets kxch-ing to T)
+    = (1/#fiber x)(1/D)#yMoves(S,T.count)  [reachSetFiberCard_eq_yMoves +
+    yMoves_card_eq_transitionNumerator]; RHS = transitionWeight(x, T.count)/#fiber(T.count),
+    closed by detailed balance (transitionNumerator_eq_transitionDenom_mul_card) + the
+    fiber-card symmetry. BLRefinement does NOT `open FiniteKernel` / `open
+    BernoulliLaplaceGeneral`, so the body must qualify `FiniteKernel.comp`,
+    `blExchangeKernel`, and (for `Membership`/`BLState` projections) as needed.
+  - **Port when done**: move `g4MacroIntertwining` from `_ProbeG4.lean` into BLRefinement
+    (python/sed, not the `edit` tool), after `reachSetFiberCard_eq_yMoves`.
