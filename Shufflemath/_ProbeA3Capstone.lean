@@ -111,6 +111,12 @@ theorem finset_fintype_sum_swap (s : Finset Membership) (f : Membership → Deck
           -- forward `sum_insert` rewrites the RHS `∑ m' ∈ insert m s', f m' d` to the LHS form
           rw [Finset.sum_insert hm]
 
+-- (73rd-session note) Next clean micro-step for h3: a helper `cFiberMass_eq_iteMass`  (cFiber mass
+--  =  ite-0-guarded mass, so `CommanderA3Mass.rawExchange_membershipCount_mass` applies to a
+--  `∑ m' ∈ cFiber c, …` LHS) needs the right Finset filter/ite identity (NOT the looping `sum_ite`
+--  simp lemma).  Then h3 = `rw [cFiberMass_eq_iteMass, rawExchange_membershipCount_mass]` + the f4
+--  equinumerosity below.
+
 /-- **Deck-averaging lemma (crux of the A3 `hMembershipExchange` discharge).**  The total
     mass `mu_x` puts on the `c`-fiber equals the Bernoulli–Laplace transition weight from the
     source count `commanderLeftCount x` to `c`.  Reason: `mu_x x` is the uniform fiberLaw over
