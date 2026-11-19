@@ -443,6 +443,30 @@ theorem fiberCount (N m : Nat) (hm : m ≤ N) (A : Membership N m) :
   rw [(fiberSet_card N m hm A).symm, fiberSet_eq_pile]
   exact hFiber
 
+/-- Every membership is the left pile of some deck, so the membership map is
+  surjective. This is the generic counterpart of the 99-card
+  `CommanderMembershipKernels.membership_surjective`: the witness comes from
+  the `Fintype` of the membership fiber `FibType N m hm A`, whose cardinality is
+  `fiberCount = m! * (N - m)! > 0`, hence the fiber is inhabited. The equality
+  is a `Subtype.ext` on the left-pile finset — no permutation is enumerated. -/
+theorem membership_surjective (N m : Nat) (hm : m ≤ N) :
+    Function.Surjective (membership N m hm) := by
+  intro A
+  classical
+  have hpos : 0 < Fintype.card (FibType N m hm A) := by
+    rw [fiberCount N m hm A]
+    exact Nat.mul_pos (Nat.factorial_pos m) (Nat.factorial_pos (N - m))
+  have hne : Nonempty (FibType N m hm A) := by
+    by_contra h
+    have hzero : Fintype.card (FibType N m hm A) = 0 := by
+      letI : IsEmpty (FibType N m hm A) := IsEmpty.mk (fun x => h (Nonempty.intro x))
+      exact Fintype.card_eq_zero
+    linarith
+  obtain ⟨g⟩ := hne
+  refine ⟨g.1, ?_⟩
+  apply Subtype.ext
+  simpa only [membership, leftCards, FibType] using g.property
+
 -- ============================================================================
 -- G2/T1 capstone (PROVEN above) — the fiber count  #Fiber(A) = m! * (N - m)!
 -- ============================================================================
