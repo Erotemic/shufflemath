@@ -101,5 +101,52 @@ theorem f5FullDeck_nondegenerate (hsurj : Function.Surjective project) (seg : De
   telescopeTV_le_idealPlusTwo rawExchange rawExchange
     (idealExchange25 hsurj) (idealExchange25 hsurj) (Dist.pointMass seg) (GSR.uniformDist Deck)
 
+/- A product of two numbers in `[0,1]` is at most `1`. -/
+theorem mul2_le_one (a b : Rat) (ha0 : 0 ≤ a) (ha1 : a ≤ 1) (hb0 : 0 ≤ b) (hb1 : b ≤ 1) :
+    a * b ≤ 1 := by
+  calc
+    _ ≤ 1 * b := mul_le_mul_of_nonneg_right ha1 hb0
+    _ = b := by rw [one_mul]
+    _ ≤ 1 := hb1
+
+/- A product of three numbers in `[0,1]` is at most `1`. -/
+theorem mul3_le_one (a b c : Rat) (ha0 : 0 ≤ a) (ha1 : a ≤ 1) (hb0 : 0 ≤ b) (hb1 : b ≤ 1)
+    (hc0 : 0 ≤ c) (hc1 : c ≤ 1) : a * (b * c) ≤ 1 := by
+  calc
+    _ ≤ 1 * (b * c) := mul_le_mul_of_nonneg_right ha1 (mul_nonneg hb0 hc0)
+    _ = b * c := by rw [one_mul]
+    _ ≤ 1 := mul2_le_one b c hb0 hb1 hc0 hc1
+
+/- A three-kernel chain on the left is within TV `3` of any three-kernel chain
+    on the right: the weighted-telescope 3-step bound is
+    `Δ₀·(δ₁·δ₂) + Δ₁·δ₂ + Δ₂ ≤ 1·1 + 1·1 + 1 = 3`, from the structural `≤ 1`
+    bounds on each discrepancy and Dobrushin coefficient.  Abstract (no univ),
+    so the F4.2 crack generalizes to any chain length. -/
+theorem compList_telescope_3step_le_3 [Fintype α] [DecidableEq α] [Nonempty α]
+    (K0 K1 K2 L0 L1 L2 : FiniteKernel α α) (mu : Dist α) :
+    Dist.tv (FiniteKernel.apply mu (compList [K0, K1, K2]))
+            (FiniteKernel.apply mu (compList [L0, L1, L2])) ≤ 3 := by
+  have h := weightedTelescope_3step K0 K1 K2 L0 L1 L2 mu
+  have d00 : 0 ≤ kernelDiscrepancy K0 L0 := kernelDiscrepancy_nonneg K0 L0
+  have d01 : kernelDiscrepancy K0 L0 ≤ 1 := kernelDiscrepancy_le_one K0 L0
+  have d10 : 0 ≤ kernelDiscrepancy K1 L1 := kernelDiscrepancy_nonneg K1 L1
+  have d11 : kernelDiscrepancy K1 L1 ≤ 1 := kernelDiscrepancy_le_one K1 L1
+  have d20 : 0 ≤ kernelDiscrepancy K2 L2 := kernelDiscrepancy_nonneg K2 L2
+  have d21 : kernelDiscrepancy K2 L2 ≤ 1 := kernelDiscrepancy_le_one K2 L2
+  have c10 : 0 ≤ dobrushinCoeff L1 := dobrushinCoeff_nonneg L1
+  have c11 : dobrushinCoeff L1 ≤ 1 := dobrushinCoeff_le_one L1
+  have c20 : 0 ≤ dobrushinCoeff L2 := dobrushinCoeff_nonneg L2
+  have c21 : dobrushinCoeff L2 ≤ 1 := dobrushinCoeff_le_one L2
+  have t0 : kernelDiscrepancy K0 L0 * (dobrushinCoeff L1 * dobrushinCoeff L2) ≤ 1 :=
+    mul3_le_one (kernelDiscrepancy K0 L0) (dobrushinCoeff L1) (dobrushinCoeff L2)
+      d00 d01 c10 c11 c20 c21
+  have t1 : kernelDiscrepancy K1 L1 * dobrushinCoeff L2 ≤ 1 :=
+    mul2_le_one (kernelDiscrepancy K1 L1) (dobrushinCoeff L2) d10 d11 c20 c21
+  exact calc
+    _ ≤ kernelDiscrepancy K0 L0 * (dobrushinCoeff L1 * dobrushinCoeff L2) +
+        kernelDiscrepancy K1 L1 * dobrushinCoeff L2 + kernelDiscrepancy K2 L2 := h
+    _ ≤ 1 + 1 + 1 := add_le_add (add_le_add t0 t1) d21
+    _ = 3 := by norm_num
+
 end Shufflemath
 end
