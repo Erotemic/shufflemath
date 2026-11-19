@@ -15,7 +15,32 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** (G4 **66th session — A3 part-(i) count-mass bridge: (a)+(b) combinatorial core DONE, one final Lean-mechanics step open** — `rawExchange_membershipCount_mass` WIP saved to `.pi-glla/56_rawExchangeMembership_count_wip.lean`).
+**Updated:** (G4 **67th session — A3 part-(i) count-mass bridge: 4th calc step + `hP` predicate equality now CLOSE; the final Fintype-card bridge is a general lemma** — `rawExchange_membershipCount_mass` 95% in `.pi-glla/66b_a3count_wip.lean`).
+
+- **A3 part (i) count-mass bridge** — the 56th-session A3 part-(i) target
+  `rawExchange_membershipCount_mass` is 95% complete (the (a)+(b) core was already done; this session
+  closed two more sub-steps). The 4th calc step (fiber-sum → preimage-card) now CLOSES with targeted
+  `rw [← Nat.cast_sum]; rw [hNat]` (the earlier `simpa [Nat.cast_sum]` recursed on the deep `Membership`
+  structure; a single `rw` does not). The predicate equality `hP : F j ∈ S ↔ Q j` — the whole
+  mathematical substance of the final step — WORKS via
+  `simp only [S, Finset.mem_filter, Finset.mem_univ]; dsimp [F]; simp only [and_true, true_and]`
+  (shallow: reduces `F j ∈ S` to `True ∧ count (F j) = c` → `Q j`, no `newMembership` unfolding).
+  The ONE remaining step is the Fintype-card bridge
+  `(Fintype.card {j // F j ∈ S} : Rat) = (Fintype.card {j // Q j} : Rat)`: the two subtypes are
+  `Iff`-equal (`hP`) but NOT definitionally equal (the predicate `F j ∈ (univ.filter (count·=c))` needs
+  a simp step, not WHNF, to become `Q j`), so `rfl` / `congr` / `congrArg Fintype.card (Subtype.ext hP)`
+  (type mismatch) / a manual `Equiv` + `Fintype.card_congr` (its injectivity `ext` leaves a deep
+  `a✝ ∈ ↑(...).2` Membership-internal subgoal) all fail.
+
+  **Next (clean fix):** prove ONCE in `Shufflemath/FinsetCombinatorics.lean` (shallow context, not the
+  Membership-heavy A3 file) the general bridge
+  `Fintype.card {a : α // P a} = Fintype.card {a : α // Q a}` from `h : ∀ a, P a ↔ Q a` — first check
+  whether Mathlib already provides it (`Fintype.card_congr` from a subtype `Equiv`, or a
+  `Finset.ncard` / `Finset.card_congr` formulation). Apply it here with `hP` to close the 5th calc step
+  (`rw [hXY]; rfl`); drop the `maxRecDepth` guard if the bridge no longer reduces the Membership Finset.
+  Then extract the whole lemma into `Shufflemath/CommanderA3Mass.lean` (new file; add to the
+  `Shufflemath.lean` module list after `CommanderA3Count`), delete the probe, verify green, commit.
+  The WIP file (full lemma + this banner) is `.pi-glla/66b_a3count_wip.lean`.
 
 - **A3 part (i) count-mass bridge** — the 56th-session A3 part-(i) target
   `rawExchange_membershipCount_mass` (per the 56th-session 4-step plan) is 95% written in
