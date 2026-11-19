@@ -216,3 +216,46 @@ Add exactly one line: `public import Shufflemath.BernoulliLaplaceFiber` after th
   (append inside `namespace Shufflemath.FiniteDeck`, before the trailing `end`s —
   use `sed`/heredoc, NOT the `edit` tool, for the Unicode-heavy content) and run
   `dev/verify_next_phase.sh` (which builds `Shufflemath.FiniteDeck.BLRefinement`).
+
+## Session 57 progress (2026-11-18) — markedCountChange DONE + in BLRefinement
+- **`markedCountChange` is PROVEN and committed into `Shufflemath/FiniteDeck/BLRefinement.lean`**
+  (after `countFiberMemb_equiv`, before `end FiniteDeck`). It builds clean in BLRefinement and
+  the whole `dev/verify_next_phase.sh` tranche (37 tests OK).
+  Final proof shape: `hInt` (disjointness via `ext; simp [mem_inter,mem_sdiff]; constructor;
+  <absurd hx.1.1.1 hxBc>`), `hDistrib` (`ext; simp; tauto`), `hIntCard`
+  (`card_union_add_card_inter` + `hZero : #(L∩R)=0` + `Nat.add_zero` + `exact hu`),
+  `hLrewrite` (`ext; simp; tauto`), `hLcard` (`card_sdiff` + `hInter : (S.1∩M)∩p.1 = p.1∩M`
+  via `simp [inter_comm, hInter]`). The key projection gotcha: after `simp [mem_inter,mem_sdiff]`
+  a premise `x ∈ (A∩B)∩(C∩D)` expands to `((x∈A∧x∈B)∧(x∈C∧x∈D))` — a **doubly** nested
+  conjunction, so `x∈A` is `hx.1.1.1`, not `hx.1.1`.
+- **`reachSetFiberCard_eq_yMoves` (in `_ProbeG4.lean`, untracked) is ~70% written.** Two precise
+  helpers it needs (discovered this session), both easy:
+  1. **`ymReach`**: from `hp : p ∈ yMoves`, get `p ∈ reachMoves`. `yMoves = (reachMoves).filter f`,
+     so `have h : p ∈ (reachMoves N m k S).filter _ := by simpa [yMoves] using hp;
+     exact (Finset.mem_filter.mp h).1`. (A bare `simpa [yMoves,reachMoves] using hp` does NOT
+     work — it yields the conjunction `p∈reachMoves ∧ f p`, not `p∈reachMoves`.)
+  2. **`ymFilter`**: from the same `h`, `(Finset.mem_filter.mp h).2` gives
+     `c - (p.1 ∩ M).card + (p.2 ∩ M).card = y` — exactly the yMoves filter.
+  3. **`hTarget` bridge**: to apply `markedCountChange` to a target `T`, its conclusion is
+     written with target `(S.1\(S.1\T.1))∪(T.1\S.1)`, which Lean auto-simplifies to
+     `((S.1∩T.1)∪(T.1\S.1))`; bridge it to `T.1` with
+     `have hTarget : ((S.1 \ (S.1 \ T.1)) ∪ (T.1 \ S.1)) = T.1 := by rw
+     [Finset.sddiff_sdiff_self_left, Finset.inter_comm, Finset.union_comm,
+      Finset.sdiff_union_inter]` (the same rw as `subsetExchangeCount`'s left-inverse), then
+     `rw [hTarget] at hraw`.
+  Then `Finset.card_bij' i j` with the 4 directions (dir 1: `i T` → move in reachMoves [reuse
+  `subsetExchangeCount` dir-1] + y-filter [markedCountChange + hTarget + hCountT=(T.1∩M).card=x.val=y];
+  dir 2: `j p` → newpile_reach + target-in-fiber [markedCountChange + ymFilter]; dirs 3-4:
+  verbatim from `subsetExchangeCount`).
+- **Capstone `uniformCount_intertwines_subsetExchange`**: `finKernels_eq` on `x,S`; reduce both
+  `comp` sides to their single-`x` / single-`S` fiber contributions (the uniform mass formula
+  `1/#fiber x` on the fiber, `0` off it — `uniformCountFiberMembership`'s body); LHS becomes
+  `(1/#fiber x)(1/D)#(ReachSet∩fiber x∩kxch→S)` = `(1/#fiber x)(1/D)#yMoves(c,x)` (via
+  `reachSetFiberCard_eq_yMoves` + `yMoves_card_eq_transitionNumerator`); RHS =
+  `transitionWeight(x,c)/#fiber c`; close with `transitionNumerator_eq_transitionDenom_mul_card`
+  (detailed balance) + `#fiber x = #fiber c`. See the "The proof (calc)" section above.
+- **Port when done**: move `reachSetFiberCard_eq_yMoves` + `uniformCount_intertwines_subsetExchange`
+  from `_ProbeG4.lean` into BLRefinement (python/sed, not the `edit` tool — Unicode `⊳`/`∩`/`∪`
+  break the edit tool); both need `open BernoulliLaplaceGeneral` + `open FiniteKernel` (already in
+  scope via BLRefinement's imports? `comp`/`FiniteKernel` — BLRefinement does NOT `open FiniteKernel`,
+  so the capstone must write `FiniteKernel.comp` fully-qualified, OR add the open). Then build + verify.

@@ -1549,5 +1549,63 @@ noncomputable def subsetExchangeMembershipKernel
         rfl
       _ = 1 := subsetExchangeKernel_rowOne p.N p.m p.k (Nat.le_of_lt p.hmn) p.hkm p.hknm S
 
+
+
+/- Marked-count change under a k-exchange move `p = (A, B)` out of `S`:
+   the target pile `(S \ A) ∪ B` carries
+   `#(S∩M) - #(A∩M) + #(B∩M)` marked cards. This is exactly the
+   `yMoves` filter rewritten as a statement about the target's count. -/
+theorem markedCountChange (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
+    (hk : k ≤ m) (hkm : k ≤ N - m) (S : Membership N m)
+    (p : Finset (Fin N) × Finset (Fin N))
+    (hp : p ∈ Lset N m k hm hk hkm S ×ˢ Rset N m k hm hk hkm S) :
+    (((S.1 \ p.1) ∪ p.2) ∩ markedSet N r hr).card =
+      (S.1 ∩ markedSet N r hr).card - (p.1 ∩ markedSet N r hr).card + (p.2 ∩ markedSet N r hr).card := by
+  let M := markedSet N r hr
+  rcases decomp N m k hm hk hkm S p hp with ⟨hsubA, hcardA, hsubB, hcardB⟩
+  have hInt : ((S.1 \ p.1) ∩ M) ∩ (p.2 ∩ M) = ∅ := by
+    ext x
+    simp only [Finset.mem_inter, Finset.mem_sdiff]
+    constructor
+    · intro hx
+      have hxB : x ∈ p.2 := hx.2.1
+      have hxBc : x ∉ S.1 := by
+        have h : x ∈ Finset.univ \ S.1 := hsubB hxB
+        simpa using h
+      exact absurd hx.1.1.1 hxBc
+    · intro hx
+      exfalso
+      simp [Finset.mem_sdiff] at hx
+  have hDistrib : ((S.1 \ p.1) ∪ p.2) ∩ M = ((S.1 \ p.1) ∩ M) ∪ (p.2 ∩ M) := by
+    ext x
+    simp only [Finset.mem_inter, Finset.mem_union, Finset.mem_sdiff]
+    tauto
+  have hIntCard : (((S.1 \ p.1) ∪ p.2) ∩ M).card = ((S.1 \ p.1) ∩ M).card + (p.2 ∩ M).card := by
+    rw [hDistrib]
+    have hu : (((S.1 \ p.1) ∩ M) ∪ (p.2 ∩ M)).card + (((S.1 \ p.1) ∩ M) ∩ (p.2 ∩ M)).card =
+        ((S.1 \ p.1) ∩ M).card + (p.2 ∩ M).card :=
+      Finset.card_union_add_card_inter ((S.1 \ p.1) ∩ M) (p.2 ∩ M)
+    have hZero : (((S.1 \ p.1) ∩ M) ∩ (p.2 ∩ M)).card = 0 := by rw [hInt, Finset.card_empty]
+    rw [hZero, Nat.add_zero] at hu
+    exact hu
+  have hLrewrite : (S.1 \ p.1) ∩ M = (S.1 ∩ M) \ p.1 := by
+    ext x
+    simp only [Finset.mem_inter, Finset.mem_sdiff]
+    tauto
+  have hLcard : ((S.1 \ p.1) ∩ M).card = (S.1 ∩ M).card - (p.1 ∩ M).card := by
+    rw [hLrewrite, Finset.card_sdiff]
+    have hInter : (p.1 ∩ (S.1 ∩ M)) = (p.1 ∩ M) := by
+      ext x
+      simp only [Finset.mem_inter]
+      constructor
+      · intro h; exact ⟨h.1, h.2.2⟩
+      · intro h
+        have hxS : x ∈ S.1 := hsubA h.1
+        exact ⟨h.1, hxS, h.2⟩
+    simp only [Finset.inter_comm, hInter]
+  calc
+    (((S.1 \ p.1) ∪ p.2) ∩ M).card = ((S.1 \ p.1) ∩ M).card + (p.2 ∩ M).card := hIntCard
+    _ = ((S.1 ∩ M).card - (p.1 ∩ M).card) + (p.2 ∩ M).card := by rw [hLcard]
+    _ = (S.1 ∩ M).card - (p.1 ∩ M).card + (p.2 ∩ M).card := by ring
 end FiniteDeck
 end Shufflemath
