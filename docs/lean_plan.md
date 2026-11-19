@@ -28,6 +28,29 @@ phase notes are linked at the end; they do not override this plan. Read
 > Full detail + last-compiling probe: `.pi-glla/53_fiberSum_wip.lean` (54th section);
 > resume point: [`agent_handoff.md`](agent_handoff.md).
 
+> **Disintegration session (2026-11-19+) — G3 `bernoulliLaplace_disintegration`
+> (LHS + RHS) PROVEN in a WIP probe.** The G3 fiber-disintegration /
+> measure-factorization headline — the `bernoulliLaplace` distribution on `Deck N`
+> factors as `Dist.uniform (Membership N m) → FibDist (FibType N m) → Deck N`, with
+> the pushforward recovering the uniform distribution on `Deck N` — is now **fully
+> proved** in a self-contained probe (`Shufflemath/_ProbeDisintegration.lean`,
+> committed `2c64e78`), no `sorry`/`admit`. The LHS
+> (`Dist.mass (blUniform N m r hm hr) A = 1 / #Membership`) reduces via
+> `countFiber_blStationary` + `countFiber_eq_countFiberMemb` + the singleton fiber-sum
+> simplification to `#cfMemb · #cfMemb⁻¹ / #choose`, closed by `field_simp` once
+> `#cfMemb > 0` is established via the **choose-product form**
+> `#cfMemb = choose r c · choose (N-r) (m-c)` with `c = (countInPile A).val` (both
+> binomials positive by the `countInPile_admissible` bounds — `Nat.choose_pos` +
+> `omega`). The RHS (`Dist.mass (FiberDisintegration.marginalLaw membership) A = 1 / #Membership`)
+> follows from `deckCard_eq_membershipFiber` + `field_simp`. This required new
+> A3KernelLaw counting-core lemmas (committed `30d49e3`): `countFiber`,
+> `countFiberMemb`, `countInPileVal`, `countFiber_blStationary`, `membershipCount`,
+> `deckCard_eq_membershipFiber`, and the `blLo`/`blHi` bounds.
+> **Next:** move `bernoulliLaplace_disintegration` from the probe into
+> `BLRefinement.lean` (its natural home) once the A3KernelLaw exports are wired into
+> BLRefinement's import; then assemble the 2/3-exchange TV headline (G2.10) and the
+> generic oracle-exchange TV headline (G2.3/G2.5) on the now-proved counting core.
+
 ## Objective and model boundary
 
 Produce a theorem for a *specified finite physical protocol* on 99 individually
