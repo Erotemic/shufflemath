@@ -350,3 +350,29 @@ kernel equality is complete**. Full sub-lemma tactics: `/tmp/note_g4_capstone.md
 Session-58 correction stands: `uniformFiber_intertwines` (BLRefinement:1420) is **already complete**;
 the G4 remainder is `reachSetFiberCard_eq_yMoves` (done) + the capstone `g4MacroIntertwining`
 (hLHS/hRHS/hDB, this session's target).
+
+## Status update (2026-12-06) — mass-body lemmas + `ite_mul_ite` in `BLRefinement`; LHS collapse fully worked out
+
+**Landed in `Shufflemath/FiniteDeck/BLRefinement.lean`** (all compile, phase green, 37 tests OK):
+- `uniformCountFiberMembership_mass` / `_mass_ite` — `(uniformCountFiberMembership p x) j = ite(countInPileVal j = x.val, 1/#fiber, 0)`.
+- `subsetExchangeMembershipKernel_mass` / `_mass_ite` — `(subsetExchangeMembershipKernel p j) S = ite(j ∈ ReachSet S, D⁻¹, 0)`.
+- `blExchangeKernel_mass` — `(blExchangeKernel p x) y = transitionWeight x.val y.val`.
+- `ite_mul_ite` — `ite a x 0 * ite b y 0 = ite (a ∧ b) (x*y) 0` (0-annihilation; general, `by_cases` + `ite_eq_left/right`).
+
+**The LHS collapse (`g4LHS_mass_sum`) is fully worked out** (in `_ProbeG4LHS.lean`, not yet ported to `BLRefinement`):
+```
+∑_j (UCFM x) j · (SE j) S
+  = ∑_j ite(cnt j = x, 1/#fiber, 0) · ite(j ∈ ReachSet S, D⁻¹, 0)     [mass-body lemmas]
+  = ∑_j ite(cnt j = x ∧ j ∈ ReachSet S, (1/#fiber)·D⁻¹, 0)            [ite_mul_ite]
+  = (∑ over {j : cnt j = x ∧ j ∈ ReachSet S} of the constant)         [Finset.sum_ite]
+  = #(A ∩ B) · (1/#fiber · D⁻¹)   where A = countFiberMemb x, B = ReachSet S   [sum_const]
+  = #yMoves(S, c, x.val) · (1/#fiber · D⁻¹)                            [h5: A∩B = yMoves]
+  = TN(c, x.val) / (#fiber(x) · D)                                     [h6: #yMoves = TN]
+```
+The only open residual is the **trivial** field cancellation `↑A.card · (↑A.card)⁻¹ · (…)⁻¹ · ↑(TN) = (…)⁻¹ · ↑(TN)` after `field_simp; ring_nf` — i.e. `a·a⁻¹ = 1` with `a = ↑A.card ≠ 0`. It resists the one-liner auto-tactics (the `↑`-cast on the `Nat` `transitionNumerator` confuses `ring`/`field_simp`'s normalizer); the fix is a targeted `rw [mul_inv_cancel (Nat.cast_ne_zero.mpr hApos.ne'), one_mul]` exposed on the correct subterm.
+
+**Next (port to `BLRefinement`):**
+1. Add `g4LHS_mass_sum` (the LHS collapse, qualified `BernoulliLaplaceGeneral.*`) and close its final cancellation.
+2. The symmetric `g4RHS_mass_sum` (RHS = `∑_S (SE x)S · (UCFM S) y`) — same structure, `y` in place of the SE index.
+3. The final equality `g4LHS_mass_sum = g4RHS_mass_sum` — both sides reduce to the same `TN`-ratio expression (a `rfl`/`ring` once the forms align).
+4. Then `g4_kernel_equality` (kernel-level) via the `FiniteKernel` `comp`-map + `apply_deterministic_eq_map`.
