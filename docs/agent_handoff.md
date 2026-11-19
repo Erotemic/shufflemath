@@ -15,6 +15,39 @@
 
 # Agent handoff: next Shufflemath task
 
+**Updated:** (G4 **65th session — membership-lift identification bridge committed**: the concrete `membershipLift` / `membershipCount` / `membershipFiberCount` are the general `uniformCountFiberMembership` / `countInPile` / `countFiberMemb` at `(99, 50)`).
+
+- **The membership-level concrete↔general bridge is proven** — 5 lemmas landed in
+  `Shufflemath/BernoulliLaplaceCommanderBridge.lean` (builds clean; full tranche 37 tests OK).
+  The 99-card concrete membership machinery of `CommanderMembershipKernels` is exactly the
+  arbitrary-finite general `BLRefinement` machinery at the Commander parameters `(99, 50, 50)`:
+  1. `leftOrigSet_eq_markedSet99_50` — the 50 initially-left card identities = `markedSet 99 50`
+     (both are `Fin 50`'s image into `Fin 99`; just `rw [markedSet, leftOrigSet_eq_image]; rfl`).
+  2. `membershipCount_eq_countInPile` — a membership's marked-card count = the general
+     `countInPile` (via `#(S.1 ∩ leftOrigSet) = #(S.1 ∩ markedSet 99 50)`).
+  3. `membershipFiberCount_eq_countFiberMemb` — the concrete fiber size = `countFiberMemb`
+     (both `choose (N-r) r`).
+  4. `commanderToBL_val_eq_commanderLeftCount` — the state's general marked-count =
+     `commanderLeftCount` (both `x.val + 1`).
+  5. `membershipLift_matches_uniformCountFiber` — **the capstone of this bridge**: the concrete
+     resample kernel's mass = the general `uniformCountFiberMembership`'s mass, proved by
+     `simp [membershipLift, Dist.mass_ofFun]` (LHS) + `rw [uniformCountFiberMembership_mass,
+     membershipCount_eq_countInPile, commanderToBL_val_eq_commanderLeftCount,
+     membershipFiberCount_eq_countFiberMemb]` (RHS). This is the **"uniform-fiber half"** of the
+     membership-level bridge — the resample kernel, count, fiber size, and marked-count all agree.
+  - Key discovery: `leftOrigSet` is definitionally `markedSet 99 50` after `rw [markedSet,
+    leftOrigSet_eq_image]` (the two `Fin.castLE` / `⟨i.val, _⟩` maps are the same term), so the
+    finset identification is `rw; rfl`.
+  - Probe `_ProbeMemLift.lean` deleted (extracted into the bridge file).
+
+- **Exactly where to resume (66th session):** connect `g4MacroIntertwining` to the concrete
+  99-card Commander objects — show the concrete exchange kernel (`commanderExchange25` /
+  `commanderMembershipExchange`) equals the macro-intertwined general one, per
+  `docs/planning/proof-strategies/2026-11-18-g4-macro-intertwining-plan.md` (the "G4 → concrete"
+  wiring). Use the membership-lift bridge just proved + `commanderExchange25_matches_blExchange`
+  + `uniformCountFiberMembership`. Then **F5** (the arbitrary-finite-deck generalization capstone)
+  per `docs/lean_plan.md`.
+
 **Updated:** (G4 **64th session — G4 COMPLETE: `g4hDB` bridge + `g4MacroIntertwining` capstone both committed**).
 
 - **G4 is done.** Two lemmas landed in `Shufflemath/FiniteDeck/BLRefinement.lean` this session

@@ -21,13 +21,20 @@ public import Shufflemath.BernoulliLaplace
 public import Shufflemath.BernoulliLaplaceGeneral
 public import Shufflemath.BernoulliLaplaceFiber
 public import Shufflemath.Markov
+public import Shufflemath.FiniteDeck.BLRefinement
+public import Shufflemath.FiniteDeck.TwoPile
+public import Shufflemath.CommanderMembershipKernels
+public import Shufflemath.CommanderFiberCount
+public import Shufflemath.Finite
+public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.Fin.Basic
 public import Mathlib.Tactic
 
 @[expose] public section
 
 namespace Shufflemath
 
-open BernoulliLaplace
+open BernoulliLaplace CommanderMembershipKernels
 
 /-- The Commander 99-card instance as general parameters: 99 cards,
 50-card left pile, all 50 original-left cards marked, 25-card exchange. -/
@@ -247,4 +254,74 @@ theorem commanderStationary_is_stationary :
 theorem commanderStationaryRun (n : Nat) :
     FiniteKernel.run commanderExchange25 n commanderStationary = commanderStationary := by
   exact stationary_run n commanderStationary commanderExchange25 commanderStationary_is_stationary
+
+-- --------------------------------------------------------------------------
+-- Membership-level concrete↔general bridge (65th session).
+--
+-- The 99-card concrete membership machinery of `CommanderMembershipKernels`
+-- (`Membership`, `membershipLift`, `membershipCount`, `membershipFiberCount`,
+-- `leftOrigSet`) is the instantiation of the arbitrary-finite general
+-- `BLRefinement` machinery (`Membership N m`, `uniformCountFiberMembership`,
+-- `countInPile`, `countFiberMemb`, `markedSet`) at the Commander parameters
+-- `(99, 50, 50)` under the state identification `commanderToBL`. These four
+-- identification lemmas, plus the capstone `membershipLift_matches_uniformCountFiber`,
+-- are the "uniform-fiber half" of the membership-level bridge: the resample
+-- kernel, the count, the fiber size, and the state's marked-count all agree
+-- pointwise between the concrete and general definitions.
+-- --------------------------------------------------------------------------
+
+/-- The 50 initially-left card identities (`leftOrigSet`) are the marked set at
+  the Commander parameters `(99, 50)`: both are the image of `Fin 50` into
+  `Fin 99` (cards `0..49`). -/
+theorem leftOrigSet_eq_markedSet99_50 (hr : 50 ≤ 99) :
+    leftOrigSet = FiniteDeck.markedSet 99 50 hr := by
+  rw [FiniteDeck.markedSet, leftOrigSet_eq_image]
+  rfl
+
+/-- The marked-card count a membership carries agrees with the general
+  `countInPile` at the Commander parameters: both count the intersection of
+  the 50-card pile with the initially-left identities. -/
+theorem membershipCount_eq_countInPile (m : Membership) :
+    membershipCount m =
+      (FiniteDeck.countInPile 99 50 50 (Nat.le_of_lt commanderBLParams.hmn)
+        commanderBLParams.hrN m).val := by
+  unfold membershipCount
+  simp only [FiniteDeck.countInPile, FiniteDeck.countInPileVal]
+  rw [leftOrigSet_eq_markedSet99_50 commanderBLParams.hrN]
+
+/-- The concrete membership-fiber size agrees with the general
+  `countFiberMemb` at the Commander parameters (both are the same
+  choose-product). -/
+theorem membershipFiberCount_eq_countFiberMemb (x : CommanderState) :
+    membershipFiberCount (commanderLeftCount x) =
+      (FiniteDeck.countFiberMemb 99 50 50 commanderBLParams.hrN
+        (commanderToBL x)).card := by
+  unfold membershipFiberCount
+  rw [FiniteDeck.countFiberMemb_card (N := 99) (m := 50) (r := 50)
+      (hm := Nat.le_of_lt commanderBLParams.hmn)
+      (hr := commanderBLParams.hrN) (x := commanderToBL x),
+    commanderToBL, commanderLeftCount]
+
+/-- The state's general-marked-count agrees with the concrete
+  `commanderLeftCount`: both are `x.val + 1`. -/
+theorem commanderToBL_val_eq_commanderLeftCount (x : CommanderState) :
+    (commanderToBL x).val = commanderLeftCount x := by
+  simp only [commanderToBL, commanderLeftCount]
+
+/-- The concrete `membershipLift` (resample uniformly within the
+  `commanderLeftCount` fiber) is, under the state identification
+  `commanderToBL`, exactly the general `uniformCountFiberMembership` at the
+  Commander parameters: the "uniform-fiber half" of the membership-level
+  concrete↔general bridge. The proof reuses the general
+  `uniformCountFiberMembership_mass` and the three identification lemmas
+  above. -/
+theorem membershipLift_matches_uniformCountFiber (x : CommanderState) (m : Membership) :
+    Dist.mass (membershipLift x) m =
+      Dist.mass (FiniteDeck.uniformCountFiberMembership commanderBLParams
+        (commanderToBL x)) m := by
+  simp only [membershipLift, Dist.mass_ofFun]
+  rw [FiniteDeck.uniformCountFiberMembership_mass,
+    membershipCount_eq_countInPile m,
+    commanderToBL_val_eq_commanderLeftCount x,
+    membershipFiberCount_eq_countFiberMemb x]
 
