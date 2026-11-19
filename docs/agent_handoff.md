@@ -37,10 +37,27 @@
 > `newLeftCount_eq_transitionNumerator` + `_Probe47v` in `CommanderA3Count.lean` / `_Probe47v.lean`), then
 > **assemble `hMembershipExchange`** (a short `calc` chaining `mu_x_fiberSum`, `mu_x_countFiberTotal`,
 > `hMembershipExchange_rhs_mass`), then `two_physical_perfect_exchanges_uniform_of_counts`, then **F5**.
+
+> **74th session (2026-02-08) — f4 wall precisely characterized, two angles.** Re-attacked the f4
+> equinumerosity from BOTH the Finset and the Fintype/equiv side. (a) The recursion is NOT in
+> constructing the `exchangeChoice` witness (a raw `⟨⟨x.1, hL⟩, ⟨x.2, hR⟩⟩` with `powersetCard`
+> memberships compiles cleanly, 4c diagnostic); it is specifically the `j ∈ (Finset.univ : Finset
+> exchangeChoice)` conjunct that `Finset.mem_image` injects — checking that membership for a *constructed*
+> (not variable) `j` computes the Fintype univ and recurses, whereas a variable `j` reduces via
+> `mem_univ`. (b) The `Equiv exchangeChoice ≃ β` (β = `{x // x ∈ s50 ×ˢ t49}`) transports fine, but the
+> **α-level** subtype `Fintype` instances are not synthesized (only `exchangeChoice`-subtype ones are).
+> **Refined next attack** (avoids the `j ∈ univ` conjunct): stay at the `Fintype.card` level — bridge the
+> exchangeChoice-subtype card to the 47v fiber card by a card-preserving subtype `Equiv`
+> (`fintypeCard_subtypeCongr`/`Fintype.card_congr`) whose predicate reduction is
+> `Q j ↔ markedCountPred d c (j.1.1, j.2.1)`, then `_Probe47v.transitionNumerator_eq_fiberProduct`
+> (combinatorial `Nat.choose`, no univ compute); provide any β-level `Fintype` instance **explicitly**
+> rather than relying on synthesis. WIP probe files from this session were removed after the diagnosis.
 > Committed this session: h2/Fubini + `finset_fintype_sum_swap` (`31e08ac`); h1/h5/`mu_x_fiberSum`
 > (`9e112c1`).
 
 **Updated:** (A3 **70th session — the count bridge is proven up to the image push.** In `Shufflemath/_ProbeA3Cap.lean`: f1 `Fintype.card {j // P j} = Finset.card (univ | P)` via `Fintype.card_of_subtype`; f2 `= Finset.card (univ | Q)` via predicate-congruence (`Finset.ext` + `congrArg Finset.card`; both univ-filter predicates reduce to the *same* `P j` once membership is simplified); f3 `= Finset.card ((univ | Q).image projLR)` via `Finset.card_image_of_injOn` on the standalone injection. All three compile in ISOLATION (non-recursive). **The last step (f4)** — equating that image to `(leftChoices ×ˢ rightChoices).filter (newLeftCards-count = c)` (= `transitionNumerator` via `newLeftCount_eq_transitionNumerator`) — needs a pointwise `Finset.ext`, which **recurses** on the exchangeChoice ×ˢ-of-`powersetCard` univ when an element is ∃-bound (`rw`/`simpa` of `a ∈ Fintype.univ` has **no** simp lemma reducing it to `True`; `Finset.mem_univ` does not exist). **Route forward:** do NOT bridge to the raw `×ˢ`-filter (recurses); bridge the image to the **47v `s50 ×ˢ t49` fiber product** (clean `powersetCard 25` membership via `Finset.mem_powersetCard`) and use `_Probe47v.transitionNumerator_eq_fiberProduct`, which computes the same card *combinatorially* (`Nat.choose`, no univ compute) — that is how `newLeftCount_eq_transitionNumerator` already avoids the recursion. Then `hMembershipExchange` and F5. Committed `f5a785d`.)
+
+> **A3 74th session — the f4 wall is precisely characterized (two independent angles).** (1) *Finset side* (re-confirmed): the recursion is **not** in constructing the witness `⟨⟨x.1, hL⟩, ⟨x.2, hR⟩⟩ : exchangeChoice` — that compiles cleanly (4c diagnostic). The recursion is **specifically** the `j ∈ (Finset.univ : Finset exchangeChoice)` conjunct that `Finset.mem_image` injects: checking that membership for a *constructed* (non-variable) `j` forces a `Fintype.univ` compute. A *variable* `j` reduces via `mem_univ`; a *constructed* `j` does not. (2) *Fintype/equiv side* (new): an `Equiv exchangeChoice ≃ β` (β = `{x // x ∈ s50 ×ˢ t49}`) transports cleanly, but the `Fintype` instances for the **α-level** subtypes (`{x : α // …}`) are **not** synthesized (only the `exchangeChoice`-subtype instances are, cf. `_ProbeA3Cap.lean` f1). **Refined route (next attack):** work entirely at the **`Fintype.card` level** to dodge the `j ∈ univ` conjunct — `Fintype.card {j : exchangeChoice // Q j} = Fintype.card {j : exchangeChoice // P j}` (f1, `card_of_subtype`) then bridge the exchangeChoice-subtype card to the 47v fiber card by a *card-preserving* `Equiv` between the two **subtypes** (`fintypeCard_subtypeCongr` / `Fintype.card_congr`, both shallow) whose predicate reduction is `Q j ↔ markedCountPred d c (j.1.1, j.2.1)`, then `_Probe47v.transitionNumerator_eq_fiberProduct` for the combinatorial `Nat.choose` count. The β-level Fintype instance must be provided **explicitly** (`Fintype.ofFinset (s50 ×ˢ t49)`-style) rather than expected to synthesize. Do NOT bridge the raw `×ˢ`-filter at the Finset level (the `j ∈ univ` conjunct recurses).
 
 - **A3 part (i) count-mass bridge — COMPLETE (68th session):** the 56th-session target
   `rawExchange_membershipCount_mass` is now **proved and committed** in `Shufflemath/CommanderA3Mass.lean`.
