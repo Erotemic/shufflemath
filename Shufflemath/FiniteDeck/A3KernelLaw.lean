@@ -6,6 +6,8 @@ public import Shufflemath.FiniteDeck.BLRefinement
 public import Shufflemath.BernoulliLaplaceGeneral
 public import Shufflemath.FiberDisintegration
 public import Shufflemath.Finite
+public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Tactic
 
 -- G2.8 / G2.10: the *generic* A3 kernel law and (next) the generic
@@ -119,6 +121,97 @@ theorem hMembershipExchange_kernel (p : BernoulliLaplaceGeneral.ExchangeAdmissib
     FiniteKernel.comp (BernoulliLaplaceGeneral.blExchangeKernel p)
       (uniformCountFiberMembership p) := by
   rw [hMembershipExchange_lhs_reduces p, g4MacroIntertwining p]
+
+/-! ## G2.10 — the recovery lemma `hrecover` and the two-physical-perfect-exchanges headline.
+
+`run_tv_eq_macro_of_membership_exchange` (G2.10's framework) needs `hrecover :
+comp (comp macroLift localLift) (det project) = identity`.  The whole recovery
+reduces to one clean combinatorial lemma, `map_const_on_support`, applied twice:
+- pushing `localLift m` through `project` is a point mass at `countInPile m`
+  (`hK` below); `localLift m` is supported on the `membership`-fiber `m`, where
+  `project = countInPile ∘ membership` is constant.
+- pushing `uniformCountFiberMembership x` through `countInPile` is a point mass
+  at `x` (`hU` below); that distribution is supported on the `countInPile`-fiber
+  `x`, where `countInPile` is constant.
+
+Chaining the two by kernel associativity gives `hrecover`; `hMembershipExchange_kernel`
+(G2.8) supplies the other framework hypothesis.
+-/
+
+/-- A distribution pushed forward by a function that is **constant `c` on its
+  positive-mass support** (every point with nonzero mass maps to `c`) is the
+  point mass at `c`.  This is the single reduction behind `hrecover`. -/
+theorem map_const_on_support [Fintype α] [Fintype β] [DecidableEq β]
+    (mu : Dist α) (f : α → β) (c : β)
+    (h : ∀ y, Dist.mass mu y ≠ 0 → f y = c) :
+    mu.map f = Dist.pointMass c := by
+  apply (Convexity.StdSimplex.weights_inj (f := mu.map f) (g := Dist.pointMass c)).mp
+  ext z
+  rw [← Dist.mass, ← Dist.mass]
+  classical
+  -- pushforward mass at z = the `mu`-weighted sum of the deterministic-row masses
+  rw [← FiniteKernel.apply_deterministic_eq_map, FiniteKernel.apply_mass]
+  -- LHS: ∑ j, mass j · (if z = f j then 1 else 0);  RHS: (if z = c then 1 else 0).
+  simp only [FiniteKernel.deterministic, Dist.mass_pointMass]
+  -- The RHS ite is a constant; rewrite it as the sum ∑ j, mass j · (if z = c),
+  -- which equals (∑ mass j) · (if z = c) = 1 · (if z = c) = the same ite.
+  have hRHS : (if z = c then 1 else 0 : Rat) =
+      ∑ j, Dist.mass mu j * (if z = c then 1 else 0 : Rat) := by
+    rw [← Finset.sum_mul, Dist.sum_mass, one_mul]
+  rw [hRHS]
+  -- Now both sides are sums; match the summands pointwise.
+  rw [Finset.sum_congr rfl]
+  intro j _
+  by_cases h0 : Dist.mass mu j = 0
+  · -- off the support the mass (hence the whole summand) is zero
+    simp [h0]
+  · -- on the support f j = c, so `z = f j ↔ z = c`: the summands agree
+    rw [h j h0]
+
+/-- A perfect-local resample `localLift m` pushed through the deck→macro
+  `project` is the point mass at the macro count of `m`: the resample is
+  supported on the `membership`-fiber `m`, where `project = countInPile ∘ membership`
+  is the constant `countInPile m`.  This is the `hK` core for `hrecover`. -/
+theorem localLift_project_map (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (m : Membership p.N p.m) :
+    (localLift p.N p.m (Nat.le_of_lt p.hmn) m).map (project p) =
+      Dist.pointMass (countInPile p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN m) := by
+  let hm := Nat.le_of_lt p.hmn
+  let hr := p.hrN
+  apply map_const_on_support
+    (mu := localLift p.N p.m hm m) (f := project p)
+    (c := countInPile p.N p.m p.r hm hr m)
+  intro d hd
+  -- hd : the resample puts nonzero mass only on decks reading membership `m`.
+  have hmem : membership p.N p.m hm d = m := by
+    by_contra hne
+    dsimp only [localLift] at hd
+    rw [FiberDisintegration.fiberLaw_mass (membership p.N p.m hm)
+      (membership_surjective p.N p.m hm) m d] at hd
+    -- hne : the fiber condition is false, so the mass is the `else` branch `0`.
+    simp [hne] at hd
+  simp only [project, hmem]
+
+/-- Pushing `localLift` through the deterministic `project` equals the
+  deterministic kernel that reads the macro count `countInPile`: the
+  `hK` half of the recovery. -/
+theorem hK (p : BernoulliLaplaceGeneral.ExchangeAdmissible) :
+    FiniteKernel.comp (localLift p.N p.m (Nat.le_of_lt p.hmn))
+      (FiniteKernel.deterministic (project p)) =
+    FiniteKernel.deterministic
+      (fun m : Membership p.N p.m =>
+        countInPile p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN m) := by
+  let hm := Nat.le_of_lt p.hmn
+  let hr := p.hrN
+  classical
+  funext m
+  -- LHS = apply (localLift m) (det (project p)) = (localLift m).map (project p)
+  have hLHS : FiniteKernel.comp (localLift p.N p.m hm) (FiniteKernel.deterministic (project p)) m =
+      (localLift p.N p.m hm m).map (project p) := by
+    dsimp only [FiniteKernel.comp]
+    rw [← FiniteKernel.apply, FiniteKernel.apply_deterministic_eq_map]
+  rw [hLHS, localLift_project_map p m]
+  dsimp only [FiniteKernel.deterministic, FiniteKernel.identity]
 
 end FiniteDeck
 end Shufflemath
