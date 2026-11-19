@@ -106,6 +106,13 @@ theorem mu_x_countFiberTotal (x : CommanderState) (c : Nat) :
           Dist.mass (fiberLaw project project_surjective x) d * Dist.mass (rawExchangeMembership d) m') =
       ∑ d : Deck, Dist.mass (fiberLaw project project_surjective x) d *
         (∑ m' ∈ cFiber c, Dist.mass (rawExchangeMembership d) m') := by
+    -- (h2) Fubini:  ∑ m' ∈ S, ∑ d, w d · f m' d  =  ∑ d, w d · ∑ m' ∈ S, f m' d.
+    -- WIP wall #2 (71st-session finding): the product-set/bijection form
+    --   `change ∑ p ∈ cFiber c ×ˢ univ, …  =  ∑ p ∈ univ ×ˢ cFiber c, …`
+    --   RECURSES on `Finset.univ : Finset Deck` (the 99! deck) — the same family as the f4 wall.
+    --   Needs an algebraic `Finset.sum`-level swap (no `change` to a product set) or a dedicated
+    --   Fubini lemma.  Step 1 (mul_comm inside) and step 3 (pull `w d` out via `Finset.mul_sum`)
+    --   are routine; only the middle swap is the wall.
     sorry
   -- (3) the inner c-fiber total of the raw exchange at deck d is the deck-independent count law
   --     = transitionWeight (leftOriginalCount d) c.
