@@ -313,3 +313,40 @@ Add exactly one line: `public import Shufflemath.BernoulliLaplaceFiber` after th
     `blExchangeKernel`, and (for `Membership`/`BLState` projections) as needed.
   - **Port when done**: move `g4MacroIntertwining` from `_ProbeG4.lean` into BLRefinement
     (python/sed, not the `edit` tool), after `reachSetFiberCard_eq_yMoves`.
+
+
+## Session 59 (2026-11-18): capstone skeleton; next sub-lemma = hLHS
+
+The one **new** G4 lemma, **`reachSetFiberCard_eq_yMoves`** (ReachSet∩fiber ↔ `yMoves`),
+is **DONE and committed** (moved into `BLRefinement.lean` after `markedCountChange`,
+`public import Shufflemath.FiniteDeck.SubsetExchange`; 3223-job build green; all 37 tests pass).
+
+The **capstone** `g4MacroIntertwining` (the full G4 kernel-equality) now has a
+**compiling WIP skeleton** in `Shufflemath/_ProbeG4.lean`:
+`funext x; unfold FiniteKernel.comp; ext S; change <pointwise-mass goal>; sorry`.
+The **ext path is confirmed** (`FiniteKernel = alpha -> Dist beta`; `comp K L x = (K x).map L ⋅ join`;
+`ext S` drills `StdSimplex -> .weights (Finsupp) -> pointwise`). `import Shufflemath.Finite`
+brings in `FiniteKernel.apply_mass_finsupp`.
+
+**Remaining (three sub-lemmas + close), in `Shufflemath/_ProbeG4.lean`:**
+- **`hLHS`** (NEXT): `mass (apply (UCFM x) (SE)) S = transitionNumerator c x.val / (#fiber x * D)`.
+  Via `apply_mass_finsupp` → dsimp the UCFM/SE mass bodies → collapse the support-sum to
+  `(1/#fiber x)·D⁻¹·#{j∈fiber x : kxch(j,S)}` → `reachSetFiberCard_eq_yMoves` +
+  `yMoves_card_eq_transitionNumerator`. (`countInPileVal` unfolds via `dsimp`, not `simp`.)
+- **`hRHS`**: `mass (apply (blExchangeKernel x) (UCFM)) S = transitionNumerator x.val c / (#fiber yc * D)`,
+  where `yc = ⟨c, countInPile_admissible ...⟩`. Via `apply_mass_finsupp` + `mass_blExchangeKernel`
+  + the UCFM mass at `S`; only `y` with `y.val = c` contributes (BLState Fintype = `Icc blLo blHi`,
+  one element per count; use the `Finset.univ`/`Icc` bridge as at BLRefinement:1217).
+- **`hDB`**: `#fiber x * tn(x.val,c) = #fiber yc * tn(c,x.val)` via `detailedBalance`
+  (BernoulliLaplaceFiber:909) + `countFiber_blStationary` + `transitionWeight = tn/D`.
+  **Reconcile** `#countFiber` (raw `Finset (Fin N)`, used by those lemmas) with
+  `#countFiberMemb` (Membership, used by the mass formulas) — the `.1` projection is a bijection;
+  add a `countFiberMemb_card_eq_countFiber` helper if needed.
+- **close**: `change` to the two mass forms; `rw [hLHS, hRHS, ← hDB]; ring_nf`.
+
+After proven, move `g4MacroIntertwining` into BLRefinement (after the bridge lemma). Then **G4
+kernel equality is complete**. Full sub-lemma tactics: `/tmp/note_g4_capstone.md`.
+
+Session-58 correction stands: `uniformFiber_intertwines` (BLRefinement:1420) is **already complete**;
+the G4 remainder is `reachSetFiberCard_eq_yMoves` (done) + the capstone `g4MacroIntertwining`
+(hLHS/hRHS/hDB, this session's target).
