@@ -1,6 +1,7 @@
 module
 public import Shufflemath.FiniteDeck.TwoPile
 public import Shufflemath.BernoulliLaplaceGeneral
+public import Shufflemath.BernoulliLaplaceFiber
 public import Shufflemath.FiberDisintegration
 public import Shufflemath.FiniteDeck.SubsetExchange
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
@@ -1916,6 +1917,35 @@ theorem g4RHS_mass_sum (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x : Ber
   dsimp only [D]
   field_simp [hFCpos.ne', hDpos.ne']
   <;> simp only [c]
+
+/-- **Detailed balance in the count-fiber form (the `hDB` bridge of the G4
+    capstone).**  For two admissible macrostates `x`, `y` the flow `x → y`
+    weighted by the source count-fiber equals the reverse flow: the product of
+    the source fiber cardinality `#countFiberMemb x` and the one-step transition
+    numerator `TN(x, y)` equals the same with `x`, `y` swapped.  This is the
+    reconciliation between the `#countFiberMemb · transitionNumerator` form used
+    by `g4LHS_mass_sum` / `g4RHS_mass_sum` and the already-proved general
+    `detailedBalance` (`BernoulliLaplaceFiber`): both sides are the fiber count
+    `fiberSum`, and the swap is `fiberSum_swap`.  It makes
+    `g4LHS_mass_sum = g4RHS_mass_sum` a `field_simp; ring`, closing the G4
+    kernel-equality capstone `g4MacroIntertwining`. -/
+theorem g4hDB (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (x y : BernoulliLaplaceGeneral.BLState p.N p.m p.r) :
+    (countFiberMemb p.N p.m p.r p.hrN x).card *
+        BernoulliLaplaceGeneral.transitionNumerator p.N p.m p.r p.k x.val y.val =
+      (countFiberMemb p.N p.m p.r p.hrN y).card *
+        BernoulliLaplaceGeneral.transitionNumerator p.N p.m p.r p.k y.val x.val := by
+  have hm : p.m ≤ p.N := Nat.le_of_lt p.hmn
+  simp only [countFiberMemb_card p.N p.m p.r hm p.hrN x,
+             countFiberMemb_card p.N p.m p.r hm p.hrN y]
+  have hxmem : x.val ∈ BernoulliLaplaceGeneral.stateFinset p.N p.m p.r := Finset.mem_Icc.mpr x.2
+  have hymem : y.val ∈ BernoulliLaplaceGeneral.stateFinset p.N p.m p.r := Finset.mem_Icc.mpr y.2
+  have hxlo : x.val ≤ p.m := x.2.2.trans (Nat.min_le_left p.m p.r)
+  have hylo : y.val ≤ p.m := y.2.2.trans (Nat.min_le_left p.m p.r)
+  have hfwd := (BernoulliLaplaceGeneral.fiberSum_eq p x.val y.val hxmem).symm
+  have hrev := (BernoulliLaplaceGeneral.fiberSum_eq p y.val x.val hymem).symm
+  rw [hfwd, BernoulliLaplaceGeneral.fiberSum_swap p x.val y.val hxlo hylo, hrev]
+
 /-- A symmetric-card-exchange is symmetric: two `m`-subsets `S`, `T` of an `N`-deck
     exchange exactly `k` cards in each direction iff the reverse pair does.  This is
     the seed of the reversible-flow / detailed-balance identity for the
