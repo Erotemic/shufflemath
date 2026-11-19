@@ -37,6 +37,35 @@
 > **Tranche green: 3234 jobs, 37 tests pass.** (Note the Lean 4.34 `module` system exposes each module's theorems under `Shufflemath.<Module>.<thm>` — e.g. `Shufflemath.CommanderPermutation.Deck`; reference across modules by full path or `open` the module namespace.)
 >
 > **Next (session 80):** **G2 is 7/13 rows already generic** (disintegration, counting, kernel-algebra, fiber-intertwining — see the manifest); **6 rows remain 99-card-only**: the 2/3-exchange TV (G2.3/5), the A3 kernel law (G2.8), and the physical / two-physical-perfect-exchange TV (G2.9/10/13). **Top priority: G2.10 — the generic two-physical-perfect-exchanges identity (objective item 3)** — build it on the type-generic `FiberDisintegration.marginal_comp_fiber_eq_uniform` + the `(N,m,k)` `blExchange` kernel + a **generic A3 kernel law (G2.8)** (generalize `hMembershipExchange_kernel` to arbitrary `N,m,r,k`; `BLRefinement.uniformFiber_intertwines` already gives the count-fiber half). All building blocks are in place. Secondary: F4.2 n-step `TV ≤ n` (fiddly elaboration), F4.2 deck-level GSR lift, and the open qwen-review engineering items (Q1/Q2/Q4/Q5/Q9, R4 handoff reorganization).
+
+### G2 execution plan (G2.8 → G2.10)
+
+Port `Shufflemath/CommanderA3KernelLaw.hMembershipExchange_kernel` to arbitrary
+`(N,m,r,k)`. The 99-card law states:
+`membershipLift ∘ localLift ∘ rawExchange ∘ deterministic membership = commanderExchange25 ∘ membershipLift`,
+closed by `hMembershipExchange_lhs_reduces` (LHS → uniform project-fiber pushforward `mu_x`) +
+kernel extensionality (`StdSimplex.weights_inj` + `Finsupp.ext`) + the pointwise A3 law `hMembershipExchange`.
+
+**Already generic (reuse, do not rebuild):**
+- `TwoPile.membership (N m) (hm) : Deck N → Membership N m` (the observation `observe`).
+- `FiberDisintegration.{fiberLaw, marginalLaw, marginal_comp_fiber_eq_uniform}` — type-generic
+  (`observe := membership`); gives `localLift` and the disintegration.
+- `BernoulliLaplaceGeneral.blExchangeKernel (p : ExchangeAdmissible)` — the generic count-exchange
+  (analog of `commanderExchange25`).
+- `FiniteDeck/SubsetExchange.subsetExchangeKernel_*` — the generic physical-exchange count kernel.
+- `BLRefinement.{uniformFiber_intertwines, blExchangeKernel_mass, subsetExchangeMembershipKernel_mass, yMoves_card_eq_transitionNumerator, countFiber_card}` — the count-fiber counting half.
+
+**To build (99-card-only gaps):**
+1. Generic `membershipLift (N m r k)` : count-state → uniform membership-fiber kernel
+   (analog of `CommanderMembershipKernels.membershipLift`; = `fiberLaw membership` at the count level).
+2. Generic Deck-level `rawExchange (N m)` : `FiniteKernel (Deck N) (Deck N)` (analog of
+   `CommanderPhysicalExchange.rawExchange`; the 25-position subset exchange, = `subsetExchange` at deck level).
+3. Generic pointwise A3 law `hMembershipExchange (N m r k)` : `mu_x = blExchange ∘ membershipLift`
+   (port `CommanderA3KernelLaw.hMembershipExchange`, reusing `BLRefinement` count-fiber counting).
+4. Assemble the generic `hMembershipExchange_kernel`, then the G2.10 two-physical-perfect-exchanges TV.
+
+Target module: `Shufflemath/FiniteDeck/A3KernelLaw.lean` (new) or `BLRefinement`. Probe-first
+per the standing rules; commit per lemma.
 >
 > **⚠ 77th session — F3 item 3 (the A3 `hMembershipExchange` kernel law) is COMPLETE and in the library.** Three commits: (1) `a6352be` (76th) proved the A3 capstone count bridge `mu_x_countFiberTotal`; (2) `b7f975e` **cycle-broke** the import graph by moving `exchangeChoice_card_eq_transitionDenominator` into a new *lower* module `Shufflemath/CommanderA3ExchangeCard.lean` (no CME dep); (3) **`c553c02` landed the kernel law in a proper library module `Shufflemath/CommanderA3KernelLaw.lean`** (in the active tranche), proving `hMembershipExchange`: for every source macrostate `x` and membership `m`, the raw-exchange pushforward `mu_x x` puts the same mass at `m` as the `commanderExchange25 ∘ membershipLift` kernel. A `Membership` is a 50-subset of the 99-card deck (50 left-orig + 49 right-orig), so `1 ≤ count ≤ 50` always (pigeonhole) — the feasibility `ite` in `hMembershipExchange_rhs_mass` is always true, and the law = `transitionWeight / membershipFiberCount` from `mu_x_countFiberTotal` + `mu_x_fiberSum`. Full tranche green (3232 jobs, 37 tests pass). ⚠ `Shufflemath/CommanderA3Count.lean` is a **SEPARATE pre-existing module** (the "A3 count half": `leftUnmarkedCardCount`) — do **NOT** overwrite it.
 >
