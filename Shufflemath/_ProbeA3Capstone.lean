@@ -78,6 +78,39 @@ theorem mu_x_fiberSum (x : CommanderState) (m : Membership) :
   -- the fiber card is `membershipFiberCount c`
   rw [membershipFiber_card c]
 
+/-- A `Finset` × `Fintype` double-sum swap: reordering two iterated sums (a `Finset` on the
+    outside, a `Fintype` on the inside) does not change the sum.  Proved by induction on the
+    `Finset`, so it never computes `Finset.univ` of the (possibly huge) `Fintype` — this unblocks
+    the A3 `h2` Fubini, whose product-set/bijection form recursed on `Finset.univ : Finset Deck`.
+    (The `Fintype.sum_mul_sum` / `Finset.sum_mul_sum` factored forms do not fit a 2-D integrand.) -/
+theorem finset_fintype_sum_swap (s : Finset Membership) (f : Membership → Deck → Rat) :
+    (∑ m' ∈ s, ∑ d : Deck, f m' d) = ∑ d : Deck, ∑ m' ∈ s, f m' d := by
+  classical
+  induction s using Finset.induction with
+  | empty =>
+      -- LHS = ∑ m' ∈ ∅, … = 0;  RHS = ∑ d, ∑ m' ∈ ∅, f m' d = ∑ d, 0 = 0
+      simp
+  | insert m s' hm ih =>
+      -- Walk LHS → RHS in four single-step rewrites (all pure / structural — no `Finset.univ`
+      -- computation, so no recursion on the 99^13 `Deck` Fintype):
+      calc
+        -- (a) expand `m` out of the LHS outer sum
+        (∑ m' ∈ insert m s', ∑ d : Deck, f m' d) =
+            (∑ d : Deck, f m d) + ∑ m' ∈ s', ∑ d : Deck, f m' d := by
+          rw [Finset.sum_insert hm]
+        -- (b) IH: swap the two sums on the second summand (both now over `s'`)
+        _ = (∑ d : Deck, f m d) + ∑ d : Deck, ∑ m' ∈ s', f m' d := by
+          rw [ih]
+        -- (c) distribute the `+` back under the outer `∑ d`
+        _ = ∑ d : Deck, (f m d + ∑ m' ∈ s', f m' d) := by
+          rw [← Finset.sum_add_distrib]
+        -- (d) re-collapse the inner `insert m s'` (pointwise under the outer `∑ d`)
+        _ = ∑ d : Deck, ∑ m' ∈ insert m s', f m' d := by
+          congr
+          funext d
+          -- forward `sum_insert` rewrites the RHS `∑ m' ∈ insert m s', f m' d` to the LHS form
+          rw [Finset.sum_insert hm]
+
 /-- **Deck-averaging lemma (crux of the A3 `hMembershipExchange` discharge).**  The total
     mass `mu_x` puts on the `c`-fiber equals the Bernoulli–Laplace transition weight from the
     source count `commanderLeftCount x` to `c`.  Reason: `mu_x x` is the uniform fiberLaw over
@@ -101,19 +134,21 @@ theorem mu_x_countFiberTotal (x : CommanderState) (c : Nat) :
     rw [mu_x, FiniteKernel.comp, ← FiniteKernel.apply]
     rw [FiniteKernel.apply_mass]
   -- (2) Fubini: pull the fiberLaw weight out of the c-fiber sum.
-  --     WIP wall #1: the two-index swap  ∑ m' ∈ S, ∑ d, w d · f m' d  =  ∑ d, w d · ∑ m' ∈ S, f m' d.
+  --     ∑ m' ∈ S, ∑ d, (w d · f m' d)  =  ∑ d, w d · ∑ m' ∈ S, f m' d.
+  --     The 71st-session product-set/bijection form recursed on `Finset.univ : Finset Deck`;
+  --     instead use the induction-based `finset_fintype_sum_swap` (no univ computation) on the integrand
+  --     g m' d := w d · f m' d, then pull the (d-dependent, m'-independent) weight out via
+  --     `Finset.mul_sum` pointwise under the outer `∑ d`.
   have h2 : (∑ m' ∈ cFiber c, ∑ d : Deck,
           Dist.mass (fiberLaw project project_surjective x) d * Dist.mass (rawExchangeMembership d) m') =
       ∑ d : Deck, Dist.mass (fiberLaw project project_surjective x) d *
         (∑ m' ∈ cFiber c, Dist.mass (rawExchangeMembership d) m') := by
-    -- (h2) Fubini:  ∑ m' ∈ S, ∑ d, w d · f m' d  =  ∑ d, w d · ∑ m' ∈ S, f m' d.
-    -- WIP wall #2 (71st-session finding): the product-set/bijection form
-    --   `change ∑ p ∈ cFiber c ×ˢ univ, …  =  ∑ p ∈ univ ×ˢ cFiber c, …`
-    --   RECURSES on `Finset.univ : Finset Deck` (the 99! deck) — the same family as the f4 wall.
-    --   Needs an algebraic `Finset.sum`-level swap (no `change` to a product set) or a dedicated
-    --   Fubini lemma.  Step 1 (mul_comm inside) and step 3 (pull `w d` out via `Finset.mul_sum`)
-    --   are routine; only the middle swap is the wall.
-    sorry
+    -- (i) Fubini swap:  ∑ m' ∈ S, ∑ d, (w d · f m' d)  =  ∑ d, ∑ m' ∈ S, (w d · f m' d)
+    rw [finset_fintype_sum_swap]
+    -- (ii) pull the fiberLaw weight  w d  out of the inner `∑ m' ∈ S`  (pointwise under `∑ d`)
+    congr
+    funext d
+    rw [← Finset.mul_sum]
   -- (3) the inner c-fiber total of the raw exchange at deck d is the deck-independent count law
   --     = transitionWeight (leftOriginalCount d) c.
   --     WIP wall #2: the count-fiber equinumerosity
