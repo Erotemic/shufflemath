@@ -376,3 +376,35 @@ The only open residual is the **trivial** field cancellation `↑A.card · (↑A
 2. The symmetric `g4RHS_mass_sum` (RHS = `∑_S (SE x)S · (UCFM S) y`) — same structure, `y` in place of the SE index.
 3. The final equality `g4LHS_mass_sum = g4RHS_mass_sum` — both sides reduce to the same `TN`-ratio expression (a `rfl`/`ring` once the forms align).
 4. Then `g4_kernel_equality` (kernel-level) via the `FiniteKernel` `comp`-map + `apply_deterministic_eq_map`.
+
+## Status update (2026-12-06, cont.) — `g4LHS_mass_sum` (full LHS collapse) in `BLRefinement`
+
+**Landed in `Shufflemath/FiniteDeck/BLRefinement.lean`** (compiles, build green):
+- `g4LHS_mass_sum`: `∑_j (uniformCountFiberMembership p x) j · (subsetExchangeMembershipKernel p j) S =
+    (transitionNumerator p.N p.m p.r p.k c x.val : Rat) / (↑(countFiberMemb p x).card · (transitionDenominator p.N p.m p.k : Rat))`
+  where `c = countInPileVal p.N p.m p.r _ _ S`.
+
+**The collapse (all proven steps):**
+```
+∑_j (UCFM x)j · (SE j)S
+  = ∑_j ite(cnt j = x, 1/#fiber, 0) · ite(j ∈ ReachSet S, D⁻¹, 0)        [mass-body lemmas]
+  = ∑_j ite(cnt j = x ∧ j ∈ ReachSet S, (1/#fiber)·D⁻¹, 0)               [ite_mul_ite]
+  = ∑_{j ∈ {j : cnt j = x ∧ j ∈ ReachSet S}} of the constant             [Finset.sum_ite]
+  = #({j : cnt j = x} ∩ ReachSet S) · (1/#fiber · D⁻¹)                   [sum_const]
+  = #(countFiberMemb p x ∩ ReachSet S) · (…)                            [extensionality]
+  = #yMoves(S, c, x.val) · (1/#fiber · D⁻¹)                             [h5: ∩ = yMoves]
+  = TN(c, x.val) / (#fiber(x) · D)                                     [h6: #yMoves = TN]
+```
+**Final step (the tricky bit):** `↑A.card * (↑A.card)⁻¹ * (↑D)⁻¹ * ↑(TN) = (↑D)⁻¹ * ↑(TN)` after
+`field_simp [ha, hd]; ring` — closed by `simp [ha, hd, mul_inv_cancel, one_mul, mul_one]; rfl`
+where `ha : (↑A.card : Rat) ≠ 0 := Nat.cast_ne_zero.mpr hApos.ne'` and `hd` similarly for `D`.
+(`rw [mul_inv_cancel ha]` does NOT work here — the `↑`-cast subterm defeats metavariable
+pattern-matching; `simp` with the explicit non-zero assumptions is the working closer.)
+
+**Next (in `BLRefinement`):**
+1. `g4RHS_mass_sum`: the symmetric RHS `∑_S (subsetExchangeMembershipKernel p x) S · (uniformCountFiberMembership p S) y`
+   = same `TN`-ratio with the exchange role of x,y (should reduce identically; `rfl`/`ring`).
+2. `g4_mass_eq`: `g4LHS_mass_sum p x S = g4RHS_mass_sum p y S` — both sides are the same `TN`-ratio.
+3. `g4_kernel_equality`: `comp (uniformCountFiberMembership p) (subsetExchangeMembershipKernel p) =
+     comp (subsetExchangeMembershipKernel p) (blExchangeKernel p)` via `apply_deterministic_eq_map` +
+   `FiniteKernel.ext` (extending `bridge_ucfm_sesk`).

@@ -1762,5 +1762,88 @@ lemma ite_mul_ite {a b : Prop} [Decidable a] [Decidable b] (x y : Rat) :
     · rw [ite_eq_right ha, ite_eq_right hb, ite_eq_right (fun h => ha h.1)]
       rw [zero_mul]
 
+
+-- ── G4 capstone LHS mass-sum collapse (ported from _ProbeG4LHS) ──
+/-- G4 capstone LHS sum collapse: `∑_j (UCFM x)(j)·(SE j)(S)` = `TN c (x.val) / (#fiber(x)·D)`
+    where `c = #(S∩M)` and `D = BernoulliLaplaceGeneral.transitionDenominator`. -/
+theorem g4LHS_mass_sum (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x : BernoulliLaplaceGeneral.BLState p.N p.m p.r) (S : Membership p.N p.m) :
+    (∑ j : Membership p.N p.m,
+      (uniformCountFiberMembership p x).mass j * (subsetExchangeMembershipKernel p j).mass S) =
+      (BernoulliLaplaceGeneral.transitionNumerator p.N p.m p.r p.k
+         (countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN S) x.val : Rat) /
+        (↑(countFiberMemb p.N p.m p.r p.hrN x).card * (BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k : Rat)) := by
+  set A := countFiberMemb p.N p.m p.r p.hrN x
+  set B := ReachSet p.N p.m p.k (Nat.le_of_lt p.hmn) p.hkm p.hknm S
+  set c := countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN S
+  set D := BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k
+  set V := (1 : Rat) / ↑A.card * (D : Rat)⁻¹
+  have hc : c = (S.1 ∩ markedSet p.N p.r p.hrN).card := by
+    dsimp only [c]
+    rw [countInPileVal]
+  have hApos : 0 < A.card := countFiberMemb_nonempty p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN x
+  have hDpos : 0 < D := BernoulliLaplaceGeneral.transitionDenominator_pos p
+  have hFib (j : Membership p.N p.m) :
+      (countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN j = x.val ↔ j ∈ A) := by
+    simpa [A, countInPile_val] using countInPile_countFiberMemb p x j
+  have hP (j : Membership p.N p.m) :
+      (countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN j = x.val ∧ j ∈ B) ↔ j ∈ A ∩ B := by
+    simp only [Finset.mem_inter]
+    exact ⟨fun h => ⟨Iff.mp (hFib j) h.1, h.2⟩, fun h => ⟨Iff.mpr (hFib j) h.1, h.2⟩⟩
+  -- 1. mass bodies
+  have hsum :
+      (∑ j : Membership p.N p.m, (uniformCountFiberMembership p x).mass j * (subsetExchangeMembershipKernel p j).mass S) =
+        (∑ j : Membership p.N p.m,
+          (if countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN j = x.val then (1 : Rat) / ↑A.card else 0) *
+          (if j ∈ B then (D : Rat)⁻¹ else 0)) := by
+    apply Finset.sum_congr rfl
+    intro j _
+    rw [uniformCountFiberMembership_mass_ite, subsetExchangeMembershipKernel_mass_ite]
+  rw [hsum]
+  -- 2. ite(a,α,0)·ite(b,γ,0) = ite(a∧b, α·γ, 0)
+  have hprod (j : Membership p.N p.m) :
+      (if countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN j = x.val then (1 : Rat) / ↑A.card else 0) *
+        (if j ∈ B then (D : Rat)⁻¹ else 0) =
+        (if (countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN j = x.val ∧ j ∈ B) then V else 0) := by
+    simpa [V] using ite_mul_ite ((1 : Rat) / ↑A.card) ((D : Rat)⁻¹)
+  have hsum2 :
+      (∑ j : Membership p.N p.m,
+        (if countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN j = x.val then (1 : Rat) / ↑A.card else 0) *
+        (if j ∈ B then (D : Rat)⁻¹ else 0)) =
+      (∑ j : Membership p.N p.m, (if (countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN j = x.val ∧ j ∈ B) then V else 0)) := by
+    apply Finset.sum_congr rfl
+    intro j _
+    exact hprod j
+  rw [hsum2]
+  -- 3. ∑_univ ite(P, V, 0) = ∑_filter V + ∑_rest 0 = (A∩B).sum V   (no `·` bullets — applied on the main goal)
+  change (Finset.univ : Finset (Membership p.N p.m)).sum
+      (fun j => if (countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN j = x.val ∧ j ∈ B) then V else 0) = _
+  rw [Finset.sum_ite]
+  have h2 : (Finset.univ : Finset (Membership p.N p.m)).filter
+      (fun j => countInPileVal p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN j = x.val ∧ j ∈ B) = A ∩ B := by
+    ext j
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+    exact hP j
+  rw [h2]
+  simp only [Finset.sum_const_zero, add_zero]
+  -- 4. (A∩B).sum V = (A∩B).card * V
+  rw [Finset.sum_const]
+  -- 5. #(A∩B) = #yMoves S c (x.val)
+  have h5 : (A ∩ B).card = (yMoves p.N p.m p.r p.k p.hrN S c x.val).card := by
+    rw [Finset.inter_comm,
+        reachSetFiberCard_eq_yMoves p.N p.m p.r p.k (Nat.le_of_lt p.hmn) p.hrN p.hkm p.hknm S c x.val hc x rfl]
+  rw [h5]
+  -- 6. #yMoves = BernoulliLaplaceGeneral.transitionNumerator c (x.val)
+  have h6 : (yMoves p.N p.m p.r p.k p.hrN S c x.val).card = BernoulliLaplaceGeneral.transitionNumerator p.N p.m p.r p.k c x.val := by
+    rw [yMoves_card_eq_transitionNumerator p.N p.m p.r p.k (Nat.le_of_lt p.hmn) p.hrN S c x.val hc]
+  rw [h6]
+  -- 7. assemble the quotient: (↑TN) * ((1/↑A.card) * (D:Rat)⁻¹) = ↑TN / (↑A.card * (D:Rat))
+  dsimp only [D, V]
+  have ha : (↑A.card : Rat) ≠ 0 := Nat.cast_ne_zero.mpr hApos.ne'
+  have hd : (↑(D : Nat) : Rat) ≠ 0 := Nat.cast_ne_zero.mpr hDpos.ne'
+  field_simp [ha, hd]
+  ring
+  simp [ha, hd, mul_inv_cancel, one_mul, mul_one]
+  <;> rfl
+
 end FiniteDeck
 end Shufflemath
