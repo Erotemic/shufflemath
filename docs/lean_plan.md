@@ -736,8 +736,22 @@ ideal-reference TV (the "sufficient TV upper bound" half; reuses
 nonnegative total cost) and the **`ActionKind`** action alphabet
 (`localRiffle`/`exchange`/`splitRecombine`) supply the "cost" and "action
 class" halves. *Remaining:* assemble these into the full F5 theorem over an
-explicit finite-GSR protocol (needs the F4.2 `Deck`-level GSR product and the
-F3 item 3/4 results), and state the optimization quantifiers separately.
+explicit finite-GSR protocol, and state the optimization quantifiers
+separately. **DONE (79th+ session, this audit):** the full F5 certificates
+are assembled in `Shufflemath/CommanderCostedCertificate.lean` —
+`macroCountExchange_costedCertificate`, the recursion-free
+`f5FullDeck_certificate` (over `Deck = Equiv.Perm (Fin 99)`, budget-free via
+the exact F3 value), the non-degenerate `f5Nondegenerate_certificate`, and
+`f5Nondegenerate_riffle` — each with model, action class, initial state,
+target, terminal bound, and cost all explicit. The **optimization quantifiers
+are stated separately** in the module's `## F5-B` section: claim (i) certified
+feasibility is **proved** (the certificates above); claim (ii) bounded
+(surrogate) optimality (min `protocolCost` among bound-passing protocols, via a
+finite `argmin` — `f5OptCost` names the objective) is **stated, not proved**;
+claim (iii) actual-TV optimality (needs competitor lower bounds) is **stated,
+not proved, and deliberately not claimed**. A non-degenerate *full-deck*
+budget certificate (over the 99! `Finset.univ`) remains the F4.2-deferred
+follow-up.
 
 **Acceptance:** theorem with model, action class, initial state, target,
 terminal bound, and cost all explicit; separately state any optimization

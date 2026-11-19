@@ -172,5 +172,47 @@ theorem f5Nondegenerate_certificate :
     (Dist.pointMass commanderSegregatedState)
     (GSR.uniformDist CommanderState)
 
+/-!
+## F5-B: the optimization quantifiers, stated separately
+
+The F5 acceptance requires that any *optimization* quantifiers be stated
+separately from the sufficient-bound certificate and that each one name its
+proof source.  The three certificates above (`macroCountExchange_costedCertificate`,
+`f5FullDeck_certificate`, `f5Nondegenerate_certificate`) are **feasibility**
+statements only; none of them minimizes anything.  The three possible
+optimization claims are kept strictly apart (review R6) with their status and
+proof source explicit:
+
+* **(i) Certified feasibility** — `∃` an admissible costed protocol `s` with
+  `protocolCost s ≤ C` and terminal `TV(s) ≤ ε`.  **PROVED**: the three
+  certificates give a concrete `s` (two exchange rounds), an explicit cost
+  `C = 2`, and an explicit `ε` (the exact F3 value, or the sufficient budget
+  bound for the non-degenerate case).
+
+* **(ii) Bounded (surrogate) optimality** — the concrete protocol minimizes
+  `f5OptCost` *among admissible protocols that pass the sufficient TV bound*.
+  **STATED, not proved.**  Proof source: a finite `argmin` over a finite
+  admissible class of costed schedules, proving the concrete schedule realizes
+  the minimum certified-bound cost — which first requires proving every
+  competitor that passes the bound has cost ≥ `2`.  Not attempted: the library
+  has no such competitor-enumeration proof.
+
+* **(iii) Actual-TV optimality** — the protocol minimizes *actual* terminal TV
+  (or physical cost) over the admissible class.  **STATED, not proved, and
+  deliberately NOT claimed.**  Proof source: a lower bound (or exact TV value)
+  for *every* competing protocol, per the F5 roadmap — "a search over
+  conservative upper bounds is not proof that the candidate minimizes actual TV
+  unless competing candidates have suitable lower bounds or exact TV values."
+  No such lower bounds are in the library, so this claim is left open.
+
+This keeps claim (i) — the only one actually proved — honest about being a
+*feasibility / sufficient-bound* certificate, not an optimality result.
+-/ --
+
+/-- Objective of the bounded-optimization claim (ii): total protocol cost.
+    The certified-bound surrogate, *not* actual terminal TV (see (iii)). -/
+def f5OptCost (ops : List (CostedKernel CommanderState)) : Rat :=
+  protocolCost ops
+
 end Shufflemath
 end
