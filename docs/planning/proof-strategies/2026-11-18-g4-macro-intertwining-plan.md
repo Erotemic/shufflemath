@@ -259,3 +259,44 @@ Add exactly one line: `public import Shufflemath.BernoulliLaplaceFiber` after th
   break the edit tool); both need `open BernoulliLaplaceGeneral` + `open FiniteKernel` (already in
   scope via BLRefinement's imports? `comp`/`FiniteKernel` — BLRefinement does NOT `open FiniteKernel`,
   so the capstone must write `FiniteKernel.comp` fully-qualified, OR add the open). Then build + verify.
+
+## Session 58 progress (2026-11-18) — reachSetFiberCard_eq_yMoves DONE + in BLRefinement
+- **`reachSetFiberCard_eq_yMoves` is PROVEN and committed into
+  `Shufflemath/FiniteDeck/BLRefinement.lean`** (after `markedCountChange`, before
+  `end FiniteDeck`, ~line 1623). It builds clean in BLRefinement and the whole
+  `dev/verify_next_phase.sh` tranche (37 tests OK).
+- **Final proof shape** (the 4 directions of `Finset.card_bij' i j`):
+  1. *i lands in yMoves* — `hMove : (S.1\T.1, T.1\S.1) ∈ Lset ×ˢ Rset` (from
+     `hInR : T ∈ ReachSet` via `rw [mem_product, Lset, Rset, mem_powersetCard, ...];
+     rcases hInR with ⟨hA,hB⟩; ⟨⟨sdiff_subset,hA⟩,⟨hsub2,hB⟩⟩` where
+     `hsub2 : T.1\S.1 ⊆ univ\S.1`), then `hmc` (markedCountChange, with
+     `hT : (S.1∩T.1)∪(T.1\S.1) = T.1` via `ext; simp [mem_union,mem_inter,mem_sdiff]; tauto`),
+     then `hmc2 : c - #((S.1\T.1)∩M) + #((T.1\S.1)∩M) = (T.1∩M).card` (`rw [hc, hmc.symm]`),
+     then `hfilter : ... = y` (`rw [hmc2, hCountT]; exact hx`), then
+     `rw [yMoves]; exact (Finset.mem_filter.mpr ⟨by dsimp [i]; simpa [reachMoves, mem_product,
+     Lset, Rset, mem_powersetCard] using hMove, by simpa using hfilter⟩)`.
+     **Gotcha**: the `mem_filter.mpr` first arg needs `i T hT ∈ reachMoves` — `i` is a `let`,
+     so `dsimp [i]` first, THEN `simpa` with `reachMoves/mem_product/Lset/Rset/mem_powersetCard`
+     in the set to unfold the goal to match `hMove`'s `↑S\↑T ∈ Lset ∧ ↑T\↑S ∈ Rset` form.
+  2. *j lands back in ReachSet ∩ fiber* — `hpL` (p ∈ Lset×Rset), `hraw :=
+     markedCountChange ... p hpL`, `rw [← hc, hFilter] at hraw` (reduces the count-change RHS to
+     `y`), then `Finset.mem_inter.mpr ⟨by simpa using newpile_reach ... hpL,
+     by simpa [countFiberMemb, hx] using hraw⟩`. **Gotcha**: the second `mem_inter` arg's goal is
+     still the MEMBERSHIP `j p hp ∈ countFiberMemb x`; `simpa [countFiberMemb, hx]` unfolds it to
+     the `((S.1\p.1)∪p.2)∩M = y` equality that `hraw` supplies.
+  3. *left inverse* `j (i T) = T` — `dsimp only [i,j]; refine Subtype.ext ?_; change
+     (S.1\(S.1\T.1))∪(T.1\S.1) = T.1; rw [Finset.sdiff_sdiff_self_left, inter_comm, union_comm,
+     sdiff_union_inter]` (verbatim from `subsetExchangeCount`).
+  4. *right inverse* `i (j p) = p` — `dsimp only [i,j]; have hpL := simpa [reachMoves,Lset,Rset]
+     using (ymReach p hp); ext; rw [inv_first ... hpL] / rw [inv_second ... hpL]`.
+     **Gotcha**: use `rw [inv_first/inv_second]` (NOT `exact`) — matches `subsetExchangeCount`.
+- **`_ProbeG4.lean` is now capstone-only** (27 lines): it keeps
+  `uniformFiber_intertwines` (the kernel-equality capstone, still `sorry`) as the next unit,
+  importing BLRefinement for the bridge lemma.
+- **NEXT (session 59+): the capstone `uniformFiber_intertwines`** — the full G4 kernel equality.
+  Assemble per the "Assembly of the theorem" + capstone sections above: `finKernels_eq` on `x,S`,
+  reduce each `comp` side to the single-`x`/single-`S` fiber contribution, use
+  `reachSetFiberCard_eq_yMoves` + `yMoves_card_eq_transitionNumerator` on the LHS,
+  `transitionNumerator_eq_transitionDenom_mul_card` (detailed balance) + `#fiber x = #fiber c`
+  on the RHS. BLRefinement does NOT `open FiniteKernel`, so the capstone must write
+  `FiniteKernel.comp` (or the pushforward names) fully-qualified, or `open FiniteKernel` locally.

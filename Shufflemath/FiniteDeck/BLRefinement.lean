@@ -1607,5 +1607,93 @@ theorem markedCountChange (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
     (((S.1 \ p.1) ∪ p.2) ∩ M).card = ((S.1 \ p.1) ∩ M).card + (p.2 ∩ M).card := hIntCard
     _ = ((S.1 ∩ M).card - (p.1 ∩ M).card) + (p.2 ∩ M).card := by rw [hLcard]
     _ = (S.1 ∩ M).card - (p.1 ∩ M).card + (p.2 ∩ M).card := by ring
+
+
+/- The fiber-restricted move/target bijection. The `k`-exchange targets of `S`
+   that carry marked-count `y` (the `x`-fiber of the count map) are in bijection with
+   the `yMoves` out of `S`: the move `(S.1 \ T.1, T.1 \ S.1)` lands the target `T`
+   back, `markedCountChange` is the `y`-landing filter, and `newpile_reach` / the
+   inverse-exchange give the two directions. Hence their count is `#yMoves S c y`.
+   (See `docs/planning/proof-strategies/2026-11-18-g4-macro-intertwining-plan.md`.)
+   -/
+/- The k-exchange targets of `S` that carry count `y` are in bijection with the
+   moves from `S` landing at `y`, so their count is `#yMoves S c y` (and hence,
+   with `c = #count(S)`, the Bernoulli-Laplace transition numerator
+   `transitionNumerator c y` by `yMoves_card_eq_transitionNumerator`). -/
+theorem reachSetFiberCard_eq_yMoves (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
+    (hk : k ≤ m) (hkm : k ≤ N - m) (S : Membership N m)
+    (c y : Nat) (hc : c = (S.1 ∩ markedSet N r hr).card)
+    (x : BernoulliLaplaceGeneral.BLState N m r) (hx : x.val = y) :
+    ((ReachSet N m k hm hk hkm S) ∩ (countFiberMemb N m r hr x)).card =
+      (yMoves N m r k hr S c y).card := by
+  let M := markedSet N r hr
+  let ymReach (p : Finset (Fin N) × Finset (Fin N)) (hp : p ∈ yMoves N m r k hr S c y) : p ∈ reachMoves N m k S := by
+    have hy : p ∈ (reachMoves N m k S).filter (fun q : Finset (Fin N) × Finset (Fin N) => c - (q.1 ∩ M).card + (q.2 ∩ M).card = y) := by
+      simpa [yMoves] using hp
+    exact (Finset.mem_filter.mp hy).1
+  let ymFilter (p : Finset (Fin N) × Finset (Fin N)) (hp : p ∈ yMoves N m r k hr S c y) :
+      c - (p.1 ∩ M).card + (p.2 ∩ M).card = y := by
+    have hy : p ∈ (reachMoves N m k S).filter (fun q : Finset (Fin N) × Finset (Fin N) => c - (q.1 ∩ M).card + (q.2 ∩ M).card = y) := by
+      simpa [yMoves] using hp
+    exact (Finset.mem_filter.mp hy).2
+  let i (T : Membership N m) (hT : T ∈ ReachSet N m k hm hk hkm S ∩ countFiberMemb N m r hr x)
+      : Finset (Fin N) × Finset (Fin N) := (S.1 \ T.1, T.1 \ S.1)
+  let j (p : Finset (Fin N) × Finset (Fin N)) (hp : p ∈ yMoves N m r k hr S c y) : Membership N m := by
+    have hpR := ymReach p hp
+    exact ⟨(S.1 \ p.1) ∪ p.2, newpile_card N m k hm hk hkm S p (by simpa [reachMoves, Lset, Rset] using hpR)⟩
+  refine Finset.card_bij' i j ?_ ?_ ?_ ?_
+  · -- i lands in yMoves (in reachMoves with the y-landing filter)
+    intro T hT
+    have hInR : T ∈ ReachSet N m k hm hk hkm S := (Finset.mem_inter.mp hT).1
+    have hInY : T ∈ countFiberMemb N m r hr x := (Finset.mem_inter.mp hT).2
+    have hCountT : (T.1 ∩ M).card = x.val := by simpa [countFiberMemb] using (Finset.mem_filter.mp hInY).2
+    have hMove : (S.1 \ T.1, T.1 \ S.1) ∈ Lset N m k hm hk hkm S ×ˢ Rset N m k hm hk hkm S := by
+      rw [Finset.mem_product, Lset, Rset, Finset.mem_powersetCard, Finset.mem_powersetCard]
+      simp only [ReachSet, Finset.mem_filter, Finset.mem_univ, true_and] at hInR
+      rcases hInR with ⟨hA, hB⟩
+      have hsub2 : T.1 \ S.1 ⊆ Finset.univ \ S.1 := by
+        intro x hx
+        rw [Finset.mem_sdiff] at hx
+        rw [Finset.mem_sdiff]
+        exact ⟨Finset.mem_univ _, hx.2⟩
+      exact ⟨⟨Finset.sdiff_subset, hA⟩, ⟨hsub2, hB⟩⟩
+    have hT : ((S.1 ∩ T.1) ∪ (T.1 \ S.1)) = T.1 := by
+      ext z
+      simp only [Finset.mem_union, Finset.mem_inter, Finset.mem_sdiff]
+      tauto
+    have hmc : (T.1 ∩ M).card = (S.1 ∩ M).card - ((S.1 \ T.1) ∩ M).card + ((T.1 \ S.1) ∩ M).card := by
+      simpa [hT] using markedCountChange N m r k hm hr hk hkm S (S.1 \ T.1, T.1 \ S.1) hMove
+    have hmc2 : c - ((S.1 \ T.1) ∩ M).card + ((T.1 \ S.1) ∩ M).card = (T.1 ∩ M).card := by
+      rw [hc, hmc.symm]
+    have hfilter : c - ((S.1 \ T.1) ∩ M).card + ((T.1 \ S.1) ∩ M).card = y := by
+      rw [hmc2, hCountT]
+      exact hx
+    rw [yMoves]
+    exact (Finset.mem_filter.mpr ⟨by dsimp [i]; simpa [reachMoves, Finset.mem_product, Lset, Rset, Finset.mem_powersetCard] using hMove, by simpa using hfilter⟩)
+  · -- j lands back in ReachSet ∩ the fiber
+    intro p hp
+    have hpR := ymReach p hp
+    have hFilter := ymFilter p hp
+    have hpL : p ∈ Lset N m k hm hk hkm S ×ˢ Rset N m k hm hk hkm S := by
+      simpa [reachMoves, Lset, Rset] using hpR
+    have hraw := markedCountChange N m r k hm hr hk hkm S p hpL
+    rw [← hc, hFilter] at hraw
+    exact Finset.mem_inter.mpr
+      ⟨by simpa using newpile_reach N m k hm hk hkm S p hpL,
+       by simpa [countFiberMemb, hx] using hraw⟩
+  · -- left inverse: j (i T) = T
+    intro T hT
+    dsimp only [i, j]
+    refine Subtype.ext ?_
+    change (S.1 \ (S.1 \ T.1)) ∪ (T.1 \ S.1) = T.1
+    rw [Finset.sdiff_sdiff_self_left, Finset.inter_comm, Finset.union_comm, Finset.sdiff_union_inter]
+  · -- right inverse: i (j p) = p
+    intro p hp
+    dsimp only [i, j]
+    have hpL : p ∈ Lset N m k hm hk hkm S ×ˢ Rset N m k hm hk hkm S := by
+      simpa [reachMoves, Lset, Rset] using (ymReach p hp)
+    ext
+    · rw [inv_first N m k hm hk hkm S p hpL]
+    · rw [inv_second N m k hm hk hkm S p hpL]
 end FiniteDeck
 end Shufflemath
