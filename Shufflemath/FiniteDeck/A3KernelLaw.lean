@@ -7,6 +7,7 @@ public import Shufflemath.BernoulliLaplaceGeneral
 public import Shufflemath.FiberDisintegration
 public import Shufflemath.Finite
 public import Shufflemath.PhysicalExchangeReduction
+public import Shufflemath.OracleRefinement
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Tactic
@@ -300,6 +301,47 @@ theorem two_physical_perfect_exchanges_uniform
     (membership := membership p.N p.m hm) (exchange := rawExchange p)
     (macroK := BernoulliLaplaceGeneral.blExchangeKernel p) (project := project p)
     (hrecover := hrecover p) (hMembershipExchange := hMembershipExchange_kernel p)
+    (Dist.pointMass x0) (BernoulliLaplaceGeneral.blStationaryDist p) n
+
+/-- **G2.3 / G2.5 headline (oracle).**  For any Bernoulli-Laplace parameters and
+  any number of steps `n`, the total variation between `n` *oracle* exchanges — each
+  a fresh uniform draw inside the count fiber after the macro (count) transition,
+  i.e. `oracleStep (project p) lift (blExchangeKernel p)` — run from a macrostate,
+  and the lifted macrostate stationary law, equals the total variation between the
+  corresponding `n` steps of the Bernoulli-Laplace *macro* chain from that
+  macrostate.
+
+  This is the type-generic oracle counterpart of the physical G2.10 headline
+  above: it follows purely from the recovery `hrecover` (no deck fiber counts,
+  and no deck-level surjectivity, which is false generically — `project`'s range
+  is the admissible sub-range, not all of `BLState`) via the type-generic
+  `OracleRefinement.run_tv_eq_macro`.  The 99-card instantiations are `n = 2`
+  (G2.3) and `n = 3` (G2.5). -/
+theorem two_oracle_exchanges_uniform
+    (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (x0 : BernoulliLaplaceGeneral.BLState p.N p.m p.r) (n : Nat) :
+    Dist.tv
+      (FiniteKernel.run
+          (OracleRefinement.oracleStep
+            (project p)
+            (FiniteKernel.comp (uniformCountFiberMembership p)
+              (localLift p.N p.m (Nat.le_of_lt p.hmn)))
+            (BernoulliLaplaceGeneral.blExchangeKernel p)) n
+          (FiniteKernel.apply (Dist.pointMass x0)
+            (FiniteKernel.comp (uniformCountFiberMembership p)
+              (localLift p.N p.m (Nat.le_of_lt p.hmn)))))
+      (FiniteKernel.apply (BernoulliLaplaceGeneral.blStationaryDist p)
+          (FiniteKernel.comp (uniformCountFiberMembership p)
+            (localLift p.N p.m (Nat.le_of_lt p.hmn)))) =
+      Dist.tv
+        (FiniteKernel.run (BernoulliLaplaceGeneral.blExchangeKernel p) n (Dist.pointMass x0))
+        (BernoulliLaplaceGeneral.blStationaryDist p) := by
+  let hm := Nat.le_of_lt p.hmn
+  exact OracleRefinement.run_tv_eq_macro
+    (project := project p)
+    (lift := FiniteKernel.comp (uniformCountFiberMembership p) (localLift p.N p.m hm))
+    (hrecover := hrecover p)
+    (macroK := BernoulliLaplaceGeneral.blExchangeKernel p)
     (Dist.pointMass x0) (BernoulliLaplaceGeneral.blStationaryDist p) n
 
 end FiniteDeck
