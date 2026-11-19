@@ -137,5 +137,40 @@ theorem f5FullDeck_certificate :
   refine ⟨rfl, ⟨hCost, ?_⟩⟩
   exact le_of_eq hEq
 
+/-! Non-degenerate certificate (macro space): a genuine perturbation budget. -/
+
+/-- The ideal reference: send every macro state to the uniform macro law. This
+    is a genuinely different kernel from `commanderExchange25`, so the one-step
+    discrepancy budget of the physical-vs-ideal pair is nonzero. -/
+noncomputable def uniformMacroKernel : FiniteKernel CommanderState CommanderState :=
+  fun _ => GSR.uniformDist CommanderState
+
+/-- **Non-degenerate F5 certificate (macro space).**  The physical two-exchange
+    terminal TV (segregated start → uniform macro target) is bounded by the
+    ideal (uniform-resample) terminal TV plus the exact one-step discrepancy
+    budget of the physical-vs-ideal pair.  Because the ideal is a genuinely
+    different kernel, the budget is nonzero — a real instance of F5's
+    "sufficient TV upper bound."  Over `Fin 50` the budget elaborates without
+    the 99! univ recursion.  No optimality claim. -/
+theorem f5Nondegenerate_certificate :
+    0 ≤ protocolCost [f5ExchangeOp, f5ExchangeOp] ∧
+    Dist.tv
+      (FiniteKernel.apply (Dist.pointMass commanderSegregatedState)
+        (kernelOfCosted [f5ExchangeOp, f5ExchangeOp]))
+      (GSR.uniformDist CommanderState) ≤
+      errorBudget
+        [commanderExchange25, commanderExchange25]
+        [uniformMacroKernel, uniformMacroKernel] +
+      Dist.tv
+        (FiniteKernel.apply (Dist.pointMass commanderSegregatedState)
+          (compList [uniformMacroKernel, uniformMacroKernel]))
+        (GSR.uniformDist CommanderState) :=
+  costedProtocol_certificate
+    [f5ExchangeOp, f5ExchangeOp]
+    [uniformMacroKernel, uniformMacroKernel]
+    rfl
+    (Dist.pointMass commanderSegregatedState)
+    (GSR.uniformDist CommanderState)
+
 end Shufflemath
 end
