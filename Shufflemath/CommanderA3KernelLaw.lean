@@ -27,15 +27,20 @@ open Finset
 open Fintype
 
 /-!
-## The A3 capstone: `hMembershipExchange` (the membership-exchange kernel law)
+## The A3 membership-exchange kernel law — `hMembershipExchange`
 
 The concrete kernel equality that discharges the abstract `hMembershipExchange`
-hypothesis (F3 item 3).  A `Membership` is a 50-subset of the 99-card deck
-(50 originally-left + 49 originally-right), so its marked count
-`membershipCount m = (m.1 ∩ leftOrigSet).card` always satisfies `1 ≤ count ≤ 50`
-(pigeonhole: a 50-subset of 50 + 49 must contain at least one left-orig card).
-The `ite` feasibility test in `hMembershipExchange_rhs_mass` is therefore always
-true, and the law assembles directly from the two count-level facts:
+hypothesis (F3 item 3).  For every source macrostate `x` and membership `m`, the
+raw-exchange pushforward `mu_x x` puts the same mass at `m` as the
+`commanderExchange25 ∘ membershipLift` kernel (the Bernoulli--Laplace uniform
+resample within the marked-count fiber).
+
+A `Membership` is a 50-subset of the 99-card deck (50 originally-left + 49
+originally-right), so its marked count `membershipCount m = (m.1 ∩ leftOrigSet).card`
+always satisfies `1 ≤ count ≤ 50` (pigeonhole: a 50-subset of 50 + 49 must contain at
+least one left-orig card).  The `ite` feasibility test in `hMembershipExchange_rhs_mass`
+is therefore always true, and the law assembles directly from two count-level facts
+(both in `Shufflemath._ProbeA3Capstone`, where the A3 count-bridge machinery lives):
 
 * **LHS pointwise** — `mu_x x m` (the raw-exchange pushforward mass at `m`) is the
   total mass of the `membershipCount m`-fiber divided by the fiber size
@@ -47,6 +52,10 @@ true, and the law assembles directly from the two count-level facts:
   `transitionWeight (count x) (count m) / membershipFiberCount (count m)`.
 
 Both sides reduce to the same `transitionWeight / membershipFiberCount`.
+
+(See also the A3 count-bridge count half in `Shufflemath.CommanderA3Count`, and the
+cardinality bridge `exchangeChoice_card_eq_transitionDenominator` in
+`Shufflemath.CommanderA3ExchangeCard`.)
 -/
 
 theorem hMembershipExchange (x : CommanderState) (m : Membership) :
