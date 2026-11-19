@@ -15,6 +15,34 @@
 
 # Agent handoff: next Shufflemath task
 
+**Updated:** (G4 **64th session — reversible-flow seed `reachSet_symm` committed; the
+detailed-balance identity is next but needs a type bridge**). The **reach-set symmetry**
+`reachSet_symm` is proved and in `Shufflemath/FiniteDeck/BLRefinement.lean` (builds clean,
+3223 jobs): two `m`-subsets `S`, `T` exchange exactly `k` cards each way iff the reverse
+pair does — `T ∈ ReachSet S ↔ S ∈ ReachSet T`. This is the *seed* of the G4
+reversible-flow / detailed-balance identity: the forward and reverse transitions are
+equinumerous, so the flow `x → y` weighted by the source stationary mass equals the
+reverse flow `y → x`.
+**Exactly where to resume:** prove the full **detailed-balance identity**
+`TN(c, x.val)·#fiber(c) = TN(x.val, c)·#fiber(x)` (the G4 RHS tie-in to
+`hMembershipExchange`). Two structural facts learned this session (keep them):
+1. The forward/reverse double count works by grouping the compatible-pair set
+   `P = (Fx ×ˢ Fy).filter (λ p, p.2 ∈ ReachSet p.1)` by its first coordinate
+   (`∑ S ∈ Fx, #(Fy ∩ ReachSet S)`) and by its second coordinate
+   (`∑ T ∈ Fy, #(Fx ∩ ReachSet T)`); the backward fiber flip is exactly
+   `reachSet_symm`. The grouping is `Finset.card_biUnion` over the disjoint family
+   `S ↦ {S} ×ˢ (Fy ∩ ReachSet S)` (uses `Finset.mem_singleton`,
+   `Finset.card_biUnion`, `Finset.card_insert_of_notMem`).
+2. **Type bridge needed first:** `countFiberMemb` (BLRefinement:1336) and the fiber
+   constants are over `BernoulliLaplaceGeneral.BLState N m r`, *not* `Membership N m`.
+The reversible-flow statement must live at the BLState level (or bridge the two) before
+   the `P`-set double count type-checks; the earlier `Membership`-level attempt was
+   type-inconsistent. `reachSet_symm` is at the `Membership` level (pure `ReachSet`),
+   independent of that bridge.
+See `docs/planning/proof-strategies/2026-11-18-g4-macro-intertwining-plan.md`.
+The scratch probe `Shufflemath/_ProbeG4Rev.lean` is deleted (its one lemma is now in
+BLRefinement).
+
 **Updated:** (G4 **63rd session — `g4RHS_mass_sum` committed; BOTH LHS+RHS mass formulas
 now done; the reversible-flow identity is next**). The G4 **RHS mass-sum collapse** is
 proved and in `Shufflemath/FiniteDeck/BLRefinement.lean` (builds clean, 3223 jobs; full

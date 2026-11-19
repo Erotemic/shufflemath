@@ -1916,7 +1916,20 @@ theorem g4RHS_mass_sum (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x : Ber
   dsimp only [D]
   field_simp [hFCpos.ne', hDpos.ne']
   <;> simp only [c]
-  <;> try ring_nf
+/-- A symmetric-card-exchange is symmetric: two `m`-subsets `S`, `T` of an `N`-deck
+    exchange exactly `k` cards in each direction iff the reverse pair does.  This is
+    the seed of the reversible-flow / detailed-balance identity for the
+    physical-exchange operator (G4 RHS): the forward and reverse transitions are
+    equinumerous, so the flow `x → y` weighted by the source stationary mass equals
+    the reverse flow `y → x`.
+
+    `ReachSet S` is `{ T | # (S \ T) = k ∧ # (T \ S) = k }`; the statement says the
+    relation is symmetric in its two arguments. -/
+theorem reachSet_symm (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k ≤ N - m)
+    (S T : Membership N m) :
+    T ∈ ReachSet N m k hm hk hkm S ↔ S ∈ ReachSet N m k hm hk hkm T := by
+  simp only [ReachSet, Finset.mem_filter, Finset.mem_univ, true_and]
+  exact ⟨fun h => ⟨h.2, h.1⟩, fun h => ⟨h.2, h.1⟩⟩
 
 end FiniteDeck
 end Shufflemath
