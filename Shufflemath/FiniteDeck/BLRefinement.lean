@@ -2,6 +2,7 @@ module
 public import Shufflemath.FiniteDeck.TwoPile
 public import Shufflemath.BernoulliLaplaceGeneral
 public import Shufflemath.FiberDisintegration
+public import Shufflemath.FiniteDeck.SubsetExchange
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Card
@@ -1519,6 +1520,34 @@ noncomputable def uniformCountFiberMembership
         have hpos : 0 < (countFiberMemb p.N p.m p.r hr x).card :=
           countFiberMemb_nonempty p.N p.m p.r (Nat.le_of_lt p.hmn) hr x
         field_simp [hpos.ne']
+
+/-- The subset-exchange kernel viewed on `Membership N m` (the G4 "subsetExchange"
+    kernel): from an `m`-member pile it moves by a `k`-exchange to another `m`-member
+    pile with the standard T3 weight. It is exactly `subsetExchangeKernel` (T3) on
+    the underlying `Finset (Fin N)`, so nonnegativity and the row-sum-1 follow from
+    `subsetExchangeKernel_rowOne`. Together with `uniformCountFiberMembership` and
+    `blExchangeKernel` it is the other half of the G4 macro-intertwining kernel
+    equality. -/
+noncomputable def subsetExchangeMembershipKernel
+    (p : BernoulliLaplaceGeneral.ExchangeAdmissible) :
+    FiniteKernel (Membership p.N p.m) (Membership p.N p.m) := by
+  refine fun S => Dist.ofFun
+    (fun T => subsetExchangeKernel p.N p.m p.k (Nat.le_of_lt p.hmn) p.hkm p.hknm S.1 T.1)
+    ?_ ?_
+  · -- nonneg: the `then` branch is the inverse of a (nonneg) Nat-cast, the
+    --   `else` branch is 0
+    intro T
+    dsimp only [subsetExchangeKernel]
+    split_ifs <;> positivity
+  · -- row sum 1: the Fintype sum is definitionally the univ Finset sum, which
+    --   is 1 by the T3 row-one lemma
+    calc
+      (∑ T : Membership p.N p.m,
+        subsetExchangeKernel p.N p.m p.k (Nat.le_of_lt p.hmn) p.hkm p.hknm S.1 T.1) =
+        (Finset.univ : Finset (Membership p.N p.m)).sum
+          (fun T => subsetExchangeKernel p.N p.m p.k (Nat.le_of_lt p.hmn) p.hkm p.hknm S.1 T.1) := by
+        rfl
+      _ = 1 := subsetExchangeKernel_rowOne p.N p.m p.k (Nat.le_of_lt p.hmn) p.hkm p.hknm S
 
 end FiniteDeck
 end Shufflemath
