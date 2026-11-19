@@ -117,11 +117,13 @@ theorem finset_fintype_sum_swap (s : Finset Membership) (f : Membership → Deck
 --  simp lemma).  Then h3 = `rw [cFiberMass_eq_iteMass, rawExchange_membershipCount_mass]` + the f4
 --  equinumerosity below.
 
---  NOTE: the `if`-guarded form needs a filter/`ite` identity that is not a clean one-liner in the
---  current Mathlib simp set (`Finset.sum_ite` does not match the `(∑ x ∈ S, (if P x then g x else 0))`
---  pattern directly); the next session can settle it (e.g. by a short `Finset.induction` on the
---  Membership univ, or a `Finset.sum_bij`).  Then h3 = `rw [cFiberMass_eq_iteMass,
---  rawExchange_membershipCount_mass]` + the f4 equinumerosity below.
+--  NOTE: the `if`-guarded c-fiber mass identity needs a filter/`ite` sum lemma that the current
+--  Mathlib does not expose as a matching `rw` pattern (`Finset.sum_ite` does not fire on
+--  `∑ x ∈ s, (if P x then g x else 0)`); settle it next session via a short `Finset.induction`
+--  (base `∅`, step on `insert`, one `by_cases P a`) or a `Finset.sum_bij` between `s.filter P` and
+--  `{x ∈ s // P x}`.  Then h3 = `rw [cFiberMass_eq_iteMass, rawExchange_membershipCount_mass]` + the
+--  f4 count-bridge equinumerosity below (the one remaining deep A3 wall).
+
 
 /-- **Deck-averaging lemma (crux of the A3 `hMembershipExchange` discharge).**  The total
     mass `mu_x` puts on the `c`-fiber equals the Bernoulli–Laplace transition weight from the
