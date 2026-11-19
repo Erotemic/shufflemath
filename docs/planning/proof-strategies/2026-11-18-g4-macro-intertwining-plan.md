@@ -408,3 +408,88 @@ pattern-matching; `simp` with the explicit non-zero assumptions is the working c
 3. `g4_kernel_equality`: `comp (uniformCountFiberMembership p) (subsetExchangeMembershipKernel p) =
      comp (subsetExchangeMembershipKernel p) (blExchangeKernel p)` via `apply_deterministic_eq_map` +
    `FiniteKernel.ext` (extending `bridge_ucfm_sesk`).
+
+---
+
+## Session (64th): LHS mass-sum DONE; RHS 95% done — next is the reversible-flow identity
+
+### Committed this session
+- **`bd3973c`** — six G4 mass-body lemmas + `ite_mul_ite` in `BLRefinement`:
+  `blExchangeKernel_mass`, `uniformCountFiberMembership_mass_ite`,
+  `UCFM_mass_nonneg`, `blExchangeKernel_mass_nonneg`,
+  `countFiberMemb_nonempty`, `ite_mul_ite`.
+- **`dc20848`** — **`g4LHS_mass_sum`** (the full LHS mass-sum collapse) in
+  `BLRefinement`:
+  `∑_y (UCFM p y)S · (blEx p y)S = (FC : Rat) / ((D : Rat) · #fiber(yc))`,
+  with `c = countInPileVal S`, `yc = ⟨c, _⟩`, `D = transitionDenominator`,
+  `FC = #fiber(yc)`. Proof: `rw [← ite_mul_ite]` (pull the weight out of the
+  per-`y` mass so the sum is a single `ite`-weighted count-fiber), `sum_ite`
+  (surviving count = `{y // c = y.val}`), `hFiber` (that fiber is the singleton
+  `{yc}`, via `Subtype.ext` uniqueness), `sum_singleton`, `sum_const_zero`,
+  then `field_simp` + `ring` (gcd = 1).
+  **This removes 2 of the 4 `sorry`s in the capstone skeleton.**
+
+### RHS — `g4RHS_mass_sum` (95% done; WIP in `Shufflemath/_ProbeG4RHS.lean`)
+Goal: `∑_y (blEx p x)y · (UCFM p y)S = TN(x.val → c) / (D · #fiber(yc))`.
+
+**The approach is WORKING (proven step-by-step in the probe):**
+1. `change` the `Fintype` sum to the `Finset.univ` (`Un`) representation.
+2. `hFiber : Un.filter (fun y => c = y.val) = {yc}` — proved via
+   `Finset.ext` + `Subtype.ext (hval.trans hcval.symm)` (a `BLState` is
+   unique per count).
+3. `h1`: mass bodies (`blExchangeKernel_mass`,
+   `uniformCountFiberMembership_mass_ite`) → move the weight INSIDE the ite
+   (`a·ite(P,b,0) = ite(P,a·b,0)` via `by_cases` + `field_simp`), keeping
+   `#fiber(y)` (not `FC`) in the target.
+4. `hIte2Fiber`: `∑_Un ite(c=y.val, A y, 0) = ∑_{Un.filter(c=y.val)} A y`
+   via `Finset.sum_ite`.
+5. `h2`: the fiber-sum over `{yc}` = `A yc` = `transitionWeight(x,c)/FC`
+   — **CLOSES** via `simp [Finset.sum_singleton, hcval, FC]` + `field_simp`.
+6. finish: `transitionWeight(x,c)/FC = TN(x,c)/(D·FC)` via
+   `field_simp [hFCpos.ne', hDpos.ne']` + `ring_nf`
+   (`hDpos := transitionDenominator_pos p`).
+
+**The ONE remaining residual** (in `hIte2Fiber`, from `rw [Finset.sum_ite]`):
+- `⊢ y ∈ Un → True` (a trivial side-condition; close with `intro y; trivial`)
+- the `sum_ite` form here is `∑_{s.filter h} f + ∑_{s\s.filter h} (−g)` (or
+  similar), and the complement term `∑_{s\s.filter} (−0)` needs `simp` with
+  `Finset.sum_const_zero, sub_zero, zero_sub` to reduce to `0`. The exact
+  `Finset.sum_ite` statement in this Mathlib pin should be checked first:
+  `rg "theorem.*sum_ite" .lake/packages/mathlib/`. Once `hIte2Fiber` closes,
+  `h2` + the final step already build.
+
+**Next agent (RHS, ~1–2 iterations):** inspect the exact `Finset.sum_ite`
+statement, handle its 2 subgoals (trivial `→ True` + complement-to-0), and the
+whole `g4RHS_mass_sum` lands. Then extract into `BLRefinement` (add
+`public import ...BernoulliLaplaceGeneral` + `open BernoulliLaplaceGeneral`,
+drop the `open Rat`, rename `yc`→`yc0`, `c`→`c0` in the statement) — mirroring
+the `g4LHS_mass_sum` extraction recipe.
+
+### THEN the real hard core — the **reversible-flow identity**
+After both mass-sum lemmas, the capstone `g4_kernel_eq` still needs:
+```
+#fiber(yc0)·TN(x.val,c0) / (D·FC·FC)  =  #fiber(x)·TN(c0,x.val) / (D·#fiber(x)·#fiber(x))
+```
+which (after cancelling one fiber factor + `D`) is the **reversible-flow
+identity**:
+```
+#fiber(c) · TN(x, c)  =  #fiber(x) · TN(c, x)
+```
+i.e. the directed transition "flow" between count-piles is symmetric. This is
+the nontrivial mathematical content of G4 (a detailed-balance / reversibility
+statement for the exchange chain). It needs the explicit `transitionNumerator`
++ `countFiberMemb` forms:
+- `transitionNumerator N m r k a b = (∑ j ∈ Icc 0 (min k (a-b)),
+     (b+j).fallingFactorial k · ((a-b-j) choose j))`
+- `#fiber(a) = binom (r) (a-bmin) · binom (N-m-r) (m+a-bmin)` (from
+  `countFiberMemb_equiv`).
+Proving the flow identity is algebraic but substantial (falling-factorial /
+binomial manipulations). It is the LAST hard task before the G4 kernel-equality
+capstone assembles (the capstone itself then follows by `congr` on the two
+`map_mass` sides, as `g4_kernel_eq_skeleton` already demonstrates).
+
+### Files
+- `Shufflemath/_ProbeG4RHS.lean` — the RHS WIP (approach proven; 1 residual).
+- `Shufflemath/FiniteDeck/BLRefinement.lean` — `g4LHS_mass_sum` + 6 mass-body
+  lemmas committed; capstone `g4_kernel_eq_skeleton` has 2 `hLHS_mass_sum`
+  `sorry`s (now removable) + 1 `hRHS_mass_sum` `sorry` + the flow-swap `sorry`.
