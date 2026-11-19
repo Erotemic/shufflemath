@@ -25,11 +25,11 @@ remaining generalization.**
   are `(N,m[,k,r])`-parameterized (fiber counts, `subsetExchangeKernel`/`blExchange`
   kernels, `uniformFiber_intertwines`), `CommanderMembershipExchange.distUniform_ofInvariantTransitive`
   is type-generic, and `Shufflemath/Finite` carries the Fintype-free kernel algebra.
-  **Six rows remain 99-card-only:** the 2/3-exchange TV (G2.3/5), the A3 kernel
-  law (G2.8), and the physical / two-physical-perfect-exchange TV (G2.9/10/13).
-  The headline **G2.10** (generic two-physical-perfect-exchanges, objective item 3)
-  is the top next task; it needs the generic A3 kernel law (G2.8) as a prerequisite,
-  and all its building blocks are already in place.
+  **Four rows remain 99-card-only (as of session 82):** the 2/3-exchange TV (G2.3/5)
+  and the physical / three-physical-perfect-exchange TV (G2.9/13). The A3 kernel
+  law (G2.8) and the headline **G2.10** (generic two-physical-perfect-exchanges,
+  objective item 3) are **DONE**: G2.8 at session 80 (`9181bff`), G2.10 at session 82
+  (`11f099f`/`ff34501`, `A3KernelLaw.two_physical_perfect_exchanges_uniform`).
 
 This is the theorem manifest (the plan's *source → target* map). The
 **target-name column** below is the original plan's proposed naming; the
@@ -74,20 +74,20 @@ Fintype-free kernel algebra `Shufflemath/Finite`.
 | 5 | `threeExchangeUniform` (3-exchange TV) | — (99-card: `three_oracle_exchanges_uniform`) | **REMAINING** |
 | 6 | `fiberCountEq` | `FiniteDeck/Fiber.fiberSet_card`, `fiberSum_eq_permCard` | **DONE (generic)** |
 | 7 | `uniformPushforwardEq` | `FiberDisintegration.fiberLaw_recovers` (type-generic) | **DONE (generic)** |
-| 8 | `membershipExchangeLaw` (A3 kernel law) | partial: `BLRefinement.uniformFiber_intertwines` (count-fiber); full law is 99-card `CommanderA3KernelLaw.hMembershipExchange_kernel` | **REMAINING** |
+| 8 | `membershipExchangeLaw` (A3 kernel law) | `A3KernelLaw.hMembershipExchange_kernel` (generic, session 80 `9181bff`) | **DONE (generic)** |
 | 9 | `physicalTwoExchange` | — (99-card: `two_physical_perfect_exchanges_uniform_of_counts`) | **REMAINING** |
-| 10 | `twoPhysicalPerfectUniform` ← **headline (objective item 3)** | — (99-card: `two_physical_perfect_exchanges_uniform_unconditional`) | **REMAINING** |
+| 10 | `twoPhysicalPerfectUniform` ← **headline (objective item 3)** | `A3KernelLaw.two_physical_perfect_exchanges_uniform` (generic, session 82 `11f099f`/`ff34501`) | **DONE (generic)** |
 | 11 | `uniformFiberIntertwines` | `BLRefinement.uniformFiber_intertwines` | **DONE (generic)** |
 | 12 | `distUniformOfInvariantTransitive` | `CommanderMembershipExchange.distUniform_ofInvariantTransitive` (type-generic) | **DONE (generic)** |
 | 13 | `physicalThreeExchange` | — (99-card: `three_physical_perfect_exchanges_uniform_unconditional`) | **REMAINING** |
 
-**Remaining (6 rows):** G2.3/5 (generic 2/3-exchange TV), G2.8 (generic A3
-kernel law), G2.9/10/13 (generic physical / two-physical-perfect-exchange TV).
-The headline **G2.10** — the generic two-physical-perfect-exchanges identity
-(objective item 3) — is the top priority; it needs the generic A3 kernel law
-(G2.8) as a prerequisite. The building blocks are all in place: type-generic
-disintegration, `(N,m,k)` count-exchange + `blExchange` kernels, generic fiber
-counts, and the type-generic `distUniform_ofInvariantTransitive`.
+**Remaining (4 rows):** G2.3/5 (generic 2/3-exchange TV) and G2.9/13 (generic
+physical / three-physical-perfect-exchange TV). The headline **G2.10** (generic
+two-physical-perfect-exchanges, objective item 3) is **DONE (session 82)** —
+`A3KernelLaw.two_physical_perfect_exchanges_uniform` on the recovery-based
+`run_tv_eq_macro_of_membership_exchange` framework, using the generic G2.8
+`hMembershipExchange_kernel` + the new `hrecover` (`map_const_on_support` twice).
+The remaining physical-TV rows (G2.9/13) should build on the same framework.
 
 ---
 

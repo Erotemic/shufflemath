@@ -36,9 +36,14 @@
 > **(5) F4.2 WALL CRACKED — full-deck non-degenerate F5 landed, recursion-free, in a new module `Shufflemath/TelescopeF5.lean`.** The wall that blocked the full-deck non-degenerate F5 for many sessions: `errorBudget`/`dobrushinCoeff`/`kernelDiscrepancy` are `max'`-over-univ computations that recurse at *elaboration* when instantiated over `Deck = Equiv.Perm (Fin 99)` (99! elements). The crack: prove the F5 bound **without ever unfolding that machinery**. Three theorems: `compList_telescope_2step_le_2` (abstract, kernel-variable: any 2-kernel chain is within TV `2` of any other 2-kernel chain — from `weightedTelescope_2step` + the structural `kernelDiscrepancy_le_one`/`dobrushinCoeff_le_one` bounds, no univ instantiated); `telescopeTV_le_idealPlusTwo` (the non-degenerate F5 sufficient-TV bound in 2-step form: any 2-step protocol's TV to a target ≤ `2` + a reference 2-step protocol's TV — via `Dist.tv_triangle`); and `f5FullDeck_nondegenerate` (the **concrete full-deck** instance: physical `rawExchange` chain vs oracle `idealExchange25 hsurj` chain, segregated start → uniform 99! target, TV ≤ `2` + oracle-TV). No optimality claim; the `2` budget is genuinely non-vanishing. The key realization: the F5 *statement* only contains `Dist.tv` of `compList` chains + a `Rat` constant — never the `kernelDiscrepancy`/`dobrushinCoeff`/`errorBudget` terms — so it elaborates cleanly over the 99! space (same pattern as the already-building `two_physical_perfect_exchanges_uniform_*`).
 > **Tranche green: 3234 jobs, 37 tests pass.** (Note the Lean 4.34 `module` system exposes each module's theorems under `Shufflemath.<Module>.<thm>` — e.g. `Shufflemath.CommanderPermutation.Deck`; reference across modules by full path or `open` the module namespace.)
 >
-> **Next (session 80):** **G2 is 7/13 rows already generic** (disintegration, counting, kernel-algebra, fiber-intertwining — see the manifest); **6 rows remain 99-card-only**: the 2/3-exchange TV (G2.3/5), the A3 kernel law (G2.8), and the physical / two-physical-perfect-exchange TV (G2.9/10/13). **Top priority: G2.10 — the generic two-physical-perfect-exchanges identity (objective item 3)** — build it on the type-generic `FiberDisintegration.marginal_comp_fiber_eq_uniform` + the `(N,m,k)` `blExchange` kernel + a **generic A3 kernel law (G2.8)** (generalize `hMembershipExchange_kernel` to arbitrary `N,m,r,k`; `BLRefinement.uniformFiber_intertwines` already gives the count-fiber half). All building blocks are in place. Secondary: F4.2 n-step `TV ≤ n` (fiddly elaboration), F4.2 deck-level GSR lift, and the open qwen-review engineering items (Q1/Q2/Q4/Q5/Q9, R4 handoff reorganization).
+> **Next (session 82):** **G2 is now 8/13 rows generic** (G2.10 landed session 82; the rest: disintegration,
+> counting, kernel-algebra, fiber-intertwining). **5 rows remain 99-card-only**: the 2/3-exchange TV (G2.3/5),
+> G2.9, G2.13. **Top priority next:** G2.9 / G2.13 (the physical / two-physical-perfect-exchange TV) or G2.3/5
+> (2/3-exchange TV) — all should now build on the same recovery-based `run_tv_eq_macro_of_membership_exchange`
+> framework G2.10 uses (see the G2.10 DONE note above for the assembly idiom). Secondary: F4.2 n-step `TV ≤ n`
+> (fiddly elaboration), F4.2 deck-level GSR lift, and the open qwen-review engineering items (Q1/Q2/Q4/Q5/Q9, R4 handoff reorganization).
 
-### G2 execution plan (G2.8 → G2.10) — STATUS: G2.8 DONE, G2.10 fully scoped
+### G2 execution plan (G2.8 → G2.10) — STATUS: G2.8 DONE, G2.10 **DONE** (session 82, committed `11f099f` + `ff34501`)
 
 **G2.8 (generic A3 kernel law) — DONE, committed (`9181bff`).** In `Shufflemath/FiniteDeck/A3KernelLaw.lean`:
 `localLift (N m) hm := fiberLaw (membership N m hm) (membership_surjective …)` (deck-level perfect-local
@@ -48,6 +53,30 @@ resample); `rawExchange p := (det membership) ⊳ (subsetExchangeMembershipKerne
 `localLift ⊳ det membership = id`) + `g4MacroIntertwining` (G4). This is the generic
 `hMembershipExchange` hypothesis the G2.10 headline needs. (Generic `membership_surjective` — fiber
 inhabited via `fiberCount = m!·(N−m)!` — is `4a5fa5a`; the 99-card `membershipLift` = `BLRefinement.uniformCountFiberMembership`, already generic.)
+
+**G2.10 (generic two-physical-perfect-exchanges) — DONE (session 82).**
+
+> **Session-82 result.** The whole `G2.10` is proven and committed in
+> `Shufflemath/FiniteDeck/A3KernelLaw.lean`.
+> - `map_const_on_support` — a distribution pushed forward by a function constant `c`
+>   on its positive-mass support is the point mass at `c`.  Cracked by matching the
+>   `pointMass` mass-ite through the `Dist.mass` def (not the `.mass` dot form), and
+>   closing the "RHS is a single ite, not a sum" wall by first rewriting the RHS ite as
+>   `∑ j, mass j · (if z = c)` (= `(∑ mass j) · (if z = c)` = `1 · (if z = c)`).  `Finset.sum_mul`
+>   (forward) + `Finset.sum_congr` (pointwise, `h` gives `f j = c` on support) close it.
+> - `localLift_project_map` / `hK`: `comp (localLift) (det project) = det (countInPile ·)`
+>   (localLift m is supported on the membership-fiber m, where `project` is the const `countInPile m`).
+> - `ucfm_countInPile_map` / `hU`: `comp (UCFM) (det (countInPile ·)) = identity` (UCFM x lives on the
+>   x-th count-fiber, where `countInPile` is the const `x`; `Subtype.ext` closes the BLState equality).
+> - `hrecover`: `comp (comp (UCFM) (localLift)) (det project) = identity` — by `comp_assoc` + `hK` + `hU`.
+> - **`two_physical_perfect_exchanges_uniform` (the headline):** for any `ExchangeAdmissible p`,
+>   the TV between `n` physical perfect-exchange steps (perfect-local resampling sandwiched around the
+>   physical exchange) run from a macrostate and the macro stationary law equals the TV of the corresponding
+>   `n` steps of the Bernoulli-Laplace macro chain.  Assembled via
+>   `run_tv_eq_macro_of_membership_exchange` using `hrecover` + `hMembershipExchange_kernel` (G2.8) —
+>   no deck fiber counts needed.
+
+<details><summary>(original session-80/81 scope — resolved above)</summary>
 
 **G2.10 (generic two-physical-perfect-exchanges) — the remaining headline; FULLY SCOPED below.**
 
@@ -144,6 +173,8 @@ as a fresh `@[simp]` lemma (by `rw [pointMass]`, `Finsupp.single_apply`) and add
 The `by_cases`-branch `Finset.sum_congr` rewrites use `h j h0` (h0 : mass j ≠ 0) to set `f j = c`, then
 `simp [hz, eq_comm, mul_one/mul_zero]`. Once `map_const_on_support` builds, `hrecover` +
 `two_physical_perfect_exchanges_uniform` (the headline) follow directly from the skeleton above.
+
+</details>
 
 Target module: `Shufflemath/FiniteDeck/A3KernelLaw.lean` (extend; keep the `@[expose] public section`).
 Probe-first per the standing rules; commit per lemma. Verify with
