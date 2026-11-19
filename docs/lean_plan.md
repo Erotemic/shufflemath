@@ -523,6 +523,24 @@ route, not a theorem already in the tree.
 > `.map`-on-`Dist`, compute the fiber-sum as a `Finset.sum` over `exchangeChoice`). Then
 > the fiber-average collapse to `rawExchangeMembership_count`, then combine with part (ii)
 > to discharge `hMembershipExchange` (see `docs/agent_handoff.md`).
+> **56th-session finding (the part-(i) bridge is a hard wall):** every route that
+> transports the `exchangeChoice` **Fintype** count to the 47v-kernel **×ˢ-filter
+> Finset** card recurses — (i) `exact Finset.mem_product.mpr`, (ii) a direct Fintype
+> fiber-card, and (iii) the explicit identity `Equiv` the 55a note proposed (both
+> `mem_product.mpr` and `.mp` hit max-recursion).  Root cause is a Fintype↔Finset
+> asymmetry: `exchangeChoice`'s subtypes sit over `powersetCard` (~10^14 elements), so
+> any fiber-card or membership proof over it unfolds the powersetCard and recurses, while
+> the 47v kernel only works because it stays at the relational Finset-card/sum level
+> (`pairCountByConstSub` over generic finsets) and never proves a specific membership.  The
+> A3 target LHS is a Fintype-card (its support is `exchangeChoice`), so the transport
+> needs the recursive membership.  **Landed this session (wall-free):** the pointwise
+> `count_exchangeChoice_eq_markedCount` (the step-iii count connection, committed in
+> `CommanderMembershipExchange`).  **Next (see `docs/planning/proof-strategies/55a_a3mass_wip.lean`)**:
+> either re-prove the 47v fiber-sum directly over the `exchangeChoice` Fintype (route A —
+> first probe whether a `Fintype.card_biUnion` over powersetCard-filtered fibers recurses),
+> or pivot to the A3 discharge via the *generic* T4 theorem `uniformFiber_intertwines`
+> (`19d964d`), which may yield a hypothesis-free 2-exchange theorem without the concrete
+> `hMembershipExchange` capstone.
 > **50th-session progress (A3 within-count invariance, `67a4efc`):** in
 > `Shufflemath/CommanderMembershipExchange.lean`, four building blocks assembling the
 > *within-count* invariance the A3 capstone needs from `distUniform_ofInvariantTransitive`

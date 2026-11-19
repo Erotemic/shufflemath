@@ -913,5 +913,21 @@ theorem membershipCount_newMembership (d : Deck) (L : Finset (Fin 50)) (hL : L.c
     membershipCount (newMembership d L hL R hR) = (newLeftCards d L R ∩ leftOrigSet).card := by
   dsimp only [membershipCount, newMembership]
 
+/-- **Part (i) count connection, at the exchange-`choice` level.**  The post-exchange
+    membership carried by a single `(L, R)` choice has left-card count exactly
+    `(leftOriginalCount d - markedInLeft d L) + markedInRight d R`.  Chaining
+    `membershipCount_newMembership` (the membership count is the new-left-original-card
+    overlap) with `newLeftOriginalCount_eq` (that overlap is the marked const-sub count)
+    gives the marked-count predicate the part-(i) inner-sum
+    `rawExchange_membershipCount_mass` must count over `exchangeChoice`.
+
+    This is *purely pointwise*: it never computes a `powersetCard` fiber cardinality nor
+    an `×ˢ`-membership, so it is the wall-free counting core that the blocked ×ˢ-bridge
+    (56th-session diagnosis) is supposed to feed. -/
+theorem count_exchangeChoice_eq_markedCount (d : Deck) (ch : exchangeChoice) :
+    membershipCount (newMembership d ch.1.1 (leftCard25 ch.1.2) ch.2.1 (rightCard25 ch.2.2)) =
+      (leftOriginalCount d - markedInLeft d ch.1.1) + markedInRight d ch.2.1 := by
+  rw [membershipCount_newMembership, newLeftOriginalCount_eq]
+
 end CommanderMembershipExchange
 end Shufflemath
