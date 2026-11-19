@@ -183,3 +183,36 @@ Add exactly one line: `public import Shufflemath.BernoulliLaplaceFiber` after th
 - `transitionNumerator` is NOT symmetric in (x,c); only the *weighted* form
   `#fiber x · transitionNumerator(x,c) = #fiber c · transitionNumerator(c,x)` holds (detailedBalance).
   This is why the fiber-size factors are essential — do NOT try to claim bare symmetry.
+
+## Resume state (session 55/56, 2026-11-18) — CONCRETE next steps
+- **Confirmed in the probe (`Shufflemath/_ProbeG4.lean`, a WIP scratch file, NOT
+  committed):** the module must be `namespace Shufflemath / namespace FiniteDeck` with
+  `open FiniteKernel` and `open BernoulliLaplaceGeneral` **inside** the namespace
+  (`comp` is `Shufflemath.FiniteKernel.comp`; `BLState`/`blExchangeKernel`/`ExchangeAdmissible`
+  are `Shufflemath.BernoulliLaplaceGeneral`). Top-level `open` of those fails.
+- **`markedCountChange` is ~85% proved** in the probe. The disjointness
+  `hInt : ((S.1\p.1)∩M)∩(p.2∩M) = ∅` compiles via `ext x; simp only
+  [Finset.mem_inter, Finset.mem_sdiff]; constructor; <contradiction via hsubB>`,
+  exactly the `CommanderFiberCount.lean:425` pattern. Three remaining Finset-tactic
+  nits, all mechanical:
+  1. `hInt` dir-1: `have hxS : x ∈ S.1 := hx.1.1` fails (coercion `x∈↑S` vs `x∈S.1`);
+     use `exact absurd hx.1.1 hxBc` instead (drop the `hxS` have).
+  2. `hIntCard`: `exact hu` reports "No goals to be solved" — the
+     `rw [hZero, Nat.zero_add] at hu` is closing the goal; drop the `exact hu` or
+     replace with a clean `calc`/`gcongr` on `#(L∪R) = #L + #R` using
+     `Finset.card_union_add_card_inter` + `hZero`.
+  3. `hLcard`: `rw [hInter]` fails because `hInter : p.1∩(S.1∩M) = p.1∩M` has the
+     operands in a different order than the goal's `(S.1∩M)∩p.1`; add
+     `rw [Finset.inter_comm]` first (or state `hInter` as `(S.1∩M)∩p.1 = p.1∩M`).
+- **After `markedCountChange` compiles:** prove `reachSetFiberCard_eq_yMoves`
+  (`Finset.card_bij'` of `i : T ↦ (S.1\T.1, T.1\S.1)` / `j : p ↦ ⟨(S.1\p.1)∪p.2,
+  newpile_card …⟩`; the landing proofs call `markedCountChange` in each direction
+  and use `hsubA`/`hsubB` to get the `p.1∩M`/`p.2∩M` cards), then `newpile_reach` +
+  `inv_first`/`inv_second` give the two inverses — all present in `subsetExchangeCount`.
+- **Capstone:** `uniformCount_intertwines_subsetExchange` = `finKernels_eq` +
+  `comp_unfold` + `pushforward_unfold` + `sum_eq_sum_if` + the two lemmas +
+  `yMoves_card_eq_transitionNumerator` + `transitionNumerator_eq_transitionDenom_mul_card`.
+- Once `_ProbeG4.lean` builds, **port the three theorems into `BLRefinement.lean`**
+  (append inside `namespace Shufflemath.FiniteDeck`, before the trailing `end`s —
+  use `sed`/heredoc, NOT the `edit` tool, for the Unicode-heavy content) and run
+  `dev/verify_next_phase.sh` (which builds `Shufflemath.FiniteDeck.BLRefinement`).
