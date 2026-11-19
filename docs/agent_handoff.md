@@ -15,7 +15,43 @@
 
 # Agent handoff: next Shufflemath task
 
-> **⚠ 75th session — RESUME HERE (A3 capstone: the f4 count-bridge WALL is CRACKED; h3 + h4 remain `sorry` in `mu_x_countFiberTotal`).**
+> **⚠ 76th session — RESUME HERE (A3 capstone `mu_x_countFiberTotal`: h3 + h4 are the two `sorry`s; the f4 count-bridge is CRACKED & committed).**
+> **This session (76th): confirmed the 75th f4 crack is solid** (tranche builds, 37 tests green, no `sorry` in the tranche) **and isolated the exact next blocker for h3.**
+> **h3's missing piece is `cFiberMass_eq_iteMass`** — the identity that the h3 target's LHS
+> `∑ m' ∈ cFiber c, Dist.mass (rawExchangeMembership d) m'` (a sum over the `cFiber c` Finset)
+> equals the **ite-0-guarded** form `∑ m : Membership, (if membershipCount m = c then Dist.mass (rawExchangeMembership d) m else 0)`
+> that `CommanderA3Mass.rawExchange_membershipCount_mass` (part (i), already committed) states.
+> I.e. **`cFiberMass_eq_iteMass` = the filter-sum = ite-0-sum reduction** (my WIP probe
+> `Shufflemath/_ProbeA3Cap4b.lean`, theorem `sum_filter_eq_sum_ite`).
+> **FINDING (corrects the 73rd note):** there is **NO** off-the-shelf `Finset.sum_ite` / `sum_filter`
+> lemma for this (grepped all of Mathlib.Data.Finset), and `simp` / `ring_norm` do **not** close it.
+> The clean route (same machinery as the now-committed f4 crack `a3_countBridge`) is the
+> **Fintype/subtype equinumerosity** between `Membership (s.filter P)` and `{ x : Membership s | P x.val }`
+> (give each fiber subtype an explicit `Fintype.subtype` instance; keep predicates `abbrev`s so the
+> `powersetCard` univ is never computed; the `@Fintype.card`/`card_congr` instance args must be the
+> **inline** `Fintype.subtype …` term, not a `def` wrapper). Alternative: specialize `β := Rat`
+> (the only capstone instantiation) — then `∑ x ∈ t, (0 : Rat) = 0` normalizes and the simpler
+> disjoint-union proof (`hS`/`hDisj`/`hA`/`h0`, all proven in the WIP probe) closes the last step.
+> **Once `cFiberMass_eq_iteMass` lands, h3 assembles as:**
+> ```
+> rw [cFiberMass_eq_iteMass, rawExchange_membershipCount_mass]   --  (1/#EC)·#{j : EC // count(newMembership d j)=c}
+> rw [a3_countBridge d c]                                       --  =  (1/#EC)·transitionNumerator (leftOriginalCount d) c   (the 75th f4 crack, _ProbeA3Cap4.lean)
+> rw [exchangeChoice_card_eq_transitionDenominator]             --  #EC = transitionDenominator
+> --  then  (1/#EC)·TN = TN/TD = transitionWeight (leftOriginalCount d) c  (transitionWeight definition)
+> ```
+> **h4** (the second `sorry`) is the **constant-extraction**: on the project fiber `leftOriginalCount d =
+> commanderLeftCount x` and the fiberLaw mass is 0 off it, so the fiberLaw-weighted sum of the
+> deck-dependent `transitionWeight (leftOriginalCount d) c` collapses to the constant
+> `transitionWeight (commanderLeftCount x) c` times the fiberLaw total (h5 = 1, already proven). This is
+> a `by_cases (project d = x)` per term + the constant-pull-out.
+> **Then** `assemble hMembershipExchange` (the `calc` at the bottom of `_ProbeA3Capstone.lean` is already written
+> around h1/h2/h3/h4/h5; only h3+h4 are `sorry`), then `two_physical_perfect_exchanges_uniform_of_counts`,
+> then **F5**.
+> **Committed this session:** the `sum_filter_eq_sum_ite` WIP probe (`_ProbeA3Cap4b.lean`, builds; `sorry` only in
+> the ite→filter reduction) + this handoff note. The f4 crack (`a3_countBridge`, `941c9c2`) remains the 75th
+> session's win.
+
+> **75th session — the f4 count-bridge WALL is CRACKED; h3 + h4 remain `sorry` in `mu_x_countFiberTotal`.**
 > **G4 is DONE** (`g4MacroIntertwining` + `reachSetFiberCard_eq_yMoves`, no `sorry` in
 > `Shufflemath/FiniteDeck/BLRefinement.lean`) — no further G4 work. The concrete A3 capstone is
 > **`hMembershipExchange`** (the kernel equality in `Shufflemath/CommanderMembershipExchange.lean`),
