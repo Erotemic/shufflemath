@@ -33,8 +33,8 @@ phase notes are linked at the end; they do not override this plan. Read
 > measure-factorization headline — the `bernoulliLaplace` distribution on `Deck N`
 > factors as `Dist.uniform (Membership N m) → FibDist (FibType N m) → Deck N`, with
 > the pushforward recovering the uniform distribution on `Deck N` — is now **fully
-> proved** in a self-contained probe (`Shufflemath/_ProbeDisintegration.lean`,
-> committed `2c64e78`), no `sorry`/`admit`. The LHS
+> proved** in a first-class module (`Shufflemath/FiniteDeck/BLDisintegration.lean`,
+> target `Shufflemath.FiniteDeck.BLDisintegration`, committed `2c64e78` then renamed), no `sorry`/`admit`. The LHS
 > (`Dist.mass (blUniform N m r hm hr) A = 1 / #Membership`) reduces via
 > `countFiber_blStationary` + `countFiber_eq_countFiberMemb` + the singleton fiber-sum
 > simplification to `#cfMemb · #cfMemb⁻¹ / #choose`, closed by `field_simp` once
