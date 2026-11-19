@@ -135,5 +135,30 @@ theorem blStationary_ucfm_eq_marginalMembership :
   simp only [Shufflemath.Dist.mass] at hLHS hRHS
   rw [hLHS, hRHS]
 
+/-- **G2.9 / G2.13 bridge.**  The BL stationary law lifted to the deck level by the
+    macro lift (`uniformCountFiberMembership`) followed by the perfect-local resample
+    (`localLift`) is exactly the uniform distribution on the full deck:
+    `apply (blStationaryDist p) (comp (UCFM p) localLift) = GSR.uniformDist (Deck p.N)`.
+    This is the *deck-uniform-target* mass formula the 99-card G2.9 / G2.13 headlines
+    need.  It composes three already-proved facts — `apply_comp` (associativity of
+    `apply` over `comp`), `blStationary_ucfm_eq_marginalMembership` (the macro lift of
+    the BL stationary is the marginal of the *membership* observation), and
+    `marginal_comp_fiber_eq_uniform` (the disintegration recovery: mixing the fiber laws
+    by their relative sizes is uniform on the deck).  Because it uses the *membership*
+    observation (which is surjective), it avoids the `project_surjective` wall that
+    blocks the `project : Deck → BLState` route. -/
+theorem apply_blStationary_ucfm_locallift_eq_uniformDeck :
+    FiniteKernel.apply (BernoulliLaplaceGeneral.blStationaryDist p)
+      (FiniteKernel.comp (uniformCountFiberMembership p)
+        (localLift p.N p.m (Nat.le_of_lt p.hmn))) =
+      GSR.uniformDist (Deck p.N) := by
+  let hm := Nat.le_of_lt p.hmn
+  rw [← FiniteKernel.apply_comp (BernoulliLaplaceGeneral.blStationaryDist p)
+      (uniformCountFiberMembership p) (localLift p.N p.m hm)]
+  rw [blStationary_ucfm_eq_marginalMembership p]
+  dsimp only [localLift]
+  exact FiberDisintegration.marginal_comp_fiber_eq_uniform (membership p.N p.m hm)
+    (membership_surjective p.N p.m hm)
+
 end FiniteDeck
 end Shufflemath
