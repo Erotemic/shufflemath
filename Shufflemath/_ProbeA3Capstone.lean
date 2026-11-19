@@ -6,8 +6,12 @@ public import Shufflemath.CommanderPhysicalExchange
 public import Shufflemath.CommanderMembershipExchange
 public import Shufflemath.BernoulliLaplace
 public import Shufflemath.FiberDisintegration
+public import Shufflemath.CommanderFiberMembership
 public import Shufflemath.Finite
 public import Shufflemath.FinsetCombinatorics
+public import Shufflemath._ProbeA3Cap4
+public import Shufflemath._ProbeA3Cap4b
+public import Shufflemath.CommanderA3Mass
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -173,21 +177,63 @@ theorem mu_x_countFiberTotal (x : CommanderState) (c : Nat) :
   have h3 (d : Deck) :
       (∑ m' ∈ cFiber c, Dist.mass (rawExchangeMembership d) m') =
         transitionWeight 99 50 25 (leftOriginalCount d) c := by
-    -- WIP wall #2: part (i) gives (1/#EC)·#{j : exchangeChoice // count(newMembership d j) = c};
-    --   the count-fiber equinumerosity #{j // ...} = transitionNumerator (leftOriginalCount d) c
-    --   (exchangeChoice_equiv_lr + count_exchangeChoice_eq_markedCount + newLeftOriginalCount_eq
-    --   + newLeftCount_eq_transitionNumerator) and #EC = transitionDenominator give the transitionWeight.
-    sorry
+    classical
+    set P := fun (m : Membership) => membershipCount m = c
+    set f := fun (m : Membership) => Dist.mass (rawExchangeMembership d) m
+    --  (a)  the  cFiber  Finset  sum  =  the  ite  -0  -guarded  sum  over  univ  (  `sum  _filter  _eq  _sum  _ite`  ,
+    --       76th  -session  crack  ,  `Shufflemath  /  _ProbeA3Cap4b  .lean`  )
+    rw [cFiber, sum_filter_eq_sum_ite P (Finset.univ : Finset Membership) f]
+    --  (b)  the  univ  -Finset  sum  and  the  Fintype  sum  are  definitionally  the  same  (  `Fintype  .sum  =  Finset  .sum  univ`  )  ,
+    --       so  `rawExchange  _membershipCount  _mass`  (  part  (i)  )  applies  :  =  (1  /  #EC)  ·  #  {j  //  Pmem  d  c  j  }
+    rw [rawExchange_membershipCount_mass d c]
+    --  (c)  #  {j  //  Pmem  d  c  j  }  =  #  (pfiber  d  c)  =  transitionNumerator  (leftOriginalCount  d)  c
+    --       (  `a3  _countBridge`  ,  75th  )  ,  and  #EC  =  transitionDenominator  (  `exchangeChoice  _card  _eq  _transitionDenominator`  )  ,
+    --       and  `transitionWeight  =  transitionNumerator  /  transitionDenominator`
+    have hEC : (Fintype.card exchangeChoice : Rat) = (transitionDenominator 99 50 25 : Rat) :=
+      exchangeChoice_card_eq_transitionDenominator
+    have hNum : (Fintype.card (pfiber d c) : Rat) = (transitionNumerator 99 50 25 (leftOriginalCount d) c : Rat) := by
+      exact_mod_cast a3_countBridge d c
+    rw [hEC]
+    --  the  rawExchange  count  -fiber  set  `{j  :  exchangeChoice  //  count  (...)  =  c}`  is  definitionally
+    --  `pfiber  d  c`  (  `Pmem  d  c  j`  is  an  `abbrev`  of  that  exact  condition  ,  so  the  two  subtypes
+    --  are  `rfl`  -equal  and  their  cards  are  `rfl`  -equal  ;  no  simp  on  `Pmem`  needed  ,  which  recurses  )
+    have hCard : (Fintype.card {j : exchangeChoice // membershipCount (newMembership d j.1.1 (leftCard25 j.1.2) j.2.1 (rightCard25 j.2.2)) = c} : Rat) =
+        (Fintype.card (pfiber d c) : Rat) := by rfl
+    rw [hCard, hNum]
+    --  goal  :  `B⁻¹  *  A  =  transitionWeight`  where  `A  =  transitionNumerator`  and  `B  =  transitionDenominator`  ;
+    --  `transitionWeight  :=  A  /  B  =  A  *  B⁻¹  =  B⁻¹  *  A`  (  `Rat  .div  _def`  +  `mul  _comm`  )  ,  in  the  goal  's  order
+    have hw : transitionWeight 99 50 25 (leftOriginalCount d) c =
+        (transitionDenominator 99 50 25 : Rat)⁻¹ * (transitionNumerator 99 50 25 (leftOriginalCount d) c : Rat) := by
+      unfold transitionWeight
+      rw [Rat.div_def]
+      rw [mul_comm]
+    exact hw.symm
   -- (4) on the project fiber, leftOriginalCount d = commanderLeftCount x, so the weighted summand
   --     equals the constant (fiberLaw mass 0 off the fiber, and equal transitionWeight on it)
   have h4 : (∑ d : Deck, Dist.mass (fiberLaw project project_surjective x) d *
           transitionWeight 99 50 25 (leftOriginalCount d) c) =
       transitionWeight 99 50 25 (commanderLeftCount x) c *
         (∑ d : Deck, Dist.mass (fiberLaw project project_surjective x) d) := by
-    -- WIP wall #3: term-wise, (fiberLaw x).mass d · TN (leftOriginalCount d) c =
-    --   (fiberLaw x).mass d · TN (commanderLeftCount x) c  (on the fiber leftOriginalCount d =
-    --   commanderLeftCount x; off it the mass is 0), then the constant pulls out of the sum.
-    sorry
+    --  term  -wise  :  on  the  fiber  (  `project  d  =  x`  )  ,  `leftOriginalCount  d  =  commanderLeftCount  x`
+    --  point  -wise  point  -mass  identity  as  a  separate  `have`  (  so  the  `by  _cases`  elaborates  in  isolation
+    --  ,  avoiding  the  recursion  of  `apply  Finset  .sum  _congr`  on  a  product  -RHS  goal  )  .  On  the  fiber
+    --  (  `project  d  =  x`  )  ,  `leftOriginalCount  d  =  commanderLeftCount  x`  (  `project  _eq  _iff  _leftOriginalCount`
+    --  )  so  the  transitionWeight  is  the  fiber  -independent  constant  and  only  the  mass  position  differs
+    --  (  `mul  _comm`  )  ;  off  the  fiber  the  fiberLaw  mass  is  0  (  `fiberLaw  _mass`  )  so  both  sides  vanish  .
+    have hPoint (d : Deck) :
+        Dist.mass (fiberLaw project project_surjective x) d * transitionWeight 99 50 25 (leftOriginalCount d) c =
+          transitionWeight 99 50 25 (commanderLeftCount x) c * Dist.mass (fiberLaw project project_surjective x) d := by
+      by_cases hf : project d = x
+      · have hLO : leftOriginalCount d = commanderLeftCount x :=
+          (project_eq_iff_leftOriginalCount d x).mp hf
+        rw [hLO]
+        apply mul_comm
+      · have h0 : Dist.mass (fiberLaw project project_surjective x) d = 0 := by
+          simp [fiberLaw_mass, hf]
+        simp [h0]
+    --  (1)  pointwise  transform  the  LHS  sum  (  `Finset  .sum  _congr`  )  ;  (2)  pull  the  d  -independent  constant
+    --  out  of  the  sum  (  `Finset  .mul  _sum`  )  .
+    rw [Finset.sum_congr rfl fun d _ => hPoint d, Finset.mul_sum]
   -- (5) the fiberLaw is a probability (sums to 1) — mirror the `fiberLaw` `ofFun` normalization
   have h5 : (∑ d : Deck, Dist.mass (fiberLaw project project_surjective x) d) = 1 := by
     calc
