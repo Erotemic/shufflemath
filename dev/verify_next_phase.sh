@@ -32,6 +32,7 @@ lake build \
   Shufflemath.CommanderA3Mass \
   Shufflemath.CommanderA3KernelLaw \
   Shufflemath.CommanderA3ExchangeCard \
+  Shufflemath.CommanderCostedCertificate \
   Shufflemath.CommanderMarkedRightCount \
   Shufflemath.CommanderLocalGSR \
   Shufflemath.CommanderDeckGSR
