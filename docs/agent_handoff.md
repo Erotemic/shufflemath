@@ -39,6 +39,31 @@
   at `(x, m)`, so the kernel equality `hMembershipExchange` follows by `FiniteKernel.ext` (pointwise in
   `x, m`); (3) instantiate `two_physical_perfect_exchanges_uniform_of_counts`.
 
+  **Immediate next lemma — the count bridge `exchangeCount_preimage_eq_transitionNumerator`**
+  (WIP at `Shufflemath/_ProbeA3Cap.lean`, statement compiles, body `sorry`):
+  `Fintype.card {j : exchangeChoice // membershipCount (newMembership d j.1.1 (leftCard25 j.1.2)
+  j.2.1 (rightCard25 j.2.2)) = c} = transitionNumerator 99 50 25 (leftOriginalCount d) c`.
+  Chained with `exchangeChoice_card_eq_transitionDenominator` it turns
+  `rawExchange_membershipCount_mass`'s RHS into the `transitionWeight`. **Proof chain:**
+  (a) `exchangeChoice ≃ ↑(leftChoices ×ˢ rightChoices)` (via `exchangeChoice_equiv_lr` +
+  `Finset.mem_prod`), (b) predicate bridge `membershipCount (newMembership d L R) =
+  (newLeftCards d L R ∩ leftOrigSet).card` (`membershipCount_newMembership` / `newLeftOriginalCount_eq`),
+  (c) `newLeftCount_eq_transitionNumerator` (`(leftChoices ×ˢ rightChoices).filter (…)`'s card =
+  `transitionNumerator`). **CRITICAL recursion diagnosis:** `Fintype.card` of the *named* Fintype
+  `exchangeChoice` and `Finset.card` of the *concrete* Finset `leftChoices ×ˢ rightChoices` both
+  elaborate fine, but `Fintype.card` of the **anonymous** product `{p : Finset (Fin 50) ×
+  Finset (Fin 49) // …}` **recurses even at `maxRecDepth 4000`** — so the bridge must *stay in the
+  named-Fintype `exchangeChoice` and the concrete-Finset `leftChoices ×ˢ rightChoices`*, never
+  instantiating a `Fintype` on the raw product (this is exactly why `newLeftCount_eq_transitionNumerator`
+  counts over `(leftChoices ×ˢ rightChoices).filter …`, not a Fintype subtype). Keep the same discipline.
+  **Imports that work** (in the probe): `FinsetCombinatorics`, `BernoulliLaplace`, `CommanderPermutation`
+  (`leftOriginalCount`), `CommanderA3Kernel` (`newLeftCount_eq_transitionNumerator`,
+  `newLeftCount_deckIndependent`), `CommanderMembershipKernels` (`membershipCount`),
+  `CommanderMembershipExchange` (`membershipCount_newMembership`), `CommanderPhysicalExchange`
+  (`newMembership`, `newLeftCards`, `leftChoices`/`rightChoices`, `leftCard25`/`rightCard25`),
+  `CommanderFiberCount` (`leftOrigSet`); all in `namespace Shufflemath`, `FinsetCombinatorics.*`
+  qualified, and `Finset.card_product` (not `card_prod`) for the prod card.
+
 - **A3 part (i) count-mass bridge** — the 56th-session A3 part-(i) target
   `rawExchange_membershipCount_mass` is 95% complete (the (a)+(b) core was already done; this session
   closed two more sub-steps). The 4th calc step (fiber-sum → preimage-card) now CLOSES with targeted
