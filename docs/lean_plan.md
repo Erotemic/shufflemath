@@ -81,18 +81,18 @@ they do not establish the separate, still-open F1-F5 theorems.
 
 ## Current entry point
 
-**F1 and F2 are complete.** The active build is the **G1–G4 arbitrary-finite-
-deck generalization** (the 2026-11-15 pivot): the generic two-pile theory in
+**F1, F2, and G1–G4 are complete.** The G4 arbitrary-finite-deck generalization
+(the 2026-11-15 pivot) is done: the generic two-pile theory in
 `Shufflemath/FiniteDeck/*` (G1 `TwoPile`, G2 `Fiber`, G3 `SubsetExchange`,
-G4 `BLRefinement`), from which Commander A3 is a specialization. The G1–G4
-core and the T4 transition-formula infrastructure are complete through the
-T4 *measure* half's count-fiber machinery (`countFiberMemb` card/equiv/nonempty
-+ `uniformFiber_intertwines`, commit `19d964d`); the single next lemma is the
-`count : Membership → BLState` projection, then the Commander F3 A3 discharge
-by instantiation at `(99, 50, 50, 25)`. The exact resume point, proof skeleton,
-and blocker list are in
-[`agent_handoff.md`](agent_handoff.md) (47th-/46th-/45th-session notes); the campaign
-roadmap is
+G4 `BLRefinement`) now closes with the **kernel-equality capstone
+`g4MacroIntertwining`** (`a59c6c1`), which discharges the Commander A3
+physical-exchange reduction by specialization at the 99-card parameters
+`(99, 50, 50, 25)`.
+The single next step is wiring `g4MacroIntertwining` to the concrete Commander
+objects (`commanderExchange25` / `commanderLeftCount`) to close the A3
+`hMembershipExchange` premise, then **F5** (the arbitrary-finite-deck
+generalization capstone). The exact resume point and proof skeleton are in
+[`agent_handoff.md`](agent_handoff.md); the campaign roadmap is
 [`planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md`](planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md).
 For new Lean work, run `lake exe cache get` followed by the affected module's
 `lake build`; run `./dev/verify_next_phase.sh` when finishing a tranche. This

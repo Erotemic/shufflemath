@@ -15,35 +15,34 @@
 
 # Agent handoff: next Shufflemath task
 
-**Updated:** (G4 **64th session — `reachSet_symm` committed; `hDB` bridge is the real next step**).
+**Updated:** (G4 **64th session — G4 COMPLETE: `g4hDB` bridge + `g4MacroIntertwining` capstone both committed**).
 
-- **`reachSet_symm`** committed to `Shufflemath/FiniteDeck/BLRefinement.lean` (builds clean,
-  3226 jobs): two `m`-subsets `S`, `T` exchange exactly `k` cards each way iff the reverse
-  pair does — `T ∈ ReachSet S ↔ S ∈ ReachSet T` (swap the two conjuncts). A useful
-  `Membership`-level seed for reversible-flow reasoning.
+- **G4 is done.** Two lemmas landed in `Shufflemath/FiniteDeck/BLRefinement.lean` this session
+  (full tranche green, 37 tests OK):
+  1. `g4hDB` (commit `f60adc3`) — the detailed-balance bridge in the count-fiber form:
+     `#countFiberMemb x · TN(x, y) = #countFiberMemb y · TN(y, x)` for two admissible macrostates,
+     via `countFiberMemb_card` + `fiberSum_eq` + `fiberSum_swap` (the already-proved general
+     `detailedBalance` in `BernoulliLaplaceFiber`, reconciled to the `#countFiberMemb · TN` form).
+  2. `g4MacroIntertwining` (commit `a59c6c1`) — **the G4 kernel-equality capstone**:
+     `uniformCountFiberMembership ⊳ subsetExchangeMembershipKernel =
+     blExchangeKernel ⊳ uniformCountFiberMembership` (a `FiniteKernel` equality). Pointwise it
+     is `g4LHS_mass_sum = g4RHS_mass_sum`; after `apply_mass` × 2 + the two mass-sum collapses
+     + `field_simp [nonzero fiber, nonzero denominator]`, the residual equality is the cast of
+     `g4hDB` (`congrArg (fun n => (n : Rat)) (g4hDB p x yc)` + `mul_comm`).
 
-- **CORRECTION (this session):** the earlier note called the reversible-flow /
-  detailed-balance identity the "genuinely hard half" still to do. It is **already proved** in
-  `Shufflemath/BernoulliLaplaceFiber.lean`: `fiberSum_swap` (line 877) → `detailedBalance`
-  (line 909, `blStationary x · transitionWeight(x,y) = blStationary y · transitionWeight(y,x)`,
-  over the common denominator `C(N,m)·C(m,k)·C(N-m,k)`) → `blDetailedBalance` →
-  `blStationaryDist_is_stationary`. So reversibility of the exchange kernel is established.
+- This discharges the **Commander A3** physical-exchange reduction by specialization at the
+  99-card parameters (the `hMembershipExchange` kernel equality at the count level).
 
-- **Exact next step — the `hDB` bridge** (a short reconciliation, not a hard proof): the G4
-  mass formulas `g4LHS_mass_sum` / `g4RHS_mass_sum` are stated in the
-  `#countFiberMemb · transitionNumerator` form, while `detailedBalance` is in the
-  `blStationary · transitionWeight` form. Prove
-  `#countFiberMemb x · TN(x.val, c) = #countFiberMemb y_c · TN(c, x.val)` (with
-  `y_c : BLState`, `y_c.val = c = countInPileVal S`) from `detailedBalance p x y_c` by
-  `blStationary z = #countFiberMemb z / C(N,m)` and `transitionWeight(x,y) = TN(x,y)/D`
-  (both are the existing `countFiberMemb_card` + `transitionWeight`/`transitionDenominator`
-  definitions), canceling the common `C(N,m)·D` denominator. This makes
-  `g4LHS_mass_sum = g4RHS_mass_sum` a `field_simp; ring` and closes the G4 kernel-equality
-  capstone `g4MacroIntertwining`.
-  **Mechanical prereq:** BLRefinement currently imports only `BernoulliLaplaceGeneral`, not
-  `BernoulliLaplaceFiber` — add `public import Shufflemath.BernoulliLaplaceFiber` to reach
-  `detailedBalance`/`fiberSum_swap`. Full sub-lemma map:
-  `docs/planning/proof-strategies/2026-11-18-g4-macro-intertwining-plan.md` (Session 59 / 2026-12-06).
+- **What remains (next):** connect `g4MacroIntertwining` to the concrete 99-card Commander
+  objects (`commanderExchange25` / `commanderLeftCount`) — i.e. show the concrete exchange
+  kernel equals the macro-intertwined general one, per the roadmap line 9/68 of this file and
+  `docs/planning/proof-strategies/2026-11-18-g4-macro-intertwining-plan.md`. Then **F5** (the
+  arbitrary-finite-deck generalization capstone) per `docs/lean_plan.md`.
+
+- Support committed this session: `reachSet_symm` (the reverse-flow / reach-set symmetry seed).
+  Also note the earlier "genuinely hard half" framing is resolved: detailed balance was already
+  proved in `BernoulliLaplaceFiber` (`fiberSum_swap` 877 → `detailedBalance` 909 →
+  `blStationaryDist_is_stationary`); `g4hDB` is the small reconciliation to the count-fiber form.
 
 **Updated:** (G4 **63rd session — `g4RHS_mass_sum` committed; BOTH LHS+RHS mass formulas
 now done; the reversible-flow identity is next**). The G4 **RHS mass-sum collapse** is
