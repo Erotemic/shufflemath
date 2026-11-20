@@ -23,15 +23,15 @@
 >   `<` on a product type** (probed both `Nat × Nat` and `Fin a × Fin n`; `Finset.filter`
 >   fails on both). **Fix: flatten the lex key to one `Nat`** — `keyNat i = (ℓ i).val * n +
 >   i.val` (its `<` *is* the lex order; `Nat.<` is decidable).
-> - **WIP saved** in `.pi-glla/f42rank_wip.lean` (`keyNat`/`keyBelow`/`rankVal` build clean).
->   Two resumption points:
->   1. `keyNat_injective` — reduce `keyNat i = keyNat j` mod n (`add_modulus_mul_modEq_iff`
->      gives `keyNat i ≡ i.val [MOD n]`), then `i.val ≡ j.val [MOD n]` + `i.val,j.val < n`
->      → `i.val = j.val` (via `x % n = x` for `x < n`).
->   2. `rank_orderPreserve` — `keyBelow i ⊂ keyBelow j` (it misses `i`); prove the strict-card
->      via the disjoint-union decomposition `keyBelow j = keyBelow i ∪ (keyBelow j \ keyBelow i)`
->      + `Finset.card_union_of_disjoint` + `(Sj \ Si).Nonempty` (contains `i`).
->   Then `rankEquiv = Equiv.ofBijective (fun i => rank n a ℓ i) ⟨hinj, Finite.surjective_of_injective hinj⟩`,
+> - **WIP saved** in `.pi-glla/f42rank_wip.lean`. **`keyNat_injective` PROVEN** this session
+>   (verified by a build): two equal flattened keys are congruent mod `n` (`Nat.mul_modulus_add_modEq_iff`),
+>   forcing equal indices (both `< n`, via `Nat.mod_eq_of_lt`).
+>   **Next resumption point: `rank_orderPreserve`** (smaller key ⇒ smaller rank): `keyBelow i ⊊
+>   keyBelow j` (it misses `i`, which lies in `keyBelow j`); strict-card via the disjoint-union
+>   `keyBelow j = keyBelow i ∪ (keyBelow j \ keyBelow i)` + `Finset.card_union_of_disjoint` +
+>   `(Sj \ Si).Nonempty` (contains `i`). Got the Finset version nearly right — the `let`-bound
+>   `Si`/`Sj` need `dsimp` (NOT `dsimp only`) to unfold; `⟨hx, hxs⟩` for `Finset.mem_sdiff` is a plain
+>   conjunction. Then `rankEquiv = Equiv.ofBijective (fun i => rank n a ℓ i) ⟨hinj, Finite.surjective_of_injective hinj⟩`,
 >   then `stableBuckets a ℓ (List.range n) = orderByNewPosition (rank_ℓ.symm)` (define
 >   `orderByNewPosition`), then `ν_{n,a}` = pushforward of `GSR.uniformLabels` through the
 >   permutation map, then the deck-level law via `CommanderDeckGSR.pileRelabelEquiv`.
