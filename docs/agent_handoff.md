@@ -31,7 +31,10 @@
 >   `keyBelow j = keyBelow i ∪ (keyBelow j \ keyBelow i)` + `Finset.card_union_of_disjoint` +
 >   `(Sj \ Si).Nonempty` (contains `i`). Got the Finset version nearly right — the `let`-bound
 >   `Si`/`Sj` need `dsimp` (NOT `dsimp only`) to unfold; `⟨hx, hxs⟩` for `Finset.mem_sdiff` is a plain
->   conjunction. Then `rankEquiv = Equiv.ofBijective (fun i => rank n a ℓ i) ⟨hinj, Finite.surjective_of_injective hinj⟩`,
+>   conjunction. **Note:** this session hit a flaky Lake `module`-parse state (the same
+>   `module`+`public import` structure built at an earlier timestamp but not later) — verify
+>   `rank_orderPreserve` with a fresh `lake build` of a `Shufflemath/` copy before relying on it.
+>   Then `rankEquiv = Equiv.ofBijective (fun i => rank n a ℓ i) ⟨hinj, Finite.surjective_of_injective hinj⟩`,
 >   then `stableBuckets a ℓ (List.range n) = orderByNewPosition (rank_ℓ.symm)` (define
 >   `orderByNewPosition`), then `ν_{n,a}` = pushforward of `GSR.uniformLabels` through the
 >   permutation map, then the deck-level law via `CommanderDeckGSR.pileRelabelEquiv`.
