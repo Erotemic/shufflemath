@@ -57,9 +57,22 @@ phase notes are linked at the end; they do not override this plan. Read
 > headline** `two_physical_perfect_exchanges_uniform_deck` (`de7638a`) proves, for any
 > `n`, `TV(run (physical 2..n-exchange, lifted) n (lifted x0), GSR.uniformDist (Deck N)) =
 > TV(run (blExchangeKernel) n (x0), blStationaryDist)` — the 99-card G2.9 (n=2) / G2.13
-> (n=3) instantiations. Remaining 99-card-only: discharge the *specific* conditional
-> `two_physical_perfect_exchanges_uniform_of_counts` (still carries the `hfactor` wall)
-> by instantiating the generic deck headline for the 99-card admissible.
+> (n=3) instantiations. (Session 92's "remaining 99-card-only" pointer here is superseded:
+> see session 93 below — both the 99-card two- and three-exchange *unconditional* headlines
+> are discharged and in the tree.)
+> **Next (session 93, 2026-12-16) — 99-card three-exchange DONE (G2.13 / G3.6).**
+> Added `three_physical_perfect_exchanges_uniform_of_counts` +
+> `three_physical_perfect_exchanges_uniform_unconditional` to
+> `Shufflemath/CommanderFullDeckDisintegration` — the 99-card three-physical-perfect-exchange
+> exact-rational headline (TV = `172379525755689183991816396516567920780192827919620440221147749 /
+> 6691837923759692633601708022649918108038775216019298375918637677488`), a direct parallel of the
+> two-exchange pair (n=2 → n=3: `run … 3`, the 3-step `FiberLifting.run_tv_eq_macro`,
+> `commander_tv_after_three_semantic`; the same A3 `hMembershipExchange_kernel` discharges the
+> per-shuffle premise — no new exchange hypothesis). Completes G2.9/13 in **both** the generic
+> (session 92) and 99-card exact-rational forms, and G3.6. **Next deep item:** the F4.2 sub-wall
+> (Gate 5/6: deck-level GSR `gsrProductKernel_eq_distProductFinsupp` / `List (Fin n) →
+> Equiv.Perm (Fin 99)` transport) and Gate 8 (F5 bounded optimization), per the
+> `2026-11-24` review follow-up check-off.
 > **G1 edge cases DONE (`f3fc08f`):** new module `Shufflemath/FiniteDeck/G1EdgeCases`
 > (imports only the generic G1 modules `TwoPile`/`TwoPileFiber` + Mathlib — no
 > `Commander*`) records that the boundary parameter values are well-formed and
