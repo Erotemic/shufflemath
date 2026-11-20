@@ -97,6 +97,21 @@
 >   `ν_{n,a}` = pushforward of `GSR.uniformLabels`, then the kernel theorem
 >   `orderExchangeKernel_eq_gsrLocal` (the F4.2 capstone) and the deck-level law via
 >   `CommanderDeckGSR.pileRelabelEquiv`.
+>   **⚠ `canonicalList_ofFn` wall (hit 2026-11-20):** the direct `induction n` route for
+>   `canonicalList n = List.ofFn (fun i : Fin n => i)` (`List.range_succ` +
+>   `List.filterMap_append` + `List.ofFn_succ'`) hits the elaboration wall: (a) `omega`
+>   cannot discharge `k < n.succ` from `k ∈ List.range n` (set membership isn't
+>   linear-arithmetic); (b) `List.filterMap_singleton` and `List.length_induction` do
+>   **not** exist in this Mathlib; (c) `ofFn_succ'` yields `.concat (f (Fin.last n))`
+>   with `Fin.castSucc`/`Fin.last` that must be reconciled with `Fin.mk k (k < n.succ)`
+>   (a `Fin` is determined by `.val`, proofs proof-irrelevant, but the proof terms are not
+>   definitionally equal). **Recommended route:** skip the induction — prove via the
+>   `Fin.val` projection: `(canonicalList n).map Fin.val = List.range n` (the `filterMap`
+>   keeps every `k ∈ range n` since `k < n`, and `.map Fin.val` erases the
+>   proof-irrelevant `Fin.mk`) and `(List.ofFn (fun i => i)).map Fin.val = List.range n`
+>   (`Fin.val` of the `Fin`-indexed identity is `range n`), then reconstruct each `Fin n`
+>   from its `.val` (a `Fin n` is determined by `.val`) for the list equality — no `Fin`
+>   proof-term matching required.
 > - **Re-verify the WIP** (it lives outside the build tree): `cp .pi-glla/f42rank_wip.lean
 >   Shufflemath/_F42rank_probe.lean && lake build Shufflemath._F42rank_probe`, then
 >   `rm Shufflemath/_F42rank_probe.lean`.
