@@ -15,6 +15,28 @@
 
 # Agent handoff: next Shufflemath task
 
+> **✅ B1-headline session (2026-12-16) — `swapPerm_membership_eq` + `swapPerm_apply` PROVEN in `LiteralSwapKernel.lean` (this session's commit).**
+> Closed the **B1 headline** that the 48th-session note named as the next unit:
+> **`swapPerm_membership_eq`** —
+> `membership N m hm (Equiv.trans (swapPerm N m hm L R b) d) = literalSwapMembership N m k hm hk hkm d L hL R hR`,
+> i.e. the left pile of the deck obtained by applying the literal-swap permutation `swapPerm` to `d` is
+> exactly the literal-swap finset bookkeeping (`newLeftCards`), **independently of the pairing** `b`.
+> Helper **`swapPerm_apply`** (`swapPerm x = swapFn x`, via `Equiv.coe_ofBijective`) carries the pointwise reduction.
+> **Proof shape:** `Subtype.ext` on the `{s // s.card = m}` membership; `dsimp` the `leftCards`/`leftPositions`/
+> `newLeftCards`/`literalSwapMembership` defs; reduce the `leftPositions.image (swapPerm ∘ d)` image to
+> `univ.image (fun l => d (swapFn (leftPosition l)))` (via `Finset.image_image` + a `show`-supplied `comp`-
+> reduction using `swapPerm_apply`); then `Finset.ext` + `simp [mem_image, mem_sdiff, mem_union, mem_univ]`
+> to a membership `∃`/`∨` split and a `by_cases l ∈ L` on each side, discharging both directions with the
+> 4 `swapFn` region lemmas (`swapFn_selectedLeft`/`swapFn_unselectedLeft`) + `Equiv.apply_symm_apply` for the
+> pairing. No `univ`/99! recursion — a pure finite-deck bookkeeping equality. **Gotchas:** `Fin m` is a
+> *structure* (use `Fin.ext`, not `Subtype.ext`, for a bare `Fin m` equality; `Subtype.ext` only for the
+> `{i // i ∈ L}` subtype); and `simp only` must include the `True`-reduction lemmas (or use full `simp`)
+> so `l ∈ univ \ L` collapses to `l ∉ L`. `lake build Shufflemath.FiniteDeck.LiteralSwapKernel` green; the
+> 10 AGENTS.md verify targets build with 0 errors.
+> **Next items (docs/planning remaining):** the F5 capstone `perDeckBridge` → `uniformFiber_intertwines`
+> (see the F5/perDeckBridge note at the end of this file; WIP `_Probe47u.lean`) and the deferred F4.2
+> deck-level GSR sub-wall (`gsrProductKernel_eq_distProductFinsupp` / Dobrushin contraction).
+
 > **⚠ LW-47th session (2026-11-27) — `LiteralSwapKernel`: the four `swapFn` region lemmas PROVEN (the G2.10 finite-deck "literal-swap-kernel" row, in progress).**
 > Worked on `Shufflemath/FiniteDeck/LiteralSwapKernel.lean` (the finite-deck literal two-pile swap kernel — the G2.10/G4 "literal-swap kernel" task). Committed `9e6dfc9`:
 > **(1)** `swapFn N m hm L R b` (the literal swap as a `Fin N → Fin N` function), the `rightBound` helper, and the 4 region lemmas **`swapFn_selectedLeft` / `swapFn_unselectedLeft` / `swapFn_selectedRight` / `swapFn_unselectedRight`** are PROVEN — the correctness of the swap on each of the 4 (left/right)×(selected/unselected) regions: selected positions move to their paired position, unselected ones are fixed.

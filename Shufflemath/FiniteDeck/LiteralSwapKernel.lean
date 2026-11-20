@@ -235,5 +235,106 @@ theorem selectedRight_image_eq (N m : Nat) (hm : m ≤ N) (L : Finset (Fin m)) (
   · intro ⟨r, hr, h⟩
     exact ⟨b.symm ⟨r, hr⟩, by simp, by rw [Equiv.apply_symm_apply]; simpa using h⟩
 
+
+/-- Applying the literal-swap deck permutation `swapPerm` to a position is exactly
+  the raw `swapFn`: `swapPerm` is `Equiv.ofBijective swapFn (swapFn_bijective)`, whose
+  function coercion is `swapFn`. -/
+theorem swapPerm_apply (N m : ℕ) (hm : m ≤ N) (L : Finset (Fin m)) (R : Finset (Fin (N - m)))
+    (b : {i : Fin m // i ∈ L} ≃ {j : Fin (N - m) // j ∈ R}) (x : Fin N) :
+    swapPerm N m hm L R b x = swapFn N m hm L R b x := by
+  unfold swapPerm
+  dsimp only [Equiv.coe_ofBijective]
+
+/- **B1 headline.**  The left pile of the deck obtained by applying the literal-swap
+  permutation to `d` — `membership (Equiv.trans (swapPerm) d)` — is exactly the
+  literal-swap membership `literalSwapMembership` (the `newLeftCards` finsets).  For
+  every left position, the card the permutation places there is the card the `swapFn`
+  bookkeeping records, so the equality holds **independently of the pairing** `b`.
+  This bridges the permutation (`Fin N ≃ Fin N`) to the finset bookkeeping that the
+  B1/B3 tranches feed into the G4 oracle-exchange kernel. -/
+theorem swapPerm_membership_eq (N m k : Nat) (hm : m ≤ N) (hk : k ≤ m) (hkm : k ≤ N - m)
+    (d : Deck N) (L : Finset (Fin m)) (hL : L.card = k) (R : Finset (Fin (N - m))) (hR : R.card = k)
+    (b : {i : Fin m // i ∈ L} ≃ {j : Fin (N - m) // j ∈ R}) :
+    membership N m hm (Equiv.trans (swapPerm N m hm L R b) d) =
+      literalSwapMembership N m k hm hk hkm d L hL R hR := by
+  refine Subtype.ext ?_
+  dsimp only [membership, leftCards, leftPositions, newLeftCards, literalSwapMembership]
+  rw [Finset.image_image]
+  have hpt (l : Fin m) :
+      (Equiv.trans (swapPerm N m hm L R b) d) (Fin.castLE hm l) = d (swapFn N m hm L R b (leftPosition N m hm l)) := by
+    rw [Equiv.trans_apply]
+    rw [swapPerm_apply]
+    rfl
+  rw [show ((fun (p : Fin N) => (Equiv.trans (swapPerm N m hm L R b) d) p) ∘ Fin.castLE hm) =
+        (fun (l : Fin m) => d (swapFn N m hm L R b (leftPosition N m hm l))) from by
+    funext l
+    rw [Function.comp_apply]
+    exact hpt l]
+  apply Finset.ext
+  intro c
+  simp [Finset.mem_image, Finset.mem_sdiff, Finset.mem_union, Finset.mem_univ]
+  constructor
+  · intro h
+    rcases h with ⟨l, hc⟩
+    by_cases hsel : l ∈ L
+    · -- selected left: the card moves to rightPosition (b⟨l,hsel⟩).val
+      have hxl : (leftPosition N m hm l).val < m := by rw [leftPosition_val]; exact l.isLt
+      have hFin : (⟨(leftPosition N m hm l).val, hxl⟩ : Fin m) = l := by
+        apply Fin.ext
+        rw [leftPosition_val]
+      have hsel' : (⟨(leftPosition N m hm l).val, hxl⟩ : Fin m) ∈ L := by simpa [hFin] using hsel
+      have hmove : swapFn N m hm L R b (leftPosition N m hm l) =
+          rightPosition N m hm (b ⟨⟨(leftPosition N m hm l).val, hxl⟩, hsel'⟩).val :=
+        swapFn_selectedLeft N m hm L R b (leftPosition N m hm l) hxl hsel'
+      have hsub : (⟨⟨(leftPosition N m hm l).val, hxl⟩, hsel'⟩ : {i : Fin m // i ∈ L}) = ⟨l, hsel⟩ := by
+        refine Subtype.ext ?_; simpa [hFin] using rfl
+      have hmove2 : swapFn N m hm L R b (leftPosition N m hm l) =
+          rightPosition N m hm (b ⟨l, hsel⟩).val := by simpa [hsub] using hmove
+      refine Or.inr ⟨(b ⟨l, hsel⟩).val, ?_, ?_⟩
+      · simpa using (b ⟨l, hsel⟩).2
+      · simpa [hmove2] using hc
+    · -- unselected left: the card stays at leftPosition l
+      have hxl : (leftPosition N m hm l).val < m := by rw [leftPosition_val]; exact l.isLt
+      have hFin : (⟨(leftPosition N m hm l).val, hxl⟩ : Fin m) = l := by
+        apply Fin.ext
+        rw [leftPosition_val]
+      have huns : (⟨(leftPosition N m hm l).val, hxl⟩ : Fin m) ∉ L := by simpa [hFin] using hsel
+      have hfix : swapFn N m hm L R b (leftPosition N m hm l) = leftPosition N m hm l :=
+        swapFn_unselectedLeft N m hm L R b (leftPosition N m hm l) hxl huns
+      refine Or.inl ⟨l, hsel, ?_⟩
+      simpa [hfix] using hc
+  · intro h
+    rcases h with hl | hr
+    · -- unselected: witness is l itself
+      rcases hl with ⟨l, ⟨huns, hc⟩⟩
+      have hxl : (leftPosition N m hm l).val < m := by rw [leftPosition_val]; exact l.isLt
+      have hFin : (⟨(leftPosition N m hm l).val, hxl⟩ : Fin m) = l := by
+        apply Fin.ext
+        rw [leftPosition_val]
+      have huns' : (⟨(leftPosition N m hm l).val, hxl⟩ : Fin m) ∉ L := by simpa [hFin] using huns
+      have hfix : swapFn N m hm L R b (leftPosition N m hm l) = leftPosition N m hm l :=
+        swapFn_unselectedLeft N m hm L R b (leftPosition N m hm l) hxl huns'
+      exact ⟨l, by simpa [hfix] using hc⟩
+    · -- selected: witness is the selected left l = (b.symm ⟨r,hr⟩).val
+      rcases hr with ⟨r, hr, hc⟩
+      let l : Fin m := (b.symm ⟨r, hr⟩).val
+      have hsel : l ∈ L := (b.symm ⟨r, hr⟩).2
+      have hxl : (leftPosition N m hm l).val < m := by rw [leftPosition_val]; exact l.isLt
+      have hFin : (⟨(leftPosition N m hm l).val, hxl⟩ : Fin m) = l := by
+        apply Fin.ext
+        rw [leftPosition_val]
+      have hsel' : (⟨(leftPosition N m hm l).val, hxl⟩ : Fin m) ∈ L := by simpa [hFin] using hsel
+      have hmove : swapFn N m hm L R b (leftPosition N m hm l) =
+          rightPosition N m hm (b ⟨⟨(leftPosition N m hm l).val, hxl⟩, hsel'⟩).val :=
+        swapFn_selectedLeft N m hm L R b (leftPosition N m hm l) hxl hsel'
+      have hsub : (⟨⟨(leftPosition N m hm l).val, hxl⟩, hsel'⟩ : {i : Fin m // i ∈ L}) = ⟨l, hsel⟩ := by
+        refine Subtype.ext ?_; simpa [hFin] using rfl
+      have hmove2 : swapFn N m hm L R b (leftPosition N m hm l) =
+          rightPosition N m hm (b ⟨l, hsel⟩).val := by simpa [hsub] using hmove
+      have hright : (b ⟨l, hsel⟩ : {j : Fin (N - m) // j ∈ R}) = ⟨r, hr⟩ :=
+        by simpa [l] using Equiv.apply_symm_apply b ⟨r, hr⟩
+      have hmove3 : swapFn N m hm L R b (leftPosition N m hm l) = rightPosition N m hm r := by
+        simpa [hmove2, hright] using rfl
+      exact ⟨l, by simpa [hmove3] using hc⟩
 end FiniteDeck
 end Shufflemath
