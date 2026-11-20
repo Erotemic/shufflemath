@@ -15,7 +15,7 @@
 
 # Agent handoff: next Shufflemath task
 
-> **✅ F4.2-rank session (2026-12-16) — the *last-F4-wall*: sorted-key rank as a genuine permutation. `rank_orderPreserve`, `rankVal_injective`, `rankVal_lt_n`, and `rankEquiv : Equiv (Fin n) (Fin n)` now PROVEN. RESUME HERE.**
+> **✅ F4.2-rank session (2026-12-16) — the *last-F4-wall*: sorted-key rank as a genuine permutation. `rank_orderPreserve`, `rankVal_injective`, `rankVal_lt_n`, `rankEquiv : Equiv (Fin n) (Fin n)`, target-side key-sortedness (`rankOrderKeys_monotone` → `rankOrderKeyList_sortedLT`), and the one-liner `map_inj_eq` now PROVEN. RESUME HERE.**
 > Next phase (G1–G4 + A3 are all done) is **F5**; its first sub-wall is Section 3 of
 > `docs/planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md` — turn
 > `GSR.idealShuffle`'s output into a real finite permutation and preserve the law.
@@ -66,15 +66,34 @@
 >   - `rankOrderKeys_monotone : keyNat (rankEquiv.symm r) < keyNat (rankEquiv.symm s)
 >     ↔ (r < s)` (forward direction shown) — the TARGET side `orderByNewPosition
 >     (rankEquiv.symm)` is key-sorted, via `rank_orderReflect` + `Fin.lt_def`.
+>   **Also this session** (clean `Fin`-indexed target list + the injective-map tool; all in the WIP, building cleanly, no warnings):
+>   - `rankOrderKeyList : List ℕ` — the GSR rank-ordered key sequence written as
+>     `List.ofFn (fun r => keyNat (rankEquiv.symm r))` (a clean `Fin n`-indexed list,
+>     avoiding the `filterMap`-based `canonicalList`). Noncomputable (depends on
+>     `rankEquiv`).
+>   - `rankOrderKeyList_sortedLT : (rankOrderKeyList).SortedLT` — the TARGET side is a
+>     proper sorted list. One line via `List.sortedLT_ofFn_iff` (`(ofFn f).SortedLT ↔
+>     StrictMono f`) + `rankOrderKeys_monotone`. **Note:** the 2026-11-20 structural-hints
+>     plan suggested `Equiv.Perm.map_finRange_perm` for this — that lemma does **not**
+>     exist in this Mathlib; the `ofFn` + `sortedLT_ofFn_iff` route is the actual clean
+>     path.
+>   - `rankOrderKeys_nodup : (rankOrderKeyList).Nodup` — the keys at distinct ranks are
+>     distinct: `keyNat ∘ rankEquiv.symm` is injective (`keyNat_injective`, then
+>     `Equiv.apply_symm_apply` for the `.symm` half), via `List.nodup_ofFn`.
+>   - `map_inj_eq {f} (hf : Injective f) (l₁ l₂) (hmap : l₁.map f = l₂.map f) : l₁ = l₂`
+>     — **one-liner**: `(List.map_injective_iff.mpr hf) hmap`. The tool that recovers
+>     card-list equality from equal key-sequences in the capstone (mapping by an
+>     injective `keyNat` is itself an injective function of lists).
 >   **Next:** `stableBuckets_eq_orderByNewPosition : GSR.stableBuckets a ℓ
 >   (canonicalList n) = orderByNewPosition n (rankEquiv n a hn ℓ).symm`. The target
->   side's sortedness is done (`rankOrderKeys_monotone`); remaining: (i) show the
->   SOURCE side `(stableBuckets a ℓ (canonicalList n)).map keyNat` is `SortedLE` (within
->   a label block keys increase as `c` grows; across blocks they jump, since block `i`
->   holds keys `⊆ [i·n, i·n+n-1]` and block `i+1` starts above it — a
->   `List.append_sortedLT`-style proof over the `flatMap`/`filter`), and (ii) both sides
->   are perms of `canonicalList n`'s key-multiset, so `List.Perm.eq_of_sortedLE` on the
->   two key-sequences + `keyNat` injectivity recovers the list equality. Then
+>   side is now a clean `SortedLT` (`rankOrderKeyList_sortedLT`) with distinct entries
+>   (`rankOrderKeys_nodup`), and `map_inj_eq` is available to lift key-sequence equality
+>   to card-list equality. Remaining: (i) show the SOURCE side `(stableBuckets a ℓ
+>   (canonicalList n)).map keyNat` is `SortedLE` (within a label block keys increase as
+>   `c` grows; across blocks they jump — a `List.append_sortedLT`-style proof over the
+>   `flatMap`/`filter`; this needs `canonicalList n = List.ofFn (·)` to index by rank),
+>   and (ii) assemble: `List.Perm.eq_of_sortedLE` on the two key-sequences (both perms
+>   of `canonicalList n`'s key-multiset) + `map_inj_eq` recovers the list equality. Then
 >   `ν_{n,a}` = pushforward of `GSR.uniformLabels`, then the kernel theorem
 >   `orderExchangeKernel_eq_gsrLocal` (the F4.2 capstone) and the deck-level law via
 >   `CommanderDeckGSR.pileRelabelEquiv`.

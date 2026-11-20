@@ -267,5 +267,47 @@ theorem rankOrderKeys_monotone (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a) 
     exact Fin.lt_def.mp h
   exact rank_orderReflect n a hn ℓ _ _ hrank
 
+/-!## The rank-ordered key list, as a clean `Fin`-indexed list (F4.2 target side)
+
+`rankOrderKeyList` is the GSR rank-ordered key sequence written directly as a `Fin n`-
+indexed list (via `List.ofFn`): its `i`-th entry is the key of the card that ranks `i`,
+i.e. `keyNat (rankEquiv.symm i)`.  Because that card has rank `i.val`
+(`rankVal_rankEquivSymm`), these keys are strictly increasing in `i`
+(`rankOrderKeys_monotone`) and pairwise distinct (`keyNat_injective`). -/
+
+/-- The GSR rank-ordered key list, `Fin`-indexed.  Noncomputable: depends on the
+    noncomputable `rankEquiv`. -/
+noncomputable def rankOrderKeyList (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a) : List ℕ :=
+  List.ofFn (fun r : Fin n => keyNat n a ℓ ((rankEquiv n a hn ℓ).symm r))
+
+/- **The rank-ordered key list is strictly increasing** — the GSR output is a sorted
+   key sequence.  Via `List.sortedLT_ofFn_iff` this is exactly `rankOrderKeys_monotone`
+   (rank `i < j` ⇒ key `i < key j`), restated as strict monotonicity of the entry map. -/
+theorem rankOrderKeyList_sortedLT (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a) :
+    (rankOrderKeyList n a hn ℓ).SortedLT := by
+  unfold rankOrderKeyList
+  rw [List.sortedLT_ofFn_iff]
+  intro i j hij
+  exact rankOrderKeys_monotone n a hn ℓ i j hij
+
+/- **The rank-ordered key list has distinct entries** — `keyNat ∘ rankEquiv.symm` is
+   injective (composition of two injective maps: `keyNat_injective`, then `Equiv.symm`). -/
+theorem rankOrderKeys_nodup (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a) :
+    (rankOrderKeyList n a hn ℓ).Nodup := by
+  unfold rankOrderKeyList
+  rw [List.nodup_ofFn]
+  intro r s h
+  have hsym : (rankEquiv n a hn ℓ).symm r = (rankEquiv n a hn ℓ).symm s :=
+    keyNat_injective n a hn ℓ h
+  have hE := congrArg (rankEquiv n a hn ℓ) hsym
+  simpa only [Equiv.apply_symm_apply] using hE
+
+/- **Injective maps reflect list equality:** if `f` is injective and
+   `l₁.map f = l₂.map f`, then `l₁ = l₂` (`List.map_injective_iff`). -/
+theorem map_inj_eq {α β : Type*} (f : α → β) (hf : Function.Injective f)
+    (l₁ l₂ : List α) (hmap : l₁.map f = l₂.map f) : l₁ = l₂ :=
+  (List.map_injective_iff.mpr hf) hmap
+
+
 end Shufflemath
 end
