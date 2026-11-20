@@ -32,6 +32,12 @@ the finset bookkeeping agree — with **no** dependence on the pairing `b`.
 
 The 99-card special case is `N = 99`, `m = 50`, `k = 25`, `L ⊆ Fin 50`,
 `R ⊆ Fin 49`, both of cardinality `25`.
+
+Status: the raw function `swapFn`, its four region lemmas, the self/index
+lemmas, the **involution** `swapFn_involution`, the **bijectivity**
+`swapFn_bijective`, and the resulting permutation `swapPerm : Equiv.Perm (Fin N)`
+are all proved in this file.  The headline pointwise identity
+`membership (swapPerm ∘ d) = literalSwapMembership d` is the remaining step.
 -/
 
 /-- A left-pile index embeds to a deck position whose `Fin.val` is unchanged. -/
@@ -46,7 +52,7 @@ theorem rightPosition_val (N m : Nat) (hm : m ≤ N) (i : Fin (N - m)) :
 
 /-- The right-index bound: if `x` is a right position (`m ≤ x.val`), then
   `x.val - m` is a valid `Fin (N - m)` value. -/
-def rightBound (N m : Nat) (hm : m ≤ N) (x : Fin N) (hmle : m ≤ x.val) : x.val - m < N - m := by
+theorem rightBound (N m : Nat) (hm : m ≤ N) (x : Fin N) (hmle : m ≤ x.val) : x.val - m < N - m := by
   have hxN : x.val < N := x.isLt
   omega
 
@@ -117,10 +123,91 @@ theorem swapFn_unselectedRight (N m : Nat) (hm : m ≤ N) (L : Finset (Fin m)) (
   split_ifs
   · rfl
 
--- WIP (next session): `leftPosition_self` / `rightPosition_self` pile-position
--- self-lemmas, then `swapFn_involution` (the four-subcase involution via the
--- region lemmas above), `swapFn_bijective`, the `Equiv.Perm` packaging, and
--- `swapPerm_involution`.  A draft with the two helpers fixed is saved to
--- `.pi-glla/lswk_involution_wip.lean`.
-end FiniteDeck
-end Shufflemath
+theorem leftPosition_self (N m : ℕ) (hm : m ≤ N) (x : Fin N) (hxl : x.val < m) :
+    leftPosition N m hm (⟨x.val, hxl⟩) = x := by
+  apply Fin.ext
+  have hxN : x.val < N := x.isLt
+  simp [leftPosition_val]
+
+theorem rightPosition_self (N m : ℕ) (hm : m ≤ N) (x : Fin N) (hxr : ¬x.val < m) :
+    rightPosition N m hm (⟨x.val - m, rightBound N m hm x (Nat.le_of_not_lt hxr)⟩) = x := by
+  apply Fin.ext
+  have hle : m ≤ x.val := Nat.le_of_not_lt hxr
+  have hxN : x.val < N := x.isLt
+  rw [rightPosition_val]
+  simpa using Nat.add_sub_of_le hle
+
+theorem rightPosition_index (N m : ℕ) (hm : m ≤ N) (i : Fin (N - m))
+    (hxr : ¬(rightPosition N m hm i).val < m) :
+    (⟨(rightPosition N m hm i).val - m, rightBound N m hm (rightPosition N m hm i) (Nat.le_of_not_lt hxr)⟩ : Fin (N - m)) = i := by
+  ext
+  simp [rightPosition_val]
+
+theorem leftPosition_index (N m : ℕ) (hm : m ≤ N) (i : Fin m) :
+    (⟨(leftPosition N m hm i).val, i.isLt⟩ : Fin m) = i := by
+  ext
+  rw [leftPosition_val]
+
+theorem swapFn_involution (N m : ℕ) (hm : m ≤ N) (L : Finset (Fin m)) (R : Finset (Fin (N - m)))
+    (b : {i : Fin m // i ∈ L} ≃ {j : Fin (N - m) // j ∈ R}) (x : Fin N) :
+    swapFn N m hm L R b (swapFn N m hm L R b x) = x := by
+  by_cases hxl : x.val < m
+  · by_cases hsel : (⟨x.val, hxl⟩ : Fin m) ∈ L
+    · let i := (⟨x.val, hxl⟩ : Fin m)
+      let j := b ⟨i, hsel⟩
+      have h1 : swapFn N m hm L R b x = rightPosition N m hm j.val := by simpa [i, j] using swapFn_selectedLeft N m hm L R b x hxl hsel
+      rw [h1]
+      have hxr : ¬(rightPosition N m hm j.val).val < m := by rw [rightPosition_val]; omega
+      have hselR : (⟨(rightPosition N m hm j.val).val - m, rightBound N m hm (rightPosition N m hm j.val) (Nat.le_of_not_lt hxr)⟩ : Fin (N - m)) ∈ R := by
+        simpa [rightPosition_index N m hm j.val hxr] using j.2
+      let rj : {j : Fin (N - m) // j ∈ R} := ⟨⟨(rightPosition N m hm j.val).val - m, rightBound N m hm (rightPosition N m hm j.val) (Nat.le_of_not_lt hxr)⟩, hselR⟩
+      have h2 : swapFn N m hm L R b (rightPosition N m hm j.val) = leftPosition N m hm (b.symm rj).val :=
+        by simpa [rj] using swapFn_selectedRight N m hm L R b (rightPosition N m hm j.val) hxr hselR
+      rw [h2]
+      have hsub : rj = (j : {j : Fin (N - m) // j ∈ R}) := by
+        refine Subtype.ext ?_
+        simpa [rj, j] using rightPosition_index N m hm j.val hxr
+      have hback : b.symm rj = (b.symm j : {i : Fin m // i ∈ L}) := by simpa [hsub]
+      have hleft : (b.symm j : {i : Fin m // i ∈ L}) = ⟨i, hsel⟩ := by simpa [j] using Equiv.symm_apply_apply b ⟨i, hsel⟩
+      simpa [hback, hleft, i] using leftPosition_self N m hm x hxl
+    · have h1 : swapFn N m hm L R b x = x := by simpa using swapFn_unselectedLeft N m hm L R b x hxl hsel
+      rw [h1, h1]
+  · let rIdx := (⟨x.val - m, rightBound N m hm x (Nat.le_of_not_lt hxl)⟩ : Fin (N - m))
+    by_cases hsel : rIdx ∈ R
+    · let j := rIdx
+      let i := b.symm ⟨j, hsel⟩
+      have h1 : swapFn N m hm L R b x = leftPosition N m hm i.val := by simpa [j] using swapFn_selectedRight N m hm L R b x hxl hsel
+      rw [h1]
+      have hxl2 : (leftPosition N m hm i.val).val < m := by rw [leftPosition_val]; exact i.val.isLt
+      have hselL : (⟨(leftPosition N m hm i.val).val, hxl2⟩ : Fin m) ∈ L := by
+        simpa [leftPosition_index N m hm i.val] using i.2
+      let li : {i : Fin m // i ∈ L} := ⟨⟨(leftPosition N m hm i.val).val, hxl2⟩, hselL⟩
+      have h2 : swapFn N m hm L R b (leftPosition N m hm i.val) = rightPosition N m hm (b li).val :=
+        by simpa [li] using swapFn_selectedLeft N m hm L R b (leftPosition N m hm i.val) hxl2 hselL
+      rw [h2]
+      have hsub : li = (i : {i : Fin m // i ∈ L}) := by
+        refine Subtype.ext ?_
+        simpa [li, i] using leftPosition_index N m hm i.val
+      have hback : b li = (b i : {j : Fin (N - m) // j ∈ R}) := by simpa [hsub]
+      have hright : (b i : {j : Fin (N - m) // j ∈ R}) = ⟨j, hsel⟩ := by simpa [i] using Equiv.apply_symm_apply b ⟨j, hsel⟩
+      simpa [hback, hright, j] using rightPosition_self N m hm x hxl
+    · have h1 : swapFn N m hm L R b x = x := by simpa using swapFn_unselectedRight N m hm L R b x hxl hsel
+      rw [h1, h1]
+
+theorem swapFn_bijective (N m : ℕ) (hm : m ≤ N) (L : Finset (Fin m)) (R : Finset (Fin (N - m)))
+    (b : {i : Fin m // i ∈ L} ≃ {j : Fin (N - m) // j ∈ R}) :
+    Function.Bijective (swapFn N m hm L R b) := by
+  constructor
+  · intro u v huv
+    have h := congrArg (swapFn N m hm L R b) huv
+    rwa [swapFn_involution N m hm L R b u, swapFn_involution N m hm L R b v] at h
+  · intro y
+    exact ⟨swapFn N m hm L R b y, swapFn_involution N m hm L R b y⟩
+
+
+
+noncomputable def swapPerm (N m : ℕ) (hm : m ≤ N) (L : Finset (Fin m)) (R : Finset (Fin (N - m)))
+    (b : {i : Fin m // i ∈ L} ≃ {j : Fin (N - m) // j ∈ R}) : Equiv.Perm (Fin N) :=
+  Equiv.ofBijective (swapFn N m hm L R b) (swapFn_bijective N m hm L R b)
+
+
