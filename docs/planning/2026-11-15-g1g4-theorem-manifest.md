@@ -1,7 +1,10 @@
 # G1–G4 theorem manifest (2026-11-15)
 
-**Status (2026-11-24 audit):** **G1, G3, G4 are complete**; **G2 is the
-remaining generalization.**
+**Status (2026-12-16):** **G1, G2, G3, and G4 are all complete** (G2's last
+rows closed at sessions 80/82/83/92/93), and the Commander A3 discharge is
+done. The remaining work is the **F5 phase**: the F4.2 deck-level GSR
+sub-wall (`gsrProductKernel_eq_distProductFinsupp` / Dobrushin contraction) and
+Gate 8 bounded optimization.
 
 * **G1 — DONE** (99-card fiber disintegration + 2/3-exchange TV), all in
   `Shufflemath/CommanderFullDeckDisintegration`: `commander_fiber_counts`,
@@ -18,16 +21,18 @@ remaining generalization.**
   `countFiber_blStationary`, `countFiber_transitive`, `countInPile_*`,
   `yMoves_card_eq_transitionNumerator`, … The "Commander A3 as an instance"
   row is the F3 discharge above.
-* **G2 — PARTIAL.** The **disintegration / counting / kernel-algebra /
-  fiber-intertwining layer is already generic**: `FiberDisintegration` is fully
+* **G2 — DONE** (all 13 rows, generic + 99-card). The **disintegration /
+  counting / kernel-algebra / fiber-intertwining layer is fully generic**: `FiberDisintegration` is fully
   type-generic (`marginal_comp_fiber_eq_uniform`, `stationary_disintegrates_of_mass`,
   `fiberLaw_recovers` — any finite `β`), `FiniteDeck/{Fiber,SubsetExchange,BLRefinement}`
   are `(N,m[,k,r])`-parameterized (fiber counts, `subsetExchangeKernel`/`blExchange`
   kernels, `uniformFiber_intertwines`), `CommanderMembershipExchange.distUniform_ofInvariantTransitive`
   is type-generic, and `Shufflemath/Finite` carries the Fintype-free kernel algebra.
-  **Two rows remain 99-card-only (as of session 83):** the physical /
-  three-physical-perfect-exchange **deck-uniform-target** TV (G2.9/13), which are
-  surjectivity-blocked generically (`project : Deck → BLState` is not onto `BLState`).
+  The physical / three-physical-perfect-exchange **deck-uniform-target** TV
+  (G2.9/13) were once **surjectivity-blocked generically** (`project : Deck →
+  BLState` is not onto `BLState`) but are **closed at sessions 92/93** via the
+  membership-based bridge `apply_blStationary_ucfm_locallift_eq_uniformDeck`
+  (see the G2.9/13 note in the G2 section).
   The 2/3-exchange TV (G2.3/5) is **DONE (generic, TV-equality form, session 83
   `7ae899e`)**: `A3KernelLaw.two_oracle_exchanges_uniform`, a one-line
   `OracleRefinement.run_tv_eq_macro` on the G2.10 `hrecover`. The A3 kernel
