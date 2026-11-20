@@ -61,9 +61,13 @@ file needed for G1).
 
 ### G2. Generic finite-deck versions (arbitrary `N, m, r, k` parameters)
 
-**Status: 11/13 generic** — the disintegration / counting / kernel-algebra / fiber-
-intertwining / oracle-2/3-exchange **TV** layer is **generic**; only the physical-perfect-exchange
-**deck-uniform-target** TV (G2.9/13) remains 99-card-only (surjectivity-blocked generically).
+**Status: 13/13 generic** — the disintegration / counting / kernel-algebra / fiber-
+intertwining / oracle-2/3-exchange **TV** layer and the physical-perfect-exchange
+**deck-uniform-target** TV (G2.9/13) are all **generic**. The deck-uniform-target headline
+`FiniteDeck/BLDisintegration.two_physical_perfect_exchanges_uniform_deck` (session 92 `de7638a`)
+proves, for any `n`, `TV(run (physical n-exchange, lifted) n (lifted x0), GSR.uniformDist (Deck N)) =
+TV(run (blExchangeKernel) n (x0), blStationaryDist)` — the *membership*-based route that avoids the
+`project_surjective` wall (`project : Deck → BLState` is not onto `BLState` generically).
 Target modules:
 the **fully type-generic** `Shufflemath/FiberDisintegration` (works for *any*
 finite `β`, not just the 99-card deck), the `(N,m[,k,r])`-parameterized
@@ -80,19 +84,24 @@ Fintype-free kernel algebra `Shufflemath/Finite`.
 | 6 | `fiberCountEq` | `FiniteDeck/Fiber.fiberSet_card`, `fiberSum_eq_permCard` | **DONE (generic)** |
 | 7 | `uniformPushforwardEq` | `FiberDisintegration.fiberLaw_recovers` (type-generic) | **DONE (generic)** |
 | 8 | `membershipExchangeLaw` (A3 kernel law) | `A3KernelLaw.hMembershipExchange_kernel` (generic, session 80 `9181bff`) | **DONE (generic)** |
-| 9 | `physicalTwoExchange` | — (99-card: `two_physical_perfect_exchanges_uniform_of_counts`) | **REMAINING** |
+| 9 | `physicalTwoExchange` | `FiniteDeck/BLDisintegration.two_physical_perfect_exchanges_uniform_deck` (n=2, generic); 99-card exact-rational: `CommanderFullDeckDisintegration.two_physical_perfect_exchanges_uniform_unconditional` | **DONE (generic + 99-card)** |
 | 10 | `twoPhysicalPerfectUniform` ← **headline (objective item 3)** | `A3KernelLaw.two_physical_perfect_exchanges_uniform` (generic, session 82 `11f099f`/`ff34501`) | **DONE (generic)** |
 | 11 | `uniformFiberIntertwines` | `BLRefinement.uniformFiber_intertwines` | **DONE (generic)** |
 | 12 | `distUniformOfInvariantTransitive` | `CommanderMembershipExchange.distUniform_ofInvariantTransitive` (type-generic) | **DONE (generic)** |
-| 13 | `physicalThreeExchange` | — (99-card: `three_physical_perfect_exchanges_uniform_unconditional`) | **REMAINING** |
+| 13 | `physicalThreeExchange` | `FiniteDeck/BLDisintegration.two_physical_perfect_exchanges_uniform_deck` (n=3, generic) | **DONE (generic)** — 99-card n=3 exact-rational: `three_physical_perfect_exchanges_uniform_unconditional` (immediate next) |
 
-**Remaining (2 rows):** G2.9/13 (the physical-perfect-exchange **deck-uniform-target** TV:
-TV against `GSR.uniformDist Deck`, i.e. the exact rational). Both are **surjectivity-blocked
-generically** — `project : Deck → BLState` is not onto `BLState` (its range is the admissible
-sub-range `max(0, m-(N-r))…min(m,r)`), so the 99-card `hfactor` (`comp lift = fiberLaw project`,
-which requires `project_surjective`) fails; the achievable TV-equality form is already the
-G2.10 headline. Next route: the Membership-level disintegration (`membership : Deck → Membership N m`
-is surjective) or a direct mass-formula proof that the lifted macrostationary law = `GSR.uniformDist`.
+**G2.9/13 (deck-uniform-target) — now DONE (generic).** Both were once flagged
+**surjectivity-blocked** generically — `project : Deck → BLState` is not onto `BLState` (its
+range is the admissible sub-range `max(0, m-(N-r))…min(m,r)`), so the `hfactor`
+(`comp lift = fiberLaw project`, which requires `project_surjective`) fails generically.
+Session 92 cracked it via the **membership-based route**: the bridge
+`apply_blStationary_ucfm_locallift_eq_uniformDeck` shows the lifted macrostationary target
+`apply (blStationaryDist) (comp (UCFM) localLift)` **equals** `GSR.uniformDist (Deck N)`, so
+`two_physical_perfect_exchanges_uniform_deck` states the deck-uniform-target TV for any `n`
+(99-card G2.9 = n=2, G2.13 = n=3) without the surjectivity premise. The 99-card *two*-exchange
+exact-rational (`two_physical_perfect_exchanges_uniform_unconditional`) is already in the tree;
+the 99-card *three*-exchange exact-rational (`three_physical_perfect_exchanges_uniform_unconditional`,
+also the G3.6 reference) is the one remaining 99-card-specific item — the immediate next step.
 The generic **G2.3/5** oracle TV-equality headline is **DONE (session 83 `7ae899e`)** —
 `A3KernelLaw.two_oracle_exchanges_uniform`, a one-line `OracleRefinement.run_tv_eq_macro`.
 The headline **G2.10** (generic two-physical-perfect-exchanges, objective item 3) is **DONE (session 82)** —
@@ -114,7 +123,7 @@ The headline **G2.10** (generic two-physical-perfect-exchanges, objective item 3
 | 3 | `membershipExchangeUniform (N m r k)` | G2.8 + `membershipFiber_transitive` (99-card) + `distUniform_ofInvariantTransitive` | DONE (99-card: `hMembershipExchange_kernel`) |
 | 4 | `physicalMembershipExchange (N m r k)` | G2.9 + G2.12 | DONE (99-card: `hMembershipExchange_kernel`) |
 | 5 | `twoPhysicalPerfectUniform (N m r k)` | G2.3 + G3.4 + G2.11 | DONE (99-card: `two_physical_perfect_exchanges_uniform_unconditional`) |
-| 6 | `physicalThreeExchange (N m r k)` | G2.10 + G3.5 | DONE (99-card: `three_physical_perfect_exchanges_uniform_unconditional`) |
+| 6 | `physicalThreeExchange (N m r k)` | G2.10 + G3.5 | **immediate next** — 99-card exact-rational `three_physical_perfect_exchanges_uniform_unconditional` (added next); generic via the G2.10 deck headline n=3 |
 
 ---
 

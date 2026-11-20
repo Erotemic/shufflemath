@@ -15,6 +15,34 @@
 
 # Agent handoff: next Shufflemath task
 
+> **⚠ 93rd session (post-compaction resume, 2026-12-16) — G2 reconciled to 13/13 generic in the manifest; next = 99-card three-physical-perfect (G2.13 / G3.6).**
+> Resumed from compaction on active goal `20261117210924-4alosn`. Re-read the artifacts from
+> disk (not memory) and reconciled the G1–G4 manifest, which was **stale**: it still marked
+> G2.9/13 (the physical-perfect-exchange **deck-uniform-target** TV) as *REMAINING / "surjectivity-
+> blocked generically"*, but session 92 already closed the *generic* form — the headline
+> `FiniteDeck/BLDisintegration.two_physical_perfect_exchanges_uniform_deck` (`de7638a`) proves,
+> for any `n`, `TV(run (physical n-exchange, lifted) n (lifted x0), GSR.uniformDist (Deck N)) =
+> TV(run (blExchangeKernel) n (x0), blStationaryDist)` via the membership-based bridge
+> `apply_blStationary_ucfm_locallift_eq_uniformDeck` (no `project_surjective` needed). **Manifest
+> corrected to 13/13 generic** (status line, rows 9/13, remaining-note; G3.6 de-ghosted) in this
+> commit. **Ghost reference found:** the manifest's G3.6 row cited
+> `three_physical_perfect_exchanges_uniform_unconditional` as *DONE*, but that 99-card declaration
+> **does not exist in the tree** — only the 99-card *two*-exchange `…_unconditional` and the 99-card
+> *oracle* `three_oracle_exchanges_uniform_unconditional` exist. Building blocks are present:
+> `commander_tv_after_three_semantic` (`BernoulliLaplaceSemantic:129`) + the A3
+> `hMembershipExchange_kernel`.
+> **Next lemma (this session):** add `three_physical_perfect_exchanges_uniform_unconditional` to
+> `Shufflemath/CommanderFullDeckDisintegration` — the 99-card *three*-physical-perfect-exchange
+> exact-rational headline, a direct parallel of the existing `two_physical_perfect_exchanges_uniform_unconditional`
+> (n=2 → n=3: `run … 3`, the 3-step `run_tv_eq_macro`, `commander_tv_after_three_semantic`). Closes
+> G2.13 (99-card) + G3.6 and satisfies objective item 8 (99-card regression benchmark). After it,
+> the deferred F4.2 sub-wall (deck-level GSR `gsrProductKernel_eq_distProductFinsupp` / Dobrushin
+> contraction) is the next deep item.
+> **Resume checklist (this session):** (1) banner + handoff read; (2) `git log`/`git status` —
+> working tree clean (only `.pi-glla/` infra untracked, no repo WIP); (3) tree unchanged since the
+> green session-92 build (`de7638a`) — re-verified with the targeted build after the next code
+> commit; (4) resuming at the three-physical-perfect headline.
+
 > **⚠ 79th+ session — VERIFICATION-CONTRACT AUDIT COMPLETE (all 8 items satisfied); final-state docs.**
 > The user directed an 8-item verification audit of the goal. All eight are now satisfied, in green commits:
 >  **(1)** `./dev/verify_next_phase.sh` exit 0 (3234 jobs, 37 tests pass).
