@@ -35,9 +35,12 @@ The 99-card special case is `N = 99`, `m = 50`, `k = 25`, `L ⊆ Fin 50`,
 
 Status: the raw function `swapFn`, its four region lemmas, the self/index
 lemmas, the **involution** `swapFn_involution`, the **bijectivity**
-`swapFn_bijective`, and the resulting permutation `swapPerm : Equiv.Perm (Fin N)`
-are all proved in this file.  The headline pointwise identity
-`membership (swapPerm ∘ d) = literalSwapMembership d` is the remaining step.
+`swapFn_bijective`, the resulting permutation `swapPerm : Equiv.Perm (Fin N)`,
+and the **pairing-bijection image** lemma `selectedRight_image_eq` are all proved
+in this file.  The headline pointwise identity
+`membership (swapPerm ∘ d) = literalSwapMembership d` (permutation ↔ finset
+bookkeeping agree on the left pile, pairing-independent) is the remaining step;
+`selectedRight_image_eq` is the crux it reduces to.
 -/
 
 /-- A left-pile index embeds to a deck position whose `Fin.val` is unchanged. -/
@@ -211,3 +214,26 @@ noncomputable def swapPerm (N m : ℕ) (hm : m ≤ N) (L : Finset (Fin m)) (R : 
   Equiv.ofBijective (swapFn N m hm L R b) (swapFn_bijective N m hm L R b)
 
 
+/-- The selected left positions, mapped by the pairing `b` to the selected right
+  positions, are exactly the selected right positions: because
+  `b : {i // i ∈ L} ≃ {j // j ∈ R}` is a bijection, `rightPosition ∘ b` over the whole
+  selected-left subtype has the same image as `rightPosition` over `R`.  This is the
+  crux used to show the literal-swap permutation and the finset bookkeeping agree on
+  the left pile, **independently of the pairing** `b`. -/
+theorem selectedRight_image_eq (N m : Nat) (hm : m ≤ N) (L : Finset (Fin m)) (R : Finset (Fin (N - m)))
+    (b : {i : Fin m // i ∈ L} ≃ {j : Fin (N - m) // j ∈ R}) :
+    (Finset.univ : Finset {i : Fin m // i ∈ L}).image (fun (s : {i : Fin m // i ∈ L}) =>
+        rightPosition N m hm (b s).val) = R.image (rightPosition N m hm) := by
+  apply Finset.ext
+  intro x
+  simp only [Finset.mem_image, Finset.mem_univ]
+  constructor
+  · intro ⟨s, hs, h⟩
+    refine ⟨(b s).val, ?_, ?_⟩
+    · simpa using (b s).2
+    · simpa [h] using rfl
+  · intro ⟨r, hr, h⟩
+    exact ⟨b.symm ⟨r, hr⟩, by simp, by rw [Equiv.apply_symm_apply]; simpa using h⟩
+
+end FiniteDeck
+end Shufflemath
