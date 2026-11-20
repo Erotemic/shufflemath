@@ -15,7 +15,7 @@
 
 # Agent handoff: next Shufflemath task
 
-> **✅ F4.2-rank session (2026-12-16) — the *last-F4-wall* started: the sorted-key rank as a genuine permutation. RESUME HERE.**
+> **✅ F4.2-rank session (2026-12-16) — the *last-F4-wall*: sorted-key rank as a genuine permutation. Two rank lemmas now PROVEN. RESUME HERE.**
 > Next phase (G1–G4 + A3 are all done) is **F5**; its first sub-wall is Section 3 of
 > `docs/planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md` — turn
 > `GSR.idealShuffle`'s output into a real finite permutation and preserve the law.
@@ -23,21 +23,30 @@
 >   `<` on a product type** (probed both `Nat × Nat` and `Fin a × Fin n`; `Finset.filter`
 >   fails on both). **Fix: flatten the lex key to one `Nat`** — `keyNat i = (ℓ i).val * n +
 >   i.val` (its `<` *is* the lex order; `Nat.<` is decidable).
-> - **WIP saved** in `.pi-glla/f42rank_wip.lean`. **`keyNat_injective` PROVEN** this session
->   (verified by a build): two equal flattened keys are congruent mod `n` (`Nat.mul_modulus_add_modEq_iff`),
->   forcing equal indices (both `< n`, via `Nat.mod_eq_of_lt`).
->   **Next resumption point: `rank_orderPreserve`** (smaller key ⇒ smaller rank): `keyBelow i ⊊
->   keyBelow j` (it misses `i`, which lies in `keyBelow j`); strict-card via the disjoint-union
->   `keyBelow j = keyBelow i ∪ (keyBelow j \ keyBelow i)` + `Finset.card_union_of_disjoint` +
->   `(Sj \ Si).Nonempty` (contains `i`). Got the Finset version nearly right — the `let`-bound
->   `Si`/`Sj` need `dsimp` (NOT `dsimp only`) to unfold; `⟨hx, hxs⟩` for `Finset.mem_sdiff` is a plain
->   conjunction. **Note:** this session hit a flaky Lake `module`-parse state (the same
->   `module`+`public import` structure built at an earlier timestamp but not later) — verify
->   `rank_orderPreserve` with a fresh `lake build` of a `Shufflemath/` copy before relying on it.
->   Then `rankEquiv = Equiv.ofBijective (fun i => rank n a ℓ i) ⟨hinj, Finite.surjective_of_injective hinj⟩`,
->   then `stableBuckets a ℓ (List.range n) = orderByNewPosition (rank_ℓ.symm)` (define
->   `orderByNewPosition`), then `ν_{n,a}` = pushforward of `GSR.uniformLabels` through the
->   permutation map, then the deck-level law via `CommanderDeckGSR.pileRelabelEquiv`.
+> - **`keyNat_injective` PROVEN** (build-verified): equal flattened keys are congruent mod
+>   `n` (`Nat.mul_modulus_add_modEq_iff`) ⇒ equal indices (both `< n`, via `Nat.mod_eq_of_lt`).
+> - **`rank_orderPreserve` PROVEN this session** (build-verified from the WIP's exact bytes).
+>   Smaller key ⇒ smaller rank. The proof that builds is **NOT** the disjoint-union calc the
+>   previous note sketched — that hit two `simp only` pitfalls (it left `True ∧ P` unreduced,
+>   and the diff's `Nonempty` rejects a 3-field `⟨i, h, h2⟩`). The working version uses the
+>   proper-subset cardinality law `Finset.card_sdiff_of_subset` (`#(Sj\Si) = #Sj - #Si`, from
+>   `Sj\Si` nonempty via the witness `i ∈ Sj\Si`) and closes the truncated-subtraction step with
+>   `omega` (`a - b > 0 ⟺ b < a`). The full proof is in the WIP file.
+> - **The real fix this session** was the *module structure*, not the proof: the earlier WIP had
+>   the doc comment **before** the `module` keyword, which broke `lake build`. `module` +
+>   `public import`s must lead, with the doc comment after the `@[expose] public section`.
+>   Required imports: `Mathlib.Data.Fintype.Basic` (for `Fintype (Fin n)` = `Fin.fintype`),
+>   `Mathlib.Data.Finset.Basic`, `Mathlib.Data.Finset.Card`, `Mathlib.Data.Nat.ModEq`.
+> - **Next resumption point: `rankVal` is bijective.** `keyNat_injective` + `rank_orderPreserve`
+>   ⇒ the rank map `i ↦ rankVal n a ℓ i` is strictly increasing, hence an injection
+>   `Fin n → Fin n`. Prove it injective, then `rankEquiv : Equiv (Fin n) (Fin n)` via
+>   `Equiv.ofBijective` + `Finite.surjective_of_injective`; then
+>   `stableBuckets a ℓ (List.range n) = orderByNewPosition (rankEquiv.symm)` (define
+>   `orderByNewPosition`), then `ν_{n,a}` = pushforward of `GSR.uniformLabels`, then the
+>   deck-level law via `CommanderDeckGSR.pileRelabelEquiv`.
+> - **Re-verify the WIP** (it lives outside the build tree): `cp .pi-glla/f42rank_wip.lean
+>   Shufflemath/_F42rank_probe.lean && lake build Shufflemath._F42rank_probe`, then
+>   `rm Shufflemath/_F42rank_probe.lean`.
 > Also this session: corrected the **G1–G4 manifest header** (`e73b6f5`) — G1/G2/G3/G4 all complete.
 
 > **✅ B1-headline session (2026-12-16) — `swapPerm_membership_eq` + `swapPerm_apply` PROVEN in `LiteralSwapKernel.lean` (this session's commit).**
