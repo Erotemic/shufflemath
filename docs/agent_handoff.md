@@ -15,6 +15,28 @@
 
 # Agent handoff: next Shufflemath task
 
+> **✅ F4.2-rank session (2026-12-16) — the *last-F4-wall* started: the sorted-key rank as a genuine permutation. RESUME HERE.**
+> Next phase (G1–G4 + A3 are all done) is **F5**; its first sub-wall is Section 3 of
+> `docs/planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md` — turn
+> `GSR.idealShuffle`'s output into a real finite permutation and preserve the law.
+> - **Root blocker found + fix:** this Mathlib has **no `DecidableRel` for the lexicographic
+>   `<` on a product type** (probed both `Nat × Nat` and `Fin a × Fin n`; `Finset.filter`
+>   fails on both). **Fix: flatten the lex key to one `Nat`** — `keyNat i = (ℓ i).val * n +
+>   i.val` (its `<` *is* the lex order; `Nat.<` is decidable).
+> - **WIP saved** in `.pi-glla/f42rank_wip.lean` (`keyNat`/`keyBelow`/`rankVal` build clean).
+>   Two resumption points:
+>   1. `keyNat_injective` — reduce `keyNat i = keyNat j` mod n (`add_modulus_mul_modEq_iff`
+>      gives `keyNat i ≡ i.val [MOD n]`), then `i.val ≡ j.val [MOD n]` + `i.val,j.val < n`
+>      → `i.val = j.val` (via `x % n = x` for `x < n`).
+>   2. `rank_orderPreserve` — `keyBelow i ⊂ keyBelow j` (it misses `i`); prove the strict-card
+>      via the disjoint-union decomposition `keyBelow j = keyBelow i ∪ (keyBelow j \ keyBelow i)`
+>      + `Finset.card_union_of_disjoint` + `(Sj \ Si).Nonempty` (contains `i`).
+>   Then `rankEquiv = Equiv.ofBijective (fun i => rank n a ℓ i) ⟨hinj, Finite.surjective_of_injective hinj⟩`,
+>   then `stableBuckets a ℓ (List.range n) = orderByNewPosition (rank_ℓ.symm)` (define
+>   `orderByNewPosition`), then `ν_{n,a}` = pushforward of `GSR.uniformLabels` through the
+>   permutation map, then the deck-level law via `CommanderDeckGSR.pileRelabelEquiv`.
+> Also this session: corrected the **G1–G4 manifest header** (`e73b6f5`) — G1/G2/G3/G4 all complete.
+
 > **✅ B1-headline session (2026-12-16) — `swapPerm_membership_eq` + `swapPerm_apply` PROVEN in `LiteralSwapKernel.lean` (this session's commit).**
 > Closed the **B1 headline** that the 48th-session note named as the next unit:
 > **`swapPerm_membership_eq`** —
