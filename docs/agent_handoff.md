@@ -15,7 +15,7 @@
 
 # Agent handoff: next Shufflemath task
 
-> **✅ F4.2-rank session (2026-12-16) — the *last-F4-wall*: sorted-key rank as a genuine permutation. Two rank lemmas now PROVEN. RESUME HERE.**
+> **✅ F4.2-rank session (2026-12-16) — the *last-F4-wall*: sorted-key rank as a genuine permutation. `rank_orderPreserve`, `rankVal_injective`, `rankVal_lt_n`, and `rankEquiv : Equiv (Fin n) (Fin n)` now PROVEN. RESUME HERE.**
 > Next phase (G1–G4 + A3 are all done) is **F5**; its first sub-wall is Section 3 of
 > `docs/planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md` — turn
 > `GSR.idealShuffle`'s output into a real finite permutation and preserve the law.
@@ -37,13 +37,20 @@
 >   `public import`s must lead, with the doc comment after the `@[expose] public section`.
 >   Required imports: `Mathlib.Data.Fintype.Basic` (for `Fintype (Fin n)` = `Fin.fintype`),
 >   `Mathlib.Data.Finset.Basic`, `Mathlib.Data.Finset.Card`, `Mathlib.Data.Nat.ModEq`.
-> - **Next resumption point: `rankVal` is bijective.** `keyNat_injective` + `rank_orderPreserve`
->   ⇒ the rank map `i ↦ rankVal n a ℓ i` is strictly increasing, hence an injection
->   `Fin n → Fin n`. Prove it injective, then `rankEquiv : Equiv (Fin n) (Fin n)` via
->   `Equiv.ofBijective` + `Finite.surjective_of_injective`; then
->   `stableBuckets a ℓ (List.range n) = orderByNewPosition (rankEquiv.symm)` (define
->   `orderByNewPosition`), then `ν_{n,a}` = pushforward of `GSR.uniformLabels`, then the
->   deck-level law via `CommanderDeckGSR.pileRelabelEquiv`.
+> - **Next resumption point: tie `rankEquiv` to the spec.** This session proved
+>   `rankVal_injective` (the rank map is an injection) and `rankVal_lt_n` (its values
+>   are `< n`), so `rankEquiv : Equiv (Fin n) (Fin n)` is now built via
+>   `Equiv.ofBijective` + `Finite.surjective_of_injective` — an **explicit** finite
+>   permutation, exactly the spec's `orderByNewPosition` (as its `symm`). Imports that
+>   `rankEquiv` needs beyond the WIP's original set: `Mathlib.Data.Fintype.Card`
+>   (for `Fintype.card_fin`), `Mathlib.Data.Fintype.EquivFin` (for the
+>   `Finite.of_fintype` instance that `Finite.surjective_of_injective` requires), and
+>   `Mathlib.Basic.Finite.Defs`; the `def` must be `noncomputable` (Equiv.ofBijective
+>   is). Next: define `orderByNewPosition` and prove
+>   `stableBuckets a ℓ (List.range n) = orderByNewPosition (rankEquiv.symm)`, then
+>   `ν_{n,a}` = pushforward of `GSR.uniformLabels`, then the kernel theorem
+>   `orderExchangeKernel_eq_gsrLocal` (the F4.2 capstone) and the deck-level law via
+>   `CommanderDeckGSR.pileRelabelEquiv`.
 > - **Re-verify the WIP** (it lives outside the build tree): `cp .pi-glla/f42rank_wip.lean
 >   Shufflemath/_F42rank_probe.lean && lake build Shufflemath._F42rank_probe`, then
 >   `rm Shufflemath/_F42rank_probe.lean`.
