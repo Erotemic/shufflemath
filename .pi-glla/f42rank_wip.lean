@@ -7,6 +7,7 @@ public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Nat.ModEq
+public import Shufflemath.GSR
 
 @[expose] public section
 
@@ -171,6 +172,56 @@ noncomputable def rankEquiv (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a) : E
     have hr : rankVal n a ℓ i = rankVal n a ℓ j := by simpa [f, Fin.val, Fin.mk] using hval
     exact rankVal_injective n a hn ℓ hr
   Equiv.ofBijective f ⟨hfInj, Finite.surjective_of_injective hfInj⟩
+
+/- **`canonicalList`: the canonical deck of positions `[0, 1, …, n-1]`** as a
+   `List (Fin n)`, in increasing-position order (the minor key). -/
+def canonicalList (n : Nat) : List (Fin n) :=
+  (List.range n).filterMap fun k => (if hk : k < n then some (Fin.mk k hk) else none)
+
+/- **`orderByNewPosition`: the output list of a position permutation `σ`.**  The
+   card at output position `r` is the one that was at original position `σ r`
+   (Section 3: the GSR shuffle's output order).  For the canonical deck this is
+   exactly `[σ 0, σ 1, …, σ (n-1)]`. -/
+def orderByNewPosition (n : Nat) (σ : Equiv (Fin n) (Fin n)) : List (Fin n) :=
+  (canonicalList n).map σ
+
+/- **When `a = 1` every label is `0`, so the flattened key is just the position:**
+   `keyNat n 1 ℓ i = i.val`, hence the number of smaller keys is `i.val` and
+   `rankVal n 1 ℓ i = i.val`.  The rank is exactly the position (identity). -/
+theorem rankVal_a1 (n : Nat) (_hn : 0 < n) (ℓ : Fin n → Fin 1) (i : Fin n) :
+    rankVal n 1 ℓ i = i.val := by
+  have hall : ∀ c : Fin n, (ℓ c).val = 0 := fun c => by
+    have : (ℓ c).val < 1 := (ℓ c).isLt
+    omega
+  -- keyBelow n 1 ℓ i = { j : Fin n | j.val < i.val }
+  have hsub : keyBelow n 1 ℓ i =
+      Finset.filter (fun j : Fin n => j.val < i.val) (Finset.univ : Finset (Fin n)) := by
+    ext j
+    simp only [keyBelow, Finset.mem_filter, Finset.mem_univ, keyNat, hall, Nat.zero_mul, Nat.zero_add]
+  -- #{ j : Fin n | j.val < i.val } = i.val  (values 0 … i.val-1)
+  have hval_inj : Function.Injective (Fin.val : Fin n → ℕ) := fun x y h => Fin.ext h
+  simpa only [rankVal, hsub] using by
+    let S := (Finset.univ : Finset (Fin n)).filter (fun j : Fin n => j.val < i.val)
+    have himg : S.image Fin.val = Finset.range i.val := by
+      dsimp only [S]
+      apply Finset.ext
+      intro k
+      simp only [Finset.mem_image, Finset.mem_filter, Finset.mem_univ, Finset.mem_range]
+      constructor
+      · rintro ⟨j, hj, rfl⟩
+        exact hj.2
+      · rintro hk
+        exact ⟨Fin.mk k (Nat.lt_trans hk i.isLt), ⟨True.intro, hk⟩, rfl⟩
+    calc S.card = (S.image Fin.val).card := (Finset.card_image_of_injective S hval_inj).symm
+      _ = (Finset.range i.val).card := by rw [himg]
+      _ = i.val := Finset.card_range _
+
+/- **When `a = 1` the stable buckets are the identity:** every card has label `0`,
+   so the single bucket (label value `0`) contains the whole deck in original
+   order.  `stableBuckets 1 ℓ deck = deck`. -/
+theorem stableBuckets_a1_id (n : Nat) (ℓ : Fin n → Fin 1) (deck : List (Fin n)) :
+    GSR.stableBuckets 1 ℓ deck = deck := by
+  simp [GSR.stableBuckets, List.range_one, List.filter_true]
 
 end Shufflemath
 end

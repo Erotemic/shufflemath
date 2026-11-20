@@ -37,17 +37,24 @@
 >   `public import`s must lead, with the doc comment after the `@[expose] public section`.
 >   Required imports: `Mathlib.Data.Fintype.Basic` (for `Fintype (Fin n)` = `Fin.fintype`),
 >   `Mathlib.Data.Finset.Basic`, `Mathlib.Data.Finset.Card`, `Mathlib.Data.Nat.ModEq`.
-> - **Next resumption point: tie `rankEquiv` to the spec.** This session proved
->   `rankVal_injective` (the rank map is an injection) and `rankVal_lt_n` (its values
->   are `< n`), so `rankEquiv : Equiv (Fin n) (Fin n)` is now built via
->   `Equiv.ofBijective` + `Finite.surjective_of_injective` — an **explicit** finite
->   permutation, exactly the spec's `orderByNewPosition` (as its `symm`). Imports that
->   `rankEquiv` needs beyond the WIP's original set: `Mathlib.Data.Fintype.Card`
->   (for `Fintype.card_fin`), `Mathlib.Data.Fintype.EquivFin` (for the
->   `Finite.of_fintype` instance that `Finite.surjective_of_injective` requires), and
->   `Mathlib.Basic.Finite.Defs`; the `def` must be `noncomputable` (Equiv.ofBijective
->   is). Next: define `orderByNewPosition` and prove
->   `stableBuckets a ℓ (List.range n) = orderByNewPosition (rankEquiv.symm)`, then
+> - **Next resumption point: the general `stableBuckets`–`orderByNewPosition` bridge.**
+>   This session added the Section-3 bridge vocabulary to the WIP and proved the
+>   **`a = 1` (identity) boundary case**:
+>   - `canonicalList n : List (Fin n)` = `[0, …, n-1]` (the positions, in order);
+>   - `orderByNewPosition n σ : List (Fin n)` = `(canonicalList n).map σ` (output
+>     position `r` = original position `σ r`);
+>   - `rankVal_a1`: when `a = 1` (all labels `0`), `keyNat i = i.val`, so
+>     `#keyBelow i = #{j : j.val < i.val} = i.val` and `rankVal n 1 ℓ i = i.val`
+>     (the rank is the position ⇒ `rankEquiv` is the identity). The proof counts via
+>     `Finset.card_image_of_injective` (`Fin.val` injective) + `himg : S.image Fin.val =
+>     Finset.range i.val` (`Finset.mem_range`) + `Finset.card_range`;
+>   - `stableBuckets_a1_id`: `GSR.stableBuckets 1 ℓ deck = deck` (single bucket =
+>     whole deck; one-line `simp [GSR.stableBuckets, List.range_one, List.filter_true]` —
+>     full simp derives `(ℓ c).val = 0` from `ℓ c : Fin 1`).
+>   **Next:** the general target `stableBuckets_eq_orderByNewPosition`:
+>   `GSR.stableBuckets a ℓ (canonicalList n) = orderByNewPosition n (rankEquiv n a hn ℓ).symm`.
+>   Both sides are `List (Fin n)`; the statement is that the `r`-th element of the
+>   stable sort by `(ℓ i.val, i)` is the card with rank `r` = `(rankEquiv.symm) r`. Then
 >   `ν_{n,a}` = pushforward of `GSR.uniformLabels`, then the kernel theorem
 >   `orderExchangeKernel_eq_gsrLocal` (the F4.2 capstone) and the deck-level law via
 >   `CommanderDeckGSR.pileRelabelEquiv`.
