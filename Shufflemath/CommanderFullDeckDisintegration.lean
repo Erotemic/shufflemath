@@ -153,6 +153,61 @@ theorem two_physical_perfect_exchanges_uniform_of_counts
     (Dist.pointMass commanderSegregatedState) commanderStationary 2]
   exact commander_tv_after_two_semantic
 
+/-- The exact full-deck *three*-exchange physical-perfect identity, conditional only
+on the same per-shuffle premises as the two-exchange version (the two-layer lift, the
+factorization of the lift as the projection's fiber law, and the membership-exchange law).
+It is the two-exchange `…_of_counts` with the step count `2` replaced by `3`: the same
+one-step intertwining `hsteps` drives `FiberLifting.run_tv_eq_macro` for any `n`, and the
+macro-chain TV is the exact three-exchange rational certificate.
+-/ 
+theorem three_physical_perfect_exchanges_uniform_of_counts
+    (hcounts : HasCommanderFiberCounts)
+    {γ : Type*}
+    (membership : Deck → γ)
+    (membershipLift : FiniteKernel CommanderState γ)
+    (localLift : FiniteKernel γ Deck)
+    (hLocalRecovers : FiniteKernel.comp localLift
+      (FiniteKernel.deterministic membership) = FiniteKernel.identity)
+    (hfactor : FiniteKernel.comp membershipLift localLift =
+      FiberDisintegration.fiberLaw project project_surjective)
+    (rawExchange : FiniteKernel Deck Deck)
+    (hMembershipExchange :
+      FiniteKernel.comp
+        (FiniteKernel.comp
+          (FiniteKernel.comp membershipLift localLift) rawExchange)
+        (FiniteKernel.deterministic membership) =
+      FiniteKernel.comp commanderExchange25 membershipLift) :
+    Dist.tv
+      (FiniteKernel.run
+        (PhysicalExchangeReduction.exchangeThenLocalReset membership
+          localLift rawExchange) 3
+        (FiniteKernel.apply (Dist.pointMass commanderSegregatedState)
+          (FiberDisintegration.fiberLaw project project_surjective)))
+      (GSR.uniformDist Deck) =
+      (172379525755689183991816396516567920780192827919620440221147749 /
+        6691837923759692633601708022649918108038775216019298375918637677488 : Rat) := by
+  have _hMembershipPreserved :=
+    PhysicalExchangeReduction.localReset_preserves_membership
+      membership localLift hLocalRecovers
+  rw [← commander_uniform_disintegration hcounts]
+  have hsteps :
+      FiniteKernel.comp (FiberDisintegration.fiberLaw project project_surjective)
+        (PhysicalExchangeReduction.exchangeThenLocalReset membership
+          localLift rawExchange) =
+      FiniteKernel.comp commanderExchange25
+        (FiberDisintegration.fiberLaw project project_surjective) := by
+    rw [← hfactor]
+    exact PhysicalExchangeReduction.intertwining_of_membership_exchange
+      membershipLift localLift membership rawExchange commanderExchange25
+      hMembershipExchange
+  rw [FiberLifting.run_tv_eq_macro
+    (FiberDisintegration.fiberLaw project project_surjective)
+    (FiniteKernel.deterministic project) commanderExchange25
+    (PhysicalExchangeReduction.exchangeThenLocalReset membership localLift
+      rawExchange) normalized_fiber_recovers hsteps
+    (Dist.pointMass commanderSegregatedState) commanderStationary 3]
+  exact commander_tv_after_three_semantic
+
 /-!
 ## F1d: the counting premise is now proved
 
@@ -254,6 +309,38 @@ theorem two_physical_perfect_exchanges_uniform_unconditional :
       (12255318415559330995522631403472464258192877 /
         4933350368865509640837610315994582805439728012 : Rat) :=
   two_physical_perfect_exchanges_uniform_of_counts commander_fiber_counts
+    (membership := CommanderMembershipKernels.membership)
+    (membershipLift := CommanderMembershipKernels.membershipLift)
+    (localLift := CommanderMembershipKernels.localLift)
+    (hLocalRecovers := CommanderMembershipKernels.localLift_preserves_membership)
+    (hfactor := CommanderMembershipKernels.membershipLift_localLift_eq_fiberLaw)
+    (rawExchange := CommanderPhysicalExchange.rawExchange)
+    (hMembershipExchange := hMembershipExchange_kernel)
+
+/-!
+## F3 item 3 (three-exchange): the physical-perfect three-exchange TV law, discharged.
+
+The direct analog of the two-exchange `…_unconditional` above, with the step count
+`2` replaced by `3`. The same concrete A3 kernel law (`hMembershipExchange_kernel`) and
+the two-layer lift discharge the per-shuffle premises, so no abstract exchange hypothesis
+remains: three real perfect-local exchanges drive the deck to the exact macro-state TV
+against the uniform 99! permutation law. This is the 99-card regression benchmark for the
+generic G2.13 headline `FiniteDeck/BLDisintegration.two_physical_perfect_exchanges_uniform_deck`
+(`n = 3`).
+-/ 
+theorem three_physical_perfect_exchanges_uniform_unconditional :
+    Dist.tv
+      (FiniteKernel.run
+        (PhysicalExchangeReduction.exchangeThenLocalReset
+          CommanderMembershipKernels.membership
+          CommanderMembershipKernels.localLift
+          CommanderPhysicalExchange.rawExchange) 3
+        (FiniteKernel.apply (Dist.pointMass commanderSegregatedState)
+          (FiberDisintegration.fiberLaw project project_surjective)))
+      (GSR.uniformDist Deck) =
+      (172379525755689183991816396516567920780192827919620440221147749 /
+        6691837923759692633601708022649918108038775216019298375918637677488 : Rat) :=
+  three_physical_perfect_exchanges_uniform_of_counts commander_fiber_counts
     (membership := CommanderMembershipKernels.membership)
     (membershipLift := CommanderMembershipKernels.membershipLift)
     (localLift := CommanderMembershipKernels.localLift)

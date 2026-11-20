@@ -15,7 +15,7 @@
 
 # Agent handoff: next Shufflemath task
 
-> **⚠ 93rd session (post-compaction resume, 2026-12-16) — G2 reconciled to 13/13 generic in the manifest; next = 99-card three-physical-perfect (G2.13 / G3.6).**
+> **⚠ 93rd session (post-compaction resume, 2026-12-16) — G2 reconciled to 13/13 generic; 99-card three-physical-perfect (G2.13 / G3.6) LANDED.**
 > Resumed from compaction on active goal `20261117210924-4alosn`. Re-read the artifacts from
 > disk (not memory) and reconciled the G1–G4 manifest, which was **stale**: it still marked
 > G2.9/13 (the physical-perfect-exchange **deck-uniform-target** TV) as *REMAINING / "surjectivity-
@@ -31,17 +31,21 @@
 > *oracle* `three_oracle_exchanges_uniform_unconditional` exist. Building blocks are present:
 > `commander_tv_after_three_semantic` (`BernoulliLaplaceSemantic:129`) + the A3
 > `hMembershipExchange_kernel`.
-> **Next lemma (this session):** add `three_physical_perfect_exchanges_uniform_unconditional` to
+> **Landed this session (93):** `three_physical_perfect_exchanges_uniform_of_counts` +
+> `three_physical_perfect_exchanges_uniform_unconditional` added to
 > `Shufflemath/CommanderFullDeckDisintegration` — the 99-card *three*-physical-perfect-exchange
-> exact-rational headline, a direct parallel of the existing `two_physical_perfect_exchanges_uniform_unconditional`
-> (n=2 → n=3: `run … 3`, the 3-step `run_tv_eq_macro`, `commander_tv_after_three_semantic`). Closes
-> G2.13 (99-card) + G3.6 and satisfies objective item 8 (99-card regression benchmark). After it,
-> the deferred F4.2 sub-wall (deck-level GSR `gsrProductKernel_eq_distProductFinsupp` / Dobrushin
-> contraction) is the next deep item.
+> exact-rational headline (rational `172379525755689183991816396516567920780192827919620440221147749 /
+> 6691837923759692633601708022649918108038775216019298375918637677488`), a direct parallel of the
+> two-exchange version (n=2 → n=3: `run … 3`, the 3-step `run_tv_eq_macro`, `commander_tv_after_
+> three_semantic`; the same A3 `hMembershipExchange_kernel` discharges the per-shuffle premise —
+> no new exchange hypothesis). Closes G2.13 (99-card) + G3.6 + objective item 8 (99-card
+> regression benchmark). Full tranche green (3234 jobs, 37 tests, exit 0). **Next deep item:** the
+> deferred F4.2 sub-wall (deck-level GSR `gsrProductKernel_eq_distProductFinsupp` / Dobrushin
+> contraction).
 > **Resume checklist (this session):** (1) banner + handoff read; (2) `git log`/`git status` —
 > working tree clean (only `.pi-glla/` infra untracked, no repo WIP); (3) tree unchanged since the
-> green session-92 build (`de7638a`) — re-verified with the targeted build after the next code
-> commit; (4) resuming at the three-physical-perfect headline.
+> green session-92 build (`de7638a`) — **re-verified: full tranche green (3234 jobs, 37 tests,
+> exit 0) after the code commit**; (4) landed the three-physical-perfect headline.
 
 > **⚠ 79th+ session — VERIFICATION-CONTRACT AUDIT COMPLETE (all 8 items satisfied); final-state docs.**
 > The user directed an 8-item verification audit of the goal. All eight are now satisfied, in green commits:
