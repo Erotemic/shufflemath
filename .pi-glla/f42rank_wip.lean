@@ -223,5 +223,49 @@ theorem stableBuckets_a1_id (n : Nat) (ℓ : Fin n → Fin 1) (deck : List (Fin 
     GSR.stableBuckets 1 ℓ deck = deck := by
   simp [GSR.stableBuckets, List.range_one, List.filter_true]
 
+
+/- **Rank is order-reflecting:** `rankVal i < rankVal j` ⇒ `keyNat i < keyNat j`
+   (the converse of `rank_orderPreserve`).  Distinct keys give distinct ranks, so the
+   two order relations coincide: `rankVal` is an order-embedding. -/
+theorem rank_orderReflect (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a) (i j : Fin n)
+    (hrank : rankVal n a ℓ i < rankVal n a ℓ j) :
+    keyNat n a ℓ i < keyNat n a ℓ j := by
+  by_contra hno
+  by_cases heq : keyNat n a ℓ i = keyNat n a ℓ j
+  · -- equal keys ⇒ i = j (keyNat injective) ⇒ equal ranks, contradicting hrank
+    have hij : i = j := (keyNat_injective n a hn ℓ) heq
+    subst hij
+    omega
+  · -- keys differ and not (key i < key j), so key j < key i; then rank j < rank i,
+      -- contradicting hrank (rank i < rank j)
+    have hjlt : keyNat n a ℓ j < keyNat n a ℓ i := by omega
+    have hrankj : rankVal n a ℓ j < rankVal n a ℓ i := rank_orderPreserve n a ℓ j i hjlt
+    omega
+
+/- **The rank of the card at sorted position `r` is `r` itself.**  `rankEquiv.symm r`
+   is the card whose rank is `r`, so its `rankVal` is `r.val`. -/
+theorem rankVal_rankEquivSymm (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a) (r : Fin n) :
+    rankVal n a ℓ ((rankEquiv n a hn ℓ).symm r) = r.val := by
+  have hval (x : Fin n) : (rankEquiv n a hn ℓ x).val = rankVal n a ℓ x := by
+    dsimp only [rankEquiv, Equiv.ofBijective]
+    exact rfl
+  have hE : rankEquiv n a hn ℓ ((rankEquiv n a hn ℓ).symm r) = r := (rankEquiv n a hn ℓ).apply_symm_apply r
+  rw [← hval ((rankEquiv n a hn ℓ).symm r)]
+  simp only [hE]
+
+/- **The rank-ordered key sequence is monotone:** earlier sorted positions have smaller
+   keys (rank r < rank s ⇒ key r < key s).  This is the sortedness of the *target* side
+   (`orderByNewPosition (rankEquiv.symm)`). -/
+theorem rankOrderKeys_monotone (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a) (r s : Fin n)
+    (h : r < s) :
+    keyNat n a ℓ ((rankEquiv n a hn ℓ).symm r) < keyNat n a ℓ ((rankEquiv n a hn ℓ).symm s) := by
+  have hr : rankVal n a ℓ ((rankEquiv n a hn ℓ).symm r) = r.val := rankVal_rankEquivSymm n a hn ℓ r
+  have hs : rankVal n a ℓ ((rankEquiv n a hn ℓ).symm s) = s.val := rankVal_rankEquivSymm n a hn ℓ s
+  have hrank : rankVal n a ℓ ((rankEquiv n a hn ℓ).symm r) <
+      rankVal n a ℓ ((rankEquiv n a hn ℓ).symm s) := by
+    rw [hr, hs]
+    exact Fin.lt_def.mp h
+  exact rank_orderReflect n a hn ℓ _ _ hrank
+
 end Shufflemath
 end

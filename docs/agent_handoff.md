@@ -51,10 +51,30 @@
 >   - `stableBuckets_a1_id`: `GSR.stableBuckets 1 ℓ deck = deck` (single bucket =
 >     whole deck; one-line `simp [GSR.stableBuckets, List.range_one, List.filter_true]` —
 >     full simp derives `(ℓ c).val = 0` from `ℓ c : Fin 1`).
->   **Next:** the general target `stableBuckets_eq_orderByNewPosition`:
->   `GSR.stableBuckets a ℓ (canonicalList n) = orderByNewPosition n (rankEquiv n a hn ℓ).symm`.
->   Both sides are `List (Fin n)`; the statement is that the `r`-th element of the
->   stable sort by `(ℓ i.val, i)` is the card with rank `r` = `(rankEquiv.symm) r`. Then
+>   **Also this session** (rank-embedding + target-side sortedness; all in the WIP,
+>   building cleanly, no warnings):
+>   - `rank_orderReflect : rankVal i < rankVal j → keyNat i < keyNat j` — the CONVERSE
+>     of `rank_orderPreserve`, so `rankVal` is an order-embedding. Proof: `by_contra`
+>     + `by_cases` on `keyNat i = keyNat j` (injective ⇒ `i = j` ⇒ rank-irreflexivity)
+>     vs `keyNat j < keyNat i` (⇒ `rank_orderPreserve` ⇒ rank contradiction); `omega`
+>     closes each branch. Note `keyNat_injective n a hn ℓ : Function.Injective (keyNat
+>     n a ℓ)` takes the `hn` explicitly.
+>   - `rankVal_rankEquivSymm : rankVal (rankEquiv.symm r) = r.val` — the card at sorted
+>     position `r` has rank `r`. Key tool: `(rankEquiv x).val` is **definitionally**
+>     `rankVal x` — `dsimp only [rankEquiv, Equiv.ofBijective]; exact rfl` (no
+>     `coe_ofBijective` import needed; the `Equiv` structure's `toFun` is `f` by def).
+>   - `rankOrderKeys_monotone : keyNat (rankEquiv.symm r) < keyNat (rankEquiv.symm s)
+>     ↔ (r < s)` (forward direction shown) — the TARGET side `orderByNewPosition
+>     (rankEquiv.symm)` is key-sorted, via `rank_orderReflect` + `Fin.lt_def`.
+>   **Next:** `stableBuckets_eq_orderByNewPosition : GSR.stableBuckets a ℓ
+>   (canonicalList n) = orderByNewPosition n (rankEquiv n a hn ℓ).symm`. The target
+>   side's sortedness is done (`rankOrderKeys_monotone`); remaining: (i) show the
+>   SOURCE side `(stableBuckets a ℓ (canonicalList n)).map keyNat` is `SortedLE` (within
+>   a label block keys increase as `c` grows; across blocks they jump, since block `i`
+>   holds keys `⊆ [i·n, i·n+n-1]` and block `i+1` starts above it — a
+>   `List.append_sortedLT`-style proof over the `flatMap`/`filter`), and (ii) both sides
+>   are perms of `canonicalList n`'s key-multiset, so `List.Perm.eq_of_sortedLE` on the
+>   two key-sequences + `keyNat` injectivity recovers the list equality. Then
 >   `ν_{n,a}` = pushforward of `GSR.uniformLabels`, then the kernel theorem
 >   `orderExchangeKernel_eq_gsrLocal` (the F4.2 capstone) and the deck-level law via
 >   `CommanderDeckGSR.pileRelabelEquiv`.
