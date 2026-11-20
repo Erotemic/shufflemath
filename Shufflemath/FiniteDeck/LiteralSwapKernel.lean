@@ -120,6 +120,7 @@ theorem swapFn_unselectedRight (N m : Nat) (hm : m ≤ N) (L : Finset (Fin m)) (
 -- WIP (next session): `leftPosition_self` / `rightPosition_self` pile-position
 -- self-lemmas, then `swapFn_involution` (the four-subcase involution via the
 -- region lemmas above), `swapFn_bijective`, the `Equiv.Perm` packaging, and
--- `swapPerm_involution`.  Full WIP saved to /tmp/lsw_k_wip.lean.
+-- `swapPerm_involution`.  A draft with the two helpers fixed is saved to
+-- `.pi-glla/lswk_involution_wip.lean`.
 end FiniteDeck
 end Shufflemath
