@@ -25,4 +25,5 @@ public import Shufflemath.PhysicalRefinement
 public import Shufflemath.FiniteDeck.WithinPileOrbit
 public import Shufflemath.FiniteDeck.DobrushinDecay
 public import Shufflemath.FiniteDeck.DobrushinDecay99
+public import Shufflemath.FiniteDeck.Gate6FiniteGSR
 public import Shufflemath.CommanderPerDeckKernel
