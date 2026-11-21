@@ -2,10 +2,18 @@ module
 
 public import Mathlib.Tactic
 public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Data.Fin.Basic
+public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Nat.Basic
 
 @[expose] public section
 
 namespace Shufflemath
+
+open Finset
 
 /-!
 ## Gate 6 — the concrete 99-card finite-GSR protocol: the exact target bound
@@ -96,6 +104,94 @@ theorem δ3_eq_7203_over_8388608 : δ3 = 7203 / 8388608 := by
     telescope. -/
 theorem gate6_headline_lt_thousandth : q3 + δ3 < (1 : Rat) / 1000 := by
   norm_num [q3, δ3, δ1, choose50_2, choose49_2]
+
+/-- §4, sub-lemma: the `n-2` complement count — `# {k : Fin n // k ≠ i ∧ k ≠ j} = n-2`
+    for `i ≠ j`, `n ≥ 2`.  (The subtype is written inline: a `def` alias does not
+    synthesize the `Fintype.Subtype` instance during typeclass search.) -/
+theorem cardComplement2 (n : Nat) (i j : Fin n) (hne : i ≠ j) (hn : 1 < n) :
+    Fintype.card {k : Fin n // k ≠ i ∧ k ≠ j} = n - 2 := by
+  have hsub : ({i, j} : Finset (Fin n)) ⊆ (Finset.univ : Finset (Fin n)) := by simp
+  have hcard : ((Finset.univ : Finset (Fin n)) \ {i, j}).card = n - 2 := by
+    rw [Finset.card_sdiff_of_subset hsub]
+    simp only [Finset.card_univ, Fintype.card_fin]
+    rw [show ({i, j} : Finset (Fin n)).card = 2 from Finset.card_pair hne]
+  have hfs : (Finset.univ : Finset (Fin n)).filter (fun k => k ≠ i ∧ k ≠ j) =
+      (Finset.univ : Finset (Fin n)) \ {i, j} := by
+    ext k
+    simp only [Finset.mem_filter, Finset.mem_univ, Finset.mem_sdiff,
+      Finset.mem_insert, Finset.mem_singleton, not_and_or]
+    tauto
+  calc Fintype.card {k : Fin n // k ≠ i ∧ k ≠ j}
+      = ((Finset.univ : Finset (Fin n)).filter (fun k => k ≠ i ∧ k ≠ j)).card := by
+        simpa [Fintype.card_subtype] using rfl
+      _ = ((Finset.univ : Finset (Fin n)) \ {i, j}).card := by simpa [hfs]
+      _ = n - 2 := hcard
+
+/-- §4: map `f` (with `f i = f j`) to the shared value `f i` and its restriction to
+    the `n-2` positions other than `i, j`. -/
+noncomputable def pairEqToFun (n a : Nat) (i j : Fin n) :
+    {f : Fin n → Fin a // f i = f j} → Fin a × ({k : Fin n // k ≠ i ∧ k ≠ j} → Fin a) :=
+  fun f => ⟨f.1 i, fun x => f.1 x.1⟩
+
+/-- §4: the inverse — rebuild `f` from the shared value `p.1` and the restriction `p.2`. -/
+noncomputable def pairEqInvFun (n a : Nat) (i j : Fin n) (hne : i ≠ j) :
+    (Fin a × ({k : Fin n // k ≠ i ∧ k ≠ j} → Fin a)) → {f : Fin n → Fin a // f i = f j} :=
+  fun p =>
+    ⟨fun k => if hki : k = i then p.1 else if hkj : k = j then p.1
+             else p.2 ⟨k, hki, hkj⟩,
+     by
+       have hi : ((fun k => if hki : k = i then p.1 else if hkj : k = j then p.1
+                            else p.2 ⟨k, hki, hkj⟩) i) = p.1 := by simp
+       have hj : ((fun k => if hki : k = i then p.1 else if hkj : k = j then p.1
+                            else p.2 ⟨k, hki, hkj⟩) j) = p.1 := by simp [hne]
+       simpa using hi.trans hj.symm⟩
+
+/-- §4: a function `f : Fin n → Fin a` with `f i = f j` (i ≠ j) is in bijection with
+    the shared value `f i` × its restriction to the `n-2` other positions. -/
+noncomputable def pairEqEquiv (n a : Nat) (i j : Fin n) (hne : i ≠ j) :
+    {f : Fin n → Fin a // f i = f j} ≃ Fin a × ({k : Fin n // k ≠ i ∧ k ≠ j} → Fin a) :=
+  ⟨pairEqToFun n a i j, pairEqInvFun n a i j hne,
+    fun f => by
+      apply Subtype.ext
+      funext k
+      dsimp only [pairEqToFun, pairEqInvFun]
+      by_cases hki : k = i
+      · simp [hki]
+      · by_cases hkj : k = j
+        · simpa [hkj] using f.2
+        · simp [hki, hkj],
+    fun p => by
+      cases p with
+      | mk a g =>
+        apply Prod.ext
+        · simp [pairEqToFun, pairEqInvFun]
+        · funext x
+          dsimp only [pairEqToFun, pairEqInvFun]
+          by_cases hxi : x.1 = i
+          · exfalso; apply x.2.1; exact hxi
+          · by_cases hxj : x.1 = j
+            · exfalso; apply x.2.2; exact hxj
+            · simp [hxi, hxj]⟩
+
+/-- **Gate 6 §4, sub-lemma 1b — proven.**  `# {f : Fin n → Fin a // f i = f j} = a^(n-1)`
+    for `i ≠ j`, `n ≥ 2` (combinatorially `a * a^(n-2) = a^(n-1)`: pick the shared
+    value for `(i, j)` in `a` ways, then the remaining `n-2` positions freely). -/
+theorem cardPairEqSet (n a : Nat) (i j : Fin n) (hne : i ≠ j) (hn : 1 < n) :
+    Fintype.card {f : Fin n → Fin a // f i = f j} = a ^ (n - 1) := by
+  have hc2 : Fintype.card {k : Fin n // k ≠ i ∧ k ≠ j} = n - 2 := cardComplement2 n i j hne hn
+  have h : Fintype.card {f : Fin n → Fin a // f i = f j} = a * (a ^ (n - 2)) := by
+    rw [Fintype.card_congr (pairEqEquiv n a i j hne)]
+    rw [Fintype.card_prod]
+    rw [Fintype.card_fin]
+    rw [Fintype.card_fun]
+    rw [Fintype.card_fin]
+    rw [hc2]
+  have hfin : a * (a ^ (n - 2)) = a ^ (n - 1) := by
+    have hexp : n - 1 = (n - 2) + 1 := by omega
+    rw [hexp, Nat.pow_succ]
+    apply Nat.mul_comm
+  rw [h]
+  exact hfin
 
 end Shufflemath
 end
