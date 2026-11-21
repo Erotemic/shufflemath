@@ -14,7 +14,7 @@ namespace Shufflemath
 /-!
 ## Gate 6 batch 2 — the tie-broken GSR rank: `tieRank` and its exact uniformity
 
-This module lands batch-2 items **(a)**, **(b)** and **(d)** of the Gate 6 plan
+This module lands batch-2 items **(a)**, **(b)**, **(c)** and **(d)** of the Gate 6 plan
 (`docs/agent_handoff.md`, 2026-11-21 note; `docs/planning/proof-strategies/
 2026-11-21-gate6-nonobvious-proof-hints.md` §2):
 
@@ -23,6 +23,10 @@ This module lands batch-2 items **(a)**, **(b)** and **(d)** of the Gate 6 plan
   back by `σ`.
 * **(b)** `tieRank_precompEquiv` — equivariance under the simultaneous
   precomposition `(ℓ, σ) ↦ (ℓ ∘ θ, θ.trans σ)`.
+* **(c)** `keyNat_lex_inj` + `rankVal_reindex_eq` + **Key fact B**
+  `tieRank_eq_rankEquiv_inj` — for *injective* `ℓ` the tie-break never
+  fires, so `tieRank n a hn ℓ σ = rankEquiv n a hn ℓ` for every `σ`
+  (section 3 below);
 * **(d)** the generic finite-group fact `uniformDist_of_rightInvariant`
   (a right-translation-invariant law on `Equiv.Perm α` is the uniform one),
   plus `tieRankLaw` (joint-uniform law on
@@ -30,12 +34,10 @@ This module lands batch-2 items **(a)**, **(b)** and **(d)** of the Gate 6 plan
   `tieRankLaw_rightInvariant` (its pushforward invariance via the
   measure-preserving `precompMapEquiv`).
 
-**Key fact A** (Gate 6 §2.2) is the corollary `tieRankLaw_uniform`:
+**Key fact A** (Gate 6 §2.2) is the corollary `tieRankLaw_uniform`, and **Key fact B** (section 3) is `tieRank_eq_rankEquiv_inj`.
 `tieRankLaw n a ha hn = GSR.uniformDist (Equiv.Perm (Fin n))` for every
 `a ≥ 1` — the tie-broken rank law is *exactly uniform* on the permutation
-group, with no counting of injective arrays and no conditioning.  The next
-batch-2 items (Key fact B `tieRank ℓ σ = rankEquiv ℓ` for injective `ℓ`, the
-generic same-source coupling inequality, and
+group, with no counting of injective arrays and no conditioning.  The next batch-2 items (the generic same-source coupling inequality, and
 `TV(ν_{n,a}, U_{S_n}) ≤ Pr(ℓ ∈ badLabels) ≤ C(n,2)/a`) build on these.
 
 **Fintype note:** `Fintype (ΩTieRank n a)` for
@@ -313,5 +315,118 @@ theorem tieRankLaw_uniform (n a : Nat) (ha : 0 < a) (hn : 0 < n) :
   haveI : Nonempty (Equiv.Perm (Fin n)) := tieRankPermNonempty n
   apply uniformDist_of_rightInvariant n
   exact fun θ => tieRankLaw_rightInvariant n a ha hn θ
+
+
+/-!## 3. Key fact B — `tieRank ℓ σ = rankEquiv ℓ` for injective `ℓ` (batch 2 item (c))
+
+For an *injective* labeling `ℓ : Fin n → Fin a` the tie-breaker in the key
+`(ℓ i, i)` never fires, so the tie-broken rank `tieRank ℓ σ` (sort by
+`(ℓ i, σ i)` via `rankEquiv` on the `σ.symm`-reindexed array, conjugated
+back) agrees with the plain rank `rankEquiv ℓ`, independent of `σ`.
+-/
+
+/-- Basic unfolding: `rankEquiv` applies as the `Fin`-wrapped `rankVal`. -/
+theorem rankEquiv_apply (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a) (i : Fin n) :
+    rankEquiv n a hn ℓ i = Fin.mk (rankVal n a ℓ i) (rankVal_lt_n n a hn ℓ i) := by
+  dsimp only [rankEquiv, Equiv.ofBijective]
+  rfl
+
+/-- The lex key order collapses to the pure label order for injective `ℓ`:
+    the tie-break disjunct of `keyNat_lex` is impossible (equal labels force
+    equal positions, which kills `k < i`). -/
+theorem keyNat_lex_inj (n a : Nat) (ℓ : Fin n → Fin a) (hInj : Function.Injective ℓ)
+    (k i : Fin n) :
+    keyNat n a ℓ k < keyNat n a ℓ i ↔ (ℓ k).val < (ℓ i).val := by
+  rw [keyNat_lex]
+  constructor
+  · intro h
+    cases h
+    case inl hlt => exact hlt
+    case inr h =>
+      -- (ℓ k).val = (ℓ i).val ∧ k.val < i.val — impossible for injective ℓ.
+      have heq : ℓ k = ℓ i := Fin.ext h.1
+      have hkne : k ≠ i := by
+        intro hki
+        subst_vars
+        exact Nat.lt_irrefl _ h.2
+      exact absurd heq (fun hli => hkne (hInj hli))
+  · intro hlt
+    exact Or.inl hlt
+
+/-- The rank of position `σ i` in the reindexed array `ℓ ∘ σ⁻¹` equals the
+    rank of position `i` in the original array, for injective `ℓ`. -/
+theorem rankVal_reindex_eq (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a)
+    (hInj : Function.Injective ℓ) (σ : Equiv.Perm (Fin n)) (i : Fin n) :
+    rankVal n a (fun j => ℓ (σ.symm j)) (σ i) = rankVal n a ℓ i := by
+  unfold rankVal keyBelow
+  -- Injectivity of the reindexed array.
+  have hσsymmInj : Function.Injective (fun x => (σ.symm : Fin n → Fin n) x) := by
+    intro j k h
+    have h' := congrArg (σ.1 : Fin n → Fin n) h
+    simpa [Equiv.apply_symm_apply] using h'
+  have hInj' : Function.Injective (fun j => ℓ (σ.symm j)) :=
+    Function.Injective.comp hInj hσsymmInj
+  -- Both key comparisons collapse to the label comparison.
+  have hL : ∀ j, keyNat n a (fun j => ℓ (σ.symm j)) j <
+      keyNat n a (fun j => ℓ (σ.symm j)) (σ i) ↔ (ℓ (σ.symm j)).val < (ℓ i).val := by
+    intro j
+    simpa [Equiv.symm_apply_apply] using
+      keyNat_lex_inj n a (fun j => ℓ (σ.symm j)) hInj' j (σ i)
+  have hR : ∀ k, keyNat n a ℓ k < keyNat n a ℓ i ↔ (ℓ k).val < (ℓ i).val := fun k =>
+    keyNat_lex_inj n a ℓ hInj k i
+  -- The reindexed filter is the σ-image of the original (label) filter.
+  let S := (Finset.univ : Finset (Fin n)).filter (fun k => (ℓ k).val < (ℓ i).val)
+  have hImg : (Finset.univ : Finset (Fin n)).filter (fun j => (ℓ (σ.symm j)).val < (ℓ i).val) =
+      S.image σ := by
+    ext j
+    constructor
+    · intro hj
+      have hj' : (ℓ (σ.symm j)).val < (ℓ i).val := by
+        simpa [Finset.mem_filter, Finset.mem_univ] using hj
+      rw [Finset.mem_image]
+      exact ⟨σ.symm j,
+        by dsimp only [S]; simpa [Finset.mem_filter, Finset.mem_univ] using hj',
+        Equiv.apply_symm_apply σ j⟩
+    · intro hj
+      rw [Finset.mem_image] at hj
+      obtain ⟨k, hkS, hkj⟩ := hj
+      have hkS' : (ℓ k).val < (ℓ i).val := by
+        dsimp only [S] at hkS
+        simpa [Finset.mem_filter, Finset.mem_univ] using hkS
+      have hs : σ.symm j = k := by
+        rw [← hkj]
+        exact Equiv.symm_apply_apply σ k
+      simpa [hs] using hkS'
+  -- The LHS filter is exactly the reindexed-label filter (by hL).
+  have hLFilter : (Finset.univ : Finset (Fin n)).filter
+      (fun j => keyNat n a (fun j => ℓ (σ.symm j)) j < keyNat n a (fun j => ℓ (σ.symm j)) (σ i)) =
+      (Finset.univ : Finset (Fin n)).filter (fun j => (ℓ (σ.symm j)).val < (ℓ i).val) := by
+    ext j
+    simp only [Finset.mem_univ, true_and, Finset.mem_filter, hL j]
+  have hRFilter : (Finset.univ : Finset (Fin n)).filter
+      (fun k => keyNat n a ℓ k < keyNat n a ℓ i) =
+      (Finset.univ : Finset (Fin n)).filter (fun k => (ℓ k).val < (ℓ i).val) := by
+    ext k
+    simp only [Finset.mem_univ, true_and, Finset.mem_filter, hR k]
+  rw [hLFilter, hImg,
+      Finset.card_image_of_injective S (by
+        intro j k h
+        have h' := congrArg (σ.symm.1 : Fin n → Fin n) h
+        simpa [Equiv.symm_apply_apply] using h'),
+      hRFilter]
+
+
+/-- **Key fact B.**  For injective `ℓ`, the tie-broken rank equals the plain
+    rank, for every `σ`: `tieRank n a hn ℓ σ = rankEquiv n a hn ℓ`. -/
+theorem tieRank_eq_rankEquiv_inj (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a)
+    (hInj : Function.Injective ℓ) (σ : Equiv.Perm (Fin n)) :
+    tieRank n a hn ℓ σ = rankEquiv n a hn ℓ := by
+  apply Equiv.ext
+  intro i
+  unfold tieRank
+  rw [Equiv.trans_apply, rankEquiv_apply, rankEquiv_apply]
+  apply Fin.ext
+  dsimp only [Fin.val]
+  exact rankVal_reindex_eq n a hn ℓ hInj σ i
 
 end Shufflemath
