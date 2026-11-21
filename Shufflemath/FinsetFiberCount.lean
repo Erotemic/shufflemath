@@ -1,6 +1,5 @@
 module
 
-import Mathlib
 public import Mathlib.Data.Finset.Defs
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Card
