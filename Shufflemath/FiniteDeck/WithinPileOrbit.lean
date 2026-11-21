@@ -542,3 +542,57 @@ theorem prOfW_surjective (N m : Nat) (hm : m ≤ N) (w : Deck N)
   have hspec : finSplit N m hm (w (rightPosition N m hm j)) =
       Sum.inr (prOfW N m hm w hwR j) := prOfW_apply N m hm w hwR j
   exact Sum.inr_injective (hspec.symm.trans hfin)
+
+noncomputable def plOfW_equiv (N m : Nat) (hm : m ≤ N) (w : Deck N)
+    (hwL : (leftPositions N m hm).image w = leftPositions N m hm) : Equiv.Perm (Fin m) :=
+  Equiv.ofBijective (plOfW N m hm w hwL) ⟨plOfW_injective N m hm w hwL, plOfW_surjective N m hm w hwL⟩
+
+/-- The within-pile permutation `w` induces on the right pile, as an `Equiv.Perm`. -/
+noncomputable def prOfW_equiv (N m : Nat) (hm : m ≤ N) (w : Deck N)
+    (hwR : (rightPositions N m hm).image w = rightPositions N m hm) : Equiv.Perm (Fin (N - m)) :=
+  Equiv.ofBijective (prOfW N m hm w hwR) ⟨prOfW_injective N m hm w hwR, prOfW_surjective N m hm w hwR⟩
+
+/-- **Reconstruction.** A bijection of the deck that preserves the left and right
+  piles is exactly the within-pile relabeling `embed_m` of the two within-pile
+  permutations it induces on those piles. This is the two-pile (F5) form of the
+  `pileRelabelEquiv` fact: the within-pile group acts freely and transitively on
+  the pile-preserving bijections. -/
+theorem w_eq_embed_m (N m : Nat) (hm : m ≤ N) (w : Deck N)
+    (hwL : (leftPositions N m hm).image w = leftPositions N m hm)
+    (hwR : (rightPositions N m hm).image w = rightPositions N m hm) :
+    w = embed_m N m hm (plOfW_equiv N m hm w hwL) (prOfW_equiv N m hm w hwR) := by
+  ext x
+  by_cases hxl : x ∈ leftPositions N m hm
+  · rcases (memLeftPositions_iff N m hm x).mp hxl with ⟨i, hxi⟩
+    have hfin : finSplit N m hm (w (leftPosition N m hm i)) =
+        Sum.inl (plOfW N m hm w hwL i) := plOfW_apply N m hm w hwL i
+    have h1 : w (leftPosition N m hm i) = leftPosition N m hm (plOfW N m hm w hwL i) := by
+      have h2 : finSplit N m hm (leftPosition N m hm (plOfW N m hm w hwL i)) =
+          Sum.inl (plOfW N m hm w hwL i) := finSplit_left N m hm (plOfW N m hm w hwL i)
+      simpa [h2] using (finSplit N m hm).injective (by simpa [h2] using hfin)
+    rw [hxi, h1, embed_m_left N m hm _ _ i]
+    have hpl : (plOfW_equiv N m hm w hwL) i = plOfW N m hm w hwL i := by
+      unfold plOfW_equiv
+      exact congrArg (fun e : Fin m → Fin m => e i)
+        (Equiv.coe_ofBijective (plOfW N m hm w hwL)
+          ⟨plOfW_injective N m hm w hwL, plOfW_surjective N m hm w hwL⟩)
+    simpa only [hpl]
+  · have hxr : x ∈ rightPositions N m hm := by
+      simpa only [rightPositions, Finset.mem_sdiff, Finset.mem_univ, true_and] using hxl
+    have hmemR : x ∈ rightPositions N m hm ↔ ∃ j : Fin (N - m), rightPosition N m hm j = x := by
+      rw [rightPositions_eqImage, Finset.mem_image]
+      simp only [Finset.mem_univ, true_and]
+    rcases hmemR.mp hxr with ⟨j, hjx⟩
+    have hfin : finSplit N m hm (w (rightPosition N m hm j)) =
+        Sum.inr (prOfW N m hm w hwR j) := prOfW_apply N m hm w hwR j
+    have h1 : w (rightPosition N m hm j) = rightPosition N m hm (prOfW N m hm w hwR j) := by
+      have h2 : finSplit N m hm (rightPosition N m hm (prOfW N m hm w hwR j)) =
+          Sum.inr (prOfW N m hm w hwR j) := finSplit_right N m hm (prOfW N m hm w hwR j)
+      simpa [h2] using (finSplit N m hm).injective (by simpa [h2] using hfin)
+    rw [← hjx, h1, embed_m_right N m hm _ _ j]
+    have hpr : (prOfW_equiv N m hm w hwR) j = prOfW N m hm w hwR j := by
+      unfold prOfW_equiv
+      exact congrArg (fun e : Fin (N - m) → Fin (N - m) => e j)
+        (Equiv.coe_ofBijective (prOfW N m hm w hwR)
+          ⟨prOfW_injective N m hm w hwR, prOfW_surjective N m hm w hwR⟩)
+    simpa only [hpr]
