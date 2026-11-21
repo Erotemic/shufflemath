@@ -10,6 +10,7 @@ public import Mathlib.Data.Nat.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Tactic
+public import Shufflemath.FiniteDeck.Gate6FiniteGSR
 
 @[expose] public section
 
@@ -195,14 +196,39 @@ noncomputable def pairEqSet (n a : Nat) (i j : Fin n) : Finset (Fin n → Fin a)
 
 theorem cardPairEqSet (n a : Nat) (ha : 0 < a) (i j : Fin n) (hne : i ≠ j) (hn : 1 < n) :
     (pairEqSet n a i j).card = a ^ (n - 1) := by
-  sorry
+  have hbridge : (pairEqSet n a i j).card =
+      Fintype.card {f : Fin n → Fin a // f i = f j} := by
+    rw [pairEqSet]
+    simpa [Fintype.card_subtype]
+  calc (pairEqSet n a i j).card
+      _ = Fintype.card {f : Fin n → Fin a // f i = f j} := hbridge
+      _ = a ^ (n - 1) := Shufflemath.cardPairEqSet n a i j hne hn
 
-/-- (sub-lemma 1d, union bound) `|A| ≤ Σ |B_i|` when `A ⊆ ⋃_{i ∈ s} B i`.
-    (route: `(s.biUnion f).toSet = ⋃ i ∈ s, (f i).toSet` +
-    `set_ncard_biUnion_le` / `apply_union_le_sum`.) -/
+/-- (union bound, core) the cardinality of a `biUnion` is at most the sum of the
+    part cardinalities: `# (s.biUnion f) ≤ Σ x ∈ s, # (f x)`.  Induction on `s`;
+    the `a ∉ s0` step uses `card_union_le` + `sum_insert`, the degenerate `a ∈ s0`
+    step is a no-op. -/
+theorem biUnion_card_le_sum {X : Type*} [DecidableEq X] (s : Finset X) (f : X → Finset X) :
+    (s.biUnion f).card ≤ ∑ x ∈ s, (f x).card := by
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s0 _ ih =>
+    by_cases ha : a ∈ s0
+    · have hs : insert a s0 = s0 := by rwa [insert_eq_self]
+      calc ((insert a s0).biUnion f).card
+          _ = (s0.biUnion f).card := by rw [hs]
+          _ ≤ ∑ x ∈ s0, (f x).card := ih
+          _ = ∑ x ∈ insert a s0, (f x).card := by rw [hs]
+    · calc ((insert a s0).biUnion f).card
+          _ = (f a ∪ s0.biUnion f).card := by rw [biUnion_insert]
+          _ ≤ (f a).card + (s0.biUnion f).card := card_union_le _ _
+          _ ≤ (f a).card + ∑ x ∈ s0, (f x).card := Nat.add_le_add_left ih _
+          _ = ∑ x ∈ insert a s0, (f x).card := by rw [sum_insert ha]
+
+/-- (sub-lemma 1d, union bound) `|A| ≤ Σ |B_i|` when `A ⊆ ⋃_{i ∈ s} B i`. -/
 lemma card_le_biUnion_sum {X : Type*} [DecidableEq X] (s : Finset X) (f : X → Finset X)
     (A : Finset X) (hA : A ⊆ s.biUnion f) : A.card ≤ s.sum (fun x => (f x).card) := by
-  sorry
+  exact (Finset.card_mono hA).trans (biUnion_card_le_sum s f)
 
 /-- **Lemma 1 of 4 (Gate 6 §4):** the collision probability of a uniform
     `[n] → Fin a` label array is at most `choose(n,2) / a`. Assembles the four
