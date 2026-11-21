@@ -67,6 +67,19 @@ theorem mass_pointMass [DecidableEq alpha] (x y : alpha) :
     mass (pointMass x) y = if y = x then 1 else 0 := by
   simp [mass, pointMass, Finsupp.single_apply, eq_comm]
 
+/-- The mass of a pushforward at `y` is the fiber sum of the source masses:
+    the `StdSimplex` pushforward is the `Finsupp.mapDomain` pushforward, so the
+    mass at `y` collects exactly the masses `μ x` with `f x = y`. -/
+theorem map_mass_eq_univ_fiber {α β : Type*} [Fintype α] [Fintype β] [DecidableEq β]
+    (μ : Dist α) (f : α → β) (y : β) :
+    mass (μ.map f) y =
+      (Finset.univ : Finset α).sum (fun x => (if f x = y then mass μ x else 0)) := by
+  simp only [mass, Convexity.StdSimplex.map]
+  have hL : (Finsupp.mapDomain f μ.weights) y =
+      (Finset.univ : Finset α).sum (fun x => (if f x = y then μ.weights x else 0)) := by
+    rw [Finsupp.mapDomain, Finsupp.sum_apply]
+    simp [Finsupp.single_apply, Finsupp.sum_fintype]
+  exact hL
 -- `sConvexComb` for the `StdSimplex` convex-space instance is `join` by
 -- definition of the instance, but the class field does not unfold under `simp`
 -- on its own. This bridge (proved on weights, where both sides are the same

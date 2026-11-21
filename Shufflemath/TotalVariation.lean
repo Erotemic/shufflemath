@@ -183,6 +183,188 @@ theorem double_sum_pullout {alpha beta : Type*} [Fintype alpha] [Fintype beta]
           congrArg (fun u => a j * u) (Finset.sum_insert hc (f := fun i => b i j)).symm]
   simpa using this
 
+/-! ## 4. Batch 2 (e) — the generic same-source coupling inequality -/
+
+/-- The nonnegative triangle-inequality form for {0,1} indicators:
+    `|ind(a = x) − ind(b = x)| ≤ ind(a = x) + ind(b = x)`. -/
+theorem boole_diff_abs_le_sum {X : Type*} [DecidableEq X] (a b x : X) :
+    |(if a = x then (1 : Rat) else 0) - (if b = x then 1 else 0)| ≤
+      (if a = x then 1 else 0) + (if b = x then 1 else 0) := by
+  split_ifs <;> norm_num
+
+/-- The mismatch factor: multiplying the pointwise difference of the two
+    singleton indicators by `(if F w = G w then 0 else mass ρ w)` leaves it
+    unchanged — matched weights already contribute `0` everywhere. -/
+theorem mismatch_mass_mul_boole_diff {Ω X : Type*}
+    [Fintype Ω] [Fintype X] [DecidableEq X] (ρ : Dist Ω)
+    (F G : Ω → X) (w : Ω) (x : X) :
+    (if F w = G w then (0 : Rat) else mass ρ w) *
+        ((if F w = x then 1 else 0) - (if G w = x then 1 else 0)) =
+      mass ρ w * ((if F w = x then 1 else 0) - (if G w = x then 1 else 0)) := by
+  by_cases h : F w = G w
+  · by_cases h2 : F w = x
+    · by_cases h3 : G w = x
+      · simp [h, h3]
+      · simp [h, h3]
+    · by_cases h3 : G w = x
+      · simp [h, h3]
+      · simp [h, h3]
+  · simp [h]
+
+/- **Key fact (e)** — the generic same-source coupling inequality: the TV of
+   two pushforwards from one source is at most the source-mass of the set on
+   which the two maps disagree. (L1 proof: per-target fiber sums, mismatch
+   factor, `abs_sub_le` + nonnegative triangle form, Fubini, `1/2` cancels
+   against the two singleton indicators.) -/
+theorem tv_maps_le_mismatch {Ω X : Type*} [Fintype Ω] [Fintype X] [DecidableEq X]
+    (ρ : Dist Ω) (F G : Ω → X) :
+    tv (ρ.map F) (ρ.map G) ≤
+      (Finset.univ : Finset Ω).sum
+        (fun w => (if F w = G w then (0 : Rat) else mass ρ w)) := by
+  let C (w : Ω) : Rat := (if F w = G w then (0 : Rat) else mass ρ w)
+  let Bf (w : Ω) (x : X) : Rat := (if F w = x then (1 : Rat) else 0)
+  let Bg (w : Ω) (x : X) : Rat := (if G w = x then (1 : Rat) else 0)
+  -- (1) Pointwise fiber forms of the pushforward masses, indicator style.
+  have hμ (x : X) :
+      mass (ρ.map F) x =
+        (Finset.univ : Finset Ω).sum (fun w => mass ρ w * Bf w x) := by
+    rw [map_mass_eq_univ_fiber ρ F x]
+    apply Finset.sum_congr rfl
+    intro w _
+    dsimp only [Bf]
+    by_cases h : F w = x
+    · simp [h]
+    · simp [h]
+  have hν (x : X) :
+      mass (ρ.map G) x =
+        (Finset.univ : Finset Ω).sum (fun w => mass ρ w * Bg w x) := by
+    rw [map_mass_eq_univ_fiber ρ G x]
+    apply Finset.sum_congr rfl
+    intro w _
+    dsimp only [Bg]
+    by_cases h : G w = x
+    · simp [h]
+    · simp [h]
+  -- (2) The pointwise difference, with the mismatch factor pulled in.
+  have hdiff (x : X) :
+      mass (ρ.map F) x - mass (ρ.map G) x =
+        (Finset.univ : Finset Ω).sum (fun w => C w * (Bf w x - Bg w x)) := by
+    have hsub : mass (ρ.map F) x - mass (ρ.map G) x =
+        (Finset.univ : Finset Ω).sum (fun w => mass ρ w * (Bf w x - Bg w x)) := by
+      rw [hμ x, hν x, sub_eq_add_neg, ← Finset.sum_neg_distrib,
+        ← Finset.sum_add_distrib]
+      apply Finset.sum_congr rfl
+      intro w _
+      ring
+    rw [hsub]
+    apply Finset.sum_congr rfl
+    intro w _
+    dsimp only [Bf, Bg, C]
+    exact (mismatch_mass_mul_boole_diff ρ F G w x).symm
+  -- (3) Pointwise: |C w · (Bf − Bg)| ≤ C w · (Bf + Bg) for C w ≥ 0.
+  have hterm (x : X) (w : Ω) :
+      |C w * (Bf w x - Bg w x)| ≤ C w * (Bf w x + Bg w x) := by
+    dsimp only [Bf, Bg, C]
+    by_cases hmg : F w = G w
+    · simp [hmg, mul_zero, abs_zero]
+    · have hnn : 0 ≤ mass ρ w := mass_nonneg ρ w
+      simp [hmg]
+      by_cases h1 : F w = x
+      · by_cases h2 : G w = x
+        · simp [h1, h2, mul_zero]
+        · simp [h1, h2, mul_one]
+          rw [abs_of_nonneg hnn]
+      · by_cases h2 : G w = x
+        · simp [h1, h2, mul_one]
+          rw [abs_of_nonneg hnn]
+        · simp [h1, h2, mul_zero, abs_zero]
+  -- (4) Pointwise: |μ x − ν x| ≤ ∑_w C w · (Bf w x + Bg w x).
+  have hpt (x : X) :
+      |mass (ρ.map F) x - mass (ρ.map G) x| ≤
+        (Finset.univ : Finset Ω).sum (fun w => C w * (Bf w x + Bg w x)) := by
+    calc
+      _ = |(Finset.univ : Finset Ω).sum (fun w => C w * (Bf w x - Bg w x))| := by
+        rw [hdiff x]
+      _ ≤ (Finset.univ : Finset Ω).sum (fun w => |C w * (Bf w x - Bg w x)|) :=
+        Finset.abs_sum_le_sum_abs (fun w => C w * (Bf w x - Bg w x))
+          (Finset.univ : Finset Ω)
+      _ ≤ (Finset.univ : Finset Ω).sum (fun w => C w * (Bf w x + Bg w x)) := by
+        exact Finset.sum_le_sum (fun w _ => hterm x w)
+  -- (5) The inner X-sum: ∑_x C w · (Bf + Bg) = 2 · C w.
+  have hinner (w : Ω) :
+      (Finset.univ : Finset X).sum (fun x => C w * (Bf w x + Bg w x)) =
+        2 * C w := by
+    rw [show (Finset.univ : Finset X).sum (fun x => C w * (Bf w x + Bg w x)) =
+        (Finset.univ : Finset X).sum (fun x => C w * Bf w x + C w * Bg w x) from by
+      apply Finset.sum_congr rfl
+      intro x _
+      rw [mul_add]]
+    rw [Finset.sum_add_distrib]
+    have hF : (Finset.univ : Finset X).sum (fun x => C w * Bf w x) = C w := by
+      rw [show (Finset.univ : Finset X).sum (fun x => C w * Bf w x) =
+          (Finset.univ : Finset X).sum (fun x => (if F w = x then C w else 0)) from by
+        apply Finset.sum_congr rfl
+        intro x _
+        dsimp only [Bf]
+        by_cases h : F w = x
+        · simp [h, mul_one]
+        · simp [h, mul_zero]]
+      rw [Finset.sum_ite_eq (Finset.univ : Finset X) (F w) (fun _ => C w),
+        ite_eq_left (Finset.mem_univ _)]
+    have hG : (Finset.univ : Finset X).sum (fun x => C w * Bg w x) = C w := by
+      rw [show (Finset.univ : Finset X).sum (fun x => C w * Bg w x) =
+          (Finset.univ : Finset X).sum (fun x => (if G w = x then C w else 0)) from by
+        apply Finset.sum_congr rfl
+        intro x _
+        dsimp only [Bg]
+        by_cases h : G w = x
+        · simp [h, mul_one]
+        · simp [h, mul_zero]]
+      rw [Finset.sum_ite_eq (Finset.univ : Finset X) (G w) (fun _ => C w),
+        ite_eq_left (Finset.mem_univ _)]
+    rw [hF, hG]
+    ring
+  -- (5b) The same with the factor pulled outside: C w · ∑_x (Bf + Bg) = 2·C w
+  --     (no distribution needed: the inner sum is the constant 2).
+  have hinner2 (w : Ω) :
+      C w * ((Finset.univ : Finset X).sum (fun x => Bf w x + Bg w x)) =
+        2 * C w := by
+    have hB : (Finset.univ : Finset X).sum (fun x => Bf w x + Bg w x) = 2 := by
+      rw [Finset.sum_add_distrib,
+        Finset.sum_ite_eq (Finset.univ : Finset X) (F w) (fun _ => (1 : Rat)),
+        Finset.sum_ite_eq (Finset.univ : Finset X) (G w) (fun _ => (1 : Rat)),
+        ite_eq_left (Finset.mem_univ _), ite_eq_left (Finset.mem_univ _)]
+      norm_num
+    rw [hB, mul_comm]
+  -- (6) Sum over X, multiply by 1/2, Fubini, and close.
+  calc
+    tv (ρ.map F) (ρ.map G) =
+        (1 / 2 : Rat) *
+          (Finset.univ : Finset X).sum
+            (fun x => |mass (ρ.map F) x - mass (ρ.map G) x|) := by
+      simp only [tv, vectorTV]
+    _ ≤ (1 / 2 : Rat) * (Finset.univ : Finset Ω).sum (fun w => 2 * C w) := by
+      apply mul_le_mul_of_nonneg_left
+      · trans (Finset.univ : Finset X).sum
+          (fun x => (Finset.univ : Finset Ω).sum (fun w => C w * (Bf w x + Bg w x)))
+        · exact Finset.sum_le_sum (fun x _ => hpt x)
+        · rw [double_sum_pullout (fun w => C w) (fun x w => Bf w x + Bg w x)]
+          exact Finset.sum_le_sum (fun w _ => by rw [hinner2 w])
+      · norm_num
+    _ = (1 / 2 : Rat) *
+        ((Finset.univ : Finset Ω).sum (fun w => C w) +
+          (Finset.univ : Finset Ω).sum (fun w => C w)) := by
+      rw [show (Finset.univ : Finset Ω).sum (fun w => 2 * C w) =
+        (Finset.univ : Finset Ω).sum (fun w => C w + C w) from by
+        apply Finset.sum_congr rfl
+        intro w _
+        ring]
+      rw [Finset.sum_add_distrib]
+    _ = (Finset.univ : Finset Ω).sum (fun w => C w) := by ring
+    _ = (Finset.univ : Finset Ω).sum
+          (fun w => (if F w = G w then (0 : Rat) else mass ρ w)) := by
+      dsimp only [C]
+
 /-- Total variation contracts under kernel application: pushing two distributions
 through the same (row-stochastic) kernel cannot increase their TV distance.
 `TV(Kμ, Kν) ≤ TV(μ, ν)`. Proof: pointwise triangle inequality in the weighted
