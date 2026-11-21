@@ -138,6 +138,17 @@
 > **Next items (docs/planning remaining):** the F5 capstone `perDeckBridge` → `uniformFiber_intertwines`
 > (see the F5/perDeckBridge note at the end of this file; WIP `_Probe47u.lean`) and the deferred F4.2
 > deck-level GSR sub-wall (`gsrProductKernel_eq_distProductFinsupp` / Dobrushin contraction).
+>
+> **✅ (2026-11-21) perDeckBridge PROMOTED to a committed module.** The per-deck Bernoulli-Laplace
+> bridge web (`_Probe47s/p/t/v/u`: the generic `(c-f)+g=n` const-sub counting, the per-deck
+> marked-count hypergeometric facts, the guarded right-pile count, the F3 A3 kernel
+> `transitionNumerator_eq_fiberProduct`, and `perDeckBridge`) is now ONE committed module
+> `Shufflemath/CommanderPerDeckKernel.lean` (in the aggregator) — same namespaces, so every
+> cross-reference stays valid; `CommanderA3Kernel` + `_ProbeA3Bridge`/`_ProbeA3Cap4` repointed to
+> it and the five probe files deleted. `perDeckBridge` / the F3 A3 kernel are now in the main build,
+> no longer probe-only (full build + 37 Python tests green). **Remaining deep-F5 target: the pointwise
+> membership-valued kernel equality** (the `SymmetricQuotient` route upgrading the count-aggregate
+> `uniformFiber_intertwines` to a full membership-valued kernel equation — deep-structural-hints §§2/§10).
 
 > **⚠ LW-47th session (2026-11-27) — `LiteralSwapKernel`: the four `swapFn` region lemmas PROVEN (the G2.10 finite-deck "literal-swap-kernel" row, in progress).**
 > Worked on `Shufflemath/FiniteDeck/LiteralSwapKernel.lean` (the finite-deck literal two-pile swap kernel — the G2.10/G4 "literal-swap kernel" task). Committed `9e6dfc9`:
