@@ -312,3 +312,37 @@ theorem act_d_injective (N m : Nat) (hm : m ≤ N) (d : Deck N) :
     simpa only [Equiv.symm_apply_apply] using (congrArg d.symm hdx)
   rcases embed_m_pairInjective N m hm pl₁ pl₂ pr₁ pr₂ he with ⟨hpl, hpr⟩
   rw [hpl, hpr]
+
+/-- The fiber condition (same left-pile cards) is exactly the statement that the
+  deck `e.trans d.symm` — the within-pile relabel that carries `d` to `e` —
+  preserves the left positions.  Unwinding: applying `d` to the left-pile image
+  of `e.trans d.symm` recovers the left-pile cards of `e`, which equal those of
+  `d`; and `d` permutes its own left-pile cards back to the left positions. -/
+theorem wPreservesLeftOfFiber (N m : Nat) (hm : m ≤ N) (d e : Deck N)
+    (hle : leftCards N m hm e = leftCards N m hm d) :
+    (leftPositions N m hm).image (e.trans d.symm) = leftPositions N m hm := by
+  dsimp [leftCards] at hle
+  change (leftPositions N m hm).image (fun p : Fin N => (e.trans d.symm) p) = leftPositions N m hm
+  have hfun : (fun p : Fin N => (e.trans d.symm) p) = (fun p => d.symm (e p)) := by
+    funext p
+    simp only [Equiv.trans_apply]
+  rw [hfun]
+  show (leftPositions N m hm).image (d.symm ∘ e) = leftPositions N m hm
+  rw [← Finset.image_image]
+  rw [hle]
+  rw [Finset.image_image]
+  change (leftPositions N m hm).image (fun p : Fin N => d.symm (d p)) = leftPositions N m hm
+  have hidd : (fun p : Fin N => d.symm (d p)) = (fun p : Fin N => p) := by
+    funext p
+    simp only [Equiv.symm_apply_apply]
+  rw [hidd]
+  exact Finset.image_id (s := leftPositions N m hm)
+
+/-- Same for the right positions: a bijection that preserves the left positions
+  preserves their complement (the right positions), so `e.trans d.symm` preserves
+  the right positions too. -/
+theorem wPreservesRightOfFiber (N m : Nat) (hm : m ≤ N) (d e : Deck N)
+    (hle : leftCards N m hm e = leftCards N m hm d) :
+    (rightPositions N m hm).image (e.trans d.symm) = rightPositions N m hm := by
+  unfold rightPositions
+  exact bijection_imageCompl (e.trans d.symm) (leftPositions N m hm) (wPreservesLeftOfFiber N m hm d e hle)
