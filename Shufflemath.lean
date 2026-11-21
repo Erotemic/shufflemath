@@ -5,6 +5,7 @@ public import Shufflemath.Matrix
 public import Shufflemath.TotalVariation
 public import Shufflemath.Perturbation
 public import Shufflemath.Dobrushin
+public import Shufflemath.DobrushinContraction
 public import Shufflemath.Markov
 public import Shufflemath.Cost
 public import Shufflemath.BernoulliLaplace
