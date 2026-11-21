@@ -596,3 +596,24 @@ theorem w_eq_embed_m (N m : Nat) (hm : m ≤ N) (w : Deck N)
         (Equiv.coe_ofBijective (prOfW N m hm w hwR)
           ⟨prOfW_injective N m hm w hwR, prOfW_surjective N m hm w hwR⟩)
     simpa only [hpr]
+
+theorem plOfW_embed_m (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
+    (pr : Equiv.Perm (Fin (N - m))) (i : Fin m) :
+    plOfW N m hm (embed_m N m hm pl pr) (embed_m_imageLeft N m hm pl pr) i = pl i := by
+  have hwL := embed_m_imageLeft N m hm pl pr
+  have hfin : finSplit N m hm ((embed_m N m hm pl pr) (leftPosition N m hm i)) = Sum.inl (pl i) := by
+    rw [embed_m_left N m hm pl pr i, finSplit_left]
+  have hspec : finSplit N m hm ((embed_m N m hm pl pr) (leftPosition N m hm i)) =
+      Sum.inl (plOfW N m hm (embed_m N m hm pl pr) hwL i) := plOfW_apply N m hm (embed_m N m hm pl pr) hwL i
+  exact Sum.inl_injective (hspec.symm.trans hfin)
+
+/-- Mirror: applying `prOfW` to `embed_m pl pr` recovers `pr`. -/
+theorem prOfW_embed_m (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
+    (pr : Equiv.Perm (Fin (N - m))) (j : Fin (N - m)) :
+    prOfW N m hm (embed_m N m hm pl pr) (embed_m_imageRight N m hm pl pr) j = pr j := by
+  have hwR := embed_m_imageRight N m hm pl pr
+  have hfin : finSplit N m hm ((embed_m N m hm pl pr) (rightPosition N m hm j)) = Sum.inr (pr j) := by
+    rw [embed_m_right N m hm pl pr j, finSplit_right]
+  have hspec : finSplit N m hm ((embed_m N m hm pl pr) (rightPosition N m hm j)) =
+      Sum.inr (prOfW N m hm (embed_m N m hm pl pr) hwR j) := prOfW_apply N m hm (embed_m N m hm pl pr) hwR j
+  exact Sum.inr_injective (hspec.symm.trans hfin)
