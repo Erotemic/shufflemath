@@ -1415,30 +1415,46 @@ theorem fiberPushforward_count (N m r k : Nat) (hm : m ≤ N) (hr : r ≤ N)
     rw [yMoves_card_eq_transitionNumerator N m r k hm hr S x.val y.val hCard.symm]
   rw [Finset.sum_const_nat hPt]
 
+/-- **Strong lumpability — the pointwise membership-valued kernel fact.** The
+    per-element transition weight out of a *specific* membership `S` in the
+    count-fiber of macrostate `x` equals the macrostate kernel weight
+    `transitionWeight x y`, **independent of which** `S` in the fiber you start
+    from.  This is the pointwise core of `uniformFiber_intertwines` (which is
+    just the average of this fiber-constant) and the concrete instance of the
+    strong-lumpability condition behind the generic reversible-quotient
+    disintegration theorem `U_x ⊳ Q = ∑_y P(x,y) U_y`
+    (`docs/planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md`,
+    §10): the exchange kernel is constant on each membership count-fiber, so the
+    fiber-uniform pushforward reproduces the macro kernel exactly. -/
+theorem uniformFiber_weight_perElement (p : BernoulliLaplaceGeneral.ExchangeAdmissible)
+    (x y : BernoulliLaplaceGeneral.BLState p.N p.m p.r)
+    (S : Membership p.N p.m) (hS : S ∈ countFiberMemb p.N p.m p.r p.hrN x) :
+    ((yMoves p.N p.m p.r p.k p.hrN S x.val y.val).card : Rat) /
+      (BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k : Rat) =
+      BernoulliLaplaceGeneral.transitionWeight p.N p.m p.r p.k x.val y.val := by
+  dsimp only [countFiberMemb] at hS
+  simp only [Finset.mem_filter, Finset.mem_univ] at hS
+  have hCard : (S.1 ∩ markedSet p.N p.r p.hrN).card = x.val := by tauto
+  rw [yMoves_card_eq_transitionNumerator p.N p.m p.r p.k (Nat.le_of_lt p.hmn) p.hrN S x.val y.val hCard.symm,
+      BernoulliLaplaceGeneral.transitionWeight]
+
 /-- The macrostate kernel is the pushforward of the fiber-uniform kernel: a
     fiber-uniform start at `x` puts mass `BernoulliLaplaceGeneral.transitionWeight x y` on the `y`-fiber
-    after one exchange. -/
+    after one exchange.  Follows immediately from `uniformFiber_weight_perElement`:
+    the average of a fiber-constant is the constant. -/
 theorem uniformFiber_intertwines (p : BernoulliLaplaceGeneral.ExchangeAdmissible) (x y : BernoulliLaplaceGeneral.BLState p.N p.m p.r) :
     (∑ S ∈ countFiberMemb p.N p.m p.r p.hrN x,
         ((yMoves p.N p.m p.r p.k p.hrN S x.val y.val).card : Rat) /
           (BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k : Rat)) /
       ((countFiberMemb p.N p.m p.r p.hrN x).card : Rat) =
       BernoulliLaplaceGeneral.transitionWeight p.N p.m p.r p.k x.val y.val := by
-  let hr := p.hrN
-  have hEach (S : Membership p.N p.m) (hS : S ∈ countFiberMemb p.N p.m p.r hr x) :
-      ((yMoves p.N p.m p.r p.k hr S x.val y.val).card : Rat) /
-        (BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k : Rat) =
-        BernoulliLaplaceGeneral.transitionWeight p.N p.m p.r p.k x.val y.val := by
-    dsimp only [countFiberMemb] at hS
-    simp only [Finset.mem_filter, Finset.mem_univ] at hS
-    have hCard : (S.1 ∩ markedSet p.N p.r hr).card = x.val := by tauto
-    rw [yMoves_card_eq_transitionNumerator p.N p.m p.r p.k (Nat.le_of_lt p.hmn) hr S x.val y.val hCard.symm,
-        BernoulliLaplaceGeneral.transitionWeight]
-  have hSum : (∑ S ∈ countFiberMemb p.N p.m p.r hr x,
-      ((yMoves p.N p.m p.r p.k hr S x.val y.val).card : Rat) /
+  have hSum : (∑ S ∈ countFiberMemb p.N p.m p.r p.hrN x,
+      ((yMoves p.N p.m p.r p.k p.hrN S x.val y.val).card : Rat) /
         (BernoulliLaplaceGeneral.transitionDenominator p.N p.m p.k : Rat)) =
-      (countFiberMemb p.N p.m p.r hr x).card * BernoulliLaplaceGeneral.transitionWeight p.N p.m p.r p.k x.val y.val := by
-    rw [Finset.sum_congr rfl (fun S hS => hEach S hS), Finset.sum_const]
+      (countFiberMemb p.N p.m p.r p.hrN x).card *
+        BernoulliLaplaceGeneral.transitionWeight p.N p.m p.r p.k x.val y.val := by
+    rw [Finset.sum_congr rfl (fun S hS => uniformFiber_weight_perElement p x y S hS),
+        Finset.sum_const]
     ring
   have hPos : 0 < (countFiberMemb p.N p.m p.r p.hrN x).card :=
     countFiberMemb_nonempty p.N p.m p.r (Nat.le_of_lt p.hmn) p.hrN x
