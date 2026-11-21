@@ -887,9 +887,19 @@ telescope lemmas to any `n` through the length-free crude telescope, so no
 `Finset.univ` is instantiated and the F4.2 wall is avoided. It bounds the physical
 `n`-exchange TV toward `GSR.uniformDist` by `n` (the per-step physical-vs-ideal
 discrepancy, each `≤ 1`) plus the oracle chain's TV toward uniform. The
-*Dobrushin-contraction* sharpening (a contracting `d < 1` budget) remains a
-possible refinement in `Shufflemath/Dobrushin.lean`; the `n` budget here is
-non-vanishing, so no optimality is claimed (F5-B (ii)/(iii) stay deferred).
+*Dobrushin-contraction* sharpening has landed at the **macro** level (2026-11-24,
+this session): `Shufflemath.BernoulliLaplaceCommanderBridge.blExchangeKernel_dobrushinCoeff_lt_one`
+proves `Dobrushin.dobrushinCoeff (blExchangeKernel commanderBLParams) < 1` — every
+`BLState 99 50 50` macrostate reaches the mid-window state `25` in one exchange
+(`blExchangeKernel_allStatesReach25`, via the uniform surviving summands `a = 1` for
+`x ≤ 26` and `a = 25` for `x ≥ 27` of the 6-arg `transitionNumerator`, isolated with the
+correct 2-arg `Finset.single_le_sum`), so every row-pair shares that positive-mass
+successor and `tv < 1` throughout, hence the max over `pairDistances` is `< 1`. This is
+*qualitative* (the macro-chain is irreducible / sub-maximally contracting); the
+quantitative `< 1/1000` objective still needs a concrete rational `d < 1` with
+`d^n < 1/1000` (the 50×50 macro-`tv` sup, then `dobrushinCoeff ≤ d`, fed to
+`physicalExchange_dobrushinDecay`). The `n` budget in the telescope certificate above
+is non-vanishing, so no optimality is claimed (F5-B (ii)/(iii) stay deferred).
 
 **Acceptance:** theorem with model, action class, initial state, target,
 terminal bound, and cost all explicit; separately state any optimization

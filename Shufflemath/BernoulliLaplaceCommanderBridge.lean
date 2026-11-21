@@ -28,6 +28,7 @@ public import Shufflemath.CommanderMembershipKernels
 public import Shufflemath.CommanderFiberCount
 public import Shufflemath.Finite
 public import Shufflemath.DobrushinContraction
+public import Shufflemath.Dobrushin
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Fin.Basic
 public import Mathlib.Tactic
@@ -352,6 +353,11 @@ def st50 : BernoulliLaplaceGeneral.BLState 99 50 50 :=
 def st25 : BernoulliLaplaceGeneral.BLState 99 50 50 :=
   ⟨25, by norm_num, by norm_num⟩
 
+/-- The 99-card macrostate space is nonempty (witnessed by the mid-window
+state `25`); `Dobrushin.dobrushinCoeff` requires a `Nonempty` instance. -/
+instance commanderBLState_nonempty : Nonempty (BernoulliLaplaceGeneral.BLState 99 50 50) :=
+  ⟨st25⟩
+
 /-- The kernel row at the minimum window state `1` gives positive mass to the
 mid-window successor `25`. Only the `a = 1` microscopic-exchange term survives
 (the product of positive binomial coefficients), so the exact weight is
@@ -388,4 +394,105 @@ theorem blExchangeKernel_extremePairTV_lt1 :
       (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams st50) < 1 := by
   exact tv_lt_one_of_commonPos _ _ st25
     blExchangeKernel_extremeMass125_pos blExchangeKernel_extremeMass5025_pos
+
+/-! ## F5 Step 2: the 99-card exchange is strictly contracting
+
+Every admissible macrostate reaches the mid-window state `25` with strictly
+positive mass in one exchange, so every pair of kernel rows shares that common
+positive-mass successor; the Dobrushin coefficient (the maximum row-TV over
+all pairs) is therefore strictly below `1`.
+-/ 
+
+/-- For `1 <= x <= 26` the `a = 1` microscopic-exchange term of the numerator
+(one special card leaving, `25 - 1` of the other kind, `26 - x` returning,
+`x - 1` special returning) is a product of four positive binomial
+coefficients, so the transition numerator is positive. -/
+theorem blExchangeKernel_num_pos_low (x : BernoulliLaplaceGeneral.BLState 99 50 50)
+    (h : 1 ≤ x.val ∧ x.val ≤ 26) :
+    0 < BernoulliLaplaceGeneral.transitionNumerator 99 50 50 25 x.val 25 := by
+  rw [BernoulliLaplaceGeneral.transitionNumerator]
+  refine lt_of_lt_of_le ?_
+    (Finset.single_le_sum (fun _ _ => Nat.zero_le _)
+       (show (1 : Nat) ∈ Finset.range (25 + 1) from by decide))
+  have hrem : x.val - 1 ≤ 25 := by omega
+  have hbk : 25 - (x.val - 1) ≤ 25 := by omega
+  simp only [hrem, hbk]
+  · have h1 : 0 < Nat.choose x.val 1 := by rw [Nat.choose_one_right]; omega
+    have h2 : 0 < Nat.choose (50 - x.val) (25 - 1) := by
+      have h : 25 - 1 ≤ 50 - x.val := by omega
+      exact Nat.choose_pos h
+    have h3 : 0 < Nat.choose (50 - x.val) (25 - (x.val - 1)) := by
+      have h : 25 - (x.val - 1) ≤ 50 - x.val := by omega
+      exact Nat.choose_pos h
+    have h4 : 0 < Nat.choose (99 - 50 - (50 - x.val)) (25 - (25 - (x.val - 1))) := by
+      have h1 : 99 - 50 - (50 - x.val) = x.val - 1 := by omega
+      have h2 : 25 - (25 - (x.val - 1)) = x.val - 1 := by omega
+      rw [h1, h2, Nat.choose_self]
+      norm_num
+    exact mul_pos (mul_pos (mul_pos h1 h2) h3) h4
+
+/-- For `26 < x <= 50` the `a = 25` microscopic-exchange term of the numerator
+(all 25 leaving cards are special, `b = 50 - x` return) is a product of four
+positive binomial coefficients, so the transition numerator is positive. -/
+theorem blExchangeKernel_num_pos_high (x : BernoulliLaplaceGeneral.BLState 99 50 50)
+    (h : 26 < x.val ∧ x.val ≤ 50) :
+    0 < BernoulliLaplaceGeneral.transitionNumerator 99 50 50 25 x.val 25 := by
+  rw [BernoulliLaplaceGeneral.transitionNumerator]
+  refine lt_of_lt_of_le ?_
+    (Finset.single_le_sum (fun _ _ => Nat.zero_le _)
+       (show (25 : Nat) ∈ Finset.range (25 + 1) from by decide))
+  have hrem : x.val - 25 ≤ 25 := by omega
+  have hbk : 25 - (x.val - 25) ≤ 25 := by omega
+  simp only [hrem, hbk]
+  · have h1 : 0 < Nat.choose x.val 25 := Nat.choose_pos (by omega)
+    have h2 : 0 < Nat.choose (50 - x.val) (25 - 25) := by
+      rw [Nat.sub_self, Nat.choose_zero_right]
+      norm_num
+    have h3 : 0 < Nat.choose (50 - x.val) (25 - (x.val - 25)) := by
+      have h : 25 - (x.val - 25) = 50 - x.val := by omega
+      rw [h, Nat.choose_self]
+      norm_num
+    have h4 : 0 < Nat.choose (99 - 50 - (50 - x.val)) (25 - (25 - (x.val - 25))) := by
+      have h1 : 99 - 50 - (50 - x.val) = x.val - 1 := by omega
+      have h2 : 25 - (25 - (x.val - 25)) = x.val - 25 := by omega
+      rw [h1, h2]
+      exact Nat.choose_pos (by omega)
+    exact mul_pos (mul_pos (mul_pos h1 h2) h3) h4
+
+/-- Every admissible 99-card macrostate reaches the mid-window state `25` with
+strictly positive mass in a single exchange. -/
+theorem blExchangeKernel_allStatesReach25 (x : BernoulliLaplaceGeneral.BLState 99 50 50) :
+    0 < Dist.mass (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams x) st25 := by
+  simp only [BernoulliLaplaceGeneral.blExchangeKernel, Dist.mass_ofFun,
+    BernoulliLaplaceGeneral.transitionWeight]
+  have hx1 : 1 ≤ x.val := by
+    simpa [BernoulliLaplaceGeneral.blLo, BernoulliLaplaceGeneral.blLo_def, max_zero]
+      using x.2.1
+  have hx50 : x.val ≤ 50 := x.2.2
+  have hd : 0 < (BernoulliLaplaceGeneral.transitionDenominator 99 50 25 : Rat) := by
+    native_decide
+  by_cases hx26 : x.val ≤ 26
+  · have hnumR : 0 < (BernoulliLaplaceGeneral.transitionNumerator 99 50 50 25 x.val 25 : Rat) :=
+      Nat.cast_pos.mpr (blExchangeKernel_num_pos_low x ⟨hx1, hx26⟩)
+    exact div_pos hnumR hd
+  · have hnumR : 0 < (BernoulliLaplaceGeneral.transitionNumerator 99 50 50 25 x.val 25 : Rat) :=
+      Nat.cast_pos.mpr (blExchangeKernel_num_pos_high x ⟨Nat.not_le.mp hx26, hx50⟩)
+    exact div_pos hnumR hd
+
+/-- The Dobrushin coefficient of the 99-card Bernoulli--Laplace exchange
+kernel is strictly below `1`: every pair of rows shares the common
+positive-mass successor `25`, so every pairwise row-TV is `< 1`, and the
+coefficient is the maximum of those distances. -/
+theorem blExchangeKernel_dobrushinCoeff_lt_one :
+    Dobrushin.dobrushinCoeff (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams) < 1 := by
+  unfold Dobrushin.dobrushinCoeff
+  rw [Finset.max'_lt_iff]
+  intro d hd
+  rcases Finset.mem_image.mp hd with ⟨ij, _, rfl⟩
+  have h1 : 0 < Dist.mass (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams ij.1) st25 :=
+    blExchangeKernel_allStatesReach25 ij.1
+  have h2 : 0 < Dist.mass (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams ij.2) st25 :=
+    blExchangeKernel_allStatesReach25 ij.2
+  rw [Dobrushin.rowTV]
+  exact tv_lt_one_of_commonPos _ _ st25 h1 h2
 
