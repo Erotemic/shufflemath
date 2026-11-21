@@ -23,6 +23,11 @@ namespace FiniteDeck
 - `bijection_imageCompl` — a bijection preserving a set preserves its complement.
 - `embed_m_imageRight` — `embed_m` maps the right-pile positions onto themselves
   (one-line application of `bijection_imageCompl` + `embed_m_imageLeft`).
+- `act_d` — the within-pile orbit action on decks: `(embed_m (pl,pr)).trans d`.
+- `act_d_preservesMembership` — the orbit action preserves membership
+  (image of the left positions is unchanged).
+- `act_d_injective` — the orbit action is injective in the within-pile pair
+  (cancel `d` from the right of `.trans d`; reduces to `embed_m_pairInjective`).
 
 **NEXT (this file is the forward WIP, a build-gate placeholder):**
 - **The fiber orbit theorem** (the §2 goal of

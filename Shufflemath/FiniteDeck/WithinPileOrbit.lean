@@ -266,3 +266,49 @@ theorem embed_m_imageRight (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
   dsimp only [rightPositions]
   exact bijection_imageCompl (embed_m N m hm pl pr) (leftPositions N m hm)
     (embed_m_imageLeft N m hm pl pr)
+
+/-! ## The within-pile orbit action and its fiber (F5) -/
+
+/-- The within-pile orbit action on decks: conjugate a deck `d` on the left by a
+  within-pile permutation `embed_m (pl, pr)`.  This relabels the cards within
+  each pile (preserving pile membership) then applies `d`.  It is the group
+  action whose orbit is the membership fiber of `d` (the F5 theorem). -/
+def act_d (N m : Nat) (hm : m ≤ N) (d : Deck N) (pl : Equiv.Perm (Fin m))
+    (pr : Equiv.Perm (Fin (N - m))) : Deck N := (embed_m N m hm pl pr).trans d
+
+/-- The orbit action preserves the membership: conjugating `d` by a within-pile
+  permutation does not change which cards sit in the left pile, because
+  `embed_m` rearranges the left positions among themselves, so the image of the
+  left positions under `embed_m ∘ d` is the same as under `d`. -/
+theorem act_d_preservesMembership (N m : Nat) (hm : m ≤ N) (d : Deck N)
+    (pl : Equiv.Perm (Fin m)) (pr : Equiv.Perm (Fin (N - m))) :
+    membership N m hm (act_d N m hm d pl pr) = membership N m hm d := by
+  have hl : leftCards N m hm (act_d N m hm d pl pr) = leftCards N m hm d := by
+    unfold leftCards
+    dsimp only [act_d]
+    have hfun : (fun p : Fin N => ((embed_m N m hm pl pr).trans d) p) =
+        (fun p => d ((embed_m N m hm pl pr) p)) := by
+      funext p
+      simp only [Equiv.trans_apply]
+    rw [hfun]
+    show (leftPositions N m hm).image (d ∘ (embed_m N m hm pl pr)) = (leftPositions N m hm).image d
+    rw [← Finset.image_image, embed_m_imageLeft]
+  exact Subtype.ext hl
+
+/-- The orbit action is injective in the within-pile pair: two pairs that
+  produce the same conjugate of `d` are equal.  Cancelling `d` from the right
+  of `.trans d` (apply `d.symm` pointwise, which is injective) reduces this to
+  `embed_m_pairInjective`. -/
+theorem act_d_injective (N m : Nat) (hm : m ≤ N) (d : Deck N) :
+    Function.Injective (fun p : Equiv.Perm (Fin m) × Equiv.Perm (Fin (N - m)) =>
+      act_d N m hm d p.1 p.2) := by
+  intro ⟨pl₁, pr₁⟩ ⟨pl₂, pr₂⟩ h
+  dsimp only [act_d] at h
+  have he : embed_m N m hm pl₁ pr₁ = embed_m N m hm pl₂ pr₂ := by
+    apply Equiv.ext
+    intro x
+    have hdx : d ((embed_m N m hm pl₁ pr₁) x) = d ((embed_m N m hm pl₂ pr₂) x) := by
+      simpa only [Equiv.trans_apply] using (congrArg (fun (e : Deck N) => e x) h)
+    simpa only [Equiv.symm_apply_apply] using (congrArg d.symm hdx)
+  rcases embed_m_pairInjective N m hm pl₁ pl₂ pr₁ pr₂ he with ⟨hpl, hpr⟩
+  rw [hpl, hpr]
