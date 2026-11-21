@@ -19,6 +19,7 @@ module
 
 public import Shufflemath.BernoulliLaplace
 public import Shufflemath.BernoulliLaplaceGeneral
+public import Shufflemath.BernoulliLaplaceFirstMode
 public import Shufflemath.BernoulliLaplaceFiber
 public import Shufflemath.Markov
 public import Shufflemath.FiniteDeck.BLRefinement
