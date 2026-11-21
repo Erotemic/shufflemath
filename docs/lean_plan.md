@@ -69,10 +69,14 @@ phase notes are linked at the end; they do not override this plan. Read
 > two-exchange pair (n=2 → n=3: `run … 3`, the 3-step `FiberLifting.run_tv_eq_macro`,
 > `commander_tv_after_three_semantic`; the same A3 `hMembershipExchange_kernel` discharges the
 > per-shuffle premise — no new exchange hypothesis). Completes G2.9/13 in **both** the generic
-> (session 92) and 99-card exact-rational forms, and G3.6. **Next deep item:** the F4.2 sub-wall
-> (Gate 5/6: deck-level GSR `gsrProductKernel_eq_distProductFinsupp` / `List (Fin n) →
-> Equiv.Perm (Fin 99)` transport) and Gate 8 (F5 bounded optimization), per the
-> `2026-11-24` review follow-up check-off.
+> (session 92) and 99-card exact-rational forms, and G3.6. **F4.2 permutation-law wall RESOLVED (this session):** the GSR's law is now a genuine
+> `Dist (Equiv.Perm (Fin n))` — `GSRPermutationLaw.gsrPermutationLaw` (the `ν_{n,a}` of the
+> `2026-11-20` Section 3 "transport") plus `idealShuffle_canonical_eq_permPushforward` /
+> `idealShuffle_canonical_eq_permLaw`, and the pointwise capstone
+> `GSRF42KeyOrder.stableBuckets_eq_orderByNewPosition` (the `List (Fin n) →
+> Equiv.Perm (Fin n)` transport). **Next deep item:** the F5 `perDeckBridge` →
+> `uniformFiber_intertwines` (WIP `_Probe47u.lean`) and Gate 8 (F5 bounded optimization /
+> non-degenerate full-deck Dobrushin), per the `2026-11-24` review follow-up check-off.
 > **G1 edge cases DONE (`f3fc08f`):** new module `Shufflemath/FiniteDeck/G1EdgeCases`
 > (imports only the generic G1 modules `TwoPile`/`TwoPileFiber` + Mathlib — no
 > `Commander*`) records that the boundary parameter values are well-formed and
@@ -774,6 +778,13 @@ algebra can advance in parallel.
    `GSR.stableBuckets` are *exactly* `rankOrderKeyList`, i.e. the keys in the
    unique order by `(label, position)`.  This is "stableBuckets = order by new
    position" at the key level — the heart of F4.2.
+   *Preserve the law (this session):* new **`Shufflemath/GSRPermutationLaw.lean`**
+   names the GSR's law as `gsrPermutationLaw : Dist (Equiv.Perm (Fin n))` (the `ν_{n,a}`
+   of the `2026-11-20` Section 3 "transport") and proves
+   `idealShuffle_canonical_eq_permPushforward` / `idealShuffle_canonical_eq_permLaw` —
+   the GSR on the canonical deck is that permutation law pushed through "apply the
+   permutation to the deck" (via `Convexity.StdSimplex.map_map`). **F4.2 is now fully
+   resolved** (both the "turn into a permutation" and "preserve the law" halves).
 3. Establish the row-wise bound against *physical perfect-local* shuffling:
    for each deck, the TV discrepancy is no greater than the sum of the two
    local GSR-versus-uniform errors (49-card and 50-card working sets).

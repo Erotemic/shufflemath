@@ -377,7 +377,7 @@ theorem keyNat_lex (n a : Nat) (ℓ : Fin n → Fin a) (i j : Fin n) :
       apply Nat.add_lt_add_left
       exact hint
 
-/-!## The F4.2 capstone: the last wall (precisely characterized)
+/-!## The F4.2 capstone — RESOLVED (both halves proved)
 
 **Goal.**
 ```
@@ -405,7 +405,7 @@ strictly increasing and the runs are disjoint and ordered (`keyNat_lex`), so the
 concatenation is `SortedLT` — provable by induction on `a` via `List.sortedLT_append`
 once each *bucket* is shown `SortedLT`.
 
-**Why it is not yet closed (the precise API gap).**
+**How it was closed.**
 A single bucket is `((finRange n).filter (fun c => (ℓ c).val == i)).map keyNat`.  To
 show it `SortedLT` one needs a Mathlib lemma that **filtering a `SortedLT` list stays
 `SortedLT`** (or, equivalently, that a `List.IsSublist` of a `SortedLT` list is
@@ -415,7 +415,13 @@ Neither is in the current Mathlib `Data.List` API (`sortedLT_finRange` and
 not).  The bucket can be shown `SortedLT` by a manual induction on the deck that
 computes the filtered list's `get` element-by-element, or by introducing a
 `bucket_sortedLT` lemma proved via `List.IsSublist` (once a sublist-sortedness lemma
-is added).  That is the exact next step; everything else for F4.2 is in place.
+is added) — resolved via the rank-key-list machinery in `GSRF42KeyOrder`
+(`bucketKeys_sortedLT`, `stableBuckets_keySortedLT`, `rankOrderKeyList_eq_Rmap`,
+`stableBuckets_keys_eq_rankOrderKeyList`, then `map_inj_eq` + `keyNat_injective`).  The
+second half of the wall — preserving the law as a genuine permutation action — is
+proved in `GSRPermutationLaw` (`gsrPermutationLaw`, the `ν_{n,a}` object, plus
+`idealShuffle_canonical_eq_permPushforward` / `idealShuffle_canonical_eq_permLaw`).
+**F4.2 is now fully resolved.**
 -/
 
 end Shufflemath
