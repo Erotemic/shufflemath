@@ -3973,3 +3973,18 @@ arbitrary-`(N,m)`** version of the orbit equiv — construct `embed_m : Sym (Fin
 (`embed_m` + its injectivity/surjectivity at arbitrary `N,m`) is the concrete next-session target** —
 a bounded, well-scoped `Equiv` construction that generalizes the already-proven 99-card `pileRelabelEquiv`
 trio, not a from-scratch proof.
+
+**F5 orbit progress (this session):** the generic two-pile split **`finSplit : Fin N ≃ Fin m ⊕
+Fin (N - m)` is now PROVEN and COMMITTED as `Shufflemath/FiniteDeck/WithinPileOrbit.lean`** (wired into
+the aggregator) — the 99-card `pileRelabelEquiv` generalization to arbitrary `(N, m)`.  What's in:
+`splitCast` (the value-preserving `Fin (m + (N - m)) ≃ Fin N` cast, `splitCast_val`/`splitCast_symm_val`),
+the `leftPosition_val`/`rightPosition_val` value facts, `finSplit` as a verified `Equiv` (bijective via
+`left_inv`/`right_inv`), its four mapping properties (`finSplit_left`/`finSplit_right`/`finSplit_symm_left`/
+`finSplit_symm_right`), and the within-pile relabel lemmas `sumCongr_left`/`sumCongr_right`.
+**Key tactic lesson (lean_plan):** an `Equiv`'s `CoeFun` application does **not** unfold under `dsimp`/`show`
+("not a let/prop"); use **`simp [finSplit, finSplitToFun]`** (which *does* unfold the `CoeFun`) to expose the
+composition, then `rw` the value facts — and `Fin.ext` yields a `↑`/`NatCast` goal, bridged with `Nat.cast` in
+the simp set.  **Immediate next steps:** (1) define `embed_m` (the `.trans`-composition `Deck N`) and prove
+`embed_m_left`/`embed_m_right` (the leftover after `rw [finSplit_left, sumCongr_left]` is exactly
+`finSplit_symm_left (pl i)` — the composition `rw` chain is the remaining friction); (2) the free-orbit
+`Fintype.card` statement of §2.  WIP: `.pi-glla/f5orbit_wip.lean` (builds clean).

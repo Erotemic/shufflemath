@@ -21,3 +21,4 @@ public import Shufflemath.GSRPermutationLaw
 public import Shufflemath.ProtocolCertificate
 public import Shufflemath.OracleRefinement
 public import Shufflemath.PhysicalRefinement
+public import Shufflemath.FiniteDeck.WithinPileOrbit
