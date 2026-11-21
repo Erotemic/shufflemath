@@ -105,6 +105,31 @@ theorem dobrushinCoeff_le_one
   rcases Finset.mem_image.mp hd with ⟨ij, _, rfl⟩
   exact Dist.tv_le_one (K ij.1) (K ij.2)
 
+/-- **One-overlap bound for a pairwise row distance.** The TV distance between two
+rows of a finite kernel is at most one minus their pointwise overlap mass at any
+single fixed state `z`:
+`rowTV K i j ≤ 1 − min (mass (K i) z) (mass (K j) z)`.
+Combines the overlap identity (`Dist.tv_eq_one_sub_overlap`) with the fact that one
+term of a nonnegative overlap sum (the term at `z`) dominates the pair's mass at `z`.
+This is the building block for `dobrushinCoeff K ≤ 1 − min_x mass (K x) z`. -/
+theorem rowTV_le_one_sub_minMass
+    [Fintype alpha] [DecidableEq alpha] [Fintype beta] (K : FiniteKernel alpha beta)
+    (i j : alpha) (z : beta) :
+    rowTV K i j ≤ 1 - min (Dist.mass (K i) z) (Dist.mass (K j) z) := by
+  have hnonneg : ∀ y, 0 ≤ min (Dist.mass (K i) y) (Dist.mass (K j) y) := by
+    intro y
+    exact le_min (Dist.mass_nonneg (K i) y) (Dist.mass_nonneg (K j) y)
+  have hsum_ge : min (Dist.mass (K i) z) (Dist.mass (K j) z) ≤
+      (Finset.univ : Finset beta).sum (fun y => min (Dist.mass (K i) y) (Dist.mass (K j) y)) :=
+    Finset.single_le_sum (fun y _ => hnonneg y) (Finset.mem_univ z)
+  calc
+    rowTV K i j =
+      1 - (Finset.univ : Finset beta).sum (fun y => min (Dist.mass (K i) y) (Dist.mass (K j) y)) := by
+      rw [rowTV, Dist.tv_eq_one_sub_overlap]
+    _ ≤ 1 - min (Dist.mass (K i) z) (Dist.mass (K j) z) := by
+      apply sub_le_sub_left
+      exact hsum_ge
+
 /-- The coefficient is zero exactly when all rows agree as mass functions
 (the chain is already stationary after one step; stated at mass level, as
 `Dist.tv_eq_zero` is, since distinct `Dist` representations can share a

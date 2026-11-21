@@ -75,8 +75,13 @@ phase notes are linked at the end; they do not override this plan. Read
 > `idealShuffle_canonical_eq_permLaw`, and the pointwise capstone
 > `GSRF42KeyOrder.stableBuckets_eq_orderByNewPosition` (the `List (Fin n) →
 > Equiv.Perm (Fin n)` transport). **Next deep item:** the F5 `perDeckBridge` →
-> `uniformFiber_intertwines` (WIP `_Probe47u.lean`) and Gate 8 (F5 bounded optimization /
-> non-degenerate full-deck Dobrushin), per the `2026-11-24` review follow-up check-off.
+> `uniformFiber_intertwines` (WIP `_Probe47u.lean`). **Gate 8's Dobrushin half DONE (this
+> audit):** the non-degenerate full-deck Dobrushin coefficient now has a concrete rational
+> bound — see the F5 section (`DobrushinDecay99.blExchange_dobrushinCoeff_le`:
+> `dobrushinCoeff (blExchangeKernel commanderBLParams) ≤ 1 − w50 25 25 ≈ 0.8424`, and the
+> headline `physicalExchange_decay_41_lt_thousand`: 41 exchanges → TV < `1/1000`). Gate 8's
+> bounded-optimization half stays deferred (competitor lower bounds). per the `2026-11-24`
+> review follow-up check-off.
 > **G1 edge cases DONE (`f3fc08f`):** new module `Shufflemath/FiniteDeck/G1EdgeCases`
 > (imports only the generic G1 modules `TwoPile`/`TwoPileFiber` + Mathlib — no
 > `Commander*`) records that the boundary parameter values are well-formed and
@@ -900,6 +905,28 @@ quantitative `< 1/1000` objective still needs a concrete rational `d < 1` with
 `d^n < 1/1000` (the 50×50 macro-`tv` sup, then `dobrushinCoeff ≤ d`, fed to
 `physicalExchange_dobrushinDecay`). The `n` budget in the telescope certificate above
 is non-vanishing, so no optimality is claimed (F5-B (ii)/(iii) stay deferred).
+
+**Quantitative bound landed (`DobrushinDecay99`, this audit).** The `d < 1` /
+`d^n < 1/1000` objective above is now PROVED with an explicit rational `d`.
+`Shufflemath/FiniteDeck/DobrushinDecay99.lean` gives
+`blExchange_dobrushinCoeff_le : dobrushinCoeff (blExchangeKernel commanderBLParams)
+≤ 1 − w50 25 25`, where `w50 25 25 = 997540809461453561581 / 6330095096149974879912
+≈ 0.15759`, so `d = 1 − w50 25 25 ≈ 0.8424` (matching the Python oracle
+`1 − P(25→25) = 0.8424…`). This is *not* the `< 1` irreducibility argument: it rests
+on two reusable lemmas — `TotalVariation.tv_overlap_identity` (Theorem A: the TV of
+two probability laws is `½·Σ|μ k − ν k|`) and `Dobrushin.rowTV_le_one_sub_minMass`
+(Theorem B: `rowTV K i j ≤ 1 − min (mass (K i) y, mass (K j) y)` for any state `y`),
+plus the structural fact `w50_25_min_reach` (state `25` minimizes the incoming mass
+to `25` over all `50` states — a `native_decide` over the exact weights). Applying
+Theorem B at `y = 25` to every row pair then bounds `dobrushinCoeff` by `1 − w50 25 25`.
+`one_sub_w50diag_pow41_lt_thousand` : `(1 − w50 25 25)^41 < 1/1000` is a single
+`native_decide` on the exact rational (stated standalone to keep the `^41` reduction
+in its own elaboration context), and the headline
+`physicalExchange_decay_41_lt_thousand (x0)` composes this with the existing
+`physicalExchange_dobrushinDecay` to state: **41 physical perfect-exchange steps from
+any 99-card deck drive the TV to `GSR.uniformDist (Deck 99)` below `1/1000`.** The
+tightest available `d` is `1 − w50 25 25`; a smaller one via the true max-rowTV pair
+is possible but not needed for the `< 1/1000` objective.
 
 **Acceptance:** theorem with model, action class, initial state, target,
 terminal bound, and cost all explicit; separately state any optimization

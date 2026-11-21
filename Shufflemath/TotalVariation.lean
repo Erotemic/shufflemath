@@ -4,6 +4,7 @@ public import Shufflemath.Matrix
 public import Shufflemath.Finite
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Order.Sub.Basic
 
 @[expose] public section
@@ -243,6 +244,50 @@ theorem tv_le_one {alpha : Type*} [Fintype alpha] (p q : Dist alpha) :
   · exact mass_nonneg q
   · exact sum_mass p
   · exact sum_mass q
+
+/-- **Overlap identity.** For two exact finite probability laws `P`, `Q`
+(total mass `1` each, by `sum_mass`), the TV distance equals one minus their
+pointwise-overlap mass:
+`tv P Q = 1 - ∑ x, min (mass P x) (mass Q x)`.
+This is the standard `TV = 1 − overlap` fact, and it underlies the Dobrushin
+coefficient bound `dobrushinCoeff K ≤ 1 − min_x mass (K x) z` (one term of the
+overlap sum dominates at any fixed state `z`). -/
+theorem tv_eq_one_sub_overlap {α : Type*} [Fintype α] (P Q : Dist α) :
+    tv P Q = 1 - (Finset.univ : Finset α).sum (fun x => min (mass P x) (mass Q x)) := by
+  rw [tv]
+  have hsumP : (Finset.univ : Finset α).sum (fun x => mass P x) = 1 := sum_mass P
+  have hsumQ : (Finset.univ : Finset α).sum (fun x => mass Q x) = 1 := sum_mass Q
+  have hper : ∀ x : α, min (mass P x) (mass Q x) + (1 / 2 : Rat) * |mass P x - mass Q x| =
+      (1 / 2 : Rat) * (mass P x + mass Q x) := by
+    intro x
+    by_cases h : mass P x ≤ mass Q x
+    · have habs : |mass P x - mass Q x| = mass Q x - mass P x := by
+        rw [← neg_sub, abs_neg, abs_of_nonneg (sub_nonneg.mpr h)]
+      rw [min_eq_left h, habs]
+      ring
+    · have habs : |mass P x - mass Q x| = mass P x - mass Q x := by
+        exact abs_of_nonneg (sub_nonneg.mpr (le_of_lt (not_le.mp h)))
+      rw [min_eq_right (le_of_lt (not_le.mp h)), habs]
+      ring
+  set Smin := (Finset.univ : Finset α).sum (fun x => min (mass P x) (mass Q x))
+  set Sabs := (Finset.univ : Finset α).sum (fun x => |mass P x - mass Q x|)
+  have hsum : Smin + (1 / 2 : Rat) * Sabs = 1 := by
+    calc
+      _ = (Finset.univ : Finset α).sum (fun x => min (mass P x) (mass Q x) +
+          (1 / 2 : Rat) * |mass P x - mass Q x|) := by
+        rw [Finset.sum_add_distrib, Finset.mul_sum]
+      _ = (Finset.univ : Finset α).sum (fun x => (1 / 2 : Rat) * (mass P x + mass Q x)) :=
+        Finset.sum_congr rfl (fun x _ => hper x)
+      _ = (1 / 2 : Rat) * (Finset.univ : Finset α).sum (fun x => mass P x + mass Q x) := by
+        rw [Finset.mul_sum]
+      _ = (1 / 2 : Rat) * ((Finset.univ : Finset α).sum (fun x => mass P x) +
+          (Finset.univ : Finset α).sum (fun x => mass Q x)) := by
+        rw [Finset.sum_add_distrib]
+      _ = (1 / 2 : Rat) * (1 + 1) := by rw [hsumP, hsumQ]
+      _ = 1 := by ring
+  rw [vectorTV]
+  have hhalf : (1 / 2 : Rat) * Sabs = 1 - Smin := by linarith
+  exact hhalf
 
 end Dist
 
