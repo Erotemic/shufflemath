@@ -1,49 +1,66 @@
-module
-
-public import Shufflemath.FiniteDeck.WithinPileOrbit
-public import Mathlib.Logic.Equiv.Sum
-public import Mathlib.Tactic
-
-@[expose] public section
-
-namespace Shufflemath
-namespace FiniteDeck
-
-/-!
-# F5 within-pile orbit — progress and next step
-
-**Landed in `Shufflemath/FiniteDeck/WithinPileOrbit.lean` this session:**
-- `sumCongr_pairInjective` — `Equiv.sumCongr` determines both within-pile
-  permutations (read off on `inl` / `inr`).
-- `embed_m_pairInjective` — `embed_m` is injective in the within-pile pair: the
-  arbitrary-`(N, m)` generalization of the 99-card `pileRelabelEquiv_pairInjective`
-  (cancel the fixed `finSplit` / `finSplit.symm` sandwich around `Equiv.sumCongr`).
-- `memLeftPositions_iff` — `x ∈ leftPositions ↔ ∃ i, x = leftPosition i`.
-- `embed_m_imageLeft` — `embed_m` maps the left-pile positions onto themselves.
-- `bijection_imageCompl` — a bijection preserving a set preserves its complement.
-- `embed_m_imageRight` — `embed_m` maps the right-pile positions onto themselves
-  (one-line application of `bijection_imageCompl` + `embed_m_imageLeft`).
-- `act_d` — the within-pile orbit action on decks: `(embed_m (pl,pr)).trans d`.
-- `act_d_preservesMembership` — the orbit action preserves membership
-  (image of the left positions is unchanged).
-- `act_d_injective` — the orbit action is injective in the within-pile pair
-  (cancel `d` from the right of `.trans d`; reduces to `embed_m_pairInjective`).
-
-**NEXT (this file is the forward WIP, a build-gate placeholder):**
-- **The fiber orbit theorem** (the §2 goal of
-  `docs/planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md`):
-   `H_m ≃ {e : Deck N // membership N m hm e = membership N m hm d}` where
-   `H_m = (Fin m ≃ Fin (N - m)) × (Fin m ≃ Fin (N - m))` and the orbit map is
-   `act_d (pl, pr) = (embed_m N m hm pl pr).trans d`.
-   - Membership-preservation of `act_d`: `embed_m_imageLeft` (+ `imageRight`)
-     show `leftCards (act_d ·) = leftCards d`.
-   - Injectivity: `embed_m_pairInjective` + cancel the trailing `.trans d`.
-   - Surjectivity onto the fiber: for `e` with `membership e = membership d`,
-     set `h := e.trans d.symm` (preserves the piles), then reconstruct
-     `(pl, pr)` from `h` (it is `embed_m (pl, pr)` for unique `(pl, pr)`);
-     finally `e = (embed_m (pl, pr)).trans d = act_d (pl, pr)`.
--/
-
--- Build-gate placeholder for the next increment; the landed lemmas live in
--- `WithinPileOrbit.lean`.
-example : True := by trivial
+-- WIP: F5 orbit generalization
+--   fiber d ≃ withinPilePerm N m hm,  (fiber := {e | leftCards e = leftCards d})
+--
+--   (F5 generalizes the F3 99-card orbit theorem: the fiber of d in the
+--   count-preserving state space is the within-pile permutation group, acting
+--   freely and transitively, with the action e ↦ (within-pile perm of d⁻¹e) ⊗ d.)
+--
+-- ═══════════════════ 8-ITEM AUDIT (executed) ═══════════════════
+--   1. [DONE] bijection_imageCompl (generalizes F3's bijection_imageCompl).
+--   2. [DONE] embed_m_imageRight (embed_m preserves right positions).
+--   3. [DONE] act_d + act_d_preservesMembership (fiber membership preserved).
+--   4. [DONE] act_d_injective (fiber orbit theorem part 1 — injectivity).
+--   5. [DONE] wPreservesLeftOfFiber (the fiber condition = w preserves left piles).
+--   6. [DONE] wPreservesRightOfFiber (the fiber condition = w preserves right piles).
+--   7. [DONE] existsFinSplitLeft (existence of the left-index of w's left image).
+--   8. [PENDING] rightPositions_eqImage + existsFinSplitRight + reconstruction.
+--
+-- ── SESSION 83 (this one) — 4 increments ──
+--   (a) bijection_imageCompl + embed_m_imageRight   (commit 67231aa)
+--   (b) act_d + act_d_preservesMembership + act_d_injective  (commit 4e47e6f)
+--   (c) wPreservesLeftOfFiber + wPreservesRightOfFiber  (commit 91117a4)
+--   (d) existsFinSplitLeft  (commit c618907)
+--
+-- ── REMAINING (in order) ───────────────────────────────────────────
+--   1. rightPositions_eqImage : rightPositions = (univ : Finset (Fin (N-m))).image rightPosition.
+--      OBSTACLES (from probes): (a) `Fin.castLE_apply` does NOT exist — use
+--      `simp only [Fin.castLE]` (unfolds castLE hm i to ⟨i.val, _⟩ so .val = i.val).
+--      (b) `Finset.mem_image` gives `↑(castLE i) = ↑x` (coerced) but the goal has
+--      `castLE hm i = x` (uncoerced) — bridge via .val or use `congrArg Fin.val`.
+--      (c) `omega` failed on `m + (x.val - m) = x.val` — use `Nat.add_sub_cancel_left`
+--      with `x.val ≥ m`, or `omega` WITH the explicit `x.val ≥ m` and `x.val < N`
+--      hypotheses in scope (add `have hxm : x.val ≥ m` / `have hxv : x.val < N` BEFORE omega).
+--   2. existsFinSplitRight (mirror of existsFinSplitLeft, using rightPositions_eqImage).
+--   3. plOfW/prOfW : Fin m → Fin m / Fin (N-m) → Fin (N-m) via Classical.choose,
+--      with the apply-lemmas (finSplit (w (leftPosition i)) = Sum.inl (plOfW i)).
+--   4. plOfW_equiv/prOfW_equiv : Equiv.Perm via Equiv.ofBijective.
+--      - injective: plOfW i = plOfW j → finSplit (w (leftPosition i)) = Sum.inl (plOfW i)
+--        = Sum.inl (plOfW j) = finSplit (w (leftPosition j)) → w (leftPosition i) = w (leftPosition j)
+--        (finSplit injective) → leftPosition i = leftPosition j (w injective) → i = j.
+--      - surjective: for k, finSplit (w (leftPositions)) = image (finSplit ∘ w) = image inl (bijection
+--        onto the inl summand) → ∃ i, finSplit (w (leftPosition i)) = Sum.inl k → plOfW i = k.
+--   5. w = embed_m (plOfW_equiv) (prOfW_equiv): by Equiv.ext, show w (leftPosition i) =
+--      leftPosition (plOfW i) and w (rightPosition j) = rightPosition (prOfW j). (The
+--      left case is wLeftIsLeftPos — see the probe; the `let` in the type is NOT visible
+--      in the body, so define plOfW as a top-level `noncomputable def` and reference it.)
+--   6. fiberOrbit_equiv : fiber d ≃ withinPilePerm (the capstone):
+--      - injective = act_d_injective (done).
+--      - surjective: for e in fiber d, e = act_d (e.trans d.symm) where e.trans d.symm ∈ H_m
+--        (e in fiber ⟹ wPreservesLeft/RightOfFiber for w = e.trans d.symm ⟹ the
+--        reconstruction ⟹ e.trans d.symm = embed_m pl pr ∈ H_m, and
+--        act_d (e.trans d.symm) = (e.trans d.symm).trans d = e (Equiv.trans_assoc)).
+--
+-- ── KEY TACTICAL NOTES (from this session's probes) ──────────────
+--   - `Fin.castLE_apply` does not exist; `simp only [Fin.castLE]` unfolds it.
+--   - `Equiv.injective (e : α ≃ β)` is `Injective (↑e)` = `∀ a b, e a = e b → a = b`;
+--     apply as `(Equiv.injective e) a b h` (PARENTHESIZE — bare `Equiv.injective e a b h`
+--     parses as `Equiv.injective` applied to 2 args).
+--   - `use k` on `∃! k, P k` triggers unwanted simp that rewrites `finSplit (...)` to
+--     `Sum.inl k` in the goal — prove `∃ k, P k` and uniqueness as SEPARATE lemmas.
+--   - `leftPosition N m hm i = Fin.castLE hm i` (def); `rightPosition N m hm i = ⟨m + i.val, _⟩`.
+--   - `finSplit (leftPosition i) = Sum.inl i` (finSplit_left); `finSplit (rightPosition j) = Sum.inr j` (finSplit_right).
+--   - `rightPosition_memRight` / `leftPosition_memLeft` give the Finset membership.
+--   - `Fintype` resolves from the module's existing imports (no explicit import needed).
+--
+--   Build: lake build Shufflemath.FiniteDeck.WithinPileOrbit (targeted);
+--          full aggregator `lake build Shufflemath` before each commit (3245 jobs).
