@@ -143,4 +143,26 @@ theorem stableBuckets_keys_eq_rankOrderKeyList (n a : Nat) (ha : 0 < a) (hn : 0 
     List.SortedLT.eq_of_mem_iff hL hR hmem
   simpa only [R, rankOrderKeyList_eq_Rmap] using hLR
 
+-- ---- THE F4.2 DECK-LEVEL PERMUTATION CAPSTONE ----------------------------
+-- The stable-bucketed deck IS the deck re-ordered by new position (rank).
+-- This is the final F4.2 capstone:  `stableBuckets a ℓ (finRange n) =
+-- (finRange n).map rankEquiv.symm` as a genuine *card-list* equality (not just
+-- at the key level).  Proof:  both sides map under the *injective* key `keyNat`
+-- to the same key list (stable-bucket key image = `rankOrderKeyList` = the
+-- rank-ordered deck's key image), so by `map_inj_eq` the card lists are equal.
+theorem stableBuckets_eq_orderByNewPosition (n a : Nat) (ha : 0 < a) (hn : 0 < n)
+    (ℓ : Fin n → Fin a) :
+    GSR.stableBuckets a ℓ (List.finRange n) =
+      (List.finRange n).map (rankEquiv n a hn ℓ).symm := by
+  -- both sides map under `keyNat` to the same key list
+  have hmap :
+      (GSR.stableBuckets a ℓ (List.finRange n)).map (keyNat n a ℓ) =
+        ((List.finRange n).map (rankEquiv n a hn ℓ).symm).map (keyNat n a ℓ) := by
+    rw [stableBuckets_keys_eq_rankOrderKeyList n a ha hn ℓ,
+        ← (rankOrderKeyList_eq_Rmap n a hn ℓ)]
+  -- `keyNat` is injective, so equal key-images force equal card lists
+  exact (map_inj_eq (keyNat n a ℓ) (keyNat_injective n a hn ℓ)
+       (GSR.stableBuckets a ℓ (List.finRange n))
+       ((List.finRange n).map (rankEquiv n a hn ℓ).symm) hmap)
+
 end Shufflemath
