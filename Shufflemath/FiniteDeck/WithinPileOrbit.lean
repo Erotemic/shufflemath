@@ -361,3 +361,65 @@ theorem existsFinSplitLeft (N m : Nat) (hm : m ≤ N) (w : Deck N) (i : Fin m)
   rcases Finset.mem_image.mp hmem with ⟨k, hk, hval⟩
   use k
   rw [show w (leftPosition N m hm i) = leftPosition N m hm k from by simpa [leftPosition] using hval.symm, finSplit_left]
+
+theorem memLeftPositions_val (N m : Nat) (hm : m ≤ N) (x : Fin N) :
+    x ∈ leftPositions N m hm ↔ x.val < m := by
+  rw [memLeftPositions_iff]
+  constructor
+  · rintro ⟨i, heq⟩
+    rw [heq]
+    simpa [leftPosition_val] using i.isLt
+  · intro hx
+    have h : leftPosition N m hm ⟨x.val, hx⟩ = x := by
+      apply Fin.ext
+      simpa only [leftPosition_val]
+    exact ⟨⟨x.val, hx⟩, h.symm⟩
+
+/-- A deck position is a right-pile position iff its value is `≥ m`. -/
+theorem memRightPositions_val (N m : Nat) (hm : m ≤ N) (x : Fin N) :
+    x ∈ rightPositions N m hm ↔ x.val ≥ m := by
+  dsimp only [rightPositions]
+  simp only [Finset.mem_sdiff, Finset.mem_univ, true_and]
+  rw [memLeftPositions_val]
+  simpa only [Nat.not_lt]
+
+/-- A deck position is in the image of `rightPosition` iff its value is `≥ m`. -/
+theorem memImageRightPosition_val (N m : Nat) (hm : m ≤ N) (x : Fin N) :
+    x ∈ (Finset.univ : Finset (Fin (N - m))).image (rightPosition N m hm) ↔ x.val ≥ m := by
+  rw [Finset.mem_image]
+  simp only [Finset.mem_univ, true_and]
+  have hxN : x.val < N := x.isLt
+  constructor
+  · rintro ⟨j, heq⟩
+    rw [← heq, rightPosition_val]
+    simpa using Nat.le_add_right m (j.val)
+  · intro hx
+    have hjv : x.val - m < N - m := by omega
+    use ⟨x.val - m, hjv⟩
+    have h : rightPosition N m hm ⟨x.val - m, hjv⟩ = x := by
+      apply Fin.ext
+      rw [rightPosition_val, Nat.add_comm]
+      exact Nat.sub_add_cancel hx
+    exact h
+
+/-- The right-pile positions are exactly the values in `[m, N)`, i.e. the image
+  of the right-pile index set under `rightPosition`. -/
+theorem rightPositions_eqImage (N m : Nat) (hm : m ≤ N) :
+    rightPositions N m hm = (Finset.univ : Finset (Fin (N - m))).image (rightPosition N m hm) := by
+  apply Finset.ext
+  intro x
+  rw [memRightPositions_val, memImageRightPosition_val]
+
+/-- Mirror of `existsFinSplitLeft` for the right pile: the image of the j-th right
+  position under a right-position-preserving bijection is again a right position,
+  hence has a well-defined right-index in the `finSplit` decomposition. -/
+theorem existsFinSplitRight (N m : Nat) (hm : m ≤ N) (w : Deck N) (j : Fin (N - m))
+    (hwR : (rightPositions N m hm).image w = rightPositions N m hm) :
+    ∃ k : Fin (N - m), finSplit N m hm (w (rightPosition N m hm j)) = Sum.inr k := by
+  have hmem : w (rightPosition N m hm j) ∈ rightPositions N m hm := by
+    rw [← hwR]
+    exact Finset.mem_image_of_mem (fun p => w p) (rightPosition_memRight N m hm j)
+  rw [rightPositions_eqImage] at hmem
+  rcases Finset.mem_image.mp hmem with ⟨k, hk, hval⟩
+  use k
+  rw [show w (rightPosition N m hm j) = rightPosition N m hm k from by simpa [rightPosition] using hval.symm, finSplit_right]
