@@ -27,4 +27,5 @@ public import Shufflemath.FiniteDeck.DobrushinDecay
 public import Shufflemath.FiniteDeck.DobrushinDecay99
 public import Shufflemath.FiniteDeck.Gate6FiniteGSR
 public import Shufflemath.Gate6BadLabels
+public import Shufflemath.FiniteDeck.Gate6TieRank
 public import Shufflemath.CommanderPerDeckKernel
