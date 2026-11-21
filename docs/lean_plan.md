@@ -757,6 +757,23 @@ algebra can advance in parallel.
    proved by a manual element-wise `get` induction (or a small added
    `IsSublist ⇒ SortedLT` lemma).  That is the exact, isolated next step; the
    module documents it in full.
+   *Resolved (this session, `93fd7a2`):* the hL sub-lemma **landed** and the
+   full capstone **proves** in new **`Shufflemath/GSRF42KeyOrder.lean`**.
+   `bucketKeys_sortedLT` (the hL sub-lemma) is proved by the induction just
+   derived: `List.SortedLT.flatMap_cons` gives that a filtered-then-mapped list
+   (mapped by the *per-label strictly-increasing* key `keyNat`,
+   `keyNat_strictMono`) is `SortedLT` exactly when its `flatMap`-tail is, and
+   each bucket's `head.SortedLT` is `List.SortedLT.nodup` (the key image is
+   `Nodup` because `keyNat` is strictly increasing inside a label).  Chaining
+   the `flatMap` over the `finRange` labels gives **`stableBuckets_keySortedLT`**
+   (the stable-bucket deck is `SortedLT` on the new key); combined with
+   `rankOrderKeyList_sortedLT` and `List.SortedLT.eq_of_mem_iff` (both key
+   images are `SortedLT` and carry the same membership — both decks contain
+   every card, `keyNat` a fixed card→key map) this yields the **F4.2 sorting
+   identity `stableBuckets_keys_eq_rankOrderKeyList`**: the keys emitted by
+   `GSR.stableBuckets` are *exactly* `rankOrderKeyList`, i.e. the keys in the
+   unique order by `(label, position)`.  This is "stableBuckets = order by new
+   position" at the key level — the heart of F4.2.
 3. Establish the row-wise bound against *physical perfect-local* shuffling:
    for each deck, the TV discrepancy is no greater than the sum of the two
    local GSR-versus-uniform errors (49-card and 50-card working sets).
