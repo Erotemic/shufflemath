@@ -157,11 +157,15 @@ deck is `Nodup`) was explored and found a **redundant parallel formulation** of 
 already-proven `orderByNewPosition`/`Equiv.Perm` result — not pursued further (this
 Mathlib's `BEq`/`==`-based `List.filter`/`count` API blocks the direct count route;
 the `orderByNewPosition` route avoids it). *Packaging (2026-11-20, commit `891a5a7`):* the ~1,070-line `section firstMode` block (the first centered eigenfunction `blFirstModeFunc`, `blConditionalMean`, the hypergeometric means, `gProd`/`gSplit`) was split out of `BernoulliLaplaceGeneral.lean` into a new `Shufflemath/BernoulliLaplaceFirstMode.lean` — a build-granularity win (editing `blConditionalMean` no longer forces a recompile of the 12-module BL-General surface); the declarations keep their `BernoulliLaplaceGeneral.*` names (the section is naming-transparent) and all 37 Python tests pass. **The remaining deep work is now (i) the F5
-`perDeckBridge` → `uniformFiber_intertwines`** (WIP `Shufflemath/_Probe47u.lean`; the last
-F5 piece, Section 3 of
-`planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md`)** and (ii) the
-F4.2-deferred (b) non-degenerate full-deck budget certificate / Dobrushin-contraction
-follow-up** (`Shufflemath/Dobrushin.lean`). The exact
+`perDeckBridge` → `uniformFiber_intertwines`** — the `perDeckBridge` proof is complete
+in the probe `Shufflemath/_Probe47u.lean` (0 sorries) pending integration into a
+committed module (`uniformFiber_intertwines` is in `Shufflemath/FiniteDeck/BLRefinement.lean`);
+the last F5 piece, Section 3 of
+`planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md` — **and (ii)
+the F4.2-deferred non-degenerate full-deck budget certificate**, now realized at any
+exchange count `n` by `Shufflemath/TelescopeF5.f5FullDeck_nondegenerate_nstep`
+(length-free crude-telescope F4.2 crack; see the F5 section), with only the optional
+Dobrushin-contraction sharpening left as a refinement. The exact
 resume point is in [`agent_handoff.md`](agent_handoff.md); the campaign roadmap
 is
 [`planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md`](planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md).
@@ -875,8 +879,17 @@ feasibility is **proved** (the certificates above); claim (ii) bounded
 finite `argmin` — `f5OptCost` names the objective) is **stated, not proved**;
 claim (iii) actual-TV optimality (needs competitor lower bounds) is **stated,
 not proved, and deliberately not claimed**. A non-degenerate *full-deck*
-budget certificate (over the 99! `Finset.univ`) remains the F4.2-deferred
-follow-up.
+budget certificate (over the 99! `Finset.univ`) is now realized at any exchange
+count `n`: **`Shufflemath/TelescopeF5.f5FullDeck_nondegenerate_nstep`** (backed by
+the abstract `compList_telescope_nstep_le_n` / `telescopeTV_le_idealPlusN` and the
+`d := 1` `Perturbation.telescopeBound_le_length`) generalizes the existing 2-/3-step
+telescope lemmas to any `n` through the length-free crude telescope, so no
+`Finset.univ` is instantiated and the F4.2 wall is avoided. It bounds the physical
+`n`-exchange TV toward `GSR.uniformDist` by `n` (the per-step physical-vs-ideal
+discrepancy, each `≤ 1`) plus the oracle chain's TV toward uniform. The
+*Dobrushin-contraction* sharpening (a contracting `d < 1` budget) remains a
+possible refinement in `Shufflemath/Dobrushin.lean`; the `n` budget here is
+non-vanishing, so no optimality is claimed (F5-B (ii)/(iii) stay deferred).
 
 **Acceptance:** theorem with model, action class, initial state, target,
 terminal bound, and cost all explicit; separately state any optimization
