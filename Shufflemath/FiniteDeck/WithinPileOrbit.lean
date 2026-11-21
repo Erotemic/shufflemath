@@ -648,3 +648,67 @@ theorem prOfW_equiv_embed_m (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
   intro j
   change (prOfW N m hm (embed_m N m hm pl pr) (embed_m_imageRight N m hm pl pr)) j = pr j
   exact prOfW_embed_m N m hm pl pr j
+
+theorem leftCards_eq_iffMembership (N m : Nat) (hm : m ≤ N) (d e : Deck N) :
+    leftCards N m hm d = leftCards N m hm e ↔ membership N m hm d = membership N m hm e := by
+  simp only [membership]
+  constructor
+  · intro h
+    exact Subtype.ext h
+  · intro h
+    exact congrArg (·.1) h
+
+/-- The fiber map: a within-pile pair `(pl, pr)` sends to `act_d d pl pr`, which
+  stays in `d`'s left-card fiber. -/
+def fiberMap (N m : Nat) (hm : m ≤ N) (d : Deck N) :
+    (Equiv.Perm (Fin m) × Equiv.Perm (Fin (N - m))) →
+    { e : Deck N // leftCards N m hm e = leftCards N m hm d } :=
+  fun p =>
+    ⟨act_d N m hm d p.1 p.2,
+     (leftCards_eq_iffMembership N m hm (act_d N m hm d p.1 p.2) d).2
+       (act_d_preservesMembership N m hm d p.1 p.2)⟩
+
+/-- The fiber map is injective: two within-pile pairs give the same fiber element
+  (the same `act_d` deck) only if they are the same pair (`act_d_injective`). -/
+theorem fiberMap_injective (N m : Nat) (hm : m ≤ N) (d : Deck N) :
+    Function.Injective (fiberMap N m hm d) := by
+  intro p q h
+  have h0 : act_d N m hm d p.1 p.2 = act_d N m hm d q.1 q.2 := by
+    simpa [fiberMap] using congrArg (fun z : {e : Deck N // leftCards N m hm e = leftCards N m hm d} => z.1) h
+  exact (act_d_injective N m hm d) h0
+
+/-- The fiber map is surjective: for `e` with `leftCards e = leftCards d`,
+  `e = act_d d (plOfW w) (prOfW w)` where `w = e ∘ d⁻¹` (the within-pile
+  reconstruction, `w_eq_embed_m`). -/
+theorem fiberOrbit_surjective (N m : Nat) (hm : m ≤ N) (d : Deck N) :
+    Function.Surjective (fiberMap N m hm d) := by
+  intro y
+  let e := y.1
+  let hle := y.2
+  let w := e.trans d.symm
+  have hwL := wPreservesLeftOfFiber N m hm d e hle
+  have hwR := wPreservesRightOfFiber N m hm d e hle
+  let pl := plOfW_equiv N m hm w hwL
+  let pr := prOfW_equiv N m hm w hwR
+  have hdeck : act_d N m hm d pl pr = e := by
+    dsimp only [act_d]
+    have hrec : e.trans d.symm = embed_m N m hm pl pr :=
+      w_eq_embed_m N m hm (e.trans d.symm) hwL hwR
+    rw [← hrec]
+    simpa only [trans_d_symm_trans_d]
+  use (pl, pr)
+  dsimp only [fiberMap]
+  refine Subtype.ext ?_
+  simpa using hdeck
+
+/-- **F5 orbit capstone.** For an arbitrary cut size `m ≤ N` and an arbitrary
+  deck `d`, the within-pile relabels of `d` (the `act_d d pl pr = (embed_m pl pr) ∘ d`)
+  are exactly the members of `d`'s left-card fiber. Hence the fiber is in bijection
+  with the within-pile permutation pair `(Fin m ≃ Fin m) × (Fin (N-m) ≃ Fin (N-m))`,
+  of size `(m!) · (N-m)!`. This is the arbitrary-finite-deck generalization of the
+  `n = 4` `leftCardFiberOrbit_equiv` (item 8), now for all `N`. -/
+noncomputable def fiberOrbit_equiv (N m : Nat) (hm : m ≤ N) (d : Deck N) :
+    (Equiv.Perm (Fin m) × Equiv.Perm (Fin (N - m))) ≃
+    { e : Deck N // leftCards N m hm e = leftCards N m hm d } :=
+  Equiv.ofBijective (fiberMap N m hm d)
+    ⟨fiberMap_injective N m hm d, fiberOrbit_surjective N m hm d⟩
