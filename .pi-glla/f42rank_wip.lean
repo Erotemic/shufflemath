@@ -5,6 +5,8 @@ public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fintype.EquivFin
 public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.List.FinRange
+public import Mathlib.Data.List.Sort
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Nat.ModEq
 public import Shufflemath.GSR
@@ -174,16 +176,18 @@ noncomputable def rankEquiv (n a : Nat) (hn : 0 < n) (ℓ : Fin n → Fin a) : E
   Equiv.ofBijective f ⟨hfInj, Finite.surjective_of_injective hfInj⟩
 
 /- **`canonicalList`: the canonical deck of positions `[0, 1, …, n-1]`** as a
-   `List (Fin n)`, in increasing-position order (the minor key). -/
-def canonicalList (n : Nat) : List (Fin n) :=
-  (List.range n).filterMap fun k => (if hk : k < n then some (Fin.mk k hk) else none)
+   `List (Fin n)`, in increasing-position order (the minor key).  Defined
+   directly as `List.finRange n` — the standard Mathlib list of all `Fin n` in
+   order — which carries clean `get`/`idxOf`/`nodup` lemmas (`idxOf_finRange`,
+   `nodup_finRange`, …) and is exactly the `filterMap`-over-`range` deck. -/
+def canonicalList (n : Nat) : List (Fin n) := List.finRange n
 
 /- **`orderByNewPosition`: the output list of a position permutation `σ`.**  The
    card at output position `r` is the one that was at original position `σ r`
    (Section 3: the GSR shuffle's output order).  For the canonical deck this is
-   exactly `[σ 0, σ 1, …, σ (n-1)]`. -/
+   exactly `[σ 0, σ 1, …, σ (n-1)]`, i.e. `finRange n` mapped by `σ`. -/
 def orderByNewPosition (n : Nat) (σ : Equiv (Fin n) (Fin n)) : List (Fin n) :=
-  (canonicalList n).map σ
+  (List.finRange n).map σ
 
 /- **When `a = 1` every label is `0`, so the flattened key is just the position:**
    `keyNat n 1 ℓ i = i.val`, hence the number of smaller keys is `i.val` and
@@ -308,6 +312,100 @@ theorem map_inj_eq {α β : Type*} (f : α → β) (hf : Function.Injective f)
     (l₁ l₂ : List α) (hmap : l₁.map f = l₂.map f) : l₁ = l₂ :=
   (List.map_injective_iff.mpr hf) hmap
 
+/-!## The key is the lex `(label, position)` order, flattened
+
+The GSR output order compares cards by `(label, position)` lexicographically, with
+`label` the major and `position` the minor key.  Because a position is always `< n`,
+flattening that lex pair to a single `Nat` via `keyNat = label·n + position` is an
+*order embedding*: two distinct cards compare by `keyNat` exactly when they compare by
+`(label, position)`.  This is the algebraic heart of why the stable-bucketed deck (which
+is precisely the `(label, position)` lex order) is a sorted key sequence. -/
+
+/-- **Key order = lex `(label, position)` order.**  For distinct cards `i`, `j`,
+    `keyNat i < keyNat j` iff `i`'s label is smaller, or the labels tie and `i`'s
+    position is smaller.  (Positions are `< n`, so `label·n + position` faithfully
+    encodes the lex pair.) -/
+theorem keyNat_lex (n a : Nat) (ℓ : Fin n → Fin a) (i j : Fin n) :
+    keyNat n a ℓ i < keyNat n a ℓ j ↔
+        (ℓ i).val < (ℓ j).val ∨ ((ℓ i).val = (ℓ j).val ∧ i.val < j.val) := by
+  dsimp only [keyNat]
+  constructor
+  · -- LHS ⟹ RHS
+    intro h
+    by_cases hlt : (ℓ i).val < (ℓ j).val
+    · exact Or.inl hlt
+    · by_cases heq : (ℓ i).val = (ℓ j).val
+      · -- labels tie: a·n + i.val < a·n + j.val  ⟹  i.val < j.val (cancel a·n)
+        rw [heq] at h
+        have hval : i.val < j.val := by simpa [Nat.add_left_cancel_iff] using h
+        exact Or.inr ⟨heq, hval⟩
+      · -- label i > label j:  (ℓ i).val ≥ (ℓ j).val + 1, so key i ≥ (ℓ j).val·n + n > key j
+        have hge : (ℓ j).val + 1 ≤ (ℓ i).val := by omega
+        have hmul : (ℓ j).val * n + n ≤ (ℓ i).val * n := by
+          simpa [Nat.succ_mul] using Nat.mul_le_mul_right n hge
+        have hstep : (ℓ j).val * n + n > (ℓ j).val * n + j.val := by
+          apply Nat.add_lt_add_left; exact j.isLt
+        have hbad : (ℓ i).val * n + i.val > (ℓ j).val * n + j.val := by
+          calc (ℓ i).val * n + i.val ≥ (ℓ i).val * n := Nat.le_add_right _ _
+            _ ≥ (ℓ j).val * n + n := hmul
+            _ > (ℓ j).val * n + j.val := hstep
+        have hba : (ℓ j).val * n + j.val < (ℓ i).val * n + i.val := hbad
+        exact False.elim (Nat.lt_irrefl _ (Nat.lt_trans h hba))
+  · -- RHS ⟹ LHS
+    intro h
+    rcases h with (hlt | ⟨heq, hint⟩)
+    · -- a < b:  a·n + i.val < (a+1)·n ≤ b·n ≤ b·n + j.val
+      have hmul : (ℓ i).val * n + n ≤ (ℓ j).val * n := by
+        simpa [Nat.succ_mul] using Nat.mul_le_mul_right n (Nat.succ_le_of_lt hlt)
+      have hstep1 : (ℓ i).val * n + i.val < (ℓ i).val * n + n := by
+        apply Nat.add_lt_add_left; exact i.isLt
+      have hstep2 : (ℓ i).val * n + i.val < (ℓ j).val * n := Nat.lt_of_lt_of_le hstep1 hmul
+      exact Nat.lt_of_lt_of_le hstep2 (Nat.le_add_right _ _)
+    · -- a = b, i.val < j.val:  a·n + i.val < a·n + j.val
+      rw [heq]
+      apply Nat.add_lt_add_left
+      exact hint
+
+/-!## The F4.2 capstone: the last wall (precisely characterized)
+
+**Goal.**
+```
+theorem stableBuckets_eq_orderByNewPosition (n a : Nat) (ha : 0 < a) (hn : 0 < n)
+    (ℓ : Fin n → Fin a) :
+    GSR.stableBuckets a ℓ (List.finRange n) =
+      (List.finRange n).map (rankEquiv n a hn ℓ).symm
+```
+**What is already in hand (this file).**
+  * `rankOrderKeyList n a hn ℓ` is the *target*'s key sequence and is `SortedLT`
+    (`rankOrderKeyList_sortedLT`), and its entries are distinct (`rankOrderKeys_nodup`).
+  * `keyNat_lex` above: `keyNat` order = the lex `(label, position)` order that
+    `stableBuckets` implements.  So conceptually `(stableBuckets …).map keyNat` is
+    *the same* sorted key sequence as `rankOrderKeyList`, and the capstone then follows
+    from `keyNat_injective` + `map_inj_eq` once both sides' key images are shown equal.
+
+**The single remaining sub-lemma (`hL`).**
+```
+(stableBuckets a ℓ (finRange n)).map (keyNat n a ℓ).SortedLT
+```
+`stableBuckets a ℓ (finRange n) = (range a).flatMap (fun i => (finRange n).filter
+(fun c => (ℓ c).val == i))`.  Its key image is the concatenation, over increasing
+label `i`, of the runs `[i·n + pos | pos increasing with label i]`.  Each run is
+strictly increasing and the runs are disjoint and ordered (`keyNat_lex`), so the whole
+concatenation is `SortedLT` — provable by induction on `a` via `List.sortedLT_append`
+once each *bucket* is shown `SortedLT`.
+
+**Why it is not yet closed (the precise API gap).**
+A single bucket is `((finRange n).filter (fun c => (ℓ c).val == i)).map keyNat`.  To
+show it `SortedLT` one needs a Mathlib lemma that **filtering a `SortedLT` list stays
+`SortedLT`** (or, equivalently, that a `List.IsSublist` of a `SortedLT` list is
+`SortedLT`), plus a way to **index into a `filter`** (`get`/`getElem` over a filter).
+Neither is in the current Mathlib `Data.List` API (`sortedLT_finRange` and
+`sortedLT_append` are present; the filter/sublist-sortedness and the filter `get` are
+not).  The bucket can be shown `SortedLT` by a manual induction on the deck that
+computes the filtered list's `get` element-by-element, or by introducing a
+`bucket_sortedLT` lemma proved via `List.IsSublist` (once a sublist-sortedness lemma
+is added).  That is the exact next step; everything else for F4.2 is in place.
+-/
 
 end Shufflemath
 end

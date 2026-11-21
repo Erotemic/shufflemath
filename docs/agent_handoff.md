@@ -15,7 +15,7 @@
 
 # Agent handoff: next Shufflemath task
 
-> **✅ F4.2-rank session (2026-12-16) — the *last-F4-wall*: sorted-key rank as a genuine permutation. `rank_orderPreserve`, `rankVal_injective`, `rankVal_lt_n`, `rankEquiv : Equiv (Fin n) (Fin n)`, target-side key-sortedness (`rankOrderKeys_monotone` → `rankOrderKeyList_sortedLT`), and the one-liner `map_inj_eq` now PROVEN. RESUME HERE.**
+> **✅ F4.2-rank COMMITTED as `Shufflemath/GSRF42.lean` (in the aggregator) — the *last-F4-wall*: sorted-key rank as a genuine permutation.** The flattened lex key `keyNat i = (ℓ i).val * n + i.val` and **`keyNat_lex`** (its `<` *is* the lexicographic `(label, position)` order — the algebraic core, proved via `Nat.mul_le_mul_right`/`Nat.add_lt_add_left`/`Nat.add_left_cancel_iff`) plus `keyNat_injective`, `rankVal` (`rankVal_rankEquivSymm`), **`rankEquiv : Equiv (Fin n) (Fin n)`** (`rankEquiv_symm_apply`, `rankEquiv_eq_orderByNewPosition`), `rankOrderKeyList_sortedLT`, `rankOrderKeys_nodup`, and `map_inj_eq` are all PROVEN and build-verified. **RESUME HERE: the one remaining sub-lemma for the capstone `stableBuckets a ℓ (finRange n) = (finRange n).map rankEquiv.symm` is `hL` — the `SortedLT` of the stable-bucketed deck's key image; the exact Mathlib API gap (no filter/subsequence-sortedness or filter-`get` lemma, so a bucket `(finRange n).filter …` needs a manual element-wise `get` induction) is documented in full at the end of `GSRF42.lean`.**
 > Next phase (G1–G4 + A3 are all done) is **F5**; its first sub-wall is Section 3 of
 > `docs/planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md` — turn
 > `GSR.idealShuffle`'s output into a real finite permutation and preserve the law.

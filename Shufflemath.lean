@@ -14,6 +14,7 @@ public import Shufflemath.BernoulliLaplaceCommanderBridge
 public import Shufflemath.FiberLifting
 public import Shufflemath.BernoulliLaplaceSemantic
 public import Shufflemath.GSR
+public import Shufflemath.GSRF42
 public import Shufflemath.ProtocolCertificate
 public import Shufflemath.OracleRefinement
 public import Shufflemath.PhysicalRefinement

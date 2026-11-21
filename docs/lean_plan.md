@@ -727,6 +727,36 @@ algebra can advance in parallel.
    Together `pileRelabelEquiv` is a bijection `Equiv.Perm (Fin 50) ×
    Equiv.Perm (Fin 49) ≃ {σ : Deck // preservesPiles σ}` — the deck-level GSR
    support, built without `List.mem_bind`/`toMultiset`.
+   *Progress (F4.2 last-wall, this session):* new **`Shufflemath/GSRF42.lean`**
+   resolves the *sorted-key rank* half of the last wall — turning
+   `GSR.idealShuffle`'s output (ordered by the lex `(label, position)` key) into a
+   **genuine finite permutation** of the deck positions.  The blocker was that this
+   Mathlib has no `DecidableRel` for the lexicographic `<` on a product type, so
+   the rank cannot be defined by `Finset.filter` on the lex order directly; the fix
+   **flattens the lex key to one `Nat`**: `keyNat i = (ℓ i).val * n + i.val`, whose
+   `<` is exactly the lex order (proved as `keyNat_lex`, the algebraic core) and is
+   decidable.  Established: `keyNat_injective` (equal keys force equal indices,
+   via mod-
+
+ `n` uniqueness), `rankVal` (rank = size of the below-set) with
+   `rankVal_rankEquivSymm`, and the capstone ingredients **`rankEquiv : Equiv
+   (Fin n) (Fin n)`** (a real permutation, via `Equiv.ofBijective` +
+   `Finite.surjective_of_injective`), `rankEquiv_symm_apply` (symm recovers the
+   rank-ordered deck), `rankEquiv_eq_orderByNewPosition` (the only remaining list
+   equality), `rankOrderKeyList_sortedLT` (the GSR output is a *sorted* key
+   sequence), `rankOrderKeys_nodup`, and `map_inj_eq` (injective maps reflect list
+   equality).  The single remaining sub-lemma for the full capstone
+   `stableBuckets a ℓ (finRange n) = (finRange n).map rankEquiv.symm` is the
+   `SortedLT` of the stable-bucketed deck's key image (hL): each label bucket
+   `[i·n + pos | pos increasing]` is a strictly-increasing run and consecutive
+   buckets are disjoint/ordered (`keyNat_lex`), so the `flatMap` is `SortedLT` by
+   induction on the bucket count via `List.sortedLT_append` — but a single bucket
+   is `(finRange n).filter …`, and this Mathlib exposes **no filter/subsequence-
+
+ sortedness and no filter-`get`** lemma, so the bucket's `SortedLT` must be
+   proved by a manual element-wise `get` induction (or a small added
+   `IsSublist ⇒ SortedLT` lemma).  That is the exact, isolated next step; the
+   module documents it in full.
 3. Establish the row-wise bound against *physical perfect-local* shuffling:
    for each deck, the TV discrepancy is no greater than the sum of the two
    local GSR-versus-uniform errors (49-card and 50-card working sets).
