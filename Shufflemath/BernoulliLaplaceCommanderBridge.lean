@@ -27,9 +27,11 @@ public import Shufflemath.FiniteDeck.TwoPile
 public import Shufflemath.CommanderMembershipKernels
 public import Shufflemath.CommanderFiberCount
 public import Shufflemath.Finite
+public import Shufflemath.DobrushinContraction
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Fin.Basic
 public import Mathlib.Tactic
+public meta import Shufflemath.BernoulliLaplaceGeneral
 
 @[expose] public section
 
@@ -325,4 +327,65 @@ theorem membershipLift_matches_uniformCountFiber (x : CommanderState) (m : Membe
     membershipCount_eq_countInPile m,
     commanderToBL_val_eq_commanderLeftCount x,
     membershipFiberCount_eq_countFiberMemb x]
+
+/-! ## F5: the 99-card exchange kernel is sub-maximally mixing
+
+The Dobrushin contraction coefficient of the 99-card exchange kernel is
+bounded above by its worst pairwise total-variation distance (see
+`Shufflemath.DobrushinContraction.dobrushinCoeff_le_tv`). That worst pair is
+*not* the uniform law: two macrostate rows of the exchange kernel share a
+common successor with strictly positive mass, so their TV distance is `< 1`.
+
+The two window extremes are the farthest apart window-wise: the minimum
+macrostate `x = 1` (one marked card left) and the maximum `x = 50` (all fifty
+left). Both reach the mid-window state `x = 25` in a single exchange with
+strictly positive mass, so they already bound the whole diameter below `1`.
+-/ 
+
+/-- The two window-extreme macrostates `1` and `50` and their shared
+positive-mass successor `25` (all inside `BLState 99 50 50`, whose window is
+`1 <= x <= 50`). -/
+def st1 : BernoulliLaplaceGeneral.BLState 99 50 50 :=
+  ⟨1, by norm_num, by norm_num⟩
+def st50 : BernoulliLaplaceGeneral.BLState 99 50 50 :=
+  ⟨50, by norm_num, by norm_num⟩
+def st25 : BernoulliLaplaceGeneral.BLState 99 50 50 :=
+  ⟨25, by norm_num, by norm_num⟩
+
+/-- The kernel row at the minimum window state `1` gives positive mass to the
+mid-window successor `25`. Only the `a = 1` microscopic-exchange term survives
+(the product of positive binomial coefficients), so the exact weight is
+`1 / 2` but only positivity is needed here. -/
+theorem blExchangeKernel_extremeMass125_pos :
+    0 < Dist.mass (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams st1) st25 := by
+  simp only [BernoulliLaplaceGeneral.blExchangeKernel, Dist.mass_ofFun,
+    BernoulliLaplaceGeneral.transitionWeight, st1, st25]
+  have h : 0 < (BernoulliLaplaceGeneral.transitionNumerator 99 50 50 25 1 25 : Rat) := by
+    native_decide
+  have hd : 0 < (BernoulliLaplaceGeneral.transitionDenominator 99 50 25 : Rat) := by
+    native_decide
+  exact div_pos h hd
+
+/-- The kernel row at the maximum window state `50` gives mass `1` to the
+mid-window successor `25` (a deterministic move): its numerator equals the
+dividend denominator, so the weight is exactly `1`. -/
+theorem blExchangeKernel_extremeMass5025_pos :
+    0 < Dist.mass (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams st50) st25 := by
+  simp only [BernoulliLaplaceGeneral.blExchangeKernel, Dist.mass_ofFun,
+    BernoulliLaplaceGeneral.transitionWeight, st50, st25]
+  have h : 0 < (BernoulliLaplaceGeneral.transitionNumerator 99 50 50 25 50 25 : Rat) := by
+    native_decide
+  have hd : 0 < (BernoulliLaplaceGeneral.transitionDenominator 99 50 25 : Rat) := by
+    native_decide
+  exact div_pos h hd
+
+/-- The two extreme macrostate rows share the positive-mass successor `25`,
+so their total-variation distance is `< 1`. Together with
+`dobrushinCoeff_le_tv` this bounds the Dobrushin coefficient of the 99-card
+exchange kernel strictly below `1`. -/
+theorem blExchangeKernel_extremePairTV_lt1 :
+    Dist.tv (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams st1)
+      (BernoulliLaplaceGeneral.blExchangeKernel commanderBLParams st50) < 1 := by
+  exact tv_lt_one_of_commonPos _ _ st25
+    blExchangeKernel_extremeMass125_pos blExchangeKernel_extremeMass5025_pos
 

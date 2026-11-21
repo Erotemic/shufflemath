@@ -99,4 +99,19 @@ theorem vectorTV_lt_one_of_commonPos
     _ = (1 / 2 : Rat) * (1 + 1) := by rw [hsump, hsumq]
     _ = 1 := by norm_num
 
+/-- Two distributions that share a point of strictly positive mass are at TV
+distance `< 1`: at that common point the two masses agree positively, so the
+overlap term `2 * \u2211 min` is strictly positive and `1 - 2 * overlap < 1`.
+This is the `Dist`-level form of `vectorTV_lt_one_of_commonPos` and is the
+workhorse for bounding the distance between two kernel rows that both reach
+the same successor state with positive probability (the F5 99-card overlap
+argument). -/
+theorem tv_lt_one_of_commonPos {alpha : Type*} [Fintype alpha]
+    (p q : Dist alpha) (z : alpha) (hpz : 0 < Dist.mass p z) (hqz : 0 < Dist.mass q z) :
+    Dist.tv p q < 1 := by
+  unfold Dist.tv
+  exact vectorTV_lt_one_of_commonPos (Dist.mass p) (Dist.mass q)
+    (fun _ => Dist.mass_nonneg p _) (fun _ => Dist.mass_nonneg q _)
+    (Dist.sum_mass p) (Dist.sum_mass q) z hpz hqz
+
 end Shufflemath
