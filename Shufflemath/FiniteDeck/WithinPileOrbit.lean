@@ -617,3 +617,34 @@ theorem prOfW_embed_m (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
   have hspec : finSplit N m hm ((embed_m N m hm pl pr) (rightPosition N m hm j)) =
       Sum.inr (prOfW N m hm (embed_m N m hm pl pr) hwR j) := prOfW_apply N m hm (embed_m N m hm pl pr) hwR j
   exact Sum.inr_injective (hspec.symm.trans hfin)
+
+theorem trans_d_symm_trans_d (N : Nat) (e d : Deck N) : (e.trans d.symm).trans d = e := by
+  ext x
+  simp only [Equiv.trans_apply, Equiv.apply_symm_apply]
+
+/-- The within-pile relabel `act_d d pl pr = (embed_m pl pr) ∘ d` satisfies
+  `(act_d d pl pr) ∘ d⁻¹ = embed_m pl pr`: the `d` cancels, leaving the relabel. -/
+theorem act_d_trans_d_symm (N m : Nat) (hm : m ≤ N) (d : Deck N)
+    (pl : Equiv.Perm (Fin m)) (pr : Equiv.Perm (Fin (N - m))) :
+    (act_d N m hm d pl pr).trans d.symm = embed_m N m hm pl pr := by
+  dsimp only [act_d]
+  ext x
+  simp only [Equiv.trans_apply, Equiv.symm_apply_apply]
+
+/-- The within-pile Equiv recovered from `embed_m pl pr` is `pl` itself. -/
+theorem plOfW_equiv_embed_m (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
+    (pr : Equiv.Perm (Fin (N - m))) :
+    plOfW_equiv N m hm (embed_m N m hm pl pr) (embed_m_imageLeft N m hm pl pr) = pl := by
+  apply Equiv.ext
+  intro i
+  change (plOfW N m hm (embed_m N m hm pl pr) (embed_m_imageLeft N m hm pl pr)) i = pl i
+  exact plOfW_embed_m N m hm pl pr i
+
+/-- Mirror: the right within-pile Equiv recovered from `embed_m pl pr` is `pr`. -/
+theorem prOfW_equiv_embed_m (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
+    (pr : Equiv.Perm (Fin (N - m))) :
+    prOfW_equiv N m hm (embed_m N m hm pl pr) (embed_m_imageRight N m hm pl pr) = pr := by
+  apply Equiv.ext
+  intro j
+  change (prOfW N m hm (embed_m N m hm pl pr) (embed_m_imageRight N m hm pl pr)) j = pr j
+  exact prOfW_embed_m N m hm pl pr j
