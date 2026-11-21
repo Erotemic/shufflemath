@@ -9,7 +9,7 @@ public import Shufflemath.CommanderMembershipKernels
 public import Shufflemath.CommanderMembershipExchange
 public import Shufflemath.CommanderPhysicalExchange
 public import Shufflemath.CommanderFiberCount
-public import Shufflemath._Probe47v
+public import Shufflemath.CommanderPerDeckKernel
 public import Mathlib.Tactic
 
 @[expose] public section

@@ -6,7 +6,7 @@ public import Shufflemath.CommanderMembershipKernels
 public import Shufflemath.CommanderMembershipExchange
 public import Shufflemath.CommanderMarkedRightCount
 public import Shufflemath.BernoulliLaplace
-public import Shufflemath._Probe47v
+public import Shufflemath.CommanderPerDeckKernel
 public import Shufflemath.CommanderA3ExchangeCard
 public import Mathlib.Tactic
 
