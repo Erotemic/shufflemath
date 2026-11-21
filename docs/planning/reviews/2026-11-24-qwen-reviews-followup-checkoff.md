@@ -8,6 +8,12 @@ Legend: **DONE** = completed in the tree; **PARTIAL** = the honest labeling /
 partial deliverable is in place but the full item is not; **OPEN** = not
 started; **DEFERRED** = the review itself recommended deferral.
 
+**Re-checked (this session, after the F4.2 n-step / full-deck budget-certificate
+work):** Q5, R2, Gate 4, and Gate 5 are now **DONE** in the tree (the 2026-11-24
+snapshot had them OPEN/PARTIAL); Gate 6 is **PARTIAL** (the Fintype-free F4.5
+one-step bound plus the new full-deck `n`-exchange bound via the crude-telescope
+F4.2 crack). The rows below are updated accordingly.
+
 ## Duplication / build-performance review (Q1–Q9)
 `2026-11-15-qwen-proof-quality-duplication-and-build-performance.md`
 
@@ -17,7 +23,7 @@ started; **DEFERRED** = the review itself recommended deferral.
 | Q2 | Make `generalCL` a corollary of `generalCL_ns` (reorder so the non-saturating chain comes first; drop the redundant restricted chain) | **OPEN** | `generalCL` (`ExchangeOverlap.lean:1015`) is declared *before* `generalCL_ns` (`:1204`) and is still an independent proof; the reordering has not been done. |
 | Q3 | Replace the `(25,25)` center `native_decide` certificate with `generalCL_cmdr_2525.symm` | **DONE** | `overlap_eq_revTransitionNumerator_cmdr_2525` (`ExchangeOverlap.lean:1225`) is now `exact generalCL_cmdr_2525.symm`; the `native_decide` proof is superseded. |
 | Q4 | Extract a shared `ScheduleIntertwining` module (one generic `List.Forall₂` induction for Oracle + Physical) | **OPEN** | No `Shufflemath/ScheduleIntertwining.lean`; `OracleRefinement` and `PhysicalRefinement` each still carry their own schedule induction. |
-| Q5 | Split `BernoulliLaplaceFirstMode` out of the BL core (measured, no proof edits) | **OPEN** | No `Shufflemath/BernoulliLaplaceFirstMode.lean`; the `section firstMode` block still lives in `BernoulliLaplaceGeneral.lean`. |
+| Q5 | Split `BernoulliLaplaceFirstMode` out of the BL core (measured, no proof edits) | **DONE** | `Shufflemath/BernoulliLaplaceFirstMode.lean` exists (split commit `891a5a7`, 2026-11-20); the ~1,070-line `section firstMode` block (`blFirstModeFunc`, `blConditionalMean`, the hypergeometric means, `gProd`/`gSplit`) lives there under the original `BernoulliLaplaceGeneral.*` names (naming-transparent). *The 2026-11-24 snapshot had this OPEN.* |
 | Q6/Q7 | Defer broad `TotalVariation` / Dobrushin surgery until measured | **DEFERRED** | Review explicitly recommends deferral pending measured evidence; no split attempted. |
 | Q8 | Defer the `CommanderMembershipOrbits` refactor until after F3 closes, then prototype a generic partition-bijection | **DEFERRED** | F3 is now closed, but the 903-line orbit module is still the concrete four-part construction; no generic replacement. Low priority (one downstream importer). |
 | Q9 | Import hygiene: drop the umbrella `import Mathlib` from `FinsetFiberCount`; dedup repeated imports | **OPEN** | `Shufflemath/FinsetFiberCount.lean:3` still has the umbrella `import Mathlib`. |
@@ -28,7 +34,7 @@ started; **DEFERRED** = the review itself recommended deferral.
 | ID | Finding / action | Status | Current evidence |
 |----|------------------|--------|------------------|
 | R1 | Record the F3 gap honestly (F3-a ingredients vs F3-b concrete kernel law) and correct optimistic wording | **DONE** | The concrete A3 kernel law `hMembershipExchange_kernel` is proved and the `agent_handoff.md` / `lean_plan.md` status now reflects completion; the misleading "proves A3" docstring wording is resolved. |
-| R2 | Distinguish the fixed-pair physical swap (1), the membership-exchange kernel (2), and swap-then-reset (3); label the current model honestly | **PARTIAL** | `CommanderPhysicalExchange.lean`'s module docstring frames the exchange as the **membership-level** transition and separates the (fixed) pairing from the membership. **Update (2026-12-16, 48th session):** the literal deck-level fixed-pair swap kernel (1) is now **constructed** as an actual deck permutation in `Shufflemath/FiniteDeck/LiteralSwapKernel.lean` — `swapFn` (a `Fin N → Fin N` function with its four region lemmas) is proved an **involution** (`swapFn_involution`) and hence a **bijection** (`swapFn_bijective`), packaged as `swapPerm : Equiv.Perm (Fin N)` via `Equiv.ofBijective`. The remaining piece of the "label honestly" item is the **B1 headline** `membership (swapPerm N m hm L R b .trans d) = literalSwapMembership N m hm L R d` (permutation ↔ finset bookkeeping agree pointwise, pairing-independent); `rawExchange = rawExchangeMembership ∘ localLift` remains the (3) construction. |
+| R2 | Distinguish the fixed-pair physical swap (1), the membership-exchange kernel (2), and swap-then-reset (3); label the current model honestly | **DONE** | `CommanderPhysicalExchange.lean`'s module docstring frames the exchange as the **membership-level** transition and separates the (fixed) pairing from the membership. The literal deck-level fixed-pair swap kernel (1) is **constructed** as an actual deck permutation in `Shufflemath/FiniteDeck/LiteralSwapKernel.lean` — `swapFn` is proved an **involution** (`swapFn_involution`) and hence a **bijection** (`swapFn_bijective`), packaged as `swapPerm : Equiv.Perm (Fin N)` via `Equiv.ofBijective`; and the **B1 headline** is now **proved** (commit `a289a70`): `swapPerm_membership_eq`, `membership N m hm (Equiv.trans (swapPerm N m hm L R b) d) = literalSwapMembership N m k hm hk hkm d L hL R hR` — the permutation and the `newLeftCards` finset bookkeeping agree pointwise, independently of the pairing `b`. `rawExchange = rawExchangeMembership ∘ localLift` remains the (3) construction. All three constructions are now built and labeled. |
 | R3 | Add the active modules as direct `verify_next_phase.sh` targets | **DONE** | `dev/verify_next_phase.sh` builds `CommanderMembershipExchange`, `CommanderMembershipOrbits`, `CommanderDeckGSR`, `CommanderLocalGSR`, `ExchangeOverlap`, `FinsetCombinatorics` (all six). |
 | R4 | Keep the operational header ~one screen; move history to dated notes; fix active pointers | **OPEN** | `docs/agent_handoff.md` is now 3512 lines (grew from ~1500 at review time); the operational banner is at the top but the historical append-only body has accumulated. A periodic reorganization is the remaining work. |
 | R5 | Keep the orbit theorem; add safe-splice discipline for automated edits | **DEFERRED** | Orbit refactor deferred (see Q8); the splice-safety guidance is process advice, observed in practice (the destructive splice was a one-off, since guarded). |
@@ -42,22 +48,22 @@ started; **DEFERRED** = the review itself recommended deferral.
 | 1 | F3 count law (`rawExchangeMembership_count`) | **DONE** |
 | 2 | F3 uniform target law (`distUniform_ofInvariantTransitive`, invariance, transitivity) | **DONE** |
 | 3 | F3 final assembly (`hMembershipExchange_kernel` + `two_physical_perfect_exchanges_uniform_unconditional`) | **DONE** |
-| 4 | Model correctness (fixed-pair deck swap, or honest labeling) | **PARTIAL** (honest membership-level labeling in place; literal deck-level fixed-pair swap kernel not built — R2) |
-| 5 | F4 deck-level GSR kernel (`Deck = Equiv.Perm (Fin 99)`) | **OPEN** (F4.2 sub-wall: the `List (Fin n)` point-mass → permutation transport, `gsrProductKernel_eq_distProductFinsupp`) |
-| 6 | F4 quantitative full-deck terminal TV bound (concrete protocol, explicit initial/target) | **OPEN** (needs Gate 5; the `errorBudget`/Dobrushin recursion over the 99! univ is the same sub-wall) |
+| 4 | Model correctness (fixed-pair deck swap, or honest labeling) | **DONE** (literal deck-level fixed-pair swap kernel built as `swapPerm`, B1 headline `swapPerm_membership_eq` proved; see R2) |
+| 5 | F4 deck-level GSR kernel (`Deck = Equiv.Perm (Fin 99)`) | **DONE** (the point-mash transport `gsrProductKernel_eq_distProductFinsupp` is a proven definitional bridge in `CommanderLocalGSR.lean`, plus the Fintype-free F4.3 row bound `gsrProductKernel_rowTV_bound` and F4.5 one-step terminal bound `gsrOneStep_terminalTV_bound`; the F4.2 deck permutation law is `GSRPermutationLaw.lean`) |
+| 6 | F4 quantitative full-deck terminal TV bound (concrete protocol, explicit initial/target) | **PARTIAL** (the Fintype-free F4.5 one-step terminal bound is in `CommanderLocalGSR.lean`; the full-deck `n`-exchange bound is now `TelescopeF5.f5FullDeck_nondegenerate_nstep` via the length-free crude-telescope F4.2 crack — no 99! `Finset.univ` recursion. Tightening via the Dobrushin-contraction `errorBudget` recursion over the 99! univ remains a refinement.) |
 | 7 | F5 feasibility (concrete `CostedKernel` schedule, `TV ≤ ε`, exact cost) | **DONE** (`f5FullDeck_certificate`, `macroCountExchange_costedCertificate`, non-degenerate certificates) |
 | 8 | F5 bounded optimization (finite class + precise min claim) | **STATED, not proved** (F5-B section: objective `f5OptCost` named; (ii) bound-surrogate and (iii) actual-TV claims stated with proof sources, not proved) |
 | 9 | Documentation closeout (reconcile planning paths; active pointers; every F1–F5 acceptance maps to a named theorem or is visibly open) | **IN PROGRESS** (this audit: G1–G4 manifest → done + named declarations; this check-off; `lean_plan`/`handoff` → final state) |
 
 ## Summary
 
-- **Closed by later work:** Q3, R1, R3, R6, Gates 0–3, 7.
-- **Genuinely open (mathematical):** Gate 5 / Gate 6 (the F4.2 `List (Fin n) →
-  Equiv.Perm (Fin 99)` point-mash transport, blocking the non-degenerate
-  full-deck bound) and Gate 8's proofs (F5 optimization, needs competitor
-  lower bounds).
-- **Open (engineering / housekeeping, no math):** Q1, Q2, Q4, Q5, Q9, R4,
-  and the Gate-4 literal deck-level swap kernel (R2).
+- **Closed by later work:** Q3, Q5, R1, R2, R3, R6, Gates 0–5, 7.
+- **Genuinely open (mathematical):** Gate 6 (the full-deck quantitative terminal
+  TV bound is reached via the F4.2 crude-telescope crack / the Fintype-free F4.5
+  one-step bound; the Dobrushin-contraction `errorBudget` tightening over the
+  99! univ remains) and Gate 8's proofs (F5 optimization, needs competitor
+  lower bounds — deliberately deferred).
+- **Open (engineering / housekeeping, no math):** Q1, Q2, Q4, Q9, R4.
 - **Deliberately deferred by the reviews:** Q6/Q7, Q8, R5.
 
 These open items are the roadmap for future sessions; none is a prerequisite
