@@ -346,3 +346,18 @@ theorem wPreservesRightOfFiber (N m : Nat) (hm : m ≤ N) (d e : Deck N)
     (rightPositions N m hm).image (e.trans d.symm) = rightPositions N m hm := by
   unfold rightPositions
   exact bijection_imageCompl (e.trans d.symm) (leftPositions N m hm) (wPreservesLeftOfFiber N m hm d e hle)
+
+/-- The image of the i-th left position under a left-position-preserving bijection
+  `w` is again a left position (hence has a well-defined left-index in the
+  `finSplit` summand decomposition).  This is the existence half of the
+  within-pile permutation reconstruction (F5): the within-pile permutation that
+  `w` induces on the left pile is well-defined. -/
+theorem existsFinSplitLeft (N m : Nat) (hm : m ≤ N) (w : Deck N) (i : Fin m)
+    (hwL : (leftPositions N m hm).image w = leftPositions N m hm) :
+    ∃ k : Fin m, finSplit N m hm (w (leftPosition N m hm i)) = Sum.inl k := by
+  have hmem : w (leftPosition N m hm i) ∈ leftPositions N m hm := by
+    rw [← hwL]
+    exact Finset.mem_image_of_mem (fun p => w p) (leftPosition_memLeft N m hm i)
+  rcases Finset.mem_image.mp hmem with ⟨k, hk, hval⟩
+  use k
+  rw [show w (leftPosition N m hm i) = leftPosition N m hm k from by simpa [leftPosition] using hval.symm, finSplit_left]
