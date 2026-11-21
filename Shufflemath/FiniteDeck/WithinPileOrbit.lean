@@ -478,3 +478,67 @@ theorem prOfW_injective (N m : Nat) (hm : m ≤ N) (w : Deck N)
   have h2 : rightPosition N m hm j = rightPosition N m hm k :=
     (Equiv.injective w) h1
   exact rightPosition_injective N m hm h2
+
+theorem plOfW_surjective (N m : Nat) (hm : m ≤ N) (w : Deck N)
+    (hwL : (leftPositions N m hm).image w = leftPositions N m hm) :
+    Function.Surjective (plOfW N m hm w hwL) := by
+  intro k
+  have hwR : (rightPositions N m hm).image w = rightPositions N m hm :=
+    bijection_imageCompl w (leftPositions N m hm) hwL
+  rcases w.surjective (leftPosition N m hm k) with ⟨x, hx⟩
+  have hxleft : x ∈ leftPositions N m hm := by
+    by_contra hxnl
+    have hxr : x ∈ rightPositions N m hm := by
+      simpa only [rightPositions, Finset.mem_sdiff, Finset.mem_univ, true_and] using hxnl
+    have hxw : w x ∈ rightPositions N m hm := by
+      rw [← hwR]
+      exact Finset.mem_image_of_mem (fun p => w p) hxr
+    have hdis : w x ∉ leftPositions N m hm := by
+      simpa only [rightPositions, Finset.mem_sdiff, Finset.mem_univ, true_and] using hxw
+    have hxwleft : w x ∈ leftPositions N m hm := by
+      simpa only [← hx] using leftPosition_memLeft N m hm k
+    contradiction
+  rcases (memLeftPositions_iff N m hm x).mp hxleft with ⟨i, hxi⟩
+  use i
+  have hwx : w (leftPosition N m hm i) = leftPosition N m hm k := by
+    simpa only [hxi] using hx
+  have hfin : finSplit N m hm (w (leftPosition N m hm i)) = Sum.inl k := by
+    rw [hwx, finSplit_left]
+  have hspec : finSplit N m hm (w (leftPosition N m hm i)) = Sum.inl (plOfW N m hm w hwL i) :=
+    plOfW_apply N m hm w hwL i
+  exact Sum.inl_injective (hspec.symm.trans hfin)
+
+theorem prOfW_surjective (N m : Nat) (hm : m ≤ N) (w : Deck N)
+    (hwR : (rightPositions N m hm).image w = rightPositions N m hm) :
+    Function.Surjective (prOfW N m hm w hwR) := by
+  intro k
+  rcases w.surjective (rightPosition N m hm k) with ⟨x, hx⟩
+  have hwxR : w x ∈ rightPositions N m hm ↔ x ∈ rightPositions N m hm := by
+    constructor
+    · intro h
+      rw [← hwR] at h
+      rcases Finset.mem_image.mp h with ⟨y, hy, hwy⟩
+      have hyx : y = x := (Equiv.injective w) hwy
+      simpa [hyx] using hy
+    · intro h
+      rw [← hwR]
+      exact Finset.mem_image_of_mem (fun p => w p) h
+  have hxright : x ∈ rightPositions N m hm := by
+    by_contra hxnl
+    have hno : w x ∉ rightPositions N m hm := by
+      simpa only [hwxR] using hxnl
+    have hxwright : w x ∈ rightPositions N m hm := by
+      simpa only [← hx] using rightPosition_memRight N m hm k
+    contradiction
+  have hmemR : x ∈ rightPositions N m hm ↔ ∃ j : Fin (N - m), rightPosition N m hm j = x := by
+    rw [rightPositions_eqImage, Finset.mem_image]
+    simp only [Finset.mem_univ, true_and]
+  rcases hmemR.mp hxright with ⟨j, hjx⟩
+  use j
+  have hwx2 : w (rightPosition N m hm j) = rightPosition N m hm k := by
+    simpa only [hjx] using hx
+  have hfin : finSplit N m hm (w (rightPosition N m hm j)) = Sum.inr k := by
+    rw [hwx2, finSplit_right]
+  have hspec : finSplit N m hm (w (rightPosition N m hm j)) =
+      Sum.inr (prOfW N m hm w hwR j) := prOfW_apply N m hm w hwR j
+  exact Sum.inr_injective (hspec.symm.trans hfin)
