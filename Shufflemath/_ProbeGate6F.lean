@@ -9,6 +9,8 @@ public import Shufflemath.TotalVariation
 public import Shufflemath.Finite
 public import Mathlib.GroupTheory.Perm.Basic
 public import Mathlib.Data.Fintype.Perm
+public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Data.Fintype.BigOperators
 
 @[expose]
 public section
@@ -38,134 +40,149 @@ theorem _probeF_main :
   let tieFn : ΩTieRank n a → Equiv.Perm (Fin n) := fun p => tieRank n a hn p.1 p.2
   have hUnivProd : (Finset.univ : Finset (ΩTieRank n a)) =
       (Finset.univ : Finset (Fin n → Fin a)) ×ˢ (Finset.univ : Finset (Equiv.Perm (Fin n))) := by
-    ext p
-    simp only [Finset.mem_product, Finset.mem_univ, true_and, and_true]
+    show hΩ.elems = hFinPi.elems ×ˢ hFinPerm.elems
+    rfl
   -- (1) μ.map tieFn = U (Key fact A; tieRankLaw = that pushforward)
   have hT : μ.map tieFn = U := by
-    dsimp only [μ, tieFn, U]
-    rw [← tieRankLaw]
+    dsimp only [μ, tieFn, U, tieRankLaw]
     exact tieRankLaw_uniform n a ha hn
   -- (2) μ.map rankFn = ν
   have hMarg : μ.map Prod.fst = GSR.uniformLabels n a ha := by
-    dsimp only [μ]
     ext ℓ
-    simp only [Dist.mass, GSR.uniformLabels]
-    have hL : Dist.mass (GSR.uniformDist (ΩTieRank n a)).map Prod.fst ℓ =
+    -- goal: (μ.map fst).weights ℓ = (GSR.uniformLabels n a ha).weights ℓ
+    have hL : (μ.map Prod.fst).weights ℓ =
         (Finset.univ : Finset (ΩTieRank n a)).sum
-          (fun p : ΩTieRank n a => (if Prod.fst p = ℓ then 1 else 0) *
-            Dist.mass (GSR.uniformDist (ΩTieRank n a)) p) :=
-      Dist.map_mass_eq_univ_fiber (GSR.uniformDist (ΩTieRank n a)) Prod.fst ℓ
+          (fun p : ΩTieRank n a =>
+            (if Prod.fst p = ℓ then Dist.mass μ p else 0)) :=
+      Dist.map_mass_eq_univ_fiber μ Prod.fst ℓ
     rw [hL]
     -- mass μ p = 1 / (a^n · n!); Fubini over the product univ.
-    have hCard (p : ΩTieRank n a) : Dist.mass (GSR.uniformDist (ΩTieRank n a)) p =
+    have hCard (p : ΩTieRank n a) : Dist.mass μ p =
         1 / (Fintype.card (ΩTieRank n a) : Rat) := by
-      dsimp only [GSR.uniformDist]
-      simpa only [Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm, one_div]
+      dsimp only [μ, GSR.uniformDist]
+      simpa only [Dist.mass, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm, one_div]
     have hCardProd : (Fintype.card (ΩTieRank n a) : Rat) =
         (Fintype.card (Fin n → Fin a) : Rat) * (Fintype.card (Equiv.Perm (Fin n)) : Rat) := by
-      rw [Fintype.card_product]
+      change (Fintype.card ((Fin n → Fin a) × Equiv.Perm (Fin n)) : Rat) =
+                (Fintype.card (Fin n → Fin a) : Rat) * (Fintype.card (Equiv.Perm (Fin n)) : Rat)
+      rw [Fintype.card_prod]
       simp only [Nat.cast_mul]
     have hPermCard : (Fintype.card (Equiv.Perm (Fin n)) : Rat) = (Nat.factorial n : Rat) := by
-      simp only [Fintype.card_perm, Nat.cast_id]
-    rw [hL]
-    conv at hL => lhs
+      simp only [Fintype.card_perm, Fintype.card_fin, Nat.cast_id]
     simp only [hCard, hCardProd, hPermCard]
     -- ∑_{ℓ',σ} 1/(cardΠ·n!) · [ℓ' = ℓ]
-    rw [hUnivProd, Finset.sum_product]
+    rw [hUnivProd]
+    refine (Finset.sum_product _ _ _).trans ?_
+    simp only [Prod.fst, Prod.snd]
     have hInn (ℓ' : Fin n → Fin a) :
         (Finset.univ : Finset (Equiv.Perm (Fin n))).sum
-          (fun σ => 1 / ((Fintype.card (Fin n → Fin a) : Rat) * (Nat.factorial n : Rat)) ·
-            (if ℓ' = ℓ then 1 else 0)) =
+          (fun σ => (if ℓ' = ℓ then
+            1 / ((Fintype.card (Fin n → Fin a) : Rat) * (Nat.factorial n : Rat))
+          else 0)) =
           (if ℓ' = ℓ then 1 else 0) / (Fintype.card (Fin n → Fin a) : Rat) := by
       split_ifs with hle hle'
-      · rw [Finset.sum_const, Finset.card_univ, Fintype.card_perm, Nat.cast_id]
-        field_simp
-      · simp only [ite_false, zero_mul, Finset.sum_const, Finset.card_univ]
-    rw [hInn]
-    -- outer: ∑_{ℓ'} (if ℓ' = ℓ then 1/cardΠ else 0) = 1/cardΠ
-    have hOut : (Finset.univ : Finset (Fin n → Fin a)).sum
-        (fun ℓ' => (if ℓ' = ℓ then 1 else 0) / (Fintype.card (Fin n → Fin a) : Rat)) =
-        1 / (Fintype.card (Fin n → Fin a) : Rat) := by
-      have hSum : (Finset.univ : Finset (Fin n → Fin a)).sum
-          (fun ℓ' => (if ℓ' = ℓ then 1 else 0) : Rat) = 1 := by
-        rw [Finset.sum_ite_eq (Finset.mem_univ ℓ)]
-      rw [Finset.sum_div, hSum]
-      field_simp [show (Fintype.card (Fin n → Fin a) : Rat) ≠ 0 from by
-        exact_mod_cast (Fintype.card_ne_zero : Fintype.card (Fin n → Fin a) ≠ 0)]
-    rw [hOut]
-    -- RHS: mass uniformLabels ℓ = 1/cardΠ
-    have hR : Dist.mass (GSR.uniformLabels n a ha) ℓ =
-        1 / (Fintype.card (Fin n → Fin a) : Rat) := by
+      · simp [Fintype.card_fin, Fintype.card_perm]
+        field_simp [Nat.factorial_ne_zero n, Fintype.card_pos_iff]
+        <;> ring
+      · simp
+    refine (Finset.sum_congr rfl (fun x _ => by simpa using (hInn x))).trans ?_
+    -- goal now: ∑_x (if x = ℓ then 1 else 0) / a^n = (uniformLabels).weights ℓ
+    have hSum1 : (∑ x : (Fin n → Fin a), (if x = ℓ then 1 else 0 : Rat)) = 1 := by
+      simpa using (Finset.sum_ite_eq' ℓ (fun _ => (1 : Rat)))
+    have hR : (GSR.uniformLabels n a ha).weights ℓ = 1 / (a ^ n : Rat) := by
       dsimp only [GSR.uniformLabels, GSR.uniformDist]
-      simpa only [Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm, one_div]
+      simpa [Dist.mass, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm,
+        Fintype.card_pi, Fintype.card_fin, Nat.cast_pow, Nat.cast_one, one_div]
     rw [hR]
+    -- LHS: (∑_x (if x = ℓ then 1 else 0)) / a^n = 1 / a^n
+    rw [← Finset.sum_div, hSum1]
   have hV : μ.map rankFn = ν := by
-    dsimp only [μ, ν, rankFn]
-    rw [gsrPermutationLaw, ← Convexity.StdSimplex.map_map]
+    dsimp only [ν]
+    rw [← Convexity.StdSimplex.map_map]
+    change (μ.map Prod.fst).map (rankEquiv n a hn) = ν
     rw [hMarg]
-    simp only [GSR.uniformLabels]
-    funext ℓ
     rfl
   -- (3) rewrite the goal to the common-source form
+  change Dist.tv ν U ≤ (badLabels n a).card / (a ^ n : Rat)
   rw [← hV, ← hT]
   -- (4) the generic same-source coupling inequality (batch 2 (e))
-  apply Dist.tv_maps_le_mismatch μ rankFn tieFn
-  -- (5) mismatch → bad: pointwise, (if F=G then 0 else m) ≤ (if bad then m else 0)
+  apply le_trans (Dist.tv_maps_le_mismatch μ rankFn tieFn)
+  -- (5) the bad-mass sum collapses to #bad / a^n (Fubini over the product)
+  have hBadSum : (Finset.univ : Finset (ΩTieRank n a)).sum
+      (fun p => (if p.1 ∈ badLabels n a then Dist.mass μ p else 0)) =
+      ((badLabels n a).card : Rat) / (a ^ n : Rat) := by
+    rw [hUnivProd]
+    refine (Finset.sum_product _ _ _).trans ?_
+    -- goal: ∑ x, ∑ y, if (x,y).1 ∈ bad then mass (x,y) else 0 = bad/a^n
+    have hInn (ℓ' : Fin n → Fin a) :
+        (Finset.univ : Finset (Equiv.Perm (Fin n))).sum
+          (fun σ => (if ℓ' ∈ badLabels n a then Dist.mass μ (ℓ', σ) else 0)) =
+          (if ℓ' ∈ badLabels n a then 1 else 0) / (Fintype.card (Fin n → Fin a) : Rat) := by
+      split_ifs with hle hle'
+      · -- ∑_σ mass μ (ℓ',σ) = n! / (cardΠ·n!) = 1/cardΠ
+        have hCard (σ : Equiv.Perm (Fin n)) :
+            Dist.mass μ (ℓ', σ) =
+              1 / ((Fintype.card (Fin n → Fin a) : Rat) * (Nat.factorial n : Rat)) := by
+          dsimp only [μ, GSR.uniformDist]
+          simpa only [Dist.mass, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm, one_div,
+            Fintype.card_prod]
+        simp only [hCard]
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_perm, Fintype.card_fin]
+        field_simp
+        · exact mod_cast (Nat.factorial_ne_zero n)
+        · exact mod_cast (show Fintype.card (Fin n → Fin a) ≠ 0 from by
+            rw [Fintype.card_fun, Fintype.card_fin]; exact Nat.pow_ne_zero (Nat.ne_of_gt ha) n)
+      · simp only [ite_false, zero_mul, Finset.sum_const, Finset.card_univ]
+    have hInner : (Finset.univ : Finset (Fin n → Fin a)).sum
+        (fun x => (Finset.univ : Finset (Equiv.Perm (Fin n))).sum
+          (fun y => (if (x, y).1 ∈ badLabels n a then Dist.mass μ (x, y) else 0))) =
+        (Finset.univ : Finset (Fin n → Fin a)).sum
+          (fun ℓ' => (if ℓ' ∈ badLabels n a then 1 else 0) /
+            (Fintype.card (Fin n → Fin a) : Rat)) := by
+      refine Finset.sum_congr rfl (fun x _ => ?_)
+      simpa using hInn x
+    rw [hInner]
+    have hOut : (Finset.univ : Finset (Fin n → Fin a)).sum
+        (fun ℓ' => (if ℓ' ∈ badLabels n a then 1 else 0) /
+          (Fintype.card (Fin n → Fin a) : Rat)) =
+        ((badLabels n a).card : Rat) / (Fintype.card (Fin n → Fin a) : Rat) := by
+      rw [← Finset.sum_div]
+      have hSum : (Finset.univ : Finset (Fin n → Fin a)).sum
+          (fun ℓ' => (if ℓ' ∈ badLabels n a then 1 else 0) : Rat) = (badLabels n a).card := by
+        rw [Finset.sum_ite (fun _ => 1)]
+        rw [Finset.card_filter, Finset.filter_mem]
+        rw [Finset.inter_eq_self_of_subset (Finset.subset_univ _)]
+        simp only [Nat.cast_id]
+      rw [hSum]
+    rw [hOut]
+    have hCard : (Fintype.card (Fin n → Fin a) : Rat) = (a ^ n : Rat) := by
+      rw [Fintype.card_fun]
+      simp only [Fintype.card_fin]
+    rw [hCard]
+    rfl
+  -- (6) mismatch ≤ bad-mass pointwise (Key fact B contrapositive)
+  rw [← hBadSum]
   apply Finset.sum_le_sum
   intro p
   by_cases hbad : p.1 ∈ badLabels n a
   · -- ℓ ∈ bad: RHS = mass μ p
     split_ifs with hfg
-    · simp only [ite_true, zero_mul, hfg]
+    · simp only [ite_true, hfg]
       exact (Dist.mass_nonneg μ p).ge
     · simp only [ite_false]
-  · -- ℓ ∉ bad: RHS = 0; the LHS must already be 0 (Key fact B contrapositive)
+      exact le_rfl
+  · -- ℓ ∉ bad: RHS = 0; the LHS must already be 0
     by_cases hfg : rankFn p = tieFn p
-    · simp only [ite_true, zero_mul, hfg, ite_false]
+    · simp only [ite_true, hfg, ite_false, hbad]
+      exact le_rfl
     · -- rankFn p ≠ tieFn p and ℓ ∉ bad → contradiction
       have hinj : Function.Injective p.1 :=
-        (not_mem_badLabels_iff_injective p.1).1 (fun h => absurd h hbad)
+        (not_mem_badLabels_iff_injective p.1).1 hbad
       have hEq : tieFn p = rankFn p := by
         simpa only [rankFn, tieFn] using tieRank_eq_rankEquiv_inj n a hn p.1 hinj p.2
       exact absurd hEq hfg
-  -- (6) collapse to #bad / a^n
-  rw [hUnivProd, Finset.sum_product]
-  have hInn (ℓ' : Fin n → Fin a) :
-      (Finset.univ : Finset (Equiv.Perm (Fin n))).sum
-        (fun σ => (if ℓ' ∈ badLabels n a then Dist.mass μ (ℓ', σ) else 0)) =
-        (if ℓ' ∈ badLabels n a then 1 else 0) / (Fintype.card (Fin n → Fin a) : Rat) := by
-    split_ifs with hle hle'
-    · -- ∑_σ mass μ (ℓ,σ) = n! / (a^n·n!) = 1/cardΠ
-      rw [Finset.sum_const, Finset.card_univ, Fintype.card_perm, Nat.cast_id]
-      have hCard : Dist.mass (GSR.uniformDist (ΩTieRank n a)) (ℓ', σ) =
-          1 / ((Fintype.card (Fin n → Fin a) : Rat) * (Nat.factorial n : Rat)) := by
-        dsimp only [μ]
-        dsimp only [GSR.uniformDist]
-        simpa only [Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm, one_div, Fintype.card_product]
-      rw [hCard]
-      field_simp
-      · field_simp
-      · exact mod_cast (Nat.factorial_ne_zero σ)
-    · simp only [ite_false, zero_mul, Finset.sum_const, Finset.card_univ]
-  rw [hInn]
-  have hOut : (Finset.univ : Finset (Fin n → Fin a)).sum
-      (fun ℓ' => (if ℓ' ∈ badLabels n a then 1 else 0) / (Fintype.card (Fin n → Fin a) : Rat)) =
-      ((badLabels n a).card : Rat) / (Fintype.card (Fin n → Fin a) : Rat) := by
-    rw [Finset.sum_div]
-    have hSum : (Finset.univ : Finset (Fin n → Fin a)).sum
-        (fun ℓ' => (if ℓ' ∈ badLabels n a then 1 else 0) : Rat) = (badLabels n a).card := by
-      rw [Finset.sum_ite (fun _ => 1)]
-      rw [Finset.card_filter, Finset.filter_mem]
-      rw [Finset.inter_eq_self_of_subset (Finset.subset_univ _)]
-      simp only [Nat.cast_id]
-    rw [hSum]
-  rw [hOut]
-  -- (7) the headline probability bound
-  have hCard : (Fintype.card (Fin n → Fin a) : Rat) = (a ^ n : Rat) := by
-    rw [Fintype.card_fun]
-    simp only [Fintype.card_fin]
-  rw [hCard]
-  exact badLabels_uniform_bound n a ha
+  -- (7) collapse: the goal is now #bad/a^n ≤ #bad/a^n
+  exact le_rfl
 
 end Probe
 
