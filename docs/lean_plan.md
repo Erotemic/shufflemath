@@ -165,7 +165,7 @@ the last F5 piece, Section 3 of
 the F4.2-deferred non-degenerate full-deck budget certificate**, now realized at any
 exchange count `n` by `Shufflemath/TelescopeF5.f5FullDeck_nondegenerate_nstep`
 (length-free crude-telescope F4.2 crack; see the F5 section), with only the optional
-Dobrushin-contraction sharpening left as a refinement. The exact
+Dobrushin-contraction sharpening left as a refinement. **Next after F5 (2026-12-17):** (a) integrate the `perDeckBridge` probe into a committed module and close `uniformFiber_intertwines`; and (b) **Gate 6** — specialize the now-proved F4.2 n-step abstract telescope (`Shufflemath/TelescopeF5.telescopeTV_le_idealPlusN` / `compList_telescope_nstep_le_n`) to a concrete 99-card finite-GSR protocol (the `Deck` with the 50/49 split in `Shufflemath/CommanderDeckGSR.lean`, the `idealShuffle`/`gsrProductKernel` machinery in `Shufflemath/GSR.lean`, the schedule machinery in `Shufflemath/PhysicalRefinement.lean`) to obtain the explicit symbolic/rational TV-against-uniform terminal bound the qwen engineering review asks for (one concrete protocol, explicit initial/target; a short calc chain per the deep-structural hints — *no* Dobrushin/full-deck maxima needed). The F5 bounded-optimization (Gate 8) stays deliberately deferred (competitor lower bounds). The exact
 resume point is in [`agent_handoff.md`](agent_handoff.md); the campaign roadmap
 is
 [`planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md`](planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md).
