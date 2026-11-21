@@ -1,11 +1,21 @@
 -- WIP: F5 orbit generalization
+-- ═══════════════════ F5 ORBIT: COMPLETE (session 83) ═══════════════════
+--   The entire F5 orbit generalization is DONE: embed_m, act_d (action +
+--   membership-preservation + injectivity), wPreserves{Left,Right}OfFiber,
+--   {existsFinSplit,rightPositions_eqImage}{Left,Right}, plOfW/prOfW (+_equiv),
+--   w_eq_embed_m (reconstruction), leftCards_eq_iffMembership, fiberMap, and the
+--   capstone **fiberOrbit_equiv** — the fiber of any deck d is in bijection with
+--   (Fin m ≃ Fin m) × (Fin (N-m) ≃ Fin (N-m)), size (m!)·(N-m)!. This generalizes
+--   the n = 4 leftCardFiberOrbit_equiv to all N.
+--   The REMAINING list below (items 1-6) is historical; all are now done.
+--
 --   fiber d ≃ withinPilePerm N m hm,  (fiber := {e | leftCards e = leftCards d})
 --
 --   (F5 generalizes the F3 99-card orbit theorem: the fiber of d in the
 --   count-preserving state space is the within-pile permutation group, acting
 --   freely and transitively, with the action e ↦ (within-pile perm of d⁻¹e) ⊗ d.)
 --
--- ═══════════════════ 8-ITEM AUDIT (executed) ═══════════════════
+-- ═══════════════════ 8-ITEM AUDIT (ALL DONE — F5 orbit COMPLETE) ═════════════
 --   1. [DONE] bijection_imageCompl (generalizes F3's bijection_imageCompl).
 --   2. [DONE] embed_m_imageRight (embed_m preserves right positions).
 --   3. [DONE] act_d + act_d_preservesMembership (fiber membership preserved).
@@ -13,7 +23,18 @@
 --   5. [DONE] wPreservesLeftOfFiber (the fiber condition = w preserves left piles).
 --   6. [DONE] wPreservesRightOfFiber (the fiber condition = w preserves right piles).
 --   7. [DONE] existsFinSplitLeft (existence of the left-index of w's left image).
---   8. [PENDING] rightPositions_eqImage + existsFinSplitRight + reconstruction.
+--   8. [DONE] rightPositions_eqImage + existsFinSplitRight + plOfW/prOfW (+_equiv)
+--      + w_eq_embed_m (reconstruction) + leftCards_eq_iffMembership + fiberMap/
+--      fiberMap_injective/fiberOrbit_surjective + **fiberOrbit_equiv (CAPSTONE)**.
+--
+-- ── THIS SESSION (items 8 + capstone) — 5 increments ──
+--   (a) rightPositions_eqImage + existsFinSplitRight  (commit 43847e9 → see 477f094)
+--   (b) plOfW/prOfW defs + apply-lemmas + injectivity  (commit e865e46)
+--   (c) plOfW/prOfW surjectivity  (commit 54c2118)
+--   (d) plOfW_equiv/prOfW_equiv + w_eq_embed_m (reconstruction)  (commit 8c39b6a)
+--   (e) plOfW/prOfW_embed_m + trans-identities + _equiv_embed_m helpers  (5304ca1, acc9391)
+--   (f) leftCards_eq_iffMembership + fiberMap + injectivity + surjectivity + **fiberOrbit_equiv**
+--      (commit a755e8d) — the F5 orbit capstone, generalized to all N.
 --
 -- ── SESSION 83 (this one) — 4 increments ──
 --   (a) bijection_imageCompl + embed_m_imageRight   (commit 67231aa)
