@@ -20,17 +20,13 @@ namespace FiniteDeck
   (cancel the fixed `finSplit` / `finSplit.symm` sandwich around `Equiv.sumCongr`).
 - `memLeftPositions_iff` — `x ∈ leftPositions ↔ ∃ i, x = leftPosition i`.
 - `embed_m_imageLeft` — `embed_m` maps the left-pile positions onto themselves.
+- `bijection_imageCompl` — a bijection preserving a set preserves its complement.
+- `embed_m_imageRight` — `embed_m` maps the right-pile positions onto themselves
+  (one-line application of `bijection_imageCompl` + `embed_m_imageLeft`).
 
 **NEXT (this file is the forward WIP, a build-gate placeholder):**
-1. `embed_m_imageRight` — the right-pile mirror. `rightPositions` is
-   `univ \ leftPositions`, so use the **bijection-complement** argument: a
-   bijection maps a set's complement onto the complement, i.e.
-   `(univ \ leftPositions).image (embed_m) = univ \ (leftPositions.image (embed_m))
-   = univ \ leftPositions = rightPositions`. (Use the injective
-   image-over-set-difference fact, or a direct `Finset.ext` with `Equiv`
-   injectivity/surjectivity + `embed_m_imageLeft`.)
-2. **The fiber orbit theorem** (the §2 goal of
-   `docs/planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md`):
+- **The fiber orbit theorem** (the §2 goal of
+  `docs/planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md`):
    `H_m ≃ {e : Deck N // membership N m hm e = membership N m hm d}` where
    `H_m = (Fin m ≃ Fin (N - m)) × (Fin m ≃ Fin (N - m))` and the orbit map is
    `act_d (pl, pr) = (embed_m N m hm pl pr).trans d`.

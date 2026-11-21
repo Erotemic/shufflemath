@@ -227,3 +227,42 @@ theorem embed_m_imageLeft (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
     constructor
     · exact hmem
     · simpa only [huse, hxj]
+
+/-- A bijection that preserves a set also preserves its complement: if `s.image f
+  = s` then `(univ \ s).image f = univ \ s`. The complement half is forced by
+  injectivity (a complement point cannot map into `s`, or two preimages would
+  collide) and the rest by surjectivity. -/
+theorem bijection_imageCompl {α : Type} [Fintype α] [DecidableEq α] (f : Equiv.Perm α)
+    (s : Finset α) (hf : s.image f = s) : (Finset.univ \ s).image f = Finset.univ \ s := by
+  apply Finset.ext
+  intro x
+  simp only [Finset.mem_sdiff, Finset.mem_univ, Finset.mem_image]
+  simp
+  constructor
+  · intro h
+    rcases h with ⟨a, hna, hax⟩
+    by_contra hx
+    have hbx : ∃ b, b ∈ s ∧ f b = x := by
+      have hximg : x ∈ s.image f := by simpa [hf] using hx
+      exact Finset.mem_image.mp hximg
+    rcases hbx with ⟨b, hbs, hbx⟩
+    have hab : a = b := f.injective (by simpa [hax, hbx])
+    rw [← hab] at hbs
+    exact hna hbs
+  · intro hnx
+    rcases f.surjective x with ⟨a, hax⟩
+    have hna : a ∉ s := by
+      by_contra hsa
+      exact hnx (by simpa [hf] using (Finset.mem_image.mpr ⟨a, hsa, hax⟩))
+    exact ⟨a, hna, hax⟩
+
+/-- `embed_m` maps the right-pile positions onto themselves (the mirror of
+  `embed_m_imageLeft`): it rearranges the right pile among right positions. Since
+  `rightPositions = univ \ leftPositions` and `embed_m` is a bijection preserving
+  `leftPositions`, this follows from `bijection_imageCompl`. -/
+theorem embed_m_imageRight (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
+    (pr : Equiv.Perm (Fin (N - m))) :
+    (rightPositions N m hm).image (embed_m N m hm pl pr) = rightPositions N m hm := by
+  dsimp only [rightPositions]
+  exact bijection_imageCompl (embed_m N m hm pl pr) (leftPositions N m hm)
+    (embed_m_imageLeft N m hm pl pr)
