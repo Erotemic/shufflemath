@@ -423,3 +423,58 @@ theorem existsFinSplitRight (N m : Nat) (hm : m ≤ N) (w : Deck N) (j : Fin (N 
   rcases Finset.mem_image.mp hmem with ⟨k, hk, hval⟩
   use k
   rw [show w (rightPosition N m hm j) = rightPosition N m hm k from by simpa [rightPosition] using hval.symm, finSplit_right]
+
+noncomputable def plOfW (N m : Nat) (hm : m ≤ N) (w : Deck N)
+    (hwL : (leftPositions N m hm).image w = leftPositions N m hm) (i : Fin m) : Fin m :=
+  Classical.choose (existsFinSplitLeft N m hm w i hwL)
+
+/-- The within-pile permutation that a right-pile-preserving bijection `w` induces
+  on the right pile. -/
+noncomputable def prOfW (N m : Nat) (hm : m ≤ N) (w : Deck N)
+    (hwR : (rightPositions N m hm).image w = rightPositions N m hm) (j : Fin (N - m)) : Fin (N - m) :=
+  Classical.choose (existsFinSplitRight N m hm w j hwR)
+
+theorem plOfW_apply (N m : Nat) (hm : m ≤ N) (w : Deck N)
+    (hwL : (leftPositions N m hm).image w = leftPositions N m hm) (i : Fin m) :
+    finSplit N m hm (w (leftPosition N m hm i)) = Sum.inl (plOfW N m hm w hwL i) :=
+  Classical.choose_spec (existsFinSplitLeft N m hm w i hwL)
+
+theorem prOfW_apply (N m : Nat) (hm : m ≤ N) (w : Deck N)
+    (hwR : (rightPositions N m hm).image w = rightPositions N m hm) (j : Fin (N - m)) :
+    finSplit N m hm (w (rightPosition N m hm j)) = Sum.inr (prOfW N m hm w hwR j) :=
+  Classical.choose_spec (existsFinSplitRight N m hm w j hwR)
+
+/-- The induced left-pile permutation is injective: equal induced indices force
+  equal images under `finSplit ∘ w` (hence equal positions, hence equal indices),
+  each step by injectivity. -/
+theorem plOfW_injective (N m : Nat) (hm : m ≤ N) (w : Deck N)
+    (hwL : (leftPositions N m hm).image w = leftPositions N m hm) :
+    Function.Injective (plOfW N m hm w hwL) := by
+  intro i j hij
+  have hi : finSplit N m hm (w (leftPosition N m hm i)) = Sum.inl (plOfW N m hm w hwL i) :=
+    plOfW_apply N m hm w hwL i
+  have hj : finSplit N m hm (w (leftPosition N m hm j)) = Sum.inl (plOfW N m hm w hwL j) :=
+    plOfW_apply N m hm w hwL j
+  have h0 : finSplit N m hm (w (leftPosition N m hm i)) = finSplit N m hm (w (leftPosition N m hm j)) := by
+    rw [hi, hj, hij]
+  have h1 : w (leftPosition N m hm i) = w (leftPosition N m hm j) :=
+    (Equiv.injective (finSplit N m hm)) h0
+  have h2 : leftPosition N m hm i = leftPosition N m hm j :=
+    (Equiv.injective w) h1
+  exact leftPosition_injective N m hm h2
+
+theorem prOfW_injective (N m : Nat) (hm : m ≤ N) (w : Deck N)
+    (hwR : (rightPositions N m hm).image w = rightPositions N m hm) :
+    Function.Injective (prOfW N m hm w hwR) := by
+  intro j k hjk
+  have hj : finSplit N m hm (w (rightPosition N m hm j)) = Sum.inr (prOfW N m hm w hwR j) :=
+    prOfW_apply N m hm w hwR j
+  have hk : finSplit N m hm (w (rightPosition N m hm k)) = Sum.inr (prOfW N m hm w hwR k) :=
+    prOfW_apply N m hm w hwR k
+  have h0 : finSplit N m hm (w (rightPosition N m hm j)) = finSplit N m hm (w (rightPosition N m hm k)) := by
+    rw [hj, hk, hjk]
+  have h1 : w (rightPosition N m hm j) = w (rightPosition N m hm k) :=
+    (Equiv.injective (finSplit N m hm)) h0
+  have h2 : rightPosition N m hm j = rightPosition N m hm k :=
+    (Equiv.injective w) h1
+  exact rightPosition_injective N m hm h2
