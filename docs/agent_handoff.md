@@ -183,6 +183,22 @@
 > green session-92 build (`de7638a`) — **re-verified: full tranche green (3234 jobs, 37 tests,
 > exit 0) after the code commit**; (4) landed the three-physical-perfect headline.
 
+> **Landed this session (F4.2 permutation law, `dcc6bca`):** the *"preserve the law"* half of F4.2 is
+> now closed. New `Shufflemath/GSRPermutationLaw.lean` names the GSR's law as `gsrPermutationLaw :
+> Dist (Equiv.Perm (Fin n))` (the `ν_{n,a}` of the 2026-11-20 Section 3 "transport") and proves
+> `idealShuffle_canonical_eq_permPushforward` / `idealShuffle_canonical_eq_permLaw`: the GSR on the
+> canonical deck is that permutation law pushed through "apply the permutation to the deck"
+> (`Convexity.StdSimplex.map_map` collapses the two pushforwards). **F4.2 is now fully resolved
+> (both halves)** — combined with session 93's `stableBuckets_eq_orderByNewPosition` ("turn into a
+> permutation"). The only remaining F4.2-deferred item is the deck-level GSR / Dobrushin sub-wall
+> noted above ("genuine rearrangement" full-Deck lift + the 99! non-degenerate budget certificate).
+
+> **F5 / A3 status (verified this session, no action):** `FiberToBernoulli` / `perDeckBridge`
+> (`_Probe47u.lean`, delegates to the proved `transitionNumerator_eq_fiberProduct`), `uniformFiber_
+> intertwines` (`FiniteDeck/BLRefinement.lean`), `hMembershipExchange_rhs_mass`, and the F5
+> certificates (`f5FullDeck_certificate` / `f5Nondegenerate_certificate` in
+> `CommanderCostedCertificate.lean`) are **all proven — no sorries** in the A3/F5 modules.
+
 > **⚠ 79th+ session — VERIFICATION-CONTRACT AUDIT COMPLETE (all 8 items satisfied); final-state docs.**
 > The user directed an 8-item verification audit of the goal. All eight are now satisfied, in green commits:
 >  **(1)** `./dev/verify_next_phase.sh` exit 0 (3234 jobs, 37 tests pass).

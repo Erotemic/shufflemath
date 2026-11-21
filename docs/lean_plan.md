@@ -138,18 +138,26 @@ they do not establish the separate, still-open F1-F5 theorems.
 
 ## Current entry point
 
-**F1, F2, and G1–G4 are complete.** The G4 arbitrary-finite-deck generalization
-(the 2026-11-15 pivot) is done: the generic two-pile theory in
+**F1–F5 and G1–G4 are complete** (no sorries in the A3/F5/G4 modules). The
+G4 arbitrary-finite-deck generalization (the 2026-11-15 pivot) is done:
 `Shufflemath/FiniteDeck/*` (G1 `TwoPile`, G2 `Fiber`, G3 `SubsetExchange`,
-G4 `BLRefinement`) now closes with the **kernel-equality capstone
-`g4MacroIntertwining`** (`a59c6c1`), which discharges the Commander A3
-physical-exchange reduction by specialization at the 99-card parameters
-`(99, 50, 50, 25)`.
-The single next step is wiring `g4MacroIntertwining` to the concrete Commander
-objects (`commanderExchange25` / `commanderLeftCount`) to close the A3
-`hMembershipExchange` premise, then **F5** (the arbitrary-finite-deck
-generalization capstone). The exact resume point and proof skeleton are in
-[`agent_handoff.md`](agent_handoff.md); the campaign roadmap is
+G4 `BLRefinement`) closes with the kernel-equality capstone
+`g4MacroIntertwining`, discharging the Commander A3 physical-exchange reduction
+(`hMembershipExchange_kernel`, `CommanderA3KernelLaw`) at the 99-card parameters.
+F5 certificates (`f5FullDeck_certificate` / `f5Nondegenerate_certificate`,
+`CommanderCostedCertificate.lean`) are assembled, with the optimization
+quantifiers stated separately in the `## F5-B` section (feasibility proved;
+bounded-surrogate + actual-TV optimality stated, not claimed).
+**The remaining deep work is the F4.2-deferred deck-level sub-wall:** (a)
+lift the pile-list GSR kernel to the full `Deck` (`Equiv.Perm (Fin 99)`) as a
+*genuine rearrangement* (not merely set-equal — `gsrProductKernel` in
+`CommanderLocalGSR.lean`, foundation `GSRPermutationLaw`), and (b) the
+non-degenerate full-deck budget certificate over the 99! `Finset.univ` (the
+Dobrushin-contraction follow-up, `Shufflemath/Dobrushin.lean`). **F4.2 is fully
+resolved** this session (the permutation law `GSRPermutationLaw.lean` plus
+session 93's `GSRF42KeyOrder.stableBuckets_eq_orderByNewPosition`). The exact
+resume point is in [`agent_handoff.md`](agent_handoff.md); the campaign roadmap
+is
 [`planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md`](planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md).
 For new Lean work, run `lake exe cache get` followed by the affected module's
 `lake build`; run `./dev/verify_next_phase.sh` when finishing a tranche. This
