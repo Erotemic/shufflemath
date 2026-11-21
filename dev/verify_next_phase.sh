@@ -36,7 +36,8 @@ lake build \
   Shufflemath.TelescopeF5 \
   Shufflemath.CommanderMarkedRightCount \
   Shufflemath.CommanderLocalGSR \
-  Shufflemath.CommanderDeckGSR
+  Shufflemath.CommanderDeckGSR \
+  Shufflemath.Gate6BadLabels
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace
