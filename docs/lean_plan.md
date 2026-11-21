@@ -156,7 +156,7 @@ direct *multiset-level* formulation of that fact (`stableBuckets_nodup`: the buc
 deck is `Nodup`) was explored and found a **redundant parallel formulation** of the
 already-proven `orderByNewPosition`/`Equiv.Perm` result — not pursued further (this
 Mathlib's `BEq`/`==`-based `List.filter`/`count` API blocks the direct count route;
-the `orderByNewPosition` route avoids it). **The remaining deep work is now (i) the F5
+the `orderByNewPosition` route avoids it). *Packaging (2026-11-20, commit `891a5a7`):* the ~1,070-line `section firstMode` block (the first centered eigenfunction `blFirstModeFunc`, `blConditionalMean`, the hypergeometric means, `gProd`/`gSplit`) was split out of `BernoulliLaplaceGeneral.lean` into a new `Shufflemath/BernoulliLaplaceFirstMode.lean` — a build-granularity win (editing `blConditionalMean` no longer forces a recompile of the 12-module BL-General surface); the declarations keep their `BernoulliLaplaceGeneral.*` names (the section is naming-transparent) and all 37 Python tests pass. **The remaining deep work is now (i) the F5
 `perDeckBridge` → `uniformFiber_intertwines`** (WIP `Shufflemath/_Probe47u.lean`; the last
 F5 piece, Section 3 of
 `planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md`)** and (ii) the

@@ -288,6 +288,20 @@ transitionNumerator_eq_fiberProduct`). Its target is `uniformFiber_intertwines` 
 F5 piece (Section 3 of
 `docs/planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md`).
 
+### Session note (Fri 2026-11-20, continued) — P2.1 `firstMode` split; P2.2/P3.x refactoring assessment
+
+**P2.1 DONE, committed (`891a5a7`).** Extracted the `section firstMode` (~1,070 lines: `blConditionalMean`, `blFirstModeFunc`, `blFirstModeFactor`, the hypergeometric means, `chooseSucc`/`chooseSum_weighted`, `innerYToB_w`, `gProd`/`gSplit`) from `Shufflemath/BernoulliLaplaceGeneral.lean` into a new module `Shufflemath/BernoulliLaplaceFirstMode.lean`. The section is naming-transparent, so every declaration keeps its `BernoulliLaplaceGeneral.*` fully-qualified name and no reference changes were needed; the one downstream consumer (`BernoulliLaplaceCommanderBridge.lean`) gains a single `public import` of the new module, and the aggregator lists it after `BernoulliLaplaceGeneral`. **All modules build and all 37 Python tests pass** (including `test_full_tv_equals_macro_tv`). Build-granularity win: editing `blConditionalMean` (385 lines) no longer forces recompiling the 12-module `BernoulliLaplaceGeneral` dependency surface.
+
+**P2.2 (extract product/mixture TV out of `TotalVariation.lean`) — deferred this turn.** The product machinery (`distProduct_tv_subadditive`, `distProductFinsupp_tv_subadditive`, `suppDistProductFinsupp`, `productMassBound`) is **intertwined** with the core TV definitions inside one big `namespace Dist` / `section PositiveSet` — not a clean extractable block like `section firstMode`. The manifest also requires **measured before/after build times** (26 downstream importers), an expensive gate. Not a good fit for remaining budget; left as the next P2 item with the measurement caveat.
+
+**P3.2 (unify `generalCL` / `generalCL_ns` in `ExchangeOverlap.lean`) — not a clean win; reverted.** `generalCL` (`m + r ≤ N`) and `generalCL_ns` (`m ≤ N`) have identical conclusions, and `generalCL` is a logical corollary of `generalCL_ns` (`m ≤ m + r ≤ N`). But `generalCL` is defined (line 1015) *before* `generalCL_ns` (line 1204), and the module system does **not** allow that forward reference (`Unknown identifier generalCL_ns`). Making it a corollary would require reordering the `_ns` theorem *and* its prerequisite `transition_eq_sum_oterm_ySuba_ns` ~200 lines upward — a change that outweighs the 4-line savings. Reverted cleanly (git diff empty, build passes). Same forward-reference constraint applies generally to making an earlier theorem a corollary of a later one.
+
+**P3.3 (share the schedule-intertwining induction, `OracleRefinement` / `PhysicalRefinement`) — not a clean win; not attempted.** `PhysicalRefinement.lean` **already imports** `Shufflemath.OracleRefinement`, so pointing `OracleRefinement.schedule_intertwining` at `PhysicalRefinement.schedule_intertwining` would create an **import cycle**. The clean fix (move the general `schedule_intertwining` into a lower shared module, e.g. next to `compList` in `Perturbation.lean`) is a larger refactor than the ~20-line dedup justifies for this turn.
+
+**P3.1 (dedup the two subset-fiber counting constructions, `ExchangeOverlap` `s1Fiber`/`fiberA` vs `FinsetFiberCount` `sFiber`/`sFiberA`) — next open refactoring item** (not yet attempted this turn).
+
+**Overall:** F1–G4 all stand (re-verified this session via the G2.10 build + `test_full_tv_equals_macro_tv` and the 8-item F4.2 capstone audit). The deep F5 frontier remains `perDeckBridge` → `uniformFiber_intertwines` (pointwise membership-valued kernel; the count-aggregate `uniformFiber_intertwines` is done). This turn's net: P2.1 landed; the remaining P2/P3 refactors are assessed and (for P2.2/P3.2/P3.3) deferred for ordering/measurement reasons.
+
 ### G2 execution plan (G2.8 → G2.10) — STATUS: G2.8 DONE, G2.10 **DONE** (session 82, committed `11f099f` + `ff34501`)
 
 **G2.8 (generic A3 kernel law) — DONE, committed (`9181bff`).** In `Shufflemath/FiniteDeck/A3KernelLaw.lean`:
