@@ -114,3 +114,30 @@ theorem sumCongr_right (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
     Equiv.sumCongr pl pr (Sum.inr j) = Sum.inr (pr j) := by
   dsimp only [Equiv.sumCongr, Sum.map]
   exact Sum.map_inr pl pr j
+
+/-- The within-pile orbit action: conjugate a pair of within-pile permutations
+  `(pl, pr)` through the two-pile split.  The generic version of the 99-card
+  `pileRelabelEquiv` (`Shufflemath/CommanderLocalGSR`) — a bijection of `Fin N`
+  that relabels left (resp. right) positions by `pl` (resp. `pr`) and fixes the
+  pile membership of every position. -/
+def embed_m (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
+    (pr : Equiv.Perm (Fin (N - m))) : Deck N :=
+  ((finSplit N m hm).trans (Equiv.sumCongr pl pr)).trans ((finSplit N m hm).symm)
+
+/-- `embed_m` relabels left (resp. right) positions by `pl` (resp. `pr`) within
+  the left (resp. right) pile. -/
+theorem embed_m_left (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
+    (pr : Equiv.Perm (Fin (N - m))) (i : Fin m) :
+    embed_m N m hm pl pr (leftPosition N m hm i) = leftPosition N m hm (pl i) := by
+  dsimp only [embed_m]
+  simp only [Equiv.trans_apply]
+  rw [finSplit_left N m hm i, sumCongr_left N m hm pl pr i]
+  exact finSplit_symm_left N m hm (pl i)
+
+theorem embed_m_right (N m : Nat) (hm : m ≤ N) (pl : Equiv.Perm (Fin m))
+    (pr : Equiv.Perm (Fin (N - m))) (j : Fin (N - m)) :
+    embed_m N m hm pl pr (rightPosition N m hm j) = rightPosition N m hm (pr j) := by
+  dsimp only [embed_m]
+  simp only [Equiv.trans_apply]
+  rw [finSplit_right N m hm j, sumCongr_right N m hm pl pr j]
+  exact finSplit_symm_right N m hm (pr j)
