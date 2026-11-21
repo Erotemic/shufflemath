@@ -148,14 +148,20 @@ F5 certificates (`f5FullDeck_certificate` / `f5Nondegenerate_certificate`,
 `CommanderCostedCertificate.lean`) are assembled, with the optimization
 quantifiers stated separately in the `## F5-B` section (feasibility proved;
 bounded-surrogate + actual-TV optimality stated, not claimed).
-**The remaining deep work is the F4.2-deferred deck-level sub-wall:** (a)
-lift the pile-list GSR kernel to the full `Deck` (`Equiv.Perm (Fin 99)`) as a
-*genuine rearrangement* (not merely set-equal — `gsrProductKernel` in
-`CommanderLocalGSR.lean`, foundation `GSRPermutationLaw`), and (b) the
-non-degenerate full-deck budget certificate over the 99! `Finset.univ` (the
-Dobrushin-contraction follow-up, `Shufflemath/Dobrushin.lean`). **F4.2 is fully
-resolved** this session (the permutation law `GSRPermutationLaw.lean` plus
-session 93's `GSRF42KeyOrder.stableBuckets_eq_orderByNewPosition`). The exact
+**F4.2 is fully resolved** (the permutation law `GSRPermutationLaw.lean` —
+`gsrPermutationLaw` / `idealShuffle_canonical_eq_perm*` as a `Dist (Equiv.Perm (Fin n))` —
+plus session 93's `GSRF42KeyOrder.stableBuckets_eq_orderByNewPosition`): the GSR is a
+genuine rearrangement of the deck, not merely set-equal. *Note (2026-11-20):* the
+direct *multiset-level* formulation of that fact (`stableBuckets_nodup`: the bucketed
+deck is `Nodup`) was explored and found a **redundant parallel formulation** of the
+already-proven `orderByNewPosition`/`Equiv.Perm` result — not pursued further (this
+Mathlib's `BEq`/`==`-based `List.filter`/`count` API blocks the direct count route;
+the `orderByNewPosition` route avoids it). **The remaining deep work is now (i) the F5
+`perDeckBridge` → `uniformFiber_intertwines`** (WIP `Shufflemath/_Probe47u.lean`; the last
+F5 piece, Section 3 of
+`planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md`)** and (ii) the
+F4.2-deferred (b) non-degenerate full-deck budget certificate / Dobrushin-contraction
+follow-up** (`Shufflemath/Dobrushin.lean`). The exact
 resume point is in [`agent_handoff.md`](agent_handoff.md); the campaign roadmap
 is
 [`planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md`](planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md).

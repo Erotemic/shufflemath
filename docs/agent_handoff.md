@@ -246,6 +246,48 @@
 > F4.2 deck-level GSR lift, and the open qwen-review engineering items
 > (Q1/Q2/Q4/Q5/Q9, R4 handoff reorganization).
 
+### Session note (Fri 2026-11-20) — G2.10 verification + F4.2 audit; pivot to F5
+
+Three results this session:
+
+1. **G2.10 recovery headline — verified.** `idealShuffle_canonical_eq_fullDeckTV` (in
+   `Shufflemath/BernoulliLaplaceCommanderBridge.lean`) **compiles with no `sorry`/`admit`/
+   `sorrySpec** and the exact-match test **`test_full_tv_equals_macro_tv` passes** (it computes
+   the macro-TV LHS and the Bernoulli–Laplace-TV RHS as independent rationals over the 99-card
+   space and asserts exact equality). So the G2.10 headline (the full-deck ideal-shuffle TV =
+   the Bernoulli–Laplace TV, by the `run_tv_eq_macro` + `hrrecover` recovery route) is sound.
+   It is already committed (`ff34501`); no code change was needed.
+
+2. **8-item audit of the F4.2 capstone `idealShuffle_canonical_eq_permLaw`**
+   (`Shufflemath/GSRPermutationLaw.lean`) — **all clean**: (i) the theorem is
+   `gsrPermutationLaw = idealShuffle_canonical` as distributions on `Equiv.Perm (Fin n)`
+   (well-scoped, `n a` + `0 < a`, `0 < n`); (ii) `gsrPermutationLaw` has the `n a`/
+   `ha`/`hn` parameters (no hidden 99); (iii) the TV is defined on a **Fintype** (the `Finset`
+   over `Equiv.Perm (Fin n)`, `Fintype.card` = `99!` — the intended finite space, not a
+   trivially-1 space); (iv) no vacuous `n=0`/`a=0` branch (`0 < a`, `0 < n` hypotheses); (v)
+   no `native_decide`/`Decidable` hack (the TV uses the `TV` typeclass, no brute-force
+   `#decide`); (vi) no `sorry`/`admit`; (vii) the proof is `rw`/`calc`-based, not an opaque
+   tactic blob; (viii) the TV's two arguments are the two different distributions the theorem
+   actually compares (the perm-law pushforward vs the ideal-shuffle law) — a genuine
+   `TV (Equiv.Perm (Fin n))`, not a trivial `TV x x = 0`.
+
+3. **F4.2 is already fully resolved** — via the cleaner *rank-key / `orderByNewPosition` /
+   `Equiv.Perm (Fin n)`* route: `stableBuckets_eq_orderByNewPosition` (GSRF42KeyOrder.lean,
+   function equality `Fin n → Fin n`) and `gsrPermutationLaw` / `idealShuffle_canonical_eq_perm*
+   (GSRPermutationLaw.lean). A direct *multiset-level* formulation
+   (`stableBuckets_nodup`: the bucketed deck is `Nodup`, a genuine rearrangement) was
+   explored this session and found to be a **redundant parallel formulation** of the same
+   already-proven fact — it was not pursued further. (For the record: the multiset-level route
+   in this Mathlib is blocked by the `BEq`/`==`-based `List.filter`/`count` API and a
+   `partition-of-`List.range`` lemma; the `orderByNewPosition` route avoids all of that.)
+
+**Next deep item (the real F5 entry): `perDeckBridge` → `uniformFiber_intertwines`.**
+`perDeckBridge` (WIP `Shufflemath/_Probe47u.lean`) connects the physical A3 count to the
+Bernoulli–Laplace numerator (two-step: `newLeftOriginalCount_eq` + `_Probe47v.
+transitionNumerator_eq_fiberProduct`). Its target is `uniformFiber_intertwines` — the last
+F5 piece (Section 3 of
+`docs/planning/proof-strategies/2026-11-20-deep-structural-hints-for-qwen.md`).
+
 ### G2 execution plan (G2.8 → G2.10) — STATUS: G2.8 DONE, G2.10 **DONE** (session 82, committed `11f099f` + `ff34501`)
 
 **G2.8 (generic A3 kernel law) — DONE, committed (`9181bff`).** In `Shufflemath/FiniteDeck/A3KernelLaw.lean`:
