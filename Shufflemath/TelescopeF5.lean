@@ -148,5 +148,77 @@ theorem compList_telescope_3step_le_3 [Fintype α] [DecidableEq α] [Nonempty α
     _ ≤ 1 + 1 + 1 := add_le_add (add_le_add t0 t1) d21
     _ = 3 := by norm_num
 
+/-
+## F4.2 crack, generalized to any chain length
+
+The 2- and 3-step lemmas above are pinned instances of one length-free fact:
+two equal-length protocols from the same start are within TV equal to their
+length of each other.  Each one-step discrepancy is at most `1` and there are
+`n` of them, so the crude (`d := 1`) telescope — already proved in
+`Perturbation` — is at most `n`.  No `Finset.univ` is ever instantiated, so
+this holds over the `99!` deck state too, and it sharpens the 2-step
+`f5FullDeck_nondegenerate` to any number of exchange rounds. -/
+
+/-- Any `n`-kernel protocol is within TV `n` of any equal-length protocol,
+    from the same start.  Crude (`d := 1`) telescope: `≤ telescopeBound 1 Δ`,
+    each discrepancy `≤ 1`, `n` terms.  Kernels stay opaque, so the F4.2 crack
+    generalizes to any chain length without instantiating a `Finset.univ`. -/
+theorem compList_telescope_nstep_le_n [Fintype α] [DecidableEq α] [Nonempty α]
+    (Ks Ls : List (FiniteKernel α α)) (hlen : Ks.length = Ls.length) (mu : Dist α) :
+    Dist.tv (FiniteKernel.apply mu (compList Ks)) (FiniteKernel.apply mu (compList Ls)) ≤
+      (Ls.length : Rat) := by
+  set Δ : List Rat := List.map (fun (p : FiniteKernel α α × FiniteKernel α α) =>
+    kernelDiscrepancy p.1 p.2) (Ks.zip Ls) with hΔ
+  have hTV : Dist.tv (FiniteKernel.apply mu (compList Ks))
+      (FiniteKernel.apply mu (compList Ls)) ≤ telescopeBound 1 Δ := by
+    simpa only [hΔ] using crudeTelescope Ks Ls hlen mu
+  have hDle : ∀ (a : Rat), a ∈ Δ → a ≤ 1 := by
+    intro a ha
+    rcases List.mem_map.mp ha with ⟨p, _, rfl⟩
+    exact kernelDiscrepancy_le_one p.1 p.2
+  calc
+    _ ≤ telescopeBound 1 Δ := hTV
+    _ ≤ (Δ.length : Rat) := telescopeBound_le_length Δ hDle
+    _ = (Ls.length : Rat) := by simp [hΔ, hlen]
+
+/-- F5 sufficient-TV bound, `n`-step form (non-degenerate): an `n`-step
+    protocol's terminal TV toward a target is at most `n` (the bounded
+    physical-vs-ideal discrepancy) plus a reference `n`-step protocol's TV.
+    Abstract over the state space (no `Finset.univ`), generalizing
+    `telescopeTV_le_idealPlusTwo`. -/
+theorem telescopeTV_le_idealPlusN [Fintype α] [DecidableEq α] [Nonempty α]
+    (Ks Ls : List (FiniteKernel α α)) (hlen : Ks.length = Ls.length) (mu target : Dist α) :
+    Dist.tv (FiniteKernel.apply mu (compList Ks)) target
+      ≤ (Ls.length : Rat) + Dist.tv (FiniteKernel.apply mu (compList Ls)) target := by
+  calc
+    _ ≤ Dist.tv (FiniteKernel.apply mu (compList Ks))
+            (FiniteKernel.apply mu (compList Ls)) +
+          Dist.tv (FiniteKernel.apply mu (compList Ls)) target :=
+      Dist.tv_triangle _ _ target
+    _ ≤ (Ls.length : Rat) + Dist.tv (FiniteKernel.apply mu (compList Ls)) target :=
+      add_le_add (compList_telescope_nstep_le_n Ks Ls hlen mu) (by rfl)
+
+/-- **Concrete full-deck non-degenerate F5, `n` exchange rounds.**  The
+    physical `n`-exchange chain (`rawExchange`) versus the oracle reference
+    chain (`idealExchange25`), both from the segregated start `seg`, toward the
+    uniform `99!` target: the physical TV is at most `n` (the bounded
+    physical-vs-ideal discrepancy) plus the oracle's TV to the target.  The
+    `n = 2` instance is `f5FullDeck_nondegenerate`.  The `kernelDiscrepancy` /
+    `dobrushinCoeff` / `errorBudget` machinery is never unfolded, so the `99!`
+    `Finset.univ` recursion is avoided.  No optimality claim; the `n` budget is
+    non-vanishing. -/
+theorem f5FullDeck_nondegenerate_nstep (hsurj : Function.Surjective project) (seg : Deck)
+    (n : Nat) :
+    Dist.tv (FiniteKernel.apply (Dist.pointMass seg)
+      (compList (List.replicate n rawExchange))) (GSR.uniformDist Deck)
+      ≤ (n : Rat) + Dist.tv (FiniteKernel.apply (Dist.pointMass seg)
+      (compList (List.replicate n (idealExchange25 hsurj)))) (GSR.uniformDist Deck) := by
+  have hlen : (List.replicate n rawExchange).length =
+      (List.replicate n (idealExchange25 hsurj)).length := by simp
+  simpa using
+    telescopeTV_le_idealPlusN (List.replicate n rawExchange)
+      (List.replicate n (idealExchange25 hsurj)) hlen (Dist.pointMass seg)
+      (GSR.uniformDist Deck)
+
 end Shufflemath
 end

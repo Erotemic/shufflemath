@@ -216,6 +216,21 @@ theorem telescopeBound_nil (d : Rat) : telescopeBound d [] = 0 := rfl
 theorem telescopeBound_cons (d : Rat) (x : Rat) (xs : List Rat) :
     telescopeBound d (x :: xs) = x * d ^ xs.length + telescopeBound d xs := rfl
 
+/-- The `d := 1` telescope is undamped: it is the plain sum of the per-step
+    discrepancies, hence at most the number of steps when every discrepancy is
+    at most `1`.  This is the combinatorial core of the length-free F4.2 crack
+    (`TV ≤ n` for two equal-length `n`-step protocols). -/
+theorem telescopeBound_le_length (Δ : List Rat) (h : ∀ (a : Rat), a ∈ Δ → a ≤ 1) :
+    telescopeBound 1 Δ ≤ (Δ.length : Rat) := by
+  induction Δ with
+  | nil => simp
+  | cons x xs ih =>
+    have hx : x ≤ 1 := h x (List.mem_cons_self)
+    have hi : telescopeBound 1 xs ≤ (xs.length : Rat) :=
+      ih (fun a ha => h a (List.mem_cons_of_mem x ha))
+    simp [telescopeBound]
+    nlinarith [hx, hi]
+
 /-- The Dobrushin coefficient of a composed protocol is at most the product
 of the coefficients: composing never amplifies contraction. -/
 theorem compList_submult [Fintype alpha] [DecidableEq alpha] [Nonempty alpha]
