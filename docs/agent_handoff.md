@@ -3948,3 +3948,28 @@ numerator/denominator`, to discharge `hMembershipExchange` and close the F5 caps
 **Verification.** Full `lake build` → **3244 jobs, exit 0** (only pre-existing `unnecessarySeqFocus` style warnings on unrelated lines 1924–1935); no `sorry`/`admit`.
 
 **Remaining next steps.** (1) **Assemble the full §10 disintegration `U_x ⊳ Q = ∑_y P(x,y) U_y`** as a standalone theorem concretized over `Membership` / `countFiberMemb` / `subsetExchangeKernel` / `blExchangeKernel`, using `uniformFiber_weight_perElement` as the per-y lumpability ingredient — the "pointwise membership-valued kernel equality" headline, the next deep F5 increment. (2) F4.2-deferred (b): the non-degenerate *full-deck* budget certificate over the 99! `Finset.univ` (Dobrushin contraction) — see prior note / `lean_plan.md` §F5. (3) P2.2 / P3.1–P3.3 remain deferred (module-ordering / two-level-dsimp / import-cycle / measurement constraints — prior note). The `pi-subagents` / `glla-delegate` / `context-mode` skills are available but the operator did not request subagent delegation or council this session; the work was a single-module edit, so no subagents were spawned.
+
+**SymmetricQuotient (§2) machinery survey — what is already proven vs. genuinely new.**
+Surveyed the within-pile-relabeling / orbit machinery to gauge the "pointwise membership-valued
+kernel" target. Most of §2's orbit pieces are **already proved at the 99-card concrete scale**:
+- `pileRelabelEquiv_image` (`CommanderDeckGSR.lean:126`) = the **surjectivity** half: every
+  membership-preserving deck permutation `σ` is `pileRelabelEquiv p.1 p.2` for some within-pile pair
+  `p : Equiv.Perm (Fin 50) × Equiv.Perm (Fin 49)` — i.e. §2's "the image of `act_d` is exactly the fiber".
+- `pileRelabelEquiv_pairInjective` (`:35`) = the **injectivity** half (`act_d` is injective).
+- `membershipFiber_transitive` (`CommanderMembershipOrbits.lean:895`) +
+  `membershipFiber_transitive_asEquiv` (51st session) = the **orbit-equals-fiber bijection** as an `Equiv`
+  (the `H_m ≃ {e // membership e = membership d}` of §2, concretized).
+- `distUniform_ofInvariantTransitive` = the **within-fiber uniformity** capstone (§10 lumpability via the
+  transitive symmetry).
+- `localLift : FiniteKernel Membership Deck` (`CommanderMembershipKernels.lean:149`) = the fiber-uniform
+  resample kernel `U_x`.
+
+So the **genuinely new** pieces for the pointwise membership-valued kernel are: (1) the **generic
+arbitrary-`(N,m)`** version of the orbit equiv — construct `embed_m : Sym (Fin m) × Sym (Fin (N-m))
+→ Equiv.Perm (Fin N)` *by the sum equivalence* `Fin N ≃ Fin m ⊕ Fin (N-m)` (`Equiv.sumCongr`), per §2's
+"use the sum equivalence by construction" (the 99-card version hardcodes the 50/49 concrete split); and
+(2) the `FiniteKernel`-level membership-valued kernel equation at arbitrary `(N,m)`, assembling
+`localLift` / `subsetExchangeMembershipKernel` / the orbit equiv. **That generic orbit-bijection
+(`embed_m` + its injectivity/surjectivity at arbitrary `N,m`) is the concrete next-session target** —
+a bounded, well-scoped `Equiv` construction that generalizes the already-proven 99-card `pileRelabelEquiv`
+trio, not a from-scratch proof.
