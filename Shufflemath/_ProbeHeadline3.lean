@@ -6,9 +6,21 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -- Batch 5b headline: `rhoRoundIdeal 99 50 … 1 … = localLift segMembership`.
 -- The one-round ideal (uniform) deck law is the perfect local law at the segregated
 -- membership: both are the uniform law over the same within-pile fiber (card 50!·49!).
--- The proof stays on the *deck* side and uses only pre-compiled lemmas, so it avoids
--- the 99!-enumeration whnf wall (the membership fiber = the left-card fiber by
--- `membership_iff_leftCards`, a set equivalence, not a 99! computation).
+--
+-- ⚠️  STATUS (re-verified 2026-12-09 by a fresh `lake build` of this module): this
+-- probe is DEFINITIVELY WALL-BOUND at N=99 and does NOT compile. It dies at the
+-- per-deck MASS-expansion step: `map_mass_eq_univ_fiber (uniformDist paramFiber) (fun e => e.val) d`
+-- (lines ~82 / 101 / 103) forces a `maximum recursion depth` (whnf) normalization of the
+-- `50!·49! ≈ 10^127` fiber / the residual `99-card Deck`-equality subgoals
+-- (`d ∈ Set.range (roundEmbedMap 99 50)`, `roundEmbedMap 99 50 p = d`,
+-- `membership d = segMembership`). This is a Lean-kernel limitation on 99-card
+-- `Equiv.Perm (Fin 99)` terms — the equality is mathematically correct (both sides are
+-- uniform on the same fiber, `#image = #fiber = 50!·49!`) but no proof manipulation
+-- discharges it at N=99. An EARLIER "whnf-free (3.7s, no wall)" commit message was an
+-- incomplete intermediate that only proved the sub-lemmas (`uniformDist_weights`,
+-- `Finset.sum_boole_nsmul`); the full headline does not close. See the "🔬 batch-5b
+-- DEFINITIVELY WALL-BOUND" note in `docs/agent_handoff.md`. Kept as a documented WIP
+-- probe; NOT wired into the build gate.
 
 module
 

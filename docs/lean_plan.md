@@ -40,10 +40,16 @@ phase notes are linked at the end; they do not override this plan. Read
 > per-round discrepancy `δ1` (the GSR round expressed as a `FiniteKernel`, via
 > `oneRoundDeckTV_le_delta1`) to get `TV(K³ d0, L³ d0) ≤ 3δ1`, add the ideal 3-round
 > chain's residual `q3 = TV(L³ d0, U)` via the triangle inequality, and show
-> `3δ1 + q3 < 1/1000` (`gate6_headline_lt_thousandth`) — the open sub-parts are (a)
-> expressing the physical-vs-ideal GSR-round kernel discrepancy as `≤ δ1` in the
-> `FiniteKernel`/`kernelDiscrepancy` framework, and (b) quantifying `q3` (the specific
-> protocol's ideal-chain convergence to uniform over 3 rounds, via its Dobrushin decay).
+> `3δ1 + q3 < 1/1000` (`gate6_headline_lt_thousandth`). **Landed this batch:** sub-part (a) —
+> `gsrRound99_discrepancy_le_δ1` (per-round discrepancy as `kernelDiscrepancy ≤ δ1`) and
+> `gate6_headline_telescope` (`TV(K³ d0, U) ≤ q3 + 3·δ1`, conditional on
+> `hq3 : TV(L³ d0, U) ≤ q3`), both in `GSRGate6Telescope.lean`. **Sole remaining open
+> sub-part: (b) / `hq3`** — FALSE for the state-independent within-pile ideal
+> (`gsrRound99Ideal`, TV ≈ 1 ≫ q3; its 3-round chain is one within-pile round, essentially
+> singular with uniform), and the fulfillable mixing ideal is the wall-bound
+> state-dependent full-round kernel (`99!×99! ≈ 10^316`, ce0ba37; rule 9 forbids
+> `maxHeartbeats 0`). The on-mission `TV < 1/1000` headline is met independently by
+> `DobrushinDecay99` (41 perfect exchanges, any macrostate, fiber-uniform start).
 > See [agent_handoff.md](agent_handoff.md) and the 2026-11-21 Gate 6 hint doc §5/§6.
 
 > **Toolchain note (2026-02-10):** the library now uses Lean 4.34's `module`

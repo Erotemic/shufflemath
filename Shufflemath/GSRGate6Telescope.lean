@@ -52,6 +52,19 @@ theorem gsrRound99_discrepancy_le_δ1 :
   simpa [gsrRound99Finite, gsrRound99Ideal, δ1_eq_2401_over_8388608] using oneRoundDeckTV_le_delta1
 
 -- G6.3: the 3-round physical chain is within `q3 + 3·δ1` of the uniform target.
+--
+-- ⚠️  OPEN SUB-PART (b) — `hq3` is the sole remaining open sub-part of the batch-4
+-- headline.  For the *within-pile-only* `gsrRound99Ideal` used here it is FALSE: that
+-- kernel is state-independent, so `compList [I, I, I]` collapses to one within-pile
+-- round whose support is the pile-preserving decks (`50!·49!` of the `99!`) —
+-- essentially singular with `GSR.uniformDist` (TV ≈ 1 ≫ q3).  The fulfillable
+-- (mixing) ideal needs the *state-dependent* full-round kernel, whose `99!×99! ≈ 10^316`
+-- normalization is definitively wall-bound (commit ce0ba37; the `N=24`/`54` probes
+-- confirm the wall and rule 9 forbids `maxHeartbeats 0`).  So the conditional telescope
+-- (`≤ q3 + 3·δ1`) is proven and `gate6_headline_lt_thousandth` gives `q3 + 3·δ1 < 1/1000`;
+-- discharging `hq3` for a genuinely mixing 3-round chain is the open item.  The
+-- on-mission `TV < 1/1000` headline is met independently by `DobrushinDecay99` (41
+-- perfect exchanges, any macrostate).
 theorem gate6_headline_telescope
     (d0 : Equiv.Perm (Fin 99))
     (hq3 : Dist.tv
