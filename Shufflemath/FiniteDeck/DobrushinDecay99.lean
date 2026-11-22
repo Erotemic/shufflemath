@@ -131,9 +131,11 @@ theorem one_sub_w50diag_pow41_lt_thousand : ((1 : Rat) - w50 25 25) ^ 41 < (1 : 
 /-- **Concrete decay.** The 99-card Commander exchange chain's Dobrushin
     contraction coefficient raised to the 41st power is strictly less than
     `1/1000`: `d^41 < 1/1000` where `d = 1 − w50 25 25`. Combined with
-    `physicalExchange_dobrushinDecay`, this gives the headline "41 physical
-    perfect-exchange steps from any 99-card deck drive the TV to uniform below
-    `1/1000`." The final comparison is a `native_decide` on the exact rational
+    `physicalExchange_dobrushinDecay`, this gives the headline that 41 physical
+    perfect-exchange steps from the **fiber-uniform** start of macrostate `x0` drive
+    the TV to uniform below `1/1000` (the arbitrary-ordered-deck strengthening is the
+    open Gate-6 program; see `physicalExchange_decay_41_lt_thousand`). The final
+    comparison is a `native_decide` on the exact rational
     `(1 − 997540809461453561581/6330095096149974879912)^41 < 1/1000`. -/
 theorem dobrushinCoeff_41_lt_thousand :
     (Dobrushin.dobrushinCoeff (blExchangeKernel commanderBLParams) : Rat) ^ 41 <
@@ -148,11 +150,23 @@ theorem dobrushinCoeff_41_lt_thousand :
     _ ≤ (1 - w50 25 25) ^ 41 := hpow
     _ < (1 : Rat) / 1000 := one_sub_w50diag_pow41_lt_thousand
 
-/-- **Headline: 41 physical perfect-exchange steps from any 99-card deck drive the
-    TV to the uniform distribution on the deck below `1/1000`.** This composes the
-    already-proved `physicalExchange_dobrushinDecay` (the physical deck-TV is bounded
-    by the 41st power of the Dobrushin coefficient of the BL macro chain) with the
-    concrete `dobrushinCoeff_41_lt_thousand`. -/
+/-- **99-card 41-step decay (fiber-uniform start).**  For any 99-card macrostate
+    `x0`, 41 physical perfect-exchange steps (perfect-local resample around the
+    physical exchange) driven **from the fiber-uniform distribution over decks with
+    macrostate `x0`** — the lift `apply (pointMass x0) (comp UCFM localLift)`, i.e.
+    uniformly over the count/membership fiber of `x0`, *not* a point mass on one
+    specific ordered deck — drive the total variation toward the uniform
+    distribution on the whole deck below `1/1000`.  This composes the already-proved
+    `physicalExchange_dobrushinDecay` (the physical deck-TV from that fiber-uniform
+    start is bounded by the 41st power of the BL macro-chain Dobrushin coefficient)
+    with the concrete `dobrushinCoeff_41_lt_thousand`.
+
+    *Scope (Nov-21 assessment, Finding 2):* this is a bound from the **fiber-uniform**
+    start of `x0`, NOT from an arbitrary specific ordered 99-card deck — count-process
+    mixing alone does not imply full-deck mixing from arbitrary microscopic states.
+    The stronger "from any ordered deck" statement is the open Gate-6 arbitrary-deck
+    program (the relabeling-invariance / right-convolution structural lemma that
+    transports the bound from one segregated ordered deck to every start). -/
 theorem physicalExchange_decay_41_lt_thousand (x0 : BLState 99 50 50) :
     Dist.tv
       (FiniteKernel.run
