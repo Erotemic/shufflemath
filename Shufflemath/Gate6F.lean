@@ -237,4 +237,31 @@ theorem twoPilePermutationTV_bound
       · exact @gsrPermutationLaw_tv_bound m a_L hLa hLpos
       · exact @gsrPermutationLaw_tv_bound (N - m) a_R hRa hRpos
 
+/-- The explicit one-round local-error bound for the concrete 99-card protocol
+(Gate 6, batch 3, \S5): the two within-pile GSR riffles (left pile size 50, right
+pile size 49, each with GSR parameter `2 ^ 23`) together stay within the collision
+budget `\delta1 = 2401 / 8388608` of the independent uniform shuffle, at the level
+of the two within-pile permutation laws.
+
+This is `twoPilePermutationTV_bound` instantiated at `N = 99`, `m = 50`,
+`a_L = a_R = 2 ^ 23`, with the symbolic right-hand side
+`choose(50,2)/2^23 + choose(49,2)/2^23` evaluated to the concrete rational
+`2401 / 8388608` (the per-round collision budget already named in
+`Shufflemath/FiniteDeck/Gate6FiniteGSR.lean`).  The binomial coefficients reduce
+via `Nat.choose_two_right` (`n.choose 2 = n·(n-1)/2`); the pure rational arithmetic
+then closes by `norm_num`. -/
+theorem oneRoundTwoPileTV_le_delta1 :
+    Dist.tv (distProduct (PermutationLaw.gsrPermutationLaw 50 (2 ^ 23) (by norm_num) (by norm_num))
+                        (PermutationLaw.gsrPermutationLaw 49 (2 ^ 23) (by norm_num) (by norm_num)))
+            (distProduct (GSR.uniformDist (Equiv.Perm (Fin 50)))
+                        (GSR.uniformDist (Equiv.Perm (Fin 49)))) ≤ 2401 / 8388608 := by
+  haveI : DecidableEq (Equiv.Perm (Fin 50)) := inferInstance
+  haveI : DecidableEq (Equiv.Perm (Fin 49)) := inferInstance
+  have hL := twoPilePermutationTV_bound 99 50 (2 ^ 23) (2 ^ 23)
+      (by norm_num) (by norm_num) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
+  have hRHS : (Nat.choose 50 2 : Rat) / 8388608 + (Nat.choose 49 2 : Rat) / 8388608 = 2401 / 8388608 := by
+    rw [Nat.choose_two_right, Nat.choose_two_right]
+    norm_num
+  simpa [hRHS] using hL
+
 end
