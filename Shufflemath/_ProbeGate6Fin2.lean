@@ -1,5 +1,7 @@
 module
 public import Mathlib
+public import Shufflemath.Finite
+public import Shufflemath.GSRDeckRound
 public import Shufflemath.CommanderPhysicalExchange
 public import Shufflemath.FiniteDeck.LiteralSwapKernel
 public import Shufflemath.GSR
@@ -42,5 +44,33 @@ noncomputable def swapLaw : Shufflemath.Dist (Equiv.Perm (Fin 99)) :=
     (fun c : Shufflemath.CommanderPhysicalExchange.exchangeChoice =>
       Shufflemath.FiniteDeck.swapPerm 99 50 (by norm_num) (c.1.1) (c.2.1)
         (canonicalPairing (c.1.1) (exchangeLCard c) (c.2.1) (exchangeRCard c)))
+
+/-
+Batch-3 step 3: the full Gate-6 round kernels. A round = one common literal-swap
+`swapLaw` (cross-pile) composed with the within-pile 2^23-riffle law
+(`rhoRoundFinite`/`rhoRoundIdeal`, already within `delta1` of each other by
+`oneRoundDeckTV_le_delta1`). The full-round permutation is `g * s` (riffle after
+swap). Because `s` is the *same common* law in both kernels, the crux
+one-round TV bound (step 4) reduces to `oneRoundDeckTV_le_delta1` by cancellation.
+-/
+
+-- The within-pile 2^23-riffle deck laws at the concrete 99-card protocol.
+noncomputable abbrev rho99Finite : Shufflemath.Dist (Equiv.Perm (Fin 99)) :=
+  Shufflemath.rhoRoundFinite 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 23) (by norm_num)
+noncomputable abbrev rho99Ideal : Shufflemath.Dist (Equiv.Perm (Fin 99)) :=
+  Shufflemath.rhoRoundIdeal 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 23) (by norm_num)
+
+-- The full-round permutation laws: compose the common literal-swap with the
+-- within-pile riffle (finite resp. ideal).
+noncomputable def fullRoundFinite : Shufflemath.Dist (Equiv.Perm (Fin 99)) :=
+  (Shufflemath.distProduct swapLaw rho99Finite).map (fun (s, g) => g * s)
+noncomputable def fullRoundIdeal : Shufflemath.Dist (Equiv.Perm (Fin 99)) :=
+  (Shufflemath.distProduct swapLaw rho99Ideal).map (fun (s, g) => g * s)
+
+-- The state-independent full-round kernels (the `K` and `J` of the certificate).
+noncomputable def finiteRound : Shufflemath.FiniteKernel (Equiv.Perm (Fin 99)) (Equiv.Perm (Fin 99)) :=
+  fun _ => fullRoundFinite
+noncomputable def idealRound : Shufflemath.FiniteKernel (Equiv.Perm (Fin 99)) (Equiv.Perm (Fin 99)) :=
+  fun _ => fullRoundIdeal
 
 end
