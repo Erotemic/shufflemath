@@ -1,8 +1,11 @@
 module
 
 public import Shufflemath.GSRSegFiber
+public import Shufflemath.GSRSegMembership
 public import Shufflemath.GSRDeckRound
+public import Shufflemath.FiniteDeck.TwoPile
 public import Shufflemath.FiniteDeck.WithinPileOrbit
+public import Shufflemath.CommanderPermutation
 public import Shufflemath.CommanderMembershipKernels
 public import Shufflemath.FiberDisintegration
 public import Shufflemath.GSR
@@ -89,5 +92,29 @@ theorem roundEmbedMap_eq_fiberOrbit_val (N m : Nat) (hm : m ≤ N)
     intro x
     simp [Equiv.refl]
   simpa only [htr, Prod.fst, Prod.snd]
+
+/-! **Frame bridge.**  The 99-card frame (`CommanderPermutation`: `leftCards`,
+  `leftPosition`, `Deck = Equiv.Perm (Fin 99)`) and the parameterized `FiniteDeck`
+  frame (`leftCards N m hm`, `leftPositions N m hm`, `Deck N`) coincide at
+  `N = 99, m = 50`: both `leftCards` are the image of the deck over the 50 left
+  positions, and `Fin.castLE hm5099 i` and the 99-card `leftPosition i` are both
+  `⟨i.val, _⟩ : Fin 99`.  This single definitional bridge is what lets the
+  `rhoRoundIdeal = localLift segMembership` headline move between the two frames. -/
+
+/-- The parameterized `FiniteDeck.leftCards` at `N = 99, m = 50` equals the
+  99-card `CommanderPermutation.leftCards`. -/
+theorem finiteDeck_leftCards_99_50_eq_commander (d : CommanderPermutation.Deck) :
+    FiniteDeck.leftCards 99 50 hm5099 d = CommanderPermutation.leftCards d := by
+  have hposI (i : Fin 50) : (Fin.castLE hm5099 i : Fin 99) = CommanderPermutation.leftPosition i := by
+    dsimp only [CommanderPermutation.leftPosition]
+    rfl
+  dsimp only [FiniteDeck.leftCards, FiniteDeck.leftPositions, CommanderPermutation.leftCards]
+  ext x
+  simp only [Finset.mem_image, Finset.mem_univ, hposI]
+  constructor
+  · rintro ⟨a, ⟨a_1, _, ha⟩, hda⟩
+    exact ⟨a_1, True.intro, by simpa [ha] using hda⟩
+  · rintro ⟨a, _, hda⟩
+    exact ⟨CommanderPermutation.leftPosition a, ⟨⟨a, True.intro, rfl⟩, hda⟩⟩
 
 end Shufflemath
