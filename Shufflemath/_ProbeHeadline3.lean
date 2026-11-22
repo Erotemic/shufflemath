@@ -16,6 +16,7 @@ public import Shufflemath.Finite
 public import Shufflemath.GSR
 public import Shufflemath.FiniteDeck.WithinPileOrbit
 public import Shufflemath.GSRSegMembership
+public import Shufflemath.GSRSegFiber
 public import Shufflemath.CommanderPermutation
 public import Shufflemath.FiberDisintegration
 public import Shufflemath.CommanderMembershipKernels
@@ -70,33 +71,22 @@ private theorem card_paramFiber_eq_membershipFiber :
     Fintype.card paramFiber = (FiberDisintegration.fiberSet membership segMembership).card := by
   -- `paramFiber` ≃ Y (bijection) and Y has card 50!·49!.
   have hL : Fintype.card paramFiber = 50 ! * 49 ! := by
-    have : Fintype.card paramFiber = Fintype.card Y := by
-      rw [← Fintype.card_congr]
-      exact (fiberOrbit_equiv 99 50 hm5099 (Equiv.refl (Fin 99))).card
-    rw [this]
-    rw [Fintype.card_prod, Fintype.card_perm, Fintype.card_fin]
+    -- `paramFiber ≃ Y` (bijection) gives `card Y = card paramFiber`; compute `card Y` as 50!·49!.
+    have hC : Fintype.card Y = Fintype.card paramFiber :=
+      Fintype.card_congr (fiberOrbit_equiv 99 50 hm5099 (Equiv.refl (Fin 99)))
+    rw [← hC]
+    rw [Fintype.card_prod, Fintype.card_perm, Fintype.card_perm, Fintype.card_fin, Fintype.card_fin]
     <;> norm_num
   -- The membership fiber is `{d // membership d = segMembership} = {d // leftCards d = segLeft}`
   -- (membership_iff_leftCards), whose card is the same 50!·49! (equinumerous to Y).
   have hR : (FiberDisintegration.fiberSet membership segMembership).card = 50 ! * 49 ! := by
-    rw [FiberDisintegration.fiberSet, Finset.card_preimage]
-    -- The preimage of `segMembership` under `membership` is `{d // leftCards d = segLeft}`; its
-    -- card equals the card of the equinumerous `Y` (the within-pile pair fiber).
-    have hPre : (Finset.univ.filter (fun d : Deck 99 => membership d = segMembership)).card =
-        (Finset.univ.filter (fun d : Deck 99 => leftCards 99 50 hm5099 d = segLeft)).card := by
-      rw [Finset.card_congr]
-      apply Finset.filter_congr
-      intro d
-      rw [membership_iff_leftCards d]
-    -- The left-card fiber deck-set has card 50!·49! (the pair fiber `Y`, via `fiberOrbit_equiv`).
-    have hLC : (Finset.univ.filter (fun d : Deck 99 => leftCards 99 50 hm5099 d = segLeft)).card =
-        50 ! * 49 ! := by
-      -- This fiber deck-set is exactly the image of `Y` under `roundEmbedMap`; both have 50!·49!.
-      rw [← Fintype.card_congr]
-      exact (fiberOrbit_equiv 99 50 hm5099 (Equiv.refl (Fin 99))).card
-      <;> rw [Fintype.card_prod, Fintype.card_perm, Fintype.card_fin]
-      <;> norm_num
-    rw [hPre, hLC]
+    -- Bridge the Finset fiber to the Fintype subtype, then use GSRSegFiber's card theorem
+    -- (`fiberSegMembership_card`): a set equivalence, not a 99! computation.
+    have hSub : (FiberDisintegration.fiberSet membership segMembership).card =
+        Fintype.card {d : Deck 99 // membership d = segMembership} := by
+      dsimp only [FiberDisintegration.fiberSet]
+      rw [← Fintype.card_subtype]
+    simpa [hSub] using fiberSegMembership_card
   linarith
 
 -- 4. The headline: the one-round ideal (uniform) deck law = the perfect local law at the
