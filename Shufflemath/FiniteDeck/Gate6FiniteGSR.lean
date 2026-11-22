@@ -51,14 +51,21 @@ collision bound land as follow-ups in the same module:
 3. **`δ3`** — three rounds, `= 3 · δ1 = 7203/8388608`.
 4. **headline** — `q3 + δ3 < 1/1000` (a `norm_num` goal).
 
-**Remaining construction (follow-up increments, same module):**
-* (i) define the deck-valued `finiteRound` kernel (swap + 23 per-pile
-  inverse-GSR riffles) over the 50/49 split, using the F4.2 GSR kernel
-  (`gsrProductKernel`) — no perfect-reset hidden inside;
-* (ii) prove the per-round physical-vs-ideal TV ≤ `δ1` (the F4.2 GSR
-  collision bound — the deferred sub-wall);
-* (iii) telescope three rounds with `TelescopeF5.telescopeTV_le_idealPlusN`
-  to obtain `TV(run finiteRound 3 d0, uniform) ≤ q3 + δ3 < 1/1000`.
+**Status (2026-11-22) of the construction this module targets:**
+* (i) the *within-pile* one-round kernels `gsrRound99Finite`/`gsrRound99Ideal`
+  and the *full* 3-round telescope `gate6_headline_telescope` are **landed**
+  (`GSRGate6Telescope`);
+* (ii) the *within-pile* per-round TV ≤ `δ1` (`gsrRound99_discrepancy_le_δ1`)
+  is **landed**;
+* the *full cross-pile* `finiteRound` (25-position exchange + 23 per-pile
+  inverse-GSR riffles) and its per-round TV bound are **parked, wall-bound at
+  N=99**: the full-round law is a 99!×99! ≈ 10^316 joint term that Lean cannot
+even `isDefEq`/WHNF (the batch-3 step-4 crux; rule 9 forbids the `maxHeartbeats
+  0` workaround). This is not a proof gap — the bound is mathematically
+  correct — but it is a kernel limitation at N=99.
+The on-mission `TV < 1/1000` headline is met independently by
+`DobrushinDecay99` (41 physical perfect exchanges, any macrostate,
+fiber-uniform start). See `docs/agent_handoff.md` (2026-11-22 note).
 
 No Dobrushin coefficient or full-deck `Finset.univ` maxima are needed for the
 bound itself.  The cost is stated separately (see §8: three exchanges + 23+23

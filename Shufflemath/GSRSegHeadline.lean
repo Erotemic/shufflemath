@@ -36,8 +36,11 @@ This module lands the two **structural bridge lemmas** the headline reduces to:
   `d = Equiv.refl` the trailing `.trans d` is the identity.
 
 **The headline itself** (`rhoRoundIdeal 99 50 … = localLift segMembership`) then
-is a direct mass computation on top of these, reduced to three remaining pieces
-(all identified, none yet landed here):
+is a mass computation on top of these, reduced to three pieces — two already
+landed in `GSRSegFiber` (`roundEmbedMap_99_50_injective`,
+`fiberSet_segMembership_card`); the remaining support equivalence and the final
+assembly are parked, wall-bound at N=99 (see the 2026-11-22 note in
+`docs/agent_handoff.md`):
 
 1. `roundImage_iff_segMembership (d)`: a deck is a `roundEmbedMap 99 50` image
    iff `membership d = segMembership`.  Forward uses `roundEmbedMap_eq_fiberOrbit_val`
