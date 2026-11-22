@@ -39,6 +39,7 @@ lake build \
   Shufflemath.CommanderDeckGSR \
   Shufflemath.Gate6BadLabels \
   Shufflemath.Gate6F \
+  Shufflemath.GSRDeckRound \
   Shufflemath.FiniteDeck.Gate6TieRank
 
 if [[ "${1:-}" == "--pair" ]]; then
