@@ -5,6 +5,18 @@ For a new agent, begin with [agent_handoff.md](agent_handoff.md). Historical
 phase notes are linked at the end; they do not override this plan. Read
 `AGENTS.md` before modifying code.
 
+> **Gate 6 status (this session):** batch 1 (`Gate6BadLabels`: bad-label union
+> bound + `badLabels_uniform_bound`), batch 2 (a)-(e) (`Gate6TieRank`: `tieRank`
+> law = uniform, Key fact B, `tv_maps_le_mismatch`) and **batch 2 (f)** are all
+> LANDED. The (f) headline is now the canonical module **`Shufflemath/Gate6F`**
+> (in the verified build): `TV(ν_{n,a}, U_{S_n}) ≤ #badLabels/a^n` and
+> `≤ choose(n,2)/a`. **Next: batch 3** — the state-independent position-
+> permutation law `ρRound` (swapPerm + embed_m + finite-GSR rank laws, fixed
+> deterministic pairing) and the one-round physical-vs-perfect row error
+> `≤ δ1 = 2401/8388608`; **then batch 4** — the 3-round telescope
+> `≤ 3δ1 + q3 < 1/1000` (`gate6_headline_lt_thousandth`). See
+> [agent_handoff.md](agent_handoff.md) and the 2026-11-21 Gate 6 hint doc §5/§6.
+
 > **Toolchain note (2026-02-10):** the library now uses Lean 4.34's `module`
 > system (`module` header + `public import` + `@[expose] public section`). See
 > `agent_handoff.md` §"Lean 4 module-system migration" for the exact recipe
