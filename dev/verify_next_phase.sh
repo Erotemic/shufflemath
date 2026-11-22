@@ -41,6 +41,7 @@ lake build \
   Shufflemath.Gate6F \
   Shufflemath.GSRDeckRound \
   Shufflemath.GSRGate6Telescope \
+  Shufflemath.GSRSegMembership \
   Shufflemath.FiniteDeck.Gate6TieRank
 
 if [[ "${1:-}" == "--pair" ]]; then
