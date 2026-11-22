@@ -189,6 +189,18 @@ theorem _probeF_main :
         simpa only [rankFn, tieFn] using tieRank_eq_rankEquiv_inj n a hn p.1 hinj p.2
       exact absurd hEq (fun h => hfg h.symm)
 
+/-- **Gate 6 batch 2 (f) headline.**  A finite GSR riffle law `ν_{n,a}` is within
+  `choose(n,2) / a` (total variation) of the uniform law on `S_n`, for all
+  `n > 0` and `a > 0`.  Composition of `_probeF_main` (`TV ≤ #bad / a^n`, this
+  file) with `Gate6BadLabels.badLabels_uniform_bound` (`#bad / a^n ≤
+  choose(n,2) / a`, batch 2 (c)).  This is the §8-style finite-size TV headline
+  for the finite GSR law (the 99-card protocol's per-round bound composes with
+  the F5 telescope for the `< 1/1000` certification). -/
+theorem _probeF_headline :
+    Dist.tv (gsrPermutationLaw n a ha hn) (GSR.uniformDist (Equiv.Perm (Fin n))) ≤
+      (n.choose 2 : Rat) / a := by
+  exact le_trans (_probeF_main n a ha hn) (badLabels_uniform_bound n a ha)
+
 end Probe
 
 end
