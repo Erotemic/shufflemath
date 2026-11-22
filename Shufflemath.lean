@@ -36,3 +36,5 @@ public import Shufflemath.GSRSegHeadline
 public import Shufflemath.GSRSegConfinement
 public import Shufflemath.FiniteDeck.Gate6TieRank
 public import Shufflemath.CommanderPerDeckKernel
+public import Shufflemath.FiniteDeck.A3KernelLaw
+public import Shufflemath.FiniteDeck.BLDisintegration

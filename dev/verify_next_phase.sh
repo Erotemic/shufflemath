@@ -44,7 +44,9 @@ lake build \
   Shufflemath.GSRSegMembership \
   Shufflemath.GSRSegFiber \
   Shufflemath.GSRSegHeadline \
-  Shufflemath.FiniteDeck.Gate6TieRank
+  Shufflemath.FiniteDeck.Gate6TieRank \
+  Shufflemath.FiniteDeck.A3KernelLaw \
+  Shufflemath.FiniteDeck.BLDisintegration
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace
