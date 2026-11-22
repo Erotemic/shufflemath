@@ -16,15 +16,25 @@ phase notes are linked at the end; they do not override this plan. Read
 > `tv_map_contraction` (a deterministic pushforward is a TV non-expansion,
 > `TotalVariation`); (3) `twoPilePermutationTV_bound` (the two within-pile GSR
 > permutation laws' product is within `choose(m,2)/a_L + choose(N-m,2)/a_R` of
-> the uniform product, `Gate6F`). **Remaining batch 3:** (a) the deck-level
-> transport — push that product law through the pile-embedding `act_d` (a
-> `tv_map_contraction` application) to the concrete `localFinite`/`localIdeal`
-> distributions, and compute the explicit `δ1 = 2401/8388608` constant for
-> `N=99, m=50, a=2^23`; (b) the state-independent position-permutation law
-> `ρRound` (swapPerm + embed_m + finite-GSR rank laws, fixed deterministic
-> pairing). **Then batch 4** — the 3-round telescope `≤ 3δ1 + q3 < 1/1000`
-> (`gate6_headline_lt_thousandth`). See [agent_handoff.md](agent_handoff.md)
-> and the 2026-11-21 Gate 6 hint doc §5/§6.
+> the uniform product, `Gate6F`); (4) `oneRoundTwoPileTV_le_delta1` (that bound
+> instantiated at `N=99, m=50, a=2^23`, RHS evaluated to `2401/8388608 = δ1`,
+> `Gate6F`). **G6.1 deck-level transport (also this session)** — new module
+> `Shufflemath/GSRDeckRound.lean`: `roundEmbedMap N m (pl,pr) = embed_m N m hm pl pr`
+> (the deterministic map embedding a within-pile permutation pair into a full-deck
+> permutation — note this is `embed_m`, *not* the deck-conjugation `act_d`); 
+> `rhoRoundFinite`/`rhoRoundIdeal` push the two-pile product laws (GSR / uniform)
+> through it; and `rhoRoundTransport_le_twoPile` + `oneRoundDeckTV_le_delta1` show
+> the **deck-level** (full-deck-permutation) one-round finite-vs-ideal TV is within
+> the same per-pile collision budget `choose(m,2)/a + choose(N-m,2)/a` (concretely
+> `2401/8388608 = δ1`), via `tv_map_contraction` composed with `twoPilePermutationTV_bound`
+> — a one-line `le_trans` of the two batch-3 lemmas. **Honest scope note:** 
+> `rhoRound` uses `embed_m` + the within-pile `gsrPermutationLaw`; whether it exactly
+> equals the *physical* one-round finite-GSR deck law (which may additionally involve a
+> left-right `swapPerm` or a different finite-GSR rank model) is a separate modeling
+> question — the transport **bound** holds regardless. **Remaining (batch 4):** the
+> 3-round telescope `≤ 3δ1 + q3 < 1/1000` (`gate6_headline_lt_thousandth`), and if the
+> physical finite-GSR law is modeled differently, bridge `rhoRound` to it. See
+> [agent_handoff.md](agent_handoff.md) and the 2026-11-21 Gate 6 hint doc §5/§6.
 
 > **Toolchain note (2026-02-10):** the library now uses Lean 4.34's `module`
 > system (`module` header + `public import` + `@[expose] public section`). See
