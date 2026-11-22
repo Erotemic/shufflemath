@@ -104,6 +104,15 @@ theorem δ3_eq_7203_over_8388608 : δ3 = 7203 / 8388608 := by
     telescope. -/
 theorem gate6_headline_lt_thousandth : q3 + δ3 < (1 : Rat) / 1000 := by
   norm_num [q3, δ3, δ1, choose50_2, choose49_2]
+/-- **G6.4 — the 3-round finite budget in `q3 + 3·δ1` form.**  Since `δ3 = 3·δ1`, the
+    committed `gate6_headline_lt_thousandth` (`q3 + δ3 < 1/1000`) is the same rational
+    inequality as `q3 + 3·δ1 < 1/1000` — the exact form the 3-round telescope headline
+    (G6.3, `TV(K^3 d0, U) ≤ q3 + 3·δ1`) compares against. -/
+theorem gate6_headline_bound : q3 + 3 * δ1 < (1 : Rat) / 1000 := by
+  have h3 : (3 * δ1 : Rat) = δ3 := by
+    rw [δ3]
+  rw [h3]
+  exact gate6_headline_lt_thousandth
 
 /-- §4, sub-lemma: the `n-2` complement count — `# {k : Fin n // k ≠ i ∧ k ≠ j} = n-2`
     for `i ≠ j`, `n ≥ 2`.  (The subtype is written inline: a `def` alias does not
