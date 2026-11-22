@@ -32,5 +32,6 @@ public import Shufflemath.GSRDeckRound
 public import Shufflemath.GSRGate6Telescope
 public import Shufflemath.GSRSegMembership
 public import Shufflemath.GSRSegFiber
+public import Shufflemath.GSRSegHeadline
 public import Shufflemath.FiniteDeck.Gate6TieRank
 public import Shufflemath.CommanderPerDeckKernel
