@@ -547,6 +547,18 @@ theorem mass_uniformDist {β : Type*} [Fintype β] [Nonempty β] (x : β) :
     Dist.mass (uniformDist β) x = (Fintype.card β : Rat)⁻¹ := by
   simp only [uniformDist, Dist.ofFun, Dist.mass, Finsupp.coe_equivFunOnFinite_symm]
 
+/-- The uniform law's raw `.weights` field assigns each point mass `1 / card`.
+  Whnf-safe by construction: proven once here over a *generic* `β` (a light
+  context), so the batch-5b headline `rhoRoundIdeal = localLift segMembership`
+  can `rw [uniformDist_weights]` in O(1) instead of re-unfolding
+  `uniformDist`/`Dist.ofFun` inside the 99!-laden 99-card context, where that
+  reduction blows the heartbeat budget (the root cause of both remaining
+  headline errors). Definitionally `Dist.mass μ x = μ.weights x`, so this is
+  `mass_uniformDist` restated on the field. -/
+theorem uniformDist_weights {β : Type*} [Fintype β] [Nonempty β] (x : β) :
+    (uniformDist β).weights x = (Fintype.card β : Rat)⁻¹ := by
+  simp only [uniformDist, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm]
+
 /-- Pushing the uniform law through a function `f` gives mass at `z` equal to
 the average (over the uniform domain) of the indicator that `f w = z`.  This
 is the single-source half of the joint-distribution bridge for F4.1. -/
