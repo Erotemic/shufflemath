@@ -835,6 +835,46 @@ def tvFinsupp {γ : Type*} [DecidableEq γ] (p q : Dist γ) : Rat :=
   (1 / 2 : Rat) * (p.weights.support ∪ q.weights.support).sum
       (fun x => |p.weights x - q.weights x|)
 
+-- TODO(proof): Gate 6 batch 3, first step — the Fintype↔Finsupp TV bridge
+--
+--   tv_eq_tvFinsupp {α : Type*} [Fintype α] [DecidableEq α] (p q : Dist α) :
+--       Dist.tv p q = tvFinsupp p q
+--
+-- This is the next Gate 6 batch 3 item: it lets the Fintype per-pile GSR bound
+-- (`gsrPermutationLaw_tv_bound`, TV ≤ choose(n,2)/a) feed the Fintype-free
+-- product machinery (`distProductFinsupp_tv_subadditive`) to get the combined
+-- two-pile local TV bound (the δ1 numerator of the one-round row error).
+--
+-- RESUME POINT (the pieces below are all proven individually; only the final
+-- sum decomposition is the wall):
+--   · `unfold Dist.tv tvFinsupp vectorTV Dist.mass`  -- works (reduces both
+--     sides to `(1/2) * (<set>).sum (fun x => |p.weights x - q.weights x|)`
+--     with `<set>` = `Finset.univ` on the LHS and the support-union on the
+--     RHS).  NOTE: `tv` and `mass` live in `namespace Dist` — qualify them.
+--   · `hf : ∀ x (h1 : x ∉ p.weights.support) (h2 : x ∉ q.weights.support),
+--     |p.weights x - q.weights x| = 0`  -- via
+--     `by_contra hne; exact h (Finsupp.mem_support_iff.mpr hne)` for each mass.
+--   · `hU : (Finset.univ : Finset α) = S ∪ (Finset.univ \ S)`  -- works
+--     (`ext x; simp [Finset.mem_union, Finset.mem_sdiff, Finset.mem_univ,
+--     not_false_iff]; by_cases hs : x ∈ S <;> simp [hs]`), `S = support ∪ support`.
+--   · (WALL) reduce `(Finset.univ \ S).sum f` to `0` (via `hf`) AND show
+--     `univ.sum f = S.sum f`.  The blocker: this Mathlib has NO
+--     `Finset.sum_union` / `Finset.sum_sdiff` / `sum_eq_sum_of_not_mem_zero`
+--     (only `Finset.sum_insert`, `Finset.sum_congr`, `Finset.sum_filter`).
+--     FIX ROUTE: prove a local `Finset.sum_eq_sum_of_not_mem_zero`-style
+--     helper — `univ.sum f = S.sum f` for `f x = 0` on `univ \ S` — e.g.
+--     via `Fintype.sum`/`Finsupp` support bookkeeping, OR by proving the
+--     disjoint-union decomposition `univ = S ⊔ (univ \ S)` from
+--     `Finset.induction_on` + `Finset.sum_insert`, OR simply note
+--     `(univ \ S).sum f = 0` (proven) and use
+--     `(S ∪ (univ \ S)).sum f = S.sum f + (univ \ S).sum f` proved inline by
+--     `Finset.sum_congr` over the disjoint-union (the pieces are all there).
+--   · then `rw [Finset.sum_const_zero]; ring` closes `(1/2)*(S.sum f + 0) = (1/2)*S.sum f`.
+--
+-- All of `hf`/`hdisj`/`hU`/the `(univ \ S).sum f = 0` reduction compiled
+-- cleanly in the working draft (session 80+); only the final
+-- `univ.sum f = S.sum f` decomposition needed a missing Finset lemma.
+
 /-- The support of the Fintype-free product `distProductFinsupp μ ν` is the
 Cartesian product of the factor supports.  This is the Fintype-free
 replacement for the `Finset.univ`-over-`α × β` bookkeeping used in the
