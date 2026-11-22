@@ -9,6 +9,10 @@ statement, and the Lean theorem ladder. Three tracks run in parallel:
 literature, exact finite computation (`experiments/`), and Lean
 formalization (library `Shufflemath`).
 
+## Commit attribution
+
+Every agent-authored commit must carry a `Co-authored-by:` trailer naming the exact model (and weights/config variant, when known) that produced it, per its own runtime identification — never copied from earlier commits; if undeterminable, say so. For qwen models, the appropriate email is: <noreply@alibabacloud.com> 
+
 ## Active roadmap and next task
 
 - **Active status and work queue:** `docs/lean_plan.md`.
