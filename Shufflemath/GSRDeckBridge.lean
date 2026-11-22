@@ -65,4 +65,31 @@ theorem bridgeA_leftCards
         simpa using FiniteDeck.embed_m_left 99 50 hm pl pr (pl.symm i)
       simp [hEq, pl.apply_symm_apply i]
 
+-- The within-pile embedding `embed_m` is injective in the pair of within-pile
+-- permutations: two equal embeddings agree at every position, and at a left
+-- (resp. right) position that identifies the left (resp. right) permutation
+-- (`leftPosition = Fin.castLE` / `rightPosition i = ⟨m + i.val⟩`, both injective).
+-- Proved at the apply level, so it never touches the `finSplit` internals.
+theorem embed_m_injective (N m : Nat) (hm : m ≤ N) :
+    Function.Injective (fun (p : Equiv.Perm (Fin m) × Equiv.Perm (Fin (N - m))) =>
+      FiniteDeck.embed_m N m hm p.1 p.2) := by
+  intro p q h
+  have hpl : p.1 = q.1 := by
+    apply Equiv.ext
+    intro i
+    have hpos := congrArg (fun (e : Equiv.Perm (Fin N)) => e (FiniteDeck.leftPosition N m hm i)) h
+    have heq : FiniteDeck.leftPosition N m hm (p.1 i) = FiniteDeck.leftPosition N m hm (q.1 i) := by
+      simpa [FiniteDeck.embed_m_left, eq_comm] using hpos
+    dsimp only [FiniteDeck.leftPosition] at heq
+    exact Fin.castLE_injective hm heq
+  have hpr : p.2 = q.2 := by
+    apply Equiv.ext
+    intro j
+    have hpos := congrArg (fun (e : Equiv.Perm (Fin N)) => e (FiniteDeck.rightPosition N m hm j)) h
+    have heq : FiniteDeck.rightPosition N m hm (p.2 j) = FiniteDeck.rightPosition N m hm (q.2 j) := by
+      simpa [FiniteDeck.embed_m_right, eq_comm] using hpos
+    apply Fin.ext
+    simpa [FiniteDeck.rightPosition] using heq
+  exact Prod.ext hpl hpr
+
 end Shufflemath
