@@ -29,5 +29,6 @@ public import Shufflemath.FiniteDeck.Gate6FiniteGSR
 public import Shufflemath.Gate6BadLabels
 public import Shufflemath.Gate6F
 public import Shufflemath.GSRDeckRound
+public import Shufflemath.GSRGate6Telescope
 public import Shufflemath.FiniteDeck.Gate6TieRank
 public import Shufflemath.CommanderPerDeckKernel
