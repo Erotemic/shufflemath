@@ -220,5 +220,47 @@ theorem f5FullDeck_nondegenerate_nstep (hsurj : Function.Surjective project) (se
       (List.replicate n (idealExchange25 hsurj)) hlen (Dist.pointMass seg)
       (GSR.uniformDist Deck)
 
+/-- Generalization of `telescopeBound_le_length` (the `δ := 1` case): the
+  `d := 1` telescope of a list of per-step discrepancies each bounded by `δ` is at
+  most `δ` times the number of steps. -/
+theorem telescopeBound_le_n_times_d (Δ : List Rat) (δ : Rat) (hδ : 0 ≤ δ)
+    (h : ∀ (a : Rat), a ∈ Δ → a ≤ δ) : telescopeBound 1 Δ ≤ (Δ.length : Rat) * δ := by
+  induction Δ with
+  | nil => simp
+  | cons x xs ih =>
+    have hx : x ≤ δ := h x (List.mem_cons_self)
+    have hi : telescopeBound 1 xs ≤ (xs.length : Rat) * δ :=
+      ih (fun a ha => h a (List.mem_cons_of_mem x ha))
+    have h1 : (1 : Rat) ^ xs.length = 1 := by rw [one_pow]
+    simp only [telescopeBound_cons, h1, mul_one]
+    have hgoal : x + telescopeBound 1 xs ≤ δ + (xs.length : Rat) * δ := add_le_add hx hi
+    have hRHS : ↑(x :: xs).length * δ = δ + (xs.length : Rat) * δ := by
+      rw [List.length_cons, Nat.cast_add, Nat.cast_one, add_mul, one_mul, add_comm]
+    rw [hRHS]
+    exact hgoal
+
+/-- A parameterized n-step telescope: two equal-length protocols from the same
+  start are within `n · δ` TV of each other when every per-step discrepancy is
+  at most `δ` (and the Dobrushin coefficients are at most `1`, as in the crude
+  telescope).  This generalizes `compList_telescope_nstep_le_n` (the `δ := 1`
+  case) and is the building block for the 3-round headline `≤ 3 δ1 + q3`. -/
+theorem compList_telescope_nstep_le_n_times_d [Fintype α] [DecidableEq α] [Nonempty α]
+    (Ks Ls : List (FiniteKernel α α)) (hlen : Ks.length = Ls.length) (δ : Rat) (hδ : 0 ≤ δ)
+    (hΔle : ∀ (a : Rat),
+      a ∈ List.map (fun (p : FiniteKernel α α × FiniteKernel α α) => kernelDiscrepancy p.1 p.2) (Ks.zip Ls) →
+      a ≤ δ)
+    (mu : Dist α) :
+    Dist.tv (FiniteKernel.apply mu (compList Ks)) (FiniteKernel.apply mu (compList Ls)) ≤
+      (Ls.length : Rat) * δ := by
+  set Δ : List Rat := List.map (fun (p : FiniteKernel α α × FiniteKernel α α) =>
+    kernelDiscrepancy p.1 p.2) (Ks.zip Ls) with hΔ
+  have hTV : Dist.tv (FiniteKernel.apply mu (compList Ks))
+      (FiniteKernel.apply mu (compList Ls)) ≤ telescopeBound 1 Δ := by
+    simpa only [hΔ] using crudeTelescope Ks Ls hlen mu
+  calc
+    _ ≤ telescopeBound 1 Δ := hTV
+    _ ≤ (Δ.length : Rat) * δ := telescopeBound_le_n_times_d Δ δ hδ hΔle
+    _ = (Ls.length : Rat) * δ := by simp [hΔ, hlen]
+
 end Shufflemath
 end
