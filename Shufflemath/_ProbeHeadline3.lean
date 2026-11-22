@@ -17,6 +17,7 @@ public import Shufflemath.GSR
 public import Shufflemath.FiniteDeck.WithinPileOrbit
 public import Shufflemath.GSRSegMembership
 public import Shufflemath.GSRSegFiber
+public import Shufflemath.GSRSegHeadline
 public import Shufflemath.CommanderPermutation
 public import Shufflemath.FiberDisintegration
 public import Shufflemath.CommanderMembershipKernels
@@ -36,25 +37,12 @@ private abbrev Y := Equiv.Perm (Fin 50) × Equiv.Perm (Fin 49)
 private abbrev paramFiber :=
     {e : Deck 99 // leftCards 99 50 hm5099 e = leftCards 99 50 hm5099 (Equiv.refl (Fin 99))}
 
--- 1. The product of the two within-pile uniform laws is the uniform law on the pair product.
-private theorem distProduct_uniforms_eq_uniform :
-    distProduct (GSR.uniformDist (Equiv.Perm (Fin 50))) (GSR.uniformDist (Equiv.Perm (Fin 49))) =
-      GSR.uniformDist Y := by
-  haveI : DecidableEq (Equiv.Perm (Fin 50)) := inferInstance
-  haveI : DecidableEq (Equiv.Perm (Fin 49)) := inferInstance
-  haveI : DecidableEq Y := inferInstance
-  haveI : Nonempty (Equiv.Perm (Fin 50)) := ⟨Equiv.refl (Fin 50)⟩
-  haveI : Nonempty (Equiv.Perm (Fin 49)) := ⟨Equiv.refl (Fin 49)⟩
-  haveI : Nonempty Y := ⟨(Equiv.refl (Fin 50), Equiv.refl (Fin 49))⟩
-  haveI : Fintype (Equiv.Perm (Fin 50)) := inferInstance
-  haveI : Fintype (Equiv.Perm (Fin 49)) := inferInstance
-  haveI : Fintype Y := inferInstance
-  ext p
-  simp only [distProduct, Dist.ofFun, Dist.mass_ofFun, mass_uniformDist,
-    Finsupp.coe_equivFunOnFinite_symm]
-  rw [Fintype.card_prod, Fintype.card_perm, Fintype.card_perm, Fintype.card_fin, Fintype.card_fin,
-      Fintype.card_perm, Fintype.card_perm, Fintype.card_fin, Fintype.card_fin]
-  <;> norm_num
+-- 1. The product of the two within-pile uniform laws is the uniform law on the pair
+--    product.  This is now the *generic*, whnf-free production lemma
+--    `GSRSegHeadline.distProduct_uniform_is_uniformProd` (proved once over `A × B` via
+--    `distProduct_mass` + `simp [Dist.mass, uniformDist, Dist.ofFun, ...]` + `ring`), so the
+--    probe no longer re-proves the 99-card-specific form (that specific re-proof was the
+--    55:6 recursion wall).  The headline below applies the production lemma directly.
 
 -- 2. `roundEmbedMap 99 50 hm5099` is the `val` of the fiber-orbit bijection at the identity deck.
 private theorem roundEmbedMap_eq_val :
@@ -97,18 +85,18 @@ private theorem segHeadline :
   haveI : DecidableEq (Deck 99) := inferInstance
   haveI : DecidableEq Y := inferInstance
   haveI : Nonempty paramFiber := ⟨⟨Equiv.refl (Fin 99), by
-      simp only [paramFiber, leftCards]; rfl⟩⟩
+      simp only [paramFiber, leftCards]⟩⟩
   haveI : Nonempty Y := ⟨(Equiv.refl (Fin 50), Equiv.refl (Fin 49))⟩
   -- Unfold the ideal law to its pushforward form and carry the pair-uniform through the
   -- fiber-orbit bijection:  (uniform on Y)  -->  (uniform on paramFiber)  -->  map val.
   change (distProduct (GSR.uniformDist (Equiv.Perm (Fin 50))) (GSR.uniformDist (Equiv.Perm (Fin 49)))).map
       (roundEmbedMap 99 50 hm5099) = localLift segMembership
-  rw [distProduct_uniforms_eq_uniform, roundEmbedMap_eq_val,
+  rw [distProduct_uniform_is_uniformProd, roundEmbedMap_eq_val,
       ← Convexity.StdSimplex.map_map,
-      ← map_bijective_uniformDist (fiberOrbit_equiv 99 50 hm5099 (Equiv.refl (Fin 99)))]
+      map_bijective_uniformDist (fiberOrbit_equiv 99 50 hm5099 (Equiv.refl (Fin 99)))]
   -- Pointwise mass: both sides are `1 / (50!·49!)` exactly on the fiber deck-set, `0` elsewhere.
   ext d
-  have hLHS := map_mass_eq_univ_fiber (GSR.uniformDist paramFiber) (fun e : paramFiber => e.val) d
+  have hLHS := Dist.map_mass_eq_univ_fiber (GSR.uniformDist paramFiber) (fun e : paramFiber => e.val) d
   have hRHS := localLift_mass segMembership d
   have hcond : (∃ e : paramFiber, e.val = d) ↔ membership d = segMembership := by
     constructor

@@ -10,6 +10,49 @@ scratch verification file that is **not** in the package aggregator
 (`dev/verify_next_phase.sh`), so the gate passes regardless of its state
 (verified: `./dev/verify_next_phase.sh` → 37 tests OK).
 
+## Latest status (this pass — supersedes the two-error analysis below)
+
+Re-probed after switching the probe to the **production** generic lemmas:
+`public import Shufflemath.GSRSegHeadline`, the headline `rw`s
+`distProduct_uniform_is_uniformProd` (the already-proven generic product-of-
+uniforms) instead of re-proving the 99-card-specific form, and uses
+**forward** `map_bijective_uniformDist` + the `Dist.` qualifier on
+`map_mass_eq_univ_fiber`. Result — the probe is down to **one** remaining failure
+(a `whnf` heartbeat timeout, reported at 3 lines: the theorem, the `have hLHS`,
+and the closing `simpa`), all the *same* site:
+
+- **Error 1 (55:6) is CRACKED.** The specific `distProduct_uniforms_eq_uniform`
+  re-proof is removed; the headline applies the **whnf-free** production generic
+  `distProduct_uniform_is_uniformProd`. Applying a proven lemma is O(1) (no
+  re-elaboration), so the `.weights`/`uniformDist` recursion that killed the
+  specific re-proof does not occur — this is exactly this note's recommended
+  "light-context lemma, `rw` in O(1)" fix, and it already exists in production.
+- **Error 2's rw step is CRACKED.** `← map_bijective_uniformDist` was the wrong
+  direction (this note predicted it); **forward** now matches, leaving the goal
+  as `map Subtype.val (GSR.uniformDist paramFiber) = localLift segMembership`.
+- **The wall is now a single, well-characterized site: the pointwise assembly.**
+  `have hLHS := Dist.map_mass_eq_univ_fiber (GSR.uniformDist paramFiber) (fun e => e.val) d`
+  and the closing `simpa [hLHS, hRHS, hcond, card_paramFiber_eq_membershipFiber, localLift] using …`
+  trigger a Lean-internal **`whnf` heartbeat timeout** (reducing the fiber-uniform's
+  mass / `Fintype.card paramFiber` at a point in the 99-card context). This is
+  *Lean-internal* normalisation — no `whnf` tactic, no `sorry` — so the whnf-free
+  rule is intact; the remaining obstruction is reducing the fiber's per-point mass.
+
+Next direction: avoid the pointwise mass reduction — either (a) prove the headline
+as a **structural distribution equality** (both sides = uniform on the same
+deck-set, via the subtype-set equality `membership_iff_leftCards`, closed by
+`Dist.ext` without ever reducing a per-point mass), or (b) a whnf-safe
+`uniformDist_weights`-style lemma (this note's earlier suggestion) that reduces the
+fiber mass in a light context so `simpa` can close from
+`card_paramFiber_eq_membershipFiber` without re-normalising `uniformDist paramFiber`.
+
+**Scope note:** this batch 5b / GSR-seg within-pile headline is an *older* stream
+than the current **G2** arc — the active front is the last G2 headline
+`two_physical_perfect_exchanges_uniform_deck`, whose two counting enablers just
+landed in `FiniteDeck/A3KernelLaw.lean` (commit 30d49e3, "G2.9/13 counting core").
+This within-pile lemma is **not** on the `TV < 1/1000` critical path (that needs the
+25-position Bernoulli-Laplace `finiteRound` composed on top).
+
 ## What this pass fixed (committed, whnf-free, 3.9 s build)
 
 Two of the "3–4 mechanical fixes" the e5cb7c7 commit left are now done:
