@@ -118,21 +118,32 @@ theorem _probeF_main :
         (Finset.univ : Finset (Equiv.Perm (Fin n))).sum
           (fun σ => (if ℓ' ∈ badLabels n a then Dist.mass μ (ℓ', σ) else 0)) =
           (if ℓ' ∈ badLabels n a then 1 else 0) / (Fintype.card (Fin n → Fin a) : Rat) := by
-      split_ifs with hle hle'
-      · -- ∑_σ mass μ (ℓ',σ) = n! / (cardΠ·n!) = 1/cardΠ
+      by_cases hbx : ℓ' ∈ badLabels n a
+      · -- ℓ' ∈ bad: ∑_σ mass μ (ℓ',σ) = n! / (cardΠ·n!) = 1/cardΠ
+        have hcCard : (Fintype.card (Fin n → Fin a) : Rat) ≠ 0 := by
+          exact_mod_cast (show Fintype.card (Fin n → Fin a) ≠ 0 from by
+            rw [Fintype.card_fun, Fintype.card_fin]; exact (Nat.pow_pos ha).ne')
+        have hcF : (Nat.factorial n : Rat) ≠ 0 := by
+          exact_mod_cast (Nat.factorial_ne_zero n)
         have hCard (σ : Equiv.Perm (Fin n)) :
             Dist.mass μ (ℓ', σ) =
               1 / ((Fintype.card (Fin n → Fin a) : Rat) * (Nat.factorial n : Rat)) := by
-          dsimp only [μ, GSR.uniformDist]
-          simpa only [Dist.mass, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm, one_div,
-            Fintype.card_prod]
-        simp only [hCard]
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_perm, Fintype.card_fin]
-        field_simp
-        · exact mod_cast (Nat.factorial_ne_zero n)
-        · exact mod_cast (show Fintype.card (Fin n → Fin a) ≠ 0 from by
-            rw [Fintype.card_fun, Fintype.card_fin]; exact Nat.pow_ne_zero (Nat.ne_of_gt ha) n)
-      · simp only [ite_false, zero_mul, Finset.sum_const, Finset.card_univ]
+          have hMass : Dist.mass μ (ℓ', σ) = 1 / (Fintype.card (ΩTieRank n a) : Rat) := by
+            dsimp only [μ, GSR.uniformDist]
+            simpa only [Dist.mass, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm, one_div]
+          rw [hMass]
+          change (1 : Rat) / (Fintype.card ((Fin n → Fin a) × Equiv.Perm (Fin n)) : Rat) =
+                 1 / ((Fintype.card (Fin n → Fin a) : Rat) * (Nat.factorial n : Rat))
+          simp only [Fintype.card_prod, Nat.cast_mul, Fintype.card_perm, Fintype.card_fin,
+            Nat.cast_id, one_div]
+        simp only [hbx, ite_true, hCard, Finset.sum_const, Finset.card_univ,
+          Fintype.card_perm, Fintype.card_fin]
+        -- the constant fiber-sum is a lifted mul; reduce n! / (cardΠ·n!) = 1 / cardΠ
+        simp only [one_div, mul_inv_rev, smul_eq_mul, nsmul_eq_mul]
+        field_simp [hcCard, hcF]
+      · -- ℓ' ∉ bad: ∑_σ 0 = 0 = 0/cardΠ
+        simp only [hbx, ite_false, zero_mul, Finset.sum_const, Finset.card_univ,
+          nsmul_eq_mul, mul_zero, zero_div]
     have hInner : (Finset.univ : Finset (Fin n → Fin a)).sum
         (fun x => (Finset.univ : Finset (Equiv.Perm (Fin n))).sum
           (fun y => (if (x, y).1 ∈ badLabels n a then Dist.mass μ (x, y) else 0))) =
@@ -140,49 +151,43 @@ theorem _probeF_main :
           (fun ℓ' => (if ℓ' ∈ badLabels n a then 1 else 0) /
             (Fintype.card (Fin n → Fin a) : Rat)) := by
       refine Finset.sum_congr rfl (fun x _ => ?_)
-      simpa using hInn x
+      by_cases hbx : x ∈ badLabels n a
+      · simpa [hbx] using hInn x
+      · simpa [hbx] using hInn x
     rw [hInner]
     have hOut : (Finset.univ : Finset (Fin n → Fin a)).sum
-        (fun ℓ' => (if ℓ' ∈ badLabels n a then 1 else 0) /
+        (fun ℓ' => (if ℓ' ∈ badLabels n a then (1 : Rat) else (0 : Rat)) /
           (Fintype.card (Fin n → Fin a) : Rat)) =
         ((badLabels n a).card : Rat) / (Fintype.card (Fin n → Fin a) : Rat) := by
       rw [← Finset.sum_div]
       have hSum : (Finset.univ : Finset (Fin n → Fin a)).sum
-          (fun ℓ' => (if ℓ' ∈ badLabels n a then 1 else 0) : Rat) = (badLabels n a).card := by
-        rw [Finset.sum_ite (fun _ => 1)]
-        rw [Finset.card_filter, Finset.filter_mem]
-        rw [Finset.inter_eq_self_of_subset (Finset.subset_univ _)]
-        simp only [Nat.cast_id]
+          (fun ℓ' => (if ℓ' ∈ badLabels n a then (1 : Rat) else (0 : Rat))) =
+          ((badLabels n a).card : Rat) := by
+        simp [Finset.sum_ite, Finset.card_filter, Nat.cast_id, nsmul_eq_mul, mul_one]
       rw [hSum]
     rw [hOut]
     have hCard : (Fintype.card (Fin n → Fin a) : Rat) = (a ^ n : Rat) := by
       rw [Fintype.card_fun]
-      simp only [Fintype.card_fin]
+      simp only [Fintype.card_fin, Nat.cast_pow]
     rw [hCard]
-    rfl
   -- (6) mismatch ≤ bad-mass pointwise (Key fact B contrapositive)
   rw [← hBadSum]
   apply Finset.sum_le_sum
-  intro p
+  intro p _
   by_cases hbad : p.1 ∈ badLabels n a
-  · -- ℓ ∈ bad: RHS = mass μ p
+  · -- ℓ ∈ bad: RHS = mass μ p, which dominates LHS (either mass μ p or 0)
     split_ifs with hfg
-    · simp only [ite_true, hfg]
-      exact (Dist.mass_nonneg μ p).ge
-    · simp only [ite_false]
-      exact le_rfl
-  · -- ℓ ∉ bad: RHS = 0; the LHS must already be 0
+    · exact Dist.mass_nonneg μ p
+    · exact le_rfl
+  · -- ℓ ∉ bad: RHS = 0, so LHS must be 0 (no mismatch by Key fact B)
     by_cases hfg : rankFn p = tieFn p
-    · simp only [ite_true, hfg, ite_false, hbad]
-      exact le_rfl
-    · -- rankFn p ≠ tieFn p and ℓ ∉ bad → contradiction
+    · simp [hfg, hbad]
+    · -- rankFn p ≠ tieFn p but ℓ ∉ bad → contradiction (Key fact B)
       have hinj : Function.Injective p.1 :=
         (not_mem_badLabels_iff_injective p.1).1 hbad
       have hEq : tieFn p = rankFn p := by
         simpa only [rankFn, tieFn] using tieRank_eq_rankEquiv_inj n a hn p.1 hinj p.2
-      exact absurd hEq hfg
-  -- (7) collapse: the goal is now #bad/a^n ≤ #bad/a^n
-  exact le_rfl
+      exact absurd hEq (fun h => hfg h.symm)
 
 end Probe
 
