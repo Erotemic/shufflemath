@@ -365,6 +365,70 @@ theorem tv_maps_le_mismatch {Ω X : Type*} [Fintype Ω] [Fintype X] [DecidableEq
           (fun w => (if F w = G w then (0 : Rat) else mass ρ w)) := by
       dsimp only [C]
 
+/-- Pushforward by a deterministic map is a TV non-expansion: applying the same
+map `f` to two laws cannot increase their total variation.  This is the
+contraction step of the Gate 6 batch 3 one-round local-error bound. -/
+theorem tv_map_contraction {Ω X : Type*} [Fintype Ω] [Fintype X] [DecidableEq X]
+    (μ ν : Dist Ω) (f : Ω → X) : Dist.tv (μ.map f) (ν.map f) ≤ Dist.tv μ ν := by
+  unfold Dist.tv vectorTV
+  let Fμ (w : Ω) (x : X) : Rat := if f w = x then Dist.mass μ w else 0
+  let Fν (w : Ω) (x : X) : Rat := if f w = x then Dist.mass ν w else 0
+  let Δ (w : Ω) : Rat := Dist.mass μ w - Dist.mass ν w
+  have hμ (x : X) : Dist.mass (μ.map f) x = (Finset.univ : Finset Ω).sum (fun w => Fμ w x) := by
+    simpa [Fμ] using Dist.map_mass_eq_univ_fiber μ f x
+  have hν (x : X) : Dist.mass (ν.map f) x = (Finset.univ : Finset Ω).sum (fun w => Fν w x) := by
+    simpa [Fν] using Dist.map_mass_eq_univ_fiber ν f x
+  have hsub (x : X) :
+      (Finset.univ : Finset Ω).sum (fun w => Fμ w x) - (Finset.univ : Finset Ω).sum (fun w => Fν w x) =
+        (Finset.univ : Finset Ω).sum (fun w => Fμ w x - Fν w x) := by
+    rw [Finset.sum_sub_distrib]
+  have habs (w : Ω) (x : X) : |Fμ w x - Fν w x| = (if f w = x then |Δ w| else 0) := by
+    dsimp only [Fμ, Fν, Δ]
+    by_cases hf : f w = x
+    · simp [hf]
+    · simp [hf]
+  calc
+    _ = (1 / 2 : Rat) * (∑ x : X, |(∑ w : Ω, Fμ w x) - (∑ w : Ω, Fν w x)|) := by
+      congr 1
+      apply Finset.sum_congr rfl; intro x _
+      rw [hμ x, hν x]
+    _ = (1 / 2 : Rat) * (∑ x : X, |(Finset.univ : Finset Ω).sum (fun w => Fμ w x - Fν w x)|) := by
+      congr 1
+      apply Finset.sum_congr rfl; intro x _
+      rw [hsub x]
+    _ ≤ (1 / 2 : Rat) * (∑ x : X, (Finset.univ : Finset Ω).sum (fun w => |Fμ w x - Fν w x|)) := by
+      apply mul_le_mul_of_nonneg_left
+      · apply Finset.sum_le_sum; intro x _
+        exact Finset.abs_sum_le_sum_abs (fun w => Fμ w x - Fν w x) Finset.univ
+      · norm_num
+    _ = (1 / 2 : Rat) * (∑ x : X, (Finset.univ : Finset Ω).sum (fun w => (if f w = x then |Δ w| else 0))) := by
+      congr 1
+      apply Finset.sum_congr rfl; intro x _
+      apply Finset.sum_congr rfl; intro w _
+      exact habs w x
+    _ = (1 / 2 : Rat) * (∑ w : Ω, (Finset.univ : Finset X).sum (fun x => (if f w = x then |Δ w| else 0))) := by
+      congr 1
+      rw [Finset.sum_comm]
+    _ = (1 / 2 : Rat) * (∑ w : Ω, (if f w = f w then |Δ w| else 0)) := by
+      congr 1
+      apply Finset.sum_congr rfl; intro w _
+      calc
+        _ = (Finset.univ : Finset X).sum (fun x => (if x = f w then |Δ w| else 0)) := by
+          apply Finset.sum_congr rfl; intro x _
+          by_cases h : f w = x
+          · simp [h]
+          · have hn : ¬(x = f w) := fun h' => h (h'.symm)
+            simp [h, hn]
+        _ = (if f w ∈ (Finset.univ : Finset X) then |Δ w| else 0) := by
+          simpa using Finset.sum_ite_eq' (Finset.univ : Finset X) (f w) (fun _ => |Δ w|)
+        _ = (if f w = f w then |Δ w| else 0) := by simp
+    _ = (1 / 2 : Rat) * (∑ w : Ω, |Δ w|) := by
+      congr 1
+      apply Finset.sum_congr rfl; intro w _
+      simp
+    _ = Dist.tv μ ν := by
+      simp [Dist.tv, vectorTV, Dist.mass, Δ]
+
 /-- Total variation contracts under kernel application: pushing two distributions
 through the same (row-stochastic) kernel cannot increase their TV distance.
 `TV(Kμ, Kν) ≤ TV(μ, ν)`. Proof: pointwise triangle inequality in the weighted
