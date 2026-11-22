@@ -203,4 +203,38 @@ theorem gsrPermutationLaw_tv_bound :
 
 end Gate6F
 
+/-- The one-round two-pile local-error bound, at the level of the two
+within-pile permutation laws (Gate 6, batch 3, \S5-\S6).  Running one round of
+the local GSR on a deck splits into two *independent* within-pile GSR draws — a
+left-pile permutation of size `m` with GSR parameter `a_L` and a right-pile
+permutation of size `N - m` with parameter `a_R`.  The total variation between
+the independent product of those two permutation laws and the fully-uniform
+product is at most the sum of the two single-pile bounds
+`choose(m,2)/a_L + choose(N-m,2)/a_R`.
+
+This is the reusable "independence subadditivity + per-pile bound" assembly:
+`distProduct_tv_subadditive` (the tensor product of two pairs of laws has TV at
+most the sum of the marginal TVs) feeds the two `gsrPermutationLaw_tv_bound`
+estimates.  The deck-level bound is then this plus a deterministic pushforward
+contraction (`tv_map_contraction`) through the pile-embedding `act_d`. -/
+theorem twoPilePermutationTV_bound
+    (N m a_L a_R : Nat) (hN : 0 < N) (hm : m ≤ N) (hLpos : 0 < m) (hRpos : 0 < N - m)
+    (hLa : 0 < a_L) (hRa : 0 < a_R) :
+    Dist.tv (distProduct (PermutationLaw.gsrPermutationLaw m a_L hLa hLpos)
+                        (PermutationLaw.gsrPermutationLaw (N - m) a_R hRa hRpos))
+            (distProduct (GSR.uniformDist (Equiv.Perm (Fin m)))
+                        (GSR.uniformDist (Equiv.Perm (Fin (N - m))))) ≤
+      (m.choose 2 : Rat) / a_L + ((N - m).choose 2 : Rat) / a_R := by
+  classical
+  haveI : DecidableEq (Equiv.Perm (Fin m)) := inferInstance
+  haveI : DecidableEq (Equiv.Perm (Fin (N - m))) := inferInstance
+  calc
+    _ ≤ Dist.tv (PermutationLaw.gsrPermutationLaw m a_L hLa hLpos) (GSR.uniformDist (Equiv.Perm (Fin m))) +
+        Dist.tv (PermutationLaw.gsrPermutationLaw (N - m) a_R hRa hRpos) (GSR.uniformDist (Equiv.Perm (Fin (N - m)))) :=
+      distProduct_tv_subadditive _ _ _ _
+    _ ≤ (m.choose 2 : Rat) / a_L + ((N - m).choose 2 : Rat) / a_R := by
+      gcongr
+      · exact @gsrPermutationLaw_tv_bound m a_L hLa hLpos
+      · exact @gsrPermutationLaw_tv_bound (N - m) a_R hRa hRpos
+
 end
