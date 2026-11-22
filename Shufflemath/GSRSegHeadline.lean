@@ -117,4 +117,42 @@ theorem finiteDeck_leftCards_99_50_eq_commander (d : CommanderPermutation.Deck) 
   · rintro ⟨a, _, hda⟩
     exact ⟨CommanderPermutation.leftPosition a, ⟨⟨a, True.intro, rfl⟩, hda⟩⟩
 
+/-! **Fiber-cardinality lemmas** for the `rhoRoundIdeal = localLift` headline.
+  These live in the 99-card frame (`CommanderMembershipKernels.membership`),
+  kept heartbeat-friendly by `rw`-ing proven bridge lemmas rather than
+  `simp`-unfolding the heavy `membership`/`leftCards` definitions. -/
+
+abbrev segStart : FiniteDeck.Deck 99 := Equiv.refl (Fin 99)
+
+/-- (2) `roundEmbedMap 99 50` is injective in its within-pile pair argument: two
+  within-pile pairs that relabel the identity deck to the same deck are equal
+  (via the fiber-orbit map's injectivity). -/
+theorem roundEmbedMap_99_50_injective :
+    Function.Injective (fun p : Equiv.Perm (Fin 50) × Equiv.Perm (Fin 49) =>
+      roundEmbedMap 99 50 (by norm_num) p) := by
+  intro p q h
+  have hvalp : roundEmbedMap 99 50 (by norm_num) p =
+      (FiniteDeck.fiberMap 99 50 (by norm_num) segStart p).val :=
+    roundEmbedMap_eq_fiberOrbit_val 99 50 (by norm_num) p.1 p.2
+  have hvalq : roundEmbedMap 99 50 (by norm_num) q =
+      (FiniteDeck.fiberMap 99 50 (by norm_num) segStart q).val :=
+    roundEmbedMap_eq_fiberOrbit_val 99 50 (by norm_num) q.1 q.2
+  have heq : (FiniteDeck.fiberMap 99 50 (by norm_num) segStart p) =
+      (FiniteDeck.fiberMap 99 50 (by norm_num) segStart q) := by
+    apply Subtype.ext
+    rw [← hvalp, ← hvalq]
+    exact h
+  exact (FiniteDeck.fiberMap_injective 99 50 (by norm_num) segStart) heq
+
+/-- (3) The `fiberSet` of the 99-card segregated membership has `50!·49!` decks
+  (each within-pile pair relabels the identity deck to a distinct fiber element). -/
+theorem fiberSet_segMembership_card :
+    (FiberDisintegration.fiberSet CommanderMembershipKernels.membership segMembership).card = 50! * 49! := by
+  have hcard : (FiberDisintegration.fiberSet CommanderMembershipKernels.membership segMembership).card =
+      Fintype.card {d : CommanderPermutation.Deck //
+        CommanderMembershipKernels.membership d = segMembership} := by
+    dsimp only [FiberDisintegration.fiberSet]
+    rw [← Fintype.card_subtype]
+  simpa [hcard] using fiberSegMembership_card
+
 end Shufflemath
