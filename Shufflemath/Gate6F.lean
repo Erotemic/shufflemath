@@ -20,12 +20,12 @@ open Shufflemath.PermutationLaw
 
 /-! Gate 6 batch 2 (f): TV(ν_{n,a}, U_{S_n}) ≤ Pr(ℓ ∈ badLabels) ≤ choose(n,2)/a. -/
 
-section Probe
+section Gate6F
 variable (n a : Nat) (ha : 0 < a) (hn : 0 < n)
 
 include ha hn
 
-theorem _probeF_main :
+theorem gsrPermutationLaw_tv_le_badLabels :
     Dist.tv (gsrPermutationLaw n a ha hn) (GSR.uniformDist (Equiv.Perm (Fin n))) ≤
       ((badLabels n a).card : Rat) / (a ^ n : Rat) := by
   let hFinPi : Fintype (Fin n → Fin a) := (by infer_instance : Fintype (Fin n → Fin a))
@@ -191,16 +191,16 @@ theorem _probeF_main :
 
 /-- **Gate 6 batch 2 (f) headline.**  A finite GSR riffle law `ν_{n,a}` is within
   `choose(n,2) / a` (total variation) of the uniform law on `S_n`, for all
-  `n > 0` and `a > 0`.  Composition of `_probeF_main` (`TV ≤ #bad / a^n`, this
+  `n > 0` and `a > 0`.  Composition of `gsrPermutationLaw_tv_le_badLabels` (`TV ≤ #bad / a^n`, this
   file) with `Gate6BadLabels.badLabels_uniform_bound` (`#bad / a^n ≤
   choose(n,2) / a`, batch 2 (c)).  This is the §8-style finite-size TV headline
   for the finite GSR law (the 99-card protocol's per-round bound composes with
   the F5 telescope for the `< 1/1000` certification). -/
-theorem _probeF_headline :
+theorem gsrPermutationLaw_tv_bound :
     Dist.tv (gsrPermutationLaw n a ha hn) (GSR.uniformDist (Equiv.Perm (Fin n))) ≤
       (n.choose 2 : Rat) / a := by
-  exact le_trans (_probeF_main n a ha hn) (badLabels_uniform_bound n a ha)
+  exact le_trans (gsrPermutationLaw_tv_le_badLabels n a ha hn) (badLabels_uniform_bound n a ha)
 
-end Probe
+end Gate6F
 
 end
