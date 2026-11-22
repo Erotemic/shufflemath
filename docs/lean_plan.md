@@ -31,10 +31,20 @@ phase notes are linked at the end; they do not override this plan. Read
 > `rhoRound` uses `embed_m` + the within-pile `gsrPermutationLaw`; whether it exactly
 > equals the *physical* one-round finite-GSR deck law (which may additionally involve a
 > left-right `swapPerm` or a different finite-GSR rank model) is a separate modeling
-> question — the transport **bound** holds regardless. **Remaining (batch 4):** the
-> 3-round telescope `≤ 3δ1 + q3 < 1/1000` (`gate6_headline_lt_thousandth`), and if the
-> physical finite-GSR law is modeled differently, bridge `rhoRound` to it. See
-> [agent_handoff.md](agent_handoff.md) and the 2026-11-21 Gate 6 hint doc §5/§6.
+> question — the transport **bound** holds regardless. **Batch 4 building block (also this
+> session):** the parameterized telescope in `TelescopeF5.lean` —
+> `telescopeBound_le_n_times_d` (generalizes `telescopeBound_le_length` with `1` → a
+> parameter `δ`) and `compList_telescope_nstep_le_n_times_d` (two equal-length
+> `FiniteKernel` protocols from the same start are within `n·δ` TV when every per-step
+> discrepancy is `≤ δ`). **Remaining (batch 4 headline):** instantiate that with the
+> per-round discrepancy `δ1` (the GSR round expressed as a `FiniteKernel`, via
+> `oneRoundDeckTV_le_delta1`) to get `TV(K³ d0, L³ d0) ≤ 3δ1`, add the ideal 3-round
+> chain's residual `q3 = TV(L³ d0, U)` via the triangle inequality, and show
+> `3δ1 + q3 < 1/1000` (`gate6_headline_lt_thousandth`) — the open sub-parts are (a)
+> expressing the physical-vs-ideal GSR-round kernel discrepancy as `≤ δ1` in the
+> `FiniteKernel`/`kernelDiscrepancy` framework, and (b) quantifying `q3` (the specific
+> protocol's ideal-chain convergence to uniform over 3 rounds, via its Dobrushin decay).
+> See [agent_handoff.md](agent_handoff.md) and the 2026-11-21 Gate 6 hint doc §5/§6.
 
 > **Toolchain note (2026-02-10):** the library now uses Lean 4.34's `module`
 > system (`module` header + `public import` + `@[expose] public section`). See
