@@ -45,6 +45,7 @@ lake build \
   Shufflemath.GSRSegFiber \
   Shufflemath.GSRSegHeadline \
   Shufflemath.FiniteDeck.Gate6TieRank \
+  Shufflemath.FiniteDeck.RelabelInvariance \
   Shufflemath.FiniteDeck.A3KernelLaw \
   Shufflemath.FiniteDeck.BLDisintegration
 
