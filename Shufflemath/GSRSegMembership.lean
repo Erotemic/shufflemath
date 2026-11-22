@@ -74,3 +74,29 @@ theorem membership_reorderedDeck_segregated
   refine Subtype.ext ?_
   dsimp only [segMembership]
   rw [membership_leftCards, reorderedDeck_leftCards, leftCards_id_eq_segLeft]
+
+/-! **Membership-side bridges for the `rhoRoundIdeal = localLift` headline.**
+  These are proved in *this* module deliberately: its import graph excludes
+  `FiniteDeck.WithinPileOrbit` (the `fiberMap`/`fiberOrbit` machinery), and that
+  absence is what keeps the `Membership` proof-field from triggering a `whnf`
+  heartbeat blowup.  They only touch the `.1`/`Finset` field of the
+  `Membership` subtype (`dsimp`/`Subtype.ext`/`congrArg Subtype.val`), never the
+  `.2` cardinality proof, so they elaborate cheaply. -/
+
+/-- The `.1` field of the segregated membership is the segregated left set. -/
+theorem segMembership_one_eq_segLeft : segMembership.1 = segLeft := by
+  dsimp only [segMembership]
+
+/-- A deck's membership is the segregated membership iff its left-card set is
+  the segregated left set. The equivalence is carried at the `.1` field only, so
+  it is the light membership-side bridge the `rhoRoundIdeal = localLift` headline
+  needs (used by `roundImage_iff_segMembership`). -/
+theorem membership_iff_leftCards (d : Deck) :
+    membership d = segMembership ↔ leftCards d = segLeft := by
+  constructor
+  · intro hm
+    have hv : (membership d).1 = segMembership.1 := congrArg Subtype.val hm
+    simpa only [membership_leftCards, segMembership_one_eq_segLeft] using hv
+  · intro hlc
+    apply Subtype.ext
+    simpa only [membership_leftCards, segMembership_one_eq_segLeft] using hlc
