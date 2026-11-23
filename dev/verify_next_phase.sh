@@ -39,6 +39,7 @@ lake build \
   Shufflemath.CommanderDeckGSR \
   Shufflemath.Gate6BadLabels \
   Shufflemath.Gate6F \
+  Shufflemath.Gate6Crux \
   Shufflemath.GSRDeckRound \
   Shufflemath.GSRGate6Telescope \
   Shufflemath.GSRSegMembership \

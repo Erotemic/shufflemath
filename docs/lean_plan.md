@@ -43,12 +43,17 @@ phase notes are linked at the end; they do not override this plan. Read
 > `3δ1 + q3 < 1/1000` (`gate6_headline_lt_thousandth`). **Landed this batch:** sub-part (a) —
 > `gsrRound99_discrepancy_le_δ1` (per-round discrepancy as `kernelDiscrepancy ≤ δ1`) and
 > `gate6_headline_telescope` (`TV(K³ d0, U) ≤ q3 + 3·δ1`, conditional on
-> `hq3 : TV(L³ d0, U) ≤ q3`), both in `GSRGate6Telescope.lean`. **Sole remaining open
+> `hq3 : TV(L³ d0, U) ≤ q3`), both in `GSRGate6Telescope.lean`. **Batch-3 step-4 CRUX LANDED (this session, `Shufflemath/Gate6Crux.lean` in the verified build):** `TV(fullRoundFinite, fullRoundIdeal) ≤ δ1 = 2401/8388608` for the full-round laws `conv rho99· swapLaw` (common literal-swap factor). Accepted architecture (no `maxHeartbeats 0`, builds in ~6 s): `convAsApply` (convolution with `W` = application of the *same* `permutationActionKernel W`, via `convMapEqApplyMap` at the identity deck) + `convContraction` (one application of the Fintype-free `kernel_apply_lipschitz`) + the committed G6.1 `oneRoundDeckTV_le_delta1` — a 3-step calc, no new collision counting, every lemma generic in `N` except the final specialization. **Sole remaining open
 > sub-part: (b) / `hq3`** — FALSE for the state-independent within-pile ideal
 > (`gsrRound99Ideal`, TV ≈ 1 ≫ q3; its 3-round chain is one within-pile round, essentially
-> singular with uniform), and the fulfillable mixing ideal is the wall-bound
-> state-dependent full-round kernel (`99!×99! ≈ 10^316`, ce0ba37; rule 9 forbids
-> `maxHeartbeats 0`). The on-mission `TV < 1/1000` headline is met independently by
+> singular with uniform); the fulfillable mixing ideal is the state-dependent full-round
+> kernel, which is now **Finsupp-representable**: repeated physical rounds are
+> `FiniteKernel.run (permutationActionKernel W) t (pointMass d) =
+> (powConv W t).map (·.trans d)` (`FiniteDeck.powConvRunEq`, already proved) — no
+> constant-output kernel, no `ofFun` joint. The old 10^316 wall (ce0ba37) bound the
+> `ofFun` Fintype carrier; the Finsupp `join`/`map` carrier (used by `gate6_crux`)
+> stays symbolic in `N`. The on-mission `TV < 1/1000` headline is met
+> independently by
 > `DobrushinDecay99` (41 perfect exchanges, any macrostate, fiber-uniform start).
 > See [agent_handoff.md](agent_handoff.md) and the 2026-11-21 Gate 6 hint doc §5/§6.
 

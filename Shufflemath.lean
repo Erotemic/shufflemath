@@ -28,6 +28,7 @@ public import Shufflemath.FiniteDeck.DobrushinDecay99
 public import Shufflemath.FiniteDeck.Gate6FiniteGSR
 public import Shufflemath.Gate6BadLabels
 public import Shufflemath.Gate6F
+public import Shufflemath.Gate6Crux
 public import Shufflemath.GSRDeckRound
 public import Shufflemath.GSRGate6Telescope
 public import Shufflemath.GSRSegMembership
