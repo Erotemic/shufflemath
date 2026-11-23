@@ -47,7 +47,9 @@ lake build \
   Shufflemath.FiniteDeck.Gate6TieRank \
   Shufflemath.FiniteDeck.RelabelInvariance \
   Shufflemath.FiniteDeck.A3KernelLaw \
-  Shufflemath.FiniteDeck.BLDisintegration
+  Shufflemath.FiniteDeck.BLDisintegration \
+  Shufflemath.FiniteDeck.PositionAction \
+  Shufflemath.FiniteDeck.ActionConvolution
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace
