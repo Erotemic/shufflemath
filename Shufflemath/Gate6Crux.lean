@@ -145,4 +145,23 @@ theorem gate6_crux :
     _ ≤ (2401 : Rat) / 8388608 := by
         simpa [rho99Finite, rho99Ideal] using oneRoundDeckTV_le_delta1
 
+
+/- ------------------------------------------------------------------
+   The deck-level corollary (the 🔓 note's "next unit (4)")
+------------------------------------------------------------------ -/
+
+/-- **Deck level.**  One full round *starting from deck* `d` — the pushforward
+    of the (state-independent) round laws by the deterministic action
+    `σ ↦ σ.trans d` — is still within `δ1` of the perfect round: a single
+    application of `tv_map_contraction` to the crux, one 99! sum, no
+    counting.  This is the one-round statement of "the physical-vs-perfect
+    error does not depend on the starting deck", and the shape the 3-round
+    headline inherits via `FiniteKernel.run (permutationActionKernel ·) t`
+    = `(powConv · t).map (·.trans d)` (`FiniteDeck.powConvRunEq`). -/
+theorem fullRoundDeck_le_delta1 (d : Equiv.Perm (Fin 99)) :
+    Dist.tv (fullRoundFinite.map (fun x => x.trans d))
+           (fullRoundIdeal.map (fun x => x.trans d)) ≤ (2401 : Rat) / 8388608 := by
+  exact (Dist.tv_map_contraction fullRoundFinite fullRoundIdeal
+          (fun x => x.trans d)).trans gate6_crux
+
 end Gate6Crux

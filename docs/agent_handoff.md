@@ -1,3 +1,36 @@
+> **🧭 (this session, after the crux commit — unit (4) LANDED + unit (5) assembly mapped.)
+**(4) Deck level:** `fullRoundDeck_le_delta1 (d) : TV(fullRoundFinite.map (·.trans d), fullRoundIdeal.map (·.trans d)) ≤ 2401/8388608` is now in `Gate6Crux.lean` — one line: `(Dist.tv_map_contraction …).trans gate6_crux`. Full verify green. **(5) 3-round headline — the remaining assembly is now a 3-lemma chain, all scoped:**
+- **K1 (the gate, deepest):** the *state-dependent* one-round law identity
+  `fullRoundIdeal.map (·.trans d) = apply (pointMass d) (exchangeThenLocalReset membership localLift rawExchange)`
+  for every 50/49 deck `d`. Semantically both sides are: uniform 25/25-subset choice →
+  *uniform fiber law of the post-exchange membership* — `rhoRoundIdeal` is the **full
+  uniform** within-pile law (`GSRDeckRound:65`, NOT the 2^23 GSR), so after the
+  canonical 25/25 swap the post-swap piles are exactly the post-exchange membership fiber,
+  uniformly arranged (the swap is a fixed bijection of the fiber space); and
+  `rawExchange = comp rawExchangeMembership localLift` (`CommanderPhysicalExchange:708`)
+  with `localLift = fiberLaw membership` (`CommanderMembershipKernels:149`) is the same
+  fiber law. The segregated special case of the riffle half already exists as the
+  batch-5b bridge `rhoRoundIdeal = localLift segMembership` (`GSRDeckBridge.lean:24`,
+  `GSR.lean:552`); K1 generalizes it to arbitrary `d` by adding the swap factor.
+  Note `exchangeThenLocalReset = comp exchange (localReset …)` — the second local reset
+  is idempotent (fiber laws are fixed points of their own lift;
+  `localLift_preserves_membership`).
+- **K2:** `run (permutationActionKernel W) 3 = compList [K, K, K]` (or run-vs-run form)
+  so the committed `compList_telescope_nstep_le_n_times_d` applies to the state-dependent
+  kernels; per-pair `kernelDiscrepancy ≤ δ1` is exactly `fullRoundDeck_le_delta1`
+  (max over `d`, each row bounded).
+- **K3 (assembly):** with both chains started from the q3 initial law
+  `μ0 = apply (pointMass commanderSegregatedState) (fiberLaw project project_surjective)`
+  (NOT a point mass — q3's object `three_physical_perfect_exchanges_uniform_unconditional`,
+  `CommanderFullDeckDisintegration:331`, is the TV of the 3-round chain *from μ0* against
+  the deck uniform, and equals the pinned rational `q3`), K1 makes the ideal chain
+  *definitionally* q3's object (so `hq3` discharges by equality, `TV(ideal³ μ0, U) = q3`),
+  and the telescope gives the unconditional
+  `TV(physical 3-round chain from μ0, uniform) ≤ q3 + 3·δ1` + the pinned
+  `gate6_headline_lt_thousandth : q3 + δ3 < 1/1000` (`Gate6FiniteGSR`) — the on-mission
+  headline. `FiniteKernel.run (permutationActionKernel ·) t`/`powConvRunEq` (not a
+  constant-output kernel) is the representation throughout.
+>
 > **✅ (this session — Gate 6 batch-3 step-4 CRUX LANDED with the ACCEPTED architecture: `TV(fullRoundFinite, fullRoundIdeal) ≤ 2401/8388608 = δ1`, production module `Shufflemath/Gate6Crux.lean` (in the aggregator + `dev/verify_next_phase.sh`), NO `maxHeartbeats 0`, no 99!² univ-fiber Fubini. Full verify green (all targets + 37 Python tests).** ⚠️ The previous version of this file (a Fintype-univ-fiber `tvFinsupp_map_contraction` specialized at 99, with a local `maxHeartbeats 0`) was **rejected by the user as "not an acceptable proof architecture"** after a 23-minute / 11 GB runaway kernel check — that file has been REPLACED; the earlier note in this file describing it is superseded by this one. **The accepted proof (148 lines, builds in ~6 s cold):** (1) **`convAsApply (μ W : Dist (FiniteDeck.Deck N)) : FiniteDeck.conv μ W = FiniteKernel.apply μ (FiniteDeck.permutationActionKernel W)`** — the convolution-as-kernel identity, proved separately from `FiniteDeck.convMapEqApplyMap` (`ActionConvolution`) at the identity deck: both pushforwards there are by `p ↦ act p (refl) = p.trans refl = p` (`Equiv.trans_refl`, @[simp]), and pushing a law through the identity map is the identity — bare `ext1; simp` (the simp lemma is `map_id_apply` inside Mathlib's `stdSimplex` namespace — do NOT spell it `Convexity.StdSimplex.map_id_apply`; that path is unknown in this Mathlib). (2) **`convContraction (F I S : Dist (FiniteDeck.Deck N)) : tvFinsupp (conv F S) (conv I S) ≤ tvFinsupp F I`** — the reusable generic core: `rw [convAsApply F S, convAsApply I S]; exact kernel_apply_lipschitz F I (permutationActionKernel S)` — one line over the already-committed Fintype-free `kernel_apply_lipschitz` (`TotalVariation:1188`, support-based Fubini — no `Fintype`, no univ-fiber sums). (3) **`gate6_crux : Dist.tv fullRoundFinite fullRoundIdeal ≤ (2401 : Rat) / 8388608`** — a three-step calc: `tv = tvFinsupp` (`tv_eq_tvFinsupp`), `convContraction rho99Finite rho99Ideal swapLaw`, and `tv_eq_tvFinsupp` + the committed G6.1 `oneRoundDeckTV_le_delta1` (`GSRDeckRound`). **Architecture invariants (keep them):** every lemma except the final 99-specialization is generic in `N`; no `Finset.univ` sum over a 99! / 99!² / 99!³ type anywhere in the proof terms (the old 10^316 wall was the `ofFun`/univ-fiber machinery — `kernel_apply_lipschitz` + the Finsupp `join`/`map` machinery in `ActionConvolution` avoids it); no `maxHeartbeats 0`; `Dist α = Convexity.StdSimplex Rat α` (`Finite.lean:18`), `Deck N = Equiv.Perm (Fin N)` (`TwoPile.lean:32`); `tvFinsupp`/`tv_eq_tvFinsupp`/`kernel_apply_lipschitz`/`mixtureTV_le` live in the OUTER `Shufflemath` namespace (the `Dist` namespace closes at `TotalVariation.lean:538`) — only `Dist.tv`/`Dist.mass`/`Dist.pointMass`/`map_mass_eq_univ_fiber`/`double_sum_pullout` are in `Dist`. **For the 3-round headline (next unit):** repeated physical rounds are `FiniteKernel.run (permutationActionKernel W) t (Dist.pointMass d) = (powConv W t).map (·.trans d)` — `FiniteDeck.powConvRunEq` (`ActionConvolution`, already proved) — NOT a constant-output kernel; the TV of `(powConv W t).map (·.trans d)` against uniform is the Finsupp-representable batch-4 q3 piece. **Namespace gotchas that cost builds:** new namespaces must be SIBLINGS of `Shufflemath.Dist` (nesting inside `Dist` makes bare `tvFinsupp` resolve to the 1-arg `ℚ`-valued one at line 206); dot-notation arguments parse greedily (`tvFinsupp (X).map (g) (Y).map (h)` = 4 applications — parenthesize each composite argument); a `have` introducing a fresh universe inside a theorem with fewer universe params fails kernel commit (make the helper top-level); `Equiv.trans_refl` (`Logic/Equiv/Defs:309`, @[simp]) gives `p.trans refl = p`.
 >
 > **🔓 (this session — DECISIVE: the Finsupp carrier dodges the 10^316 Gate-6 wall; `_ProbeGate6Fin3` green, 8961 jobs).** The batch-3 crux was dead because `fullRoundFinite = (distProduct swapLaw rho99·).map (·*·)` is a **Fintype-carrier** (`Dist.ofFun`) joint over `Equiv.Perm (Fin 99) × Equiv.Perm (Fin 99)` ≈ 10^316 — un-`isDefEq`-able at any heartbeat (the November "DEFINITIVE CONCLUSION"). **This session's ActionConvolution bridge (`Shufflemath/FiniteDeck/ActionConvolution.lean`: `conv`/`powConv`/`joinMapComm`/`convMapEqApplyMap`/`powConvRunEq`, commit `cf6bc7b`) supplied the Finsupp-carrier alternative, and `Shufflemath/_ProbeGate6Fin3.lean` (committed, GREEN) redefines the same Gate-6 round as**
