@@ -12,6 +12,9 @@ public import Mathlib.GroupTheory.Perm.Basic
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 public import Mathlib.Analysis.Convex.StdSimplex
+public import Mathlib.LinearAlgebra.Finsupp.LSum
+public import Mathlib.Data.Finsupp.SMul
+public import Mathlib.Tactic
 
 @[expose] public section
 
@@ -106,6 +109,104 @@ theorem act_composition_apply (a b d : Deck N) (i : Fin N) :
   have hmul : a * b = b.trans a := perm_mul_eq_trans_flip a b
   rw [act, hmul]
   simp only [Equiv.trans_apply]
+
+-- ---------------------------------------------------------------------------
+-- The action-convolution bridge:  joining the pushed kernel equals pushing
+-- the convolution.
+-- ---------------------------------------------------------------------------
+
+/-- **Join–map commutation** at the Finsupp level:  pushing a distribution of
+    distributions through `g` and then joining equals joining and then
+    pushing.  This is the `E[ f(X) ]`-level form of the fact that the push-
+    forward of a barycentric integral is the barycentric integral of the
+    pushforward.  Proved at the `Finsupp` level (no `Fintype`):  both sides
+    carry the weight `∑_{s ∋ x} f s * s x` at `g x`,  unfolded through
+    `mapDomain`/`sum_sum_index`/`sum_smul_index`/`smul_sum`. -/
+theorem joinMapComm {X Y : Type*} (f : Convexity.StdSimplex Rat (Convexity.StdSimplex Rat X))
+    (g : X → Y) :
+    (f.map (fun (h : Convexity.StdSimplex Rat X) => h.map g)).join = f.join.map g := by
+  ext1
+  simp [Finsupp.mapDomain, Finsupp.sum_sum_index, Finsupp.sum_smul_index, Finsupp.smul_sum, add_smul]
+
+/-- Pushing a point mass through a map gives the point mass at the image. -/
+theorem pointMassMap {X Y : Type*} (x : X) (f : X → Y) :
+    (Dist.pointMass x).map f = Dist.pointMass (f x) := by
+  ext1
+  simp [Dist.pointMass]
+
+/-- The identity permutation acts trivially on any deck. -/
+theorem reflAct (d : Deck N) : act (Equiv.refl (Fin N)) d = d := by
+  simp [act, Equiv.refl_trans]
+
+/-- **One-step convolution compatibility** (the join–map crack):  applying the
+    action kernel of `W` to the pushed deck law `(μ).map (·.trans d)` equals
+    pushing the one-step convolution `conv μ W`.  The two sides are both
+    `((μ.map (λ p, W.map (λ q, (p, q)))).join).map (λ z, act (z.1 * z.2) d)`:
+    the left side via `permutationActionKernel_eq_map` (a definitional
+    unfolding) and `joinMapComm`;  the right side via the definition of
+    `conv` and `distProductFinsupp`. -/
+theorem convMapEqApplyMap (μ W : Dist (Deck N)) (d : Deck N) :
+    FiniteKernel.apply (μ.map (fun p => act p d)) (permutationActionKernel W) =
+    (conv μ W).map (fun p => act p d) := by
+  unfold FiniteKernel.apply
+  rw [Convexity.StdSimplex.map_map]
+  -- `permutationActionKernel W (act x d)` is definitionally
+  -- `W.map (fun q => act q (act x d))` (`permutationActionKernel_eq_map` is
+  -- `@[defeq]`):  spell it out so the two sides share a spine.
+  change (μ.map (fun (x : Deck N) => (W.map (fun (q : Deck N) => act q (act x d)) : Dist (Deck N)))).join =
+      (conv μ W).map (fun p => act p d)
+  have hinner : (fun x : Deck N => W.map (fun q => act q (act x d))) =
+                (fun x => (W.map (fun q => (x, q))).map (fun z => act (z.1 * z.2) d)) := by
+    funext x
+    have h1 : (W.map (fun q => (x, q))).map (fun z => act (z.1 * z.2) d) =
+              W.map (fun q => act (x * q) d) := by
+      rw [Convexity.StdSimplex.map_map]
+    have h2 : W.map (fun q => act q (act x d)) = W.map (fun q => act (x * q) d) := by
+      exact congrArg (fun f => W.map f) (funext fun q => by rw [← act_composition])
+    simpa [h1] using h2
+  -- Left side:  pull the inner push out of the join.
+  have hL : (μ.map (fun x => W.map (fun q => act q (act x d)))).join =
+      ((μ.map (fun p => W.map (fun q => (p, q)))).join).map (fun z => act (z.1 * z.2) d) := by
+    rw [hinner, ← Convexity.StdSimplex.map_map, joinMapComm]
+  -- Right side:  unfold `conv` and `distProductFinsupp`.
+  have hR : (conv μ W).map (fun p => act p d) =
+      ((μ.map (fun p => W.map (fun q => (p, q)))).join).map (fun z => act (z.1 * z.2) d) := by
+    unfold conv
+    rw [Convexity.StdSimplex.map_map, distProductFinsupp]
+  simp [hL, hR]
+
+/-- **The action-convolution headline**:  the law of `t` successive runs of
+    the permutation action kernel from a point mass on `d` equals the
+    pushforward of the `t`-fold convolution power of the action law.  I.e.
+    `FiniteKernel.run (permutationActionKernel W) t (Dist.pointMass d) =
+    (powConv W t).map (·.trans d)`.  Proved by a simultaneous induction on
+    the run count:  the `n + 1` step is `convMapEqApplyMap` followed by the
+    induction hypothesis and `powConv`'s recursive definition;  the base
+    (`t = 0`) is `powConv W 0 = pointMass (Equiv.refl (Fin N))` (the
+    `Nat.recOn 0` base of `powConv`) plus `pointMassMap` and `reflAct`. -/
+theorem powConvRunEq (W : Dist (Deck N)) (t : Nat) (d : Deck N) :
+    FiniteKernel.run (permutationActionKernel W) t (Dist.pointMass d) =
+    (powConv W t).map (fun p => act p d) := by
+  have hstrong : ∀ (n j : Nat),
+      FiniteKernel.run (permutationActionKernel W) n ((powConv W j).map (fun p => act p d)) =
+      (powConv W (n + j)).map (fun p => act p d) := by
+    intro n
+    induction n with
+    | zero =>
+        simp [zero_add]
+    | succ n ih =>
+        intro j
+        have hstep : FiniteKernel.run (permutationActionKernel W) (n + 1) ((powConv W j).map (fun p => act p d)) =
+            FiniteKernel.run (permutationActionKernel W) n (FiniteKernel.apply ((powConv W j).map (fun p => act p d)) (permutationActionKernel W)) := by
+          rfl
+        rw [hstep, convMapEqApplyMap]
+        rw [show (conv (powConv W j) W) = (powConv W (j + 1)) from rfl]
+        rw [ih (j + 1)]
+        simp [Nat.add_comm, Nat.add_left_comm]
+  have hbase : (powConv W 0).map (fun p => act p d) = Dist.pointMass d := by
+    show (Dist.pointMass (Equiv.refl (Fin N))).map (fun p => act p d) = Dist.pointMass d
+    rw [pointMassMap, reflAct]
+  simpa [hbase, Nat.add_zero] using hstrong t 0
 
 end FiniteDeck
 end Shufflemath

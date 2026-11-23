@@ -1,9 +1,9 @@
 # Action–convolution bridge: status and the one remaining lemma
 
-Status: **2026‑11‑23**. Follows `2026-11-23-convolution-orbits-and-first-round-smoothing.md`
-(§A "check `*` vs `trans`", §C "one general associativity/compatibility lemma, before
-induction"). This note records what landed, the exact reduction of the probabilistic
-bridge, and the single lemma that still blocks the headline.
+Status: **2026‑11‑23; RESOLVED 2026‑12‑02** — the bridge is complete. `joinMapComm`,
+`pointMassMap`, `reflAct`, `convMapEqApplyMap`, and `powConvRunEq` all landed in
+`Shufflemath/FiniteDeck/ActionConvolution.lean` (see the addendum at the bottom). The
+sections below are the original status note, kept for the reduction record.
 
 ## Landed (committed `1867eff`)
 
@@ -153,3 +153,66 @@ because the `·.trans ·` fibers are unique (cancellation): LHS fiber
 - This is the **probabilistic bridge** the plan asked for; the follow-on after it is
   specializing `W` to the one-round `swapThenLocalKernel` noise and reading the
   Gate 6 headline off `powConvRunEq`.
+
+## Addendum — RESOLVED (2026‑12‑02): the bridge is complete
+
+`Shufflemath/FiniteDeck/ActionConvolution.lean` now carries, all generic in `N`,
+wall-free, no `sorry`/`admit`, zero new warnings:
+
+- `joinMapComm {X Y : Type*} (f : Convexity.StdSimplex Rat (Convexity.StdSimplex Rat X))
+    (g : X → Y) : (f.map (·.map g)).join = f.join.map g`
+  — proved by **route 2/3 hybrid**: `ext1` then **one** controlled
+  `simp [Finsupp.mapDomain, Finsupp.sum_sum_index, Finsupp.sum_smul_index,
+  Finsupp.smul_sum, add_smul]` (no `Finsupp.sum`/`LSum` names — they re-expand and
+  re-swell; both sides normalize to the same double-index `∑` under that set).
+- `pointMassMap {X Y : Type*} (x : X) (f : X → Y) : (Dist.pointMass x).map f =
+  Dist.pointMass (f x)` — `ext1; simp [Dist.pointMass]`.
+- `reflAct (d : Deck N) : act (Equiv.refl (Fin N)) d = d` — `simp [act, Equiv.refl_trans]`.
+- `convMapEqApplyMap (μ W : Dist (Deck N)) (d : Deck N) :
+  FiniteKernel.apply (μ.map (·.trans d via act)) (permutationActionKernel W) =
+  (conv μ W).map (fun p => act p d)` — the one-step crack: `unfold FiniteKernel.apply;
+  rw [map_map]`; `change` to the definitional `W.map` form of the kernel (the
+  `@[defeq]` `permutationActionKernel_eq_map` — `rw` on it inside a nested lambda is
+  unreliable, `change` is not); `hinner` (product-level spelling, `funext` +
+  `map_map` + `act_composition`); `hL` via `rw [hinner, ← map_map, joinMapComm]`;
+  `hR` via `unfold conv; rw [map_map, distProductFinsupp]`; `simp [hL, hR]`.
+- `powConvRunEq (W : Dist (Deck N)) (t : Nat) (d : Deck N) :
+  FiniteKernel.run (permutationActionKernel W) t (Dist.pointMass d) =
+  (powConv W t).map (fun p => act p d)` — the **headline**: simultaneous induction
+  on the run count `n` (the law is the `j`-fold power, so the step needs the IH at
+  `j+1`: introduce `n`, induct, *then* `intro j`; the step is `hstep` (`rfl` from the
+  `run` definition) + `convMapEqApplyMap` + `conv (powConv W j) W = powConv W (j+1)`
+  (definitional) + IH + additive `simp [add_comm, add_left_comm]`); base is
+  `powConv W 0 = pointMass (Equiv.refl (Fin N))` (the `Nat.recOn 0` base of
+  `powConv`) + `pointMassMap` + `reflAct`.
+
+**Naming pitfalls (cost a full day — read before touching this area again):**
+
+1. `Shufflemath.apply` / `Shufflemath.run` **do not exist** — `apply`, `run`, `comp`,
+   `deterministic`, `identity` live in **`Shufflemath.FiniteKernel`** (a namespace
+   inside the `noncomputable section` of `Finite.lean`). Unqualified `apply` in a
+   module file resolves to a stray *local* declaration (from some exposed variable)
+   and fails with `Local variable 'apply' has no definition` / `Function expected` —
+   not `Unknown identifier`. Always write `FiniteKernel.apply` / `FiniteKernel.run`
+   (unqualified `FiniteKernel.` works from anywhere inside `namespace Shufflemath`).
+2. `pointMass`/`mass` live in **`Shufflemath.Dist`** — `Dist.pointMass` works
+   unqualified inside the `Shufflemath` namespace.
+3. `.map`/`.join` **method** syntax on `Dist`-typed terms only resolves when the
+   file **directly imports** `Mathlib.Geometry.Convex.ConvexSpace.Defs` (the
+   method lives in `Convexity.StdSimplex` and the `Dist` abbreviation is not
+   unfolded for method lookup). `Shufflemath.Finite`'s import of that file is not
+   enough for downstream files.
+4. **Never put a `join`-expanding `simp` on a law-of-laws term** — the default
+   simp set pulls `sConvexComb`-dependent lemmas that spawn uncloseable
+   `⊢ Convexity.sConvexComb` side goals (the same swamp that stalled the Nov 24
+   batch-5b headline). Keep `join` under **`rw`** (e.g. `rw [joinMapComm]`), or
+   keep it out of the simp set entirely; `rw`'s final definitional check happily
+   closes `X.map h = ((X).map h)`-style leftovers, so the trailing `rfl`/`simpa`
+   are often already redundant (the linter says so — heed it).
+5. `permutationActionKernel_eq_map` is `@[defeq]` — usable as a definitional
+   `change` (reliable) or a top-level `rw` (works); inside a lambda under another
+   `map`, prefer `change` to the whole goal.
+
+Build state at resolution: `lake build` (full project, 3272 jobs) succeeds; the only
+warnings in the new code were three linter nits (`Dist.mass` / `Nat.add_assoc`
+unused in two simp sets, `simpa`→`simp`), all fixed.
