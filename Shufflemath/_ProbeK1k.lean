@@ -63,8 +63,8 @@ theorem k1b_swap_half (d : CommanderPermutation.Deck) :
 /- The inverse of a literal-swap permutation is the same permutation,
   pointwise (`swapFn` is an involution, hence a right-inverse of itself,
   and `Equiv.symm` is the unique right-inverse). -/
-theorem k1b_symm_pointwise (L : Finset (Fin 50)) (hL : L.card = 25)
-    (R : Finset (Fin 49)) (hR : R.card = 25)
+theorem k1b_symm_pointwise (L : Finset (Fin 50)) (_hL : L.card = 25)
+    (R : Finset (Fin 49)) (_hR : R.card = 25)
     (b : {i : Fin 50 // i ∈ L} ≃ {j : Fin 49 // j ∈ R}) (i : Fin 99) :
     (FiniteDeck.swapPerm 99 50 h50le99 L R b).symm i =
       (FiniteDeck.swapPerm 99 50 h50le99 L R b) i := by
@@ -101,21 +101,73 @@ theorem k1b_inv_swap_membership (d : CommanderPermutation.Deck)
   rw [heq]
   exact K1a_stmt_only d L hL R hR b
 
-/- **k1b_beta** (the combinatorial heart; proof pending the 25/25
-  set computation, next session): for every deck `X` and 25/25 choice, `X`
-  lies in the image of the fiber transport `q ↦ (s_c).trans q` over the fiber
-  of `d` iff `newMembership d L R = membership X`. -/
+/- **k1b_swapPerm_pointwise_sq** (the involution, function level): the swap
+  permutation is its own square, pointwise — `swapPerm` is
+  `Equiv.ofBijective swapFn …` and `swapFn` is an involution, so each
+  `swapPerm`-application reduces to `swapFn` and the result is exactly
+  `swapFn_involution`.  (No 99! normalisation: two `rw` steps + `exact`.)
+  Used for the `(s ∘ s.symm = id)` retraction, whose `Equiv.symm_apply`
+  form does not match the let-unfolded goal shape in this Mathlib. -/
+theorem k1b_swapPerm_pointwise_sq (L : Finset (Fin 50)) (hL : L.card = 25)
+    (R : Finset (Fin 49)) (hR : R.card = 25)
+    (b : {i : Fin 50 // i ∈ L} ≃ {j : Fin 49 // j ∈ R}) (i : Fin 99) :
+    (FiniteDeck.swapPerm 99 50 h50le99 L R b)
+      ((FiniteDeck.swapPerm 99 50 h50le99 L R b) i) = i := by
+  rw [FiniteDeck.swapPerm_apply 99 50 h50le99 L R b,
+      FiniteDeck.swapPerm_apply 99 50 h50le99 L R b]
+  exact FiniteDeck.swapFn_involution 99 50 h50le99 L R b i
+
+/- **k1b_beta** (the combinatorial heart — PROVED): for every deck `X` and
+  25/25 choice, `X` lies in the image of the fiber transport `q ↦ (s_c).trans q`
+  over the fiber of `d` iff the 25/25 split of `X` at that choice equals
+  `membership d`.  Both directions are retraction chains: the unique preimage
+  of `X` is `(s_c).symm.trans X`, and the pure-Equiv retractions
+  `(s.symm ∘ s = id)` / `(s ∘ s.symm = id)` — no 99! normalisation anywhere:
+  the statement avoids the `(s_c).symm.trans` composite entirely (it is
+  carried through by the *proven* equation `k1b_inv_swap_membership`, which
+  `rw` matches without whnf).  (4-card Python model: the image condition is
+  exactly this split-equality — NOT `newMembership d c = membership X`, which
+  mismatches 24/96 pairs — while the headline deck laws still coincide, via
+  the counting symmetry `#{c: split_X(c)=m_d} = #{c: split_d(c)=m_X}` the K1b
+  assembly must carry.) -/
 theorem k1b_beta (d X : CommanderPermutation.Deck)
     (L : Finset (Fin 50)) (hL : L.card = 25) (R : Finset (Fin 49)) (hR : R.card = 25)
     (b : {i : Fin 50 // i ∈ L} ≃ {j : Fin 49 // j ∈ R}) :
     (∃ q : CommanderPermutation.Deck,
        CommanderMembershipKernels.membership q = CommanderMembershipKernels.membership d ∧
        (FiniteDeck.swapPerm 99 50 h50le99 L R b).trans q = X) ↔
-      CommanderPhysicalExchange.newMembership d L hL R hR =
-        CommanderMembershipKernels.membership X := by
-  -- (←): q := (s_c).symm.trans X;  membership q = newMembership X c
-  --      (k1b_inv_swap_membership);  then the 25/25 split computation.
-  -- (→):  membership ((s_c).symm.trans X) = membership d  —  same computation.
-  sorry
+      CommanderPhysicalExchange.newMembership X L hL R hR =
+        CommanderMembershipKernels.membership d := by
+  let s := FiniteDeck.swapPerm 99 50 h50le99 L R b
+  constructor
+  · -- (→):  q in the fiber, X = s.trans q.
+    rintro ⟨q, hmq, hX⟩
+    have hXeq : X = s.trans q := hX.symm
+    have hdeck : s.symm.trans (s.trans q) = q := by
+      ext1 i
+      rw [Equiv.trans_apply, Equiv.trans_apply,
+          Equiv.apply_symm_apply (e := s)]
+    -- newMembership X = membership (s.symm.trans X)  [proven, no whnf]
+    --               = membership ((s.symm).trans (s.trans q))  [hXeq]
+    --               = membership q  [retraction]
+    --               = membership d  [hmq]
+    calc
+      CommanderPhysicalExchange.newMembership X L hL R hR =
+        CommanderMembershipKernels.membership (s.symm.trans X) :=
+          (k1b_inv_swap_membership X L hL R hR b).symm
+      _ = CommanderMembershipKernels.membership (s.symm.trans (s.trans q)) := by rw [hXeq]
+      _ = CommanderMembershipKernels.membership q := by rw [hdeck]
+      _ = CommanderMembershipKernels.membership d := hmq
+  · -- (←):  take q := s.symm.trans X.
+    rintro hnm
+    refine ⟨s.symm.trans X, ?_, ?_⟩
+    · -- membership (s.symm.trans X) = newMembership X = membership d
+      rw [k1b_inv_swap_membership X L hL R hR b]
+      exact hnm
+    · -- X = s.trans (s.symm.trans X)  pointwise:  (f.trans g) a = g (f a),
+      --  twice, then e.symm (e i) = i.
+      ext1 i
+      rw [Equiv.trans_apply, Equiv.trans_apply,
+          Equiv.symm_apply_apply (e := s)]
 
 end Shufflemath
