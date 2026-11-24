@@ -374,4 +374,61 @@ theorem swapRightPart_injective (d : CommanderPermutation.Deck) :
       (Finset.subset_univ R2)).1 h
 
 
+-- The witness sets of the count split: the left positions whose cards are in
+-- `leftCards \ O` (the 25 that must move out of the left pile) and the right
+-- positions whose cards are in `S` (the 25 that must be pulled in). Their
+-- images under the deck map recover exactly the target sets, because the
+-- position→card maps are bijections onto the piles.
+-- The witness choice sets of the count split, as filters of the position
+-- universes (avoids the noncomputable `Finset.preimage` API): the left
+-- positions whose cards lie in `C`, the right positions whose cards lie in `S`.
+def leftWitness (Y : CommanderPermutation.Deck) (C : Finset (Fin 99)) :
+    Finset (Fin 50) :=
+  (Finset.univ : Finset (Fin 50)).filter (fun l => Y (CommanderPermutation.leftPosition l) ∈ C)
+
+def rightWitness (Y : CommanderPermutation.Deck) (S : Finset (Fin 99)) :
+    Finset (Fin 49) :=
+  (Finset.univ : Finset (Fin 49)).filter (fun r => Y (rightPosition r) ∈ S)
+
+theorem k1b_witnessLeft_removed (Y : CommanderPermutation.Deck)
+    (O : Finset (Fin 99)) (hOsub : O ⊆ CommanderPermutation.leftCards Y) :
+    removedLeft Y (leftWitness Y (CommanderPermutation.leftCards Y \ O)) =
+      CommanderPermutation.leftCards Y \ O := by
+  apply Finset.ext
+  intro card
+  apply Iff.intro
+  · intro h
+    rcases Finset.mem_image.mp h with ⟨l, hmem, heq⟩
+    rcases Finset.mem_filter.mp hmem with ⟨_, hP⟩
+    simpa [heq.symm] using hP
+  · intro h
+    rcases Finset.mem_sdiff.mp h with ⟨hlc, hnotO⟩
+    rcases Finset.mem_image.mp hlc with ⟨l, hmem, heq⟩
+    have hP : Y (CommanderPermutation.leftPosition l) ∈ CommanderPermutation.leftCards Y \ O := by
+      simpa [heq.symm] using h
+    have hmem2 : l ∈ leftWitness Y (CommanderPermutation.leftCards Y \ O) := by
+      simpa [leftWitness, Finset.mem_filter, Finset.mem_univ] using hP
+    exact Finset.mem_image.mpr ⟨l, hmem2, heq⟩
+
+theorem k1b_witnessRight (Y : CommanderPermutation.Deck)
+    (S : Finset (Fin 99)) (hSsub : S ⊆ rightCards Y) :
+    swapRightPart Y (rightWitness Y S) = S := by
+  apply Finset.ext
+  intro card
+  apply Iff.intro
+  · intro h
+    rcases Finset.mem_image.mp h with ⟨r, hmem, heq⟩
+    rcases Finset.mem_filter.mp hmem with ⟨_, hP⟩
+    simpa [heq.symm] using hP
+  · intro h
+    have hRc : card ∈ rightCards Y := hSsub h
+    have hImg : card ∈ Finset.image (fun r2 => Y (rightPosition r2)) (Finset.univ : Finset (Fin 49)) := by
+      dsimp only [rightCards] at hRc
+      simpa [Finset.mem_image] using hRc
+    rcases Finset.mem_image.mp hImg with ⟨r, hmem, heq⟩
+    have hP : Y (rightPosition r) ∈ S := by simpa [heq.symm] using h
+    have hmem2 : r ∈ rightWitness Y S := by
+      simpa [rightWitness, Finset.mem_filter, Finset.mem_univ] using hP
+    exact Finset.mem_image.mpr ⟨r, hmem2, heq⟩
+
 end Shufflemath
