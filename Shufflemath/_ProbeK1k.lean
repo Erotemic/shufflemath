@@ -336,4 +336,42 @@ theorem removedLeft_injective (d : CommanderPermutation.Deck) :
   simpa using (Finset.image_eq_image_iff_of_injOn hInjOn' (Finset.subset_univ L1)
       (Finset.subset_univ L2)).1 h
 
+-- The membership produced by a 25/25 exchange is `M` exactly when the
+-- union of the two kept/pulled parts equals `M`'s 50-card set.
+theorem newMembership_set_eq (Y : CommanderPermutation.Deck)
+    (L : Finset (Fin 50)) (hL : L ∈ CommanderPhysicalExchange.leftChoices)
+    (R : Finset (Fin 49)) (hR : R ∈ CommanderPhysicalExchange.rightChoices)
+    (M : CommanderMembershipKernels.Membership) :
+    CommanderPhysicalExchange.newMembership Y L (CommanderPhysicalExchange.leftCard25 hL) R
+      (CommanderPhysicalExchange.rightCard25 hR) = M ↔
+      (swapLeftPart Y L) ∪ (swapRightPart Y R) = M.1 := by
+  apply Iff.intro
+  · intro h
+    have h1 : (CommanderPhysicalExchange.newMembership Y L
+        (CommanderPhysicalExchange.leftCard25 hL) R
+        (CommanderPhysicalExchange.rightCard25 hR)).1 = M.1 := by
+      simpa using congrArg (fun (m : CommanderMembershipKernels.Membership) => m.1) h
+    simpa [CommanderPhysicalExchange.newMembership, CommanderPhysicalExchange.newLeftCards,
+      swapLeftPart, swapRightPart] using h1
+  · intro h
+    apply Subtype.ext
+    simpa [CommanderPhysicalExchange.newMembership, CommanderPhysicalExchange.newLeftCards,
+      swapLeftPart, swapRightPart] using h
+
+-- The map `R ↦ swapRightPart d R` is injective (the position→card map is a
+-- bijection between the 49 right positions and the 49 right cards).
+theorem swapRightPart_injective (d : CommanderPermutation.Deck) :
+    Function.Injective (fun (R : Finset (Fin 49)) => swapRightPart d R) := by
+  have hInjOn : (Set.univ : Set (Fin 49)).InjOn (fun r => d (rightPosition r)) := by
+    intro r1 hr1 r2 hr2 h
+    apply Fin.ext
+    simpa [rightPosition] using (congrArg Fin.val ((Equiv.injective d) h))
+  have hInjOn' : (↑(Finset.univ : Finset (Fin 49)) : Set (Fin 49)).InjOn
+      (fun r => d (rightPosition r)) := by simpa using hInjOn
+  intro R1 R2 h
+  dsimp only [swapRightPart] at h ⊢
+  simpa using (Finset.image_eq_image_iff_of_injOn hInjOn' (Finset.subset_univ R1)
+      (Finset.subset_univ R2)).1 h
+
+
 end Shufflemath
