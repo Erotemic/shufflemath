@@ -11,28 +11,44 @@ namespace Shufflemath
 open GSR
 
 /-!
-Uniform law on a fiber / orbit (Nov 23 Gate 6 plan, "Proof separation", step 2).
+Uniform laws on fibers and orbits (Nov 23 Gate 6 plan, "Proof separation").
 
-The uniform law on a fiber `{ b // observe b = x }`, pushed through `Subtype.val`,
-equals the disintegration `fiberLaw observe hsurj x`. This is the reusable
-mechanism that `uniformOrbitLaw N m` (step 3) instantiates to the membership
-observation: a bijection (here the fiber's `Subtype.val`) pushes a uniform law
-on its domain to the uniform conditional on the image fiber — the same argument
-as `GSR.map_bijective_uniformDist`, re-expressed over
-`FiberDisintegration.fiberLaw` so it transfers to `membership`.
+This module holds the two reusable building blocks that `uniformOrbitLaw N m`
+(the Gate 6 headline) instantiates to the membership observation:
 
-The proof is `by_cases` on whether `b` lies in the fiber:
-- in the fiber, both laws assign `1 / |fiber|`, computed on the LHS by
-  `Finsupp.mapDomain_apply_of_injective` (mirroring `GSR.map_bijective_uniformDist`);
-- outside the fiber, both assign `0`, computed on the LHS by
-  `Finsupp.mapDomain_of_notMem_range`.
-The fiber's `Fintype` cardinality equals the `Finset.filter` cardinality
-(`Fintype.card_subtype`), so the two mass expressions are identical pointwise.
-No 99! / Fintype unrolling: everything is structural in `observe`.
+- `uniform_map_equiv`: pushing the uniform law on `A` through an equivalence
+  `e : A ≃ B` gives the uniform law on `B` (step 1);
+- `uniformFiberMapEqFiberLaw`: the uniform law on the fiber
+  `{ b // observe b = x }` pushed through `Subtype.val` equals the disintegration
+  `fiberLaw observe hsurj x` (step 2).
+
+Both are stated generically (no 99! / Fintype unrolling). The only cardinality
+step in each is a `Fintype.card_*` congruence; the pointwise mass is computed via
+`Finsupp.mapDomain` — the in-image case via `Finsupp.mapDomain_apply_of_injective`
+(mirroring `GSR.map_bijective_uniformDist`) and the not-in-image case via
+`Finsupp.mapDomain_of_notMem_range`.
 -/
 
-variable {α β : Type*}
-variable [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β] [Nonempty β]
+/-- Pushing the uniform law on `A` through an equivalence `e : A ≃ B` gives the
+  uniform law on `B`. Every `b : B` has a unique preimage `e.symm b`, so it
+  receives mass `1/|A| = 1/|B|` (via `Fintype.card_congr e`); because `e` is onto,
+  every point of `B` lies in the image. -/
+theorem uniform_map_equiv {A B : Type*} [Fintype A] [Fintype B]
+    [Nonempty A] [Nonempty B] (e : A ≃ B) :
+    (uniformDist A).map e = uniformDist B := by
+  classical
+  ext b
+  -- LHS: push uniform through the bijection e; b's unique preimage is e.symm b
+  have hLHS : Dist.mass ((uniformDist A).map e) b = (Fintype.card A : Rat)⁻¹ := by
+    simp only [Dist.mass, Convexity.StdSimplex.map]
+    have hb : b = e (e.symm b) := Eq.symm (e.apply_symm_apply b)
+    rw [hb, Finsupp.mapDomain_apply_of_injective e.injective]
+    simp only [uniformDist, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm]
+  -- RHS: uniform on B
+  have hRHS : Dist.mass (uniformDist B) b = (Fintype.card B : Rat)⁻¹ := by
+    simp only [Dist.mass, uniformDist, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm]
+  change Dist.mass ((uniformDist A).map e) b = Dist.mass (uniformDist B) b
+  rw [hLHS, hRHS, Fintype.card_congr e]
 
 /-- The uniform law on the fiber `{ b // observe b = x }` pushed through
   `Subtype.val` is the uniform conditional `fiberLaw observe hsurj x`.
@@ -41,9 +57,10 @@ variable [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β] [Nonempty �
   two laws are pointwise identical. The in-fiber case mirrors
   `GSR.map_bijective_uniformDist`; the not-in-fiber case uses
   `Finsupp.mapDomain_of_notMem_range`. -/
-theorem uniformFiberMapEqFiberLaw (observe : β → α)
+theorem uniformFiberMapEqFiberLaw {α β : Type*} [Fintype α] [Fintype β]
+    [DecidableEq α] [DecidableEq β] (observe : β → α)
     (hsurj : Function.Surjective observe) (x : α)
-    [Nonempty (Subtype (fun b => observe b = x))] :
+    [Nonempty β] [Nonempty (Subtype (fun b => observe b = x))] :
     (uniformDist (Subtype (fun b => observe b = x))).map Subtype.val =
       FiberDisintegration.fiberLaw observe hsurj x := by
   classical
