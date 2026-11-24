@@ -1,5 +1,15 @@
 # K1b `k1b_count_split`: exponential-whnf wall + decomposition plan (2026-12-30)
 
+> **⚠️ STATUS (2026-12-30, 77th session) — this whole K1b track targets the OPPOSITE
+> (local-then-swap) order, which is the WRONG round.** `Gate6Crux.fullRoundIdeal =
+> conv rho99Ideal swapLaw` applies the riffle first (local-then-swap); the goal's
+> physical round is **swap-then-local** = `conv swapLaw rho99Ideal`. The 2b
+> exponential-WHNF wall below is a symptom of that category error, not an
+> unavoidable cost. The correct-order capstone is already cracked (no wall, no K1b
+> counting) — see **`2026-12-30-k1-correct-order-crack.md`** (the new reference for
+> this arc). The 2b wall / `k1b_count_split` / `k1b_swap_half` work below is retained
+> as history but is not the path to the K1 headline.
+
 Companion to `docs/planning/proof-strategies/2026-12-25-k1-core-and-remaining-assembly.md`.
 This corrects that handoff's assumption that the already-written `k1b_count_split`
 "elaborates with a few fixes." It does not — the real blocker is a **deep

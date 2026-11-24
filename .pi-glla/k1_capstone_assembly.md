@@ -56,6 +56,19 @@ exchange-then-local-reset.*
 
 ## ⚠️ OPEN QUESTION (verify before treating the sub-lemma as a routine next step)
 
+> **✅ RESOLVED (2026-12-30, 77th session — see `docs/planning/proof-strategies/
+> 2026-12-30-k1-correct-order-crack.md`).** Item 2's suspicion was right and the answer is
+> **the composition order**: `Gate6Crux.fullRoundIdeal = conv rho99Ideal swapLaw` applies
+> `rho99Ideal` (the riffle) *first*, i.e. it is **local-then-swap**, the opposite of the
+> goal's physical **swap-then-local** = `conv swapLaw rho99Ideal`. The sub-lemma
+> `k1_swapLift_eq_exchangeLift` (and the opposite-order capstone) is **false as stated**
+> (fiber-symmetric LHS vs deck-specific RHS), and no work on it can close it. The
+> **correct-order** capstone `k1_capstone_correct` in
+> `Shufflemath/_ProbeK1correctOrder.lean` now **builds** (no `sorry`): it follows from
+> `k1a_riffle_half` + `k1_swapMembership_eq_exchangeMembership` + a new `riffleApply`
+> (linearity of the ideal riffle). Remaining: the finite version, the one-round TV bound,
+> and promotion to a committed module.
+
 The 4-rw reduction **builds** (it is algebraically valid), but the resulting sub-lemma
 `k1_swapLift_eq_exchangeLift` has an **asymmetry that may make it false as stated**:
 

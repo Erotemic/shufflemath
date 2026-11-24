@@ -81,8 +81,14 @@ phase notes are linked at the end; they do not override this plan. Read
 > `exact`); `act` and `Equiv.trans` are two whnf forms — keep one form per
 > proof, bridge by `congrArg + funext + rfl`; fold trailing rewrites into one
 > `rw […` list (a separate later tactic errors when an earlier `rw`
-> auto-closed the goal). Next: the orbit-fiber wall, then **K1a** (membership
-> enabler), then **K2** (the headline).
+> auto-closed the goal). **UPDATE (2026-12-30, 77th session):** this batch-4 K1 was the
+> **opposite (local-then-swap) order** — `conv rho99Ideal swapLaw` applies the riffle
+> first. The goal's physical round is **swap-then-local** = `conv swapLaw rho99Ideal`,
+> whose ideal capstone **`k1_capstone_correct` now builds** in
+> `Shufflemath/_ProbeK1correctOrder.lean` (no 99! wall, no K1b counting) — see
+> `docs/planning/proof-strategies/2026-12-30-k1-correct-order-crack.md`. The orbit-fiber
+> wall / K1b `k1b_count_split` (2b) are symptoms of the wrong order and are moot. Next:
+> the finite version, the one-round TV bound, and promotion to a committed module.
 
 > **Toolchain note (2026-02-10):** the library now uses Lean 4.34's `module`
 > system (`module` header + `public import` + `@[expose] public section`). See
