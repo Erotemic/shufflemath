@@ -92,10 +92,18 @@ Riffle-first: `comp (PAK swapLaw) (PAK rho99Ideal)`, i.e. `apply (apply
 
 ## This session's notes (2026-12-25)
 
-- **Two commits landed.**  `map_det_join_eq_map` (the Fintype-free Giry-mondad
+- **Three wins landed.**  `map_det_join_eq_map` (the Fintype-free Giry-mondad
   unit) is committed in `Shufflemath/Finite.lean` (`f6296eb`).  The §3.3
   swap/membership half is committed as production `Shufflemath/Gate6K1Swap.lean`
-  (promoted from the `_ProbeK1swap` probe, which was deleted).
+  (promoted from the `_ProbeK1swap` probe, which was deleted; `74c7333`).
+  The §3.2 *ideal-half kernel form* is now proven (sorry-free) in
+  **`Shufflemath/_ProbeK1ideal.lean`** — `k1_idealKernel_eq_membershipLift :
+  PAK rho99Ideal = comp (deterministic membership) localLift`, a single `exact`
+  of `Gate6K1Direct.kernelOfFiberRows` applied to the committed `k1a_riffle_half`
+  point-mass form.  So **both halves of K1 are now in kernel form.**  Promotion
+  of the ideal half to a production module is deferred until the whole K1 (incl.
+  the deck-level bridge) lands, so `_ProbeK1half` (`k1a_riffle_half`) and its
+  `_ProbeK1wall` counting dependency stay together in one promotion.
 - **Corrected the "mechanical" claim.**  The two membership-level halves
   (ideal §3.2 + swap §3.3) do NOT by themselves close the K1 capstone; the
   capstone needs the deck-level fiber-uniformity commutation (item 3 above),
@@ -104,6 +112,6 @@ Riffle-first: `comp (PAK swapLaw) (PAK rho99Ideal)`, i.e. `apply (apply
   promoted to production (it is `kernelOfFiberRows` + the committed
   `k1a_riffle_half` point-mass form); it is the mechanical of the three and is
   the next small win before the deck-level bridge.
-- No `sorry`/`admit` in `Finite.lean`, `Gate6K1Swap.lean`, or the `_ProbeK1*`
-  files; `lake build` of `Gate6K1Swap` + `Gate6K1Direct` + `_ProbeK1half` +
-  `_ProbeGate6K1` is green.
+- No `sorry`/`admit` in `Finite.lean`, `Gate6K1Swap.lean`, `_ProbeK1ideal.lean`,
+  or the other `_ProbeK1*` files; `lake build` of `Gate6K1Swap` + `Gate6K1Direct`
+  + `_ProbeK1half` + `_ProbeGate6K1` + `_ProbeK1ideal` is green.
