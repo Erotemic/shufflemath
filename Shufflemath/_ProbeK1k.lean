@@ -3,6 +3,7 @@ public import Mathlib
 public import Shufflemath.Finite
 public import Shufflemath.Gate6Crux
 public import Shufflemath.CommanderPermutation
+public import Shufflemath.CommanderFiberCount
 public import Shufflemath.CommanderMembershipKernels
 public import Shufflemath.CommanderPhysicalExchange
 public import Shufflemath.FiniteDeck.LiteralSwapKernel
@@ -169,5 +170,170 @@ theorem k1b_beta (d X : CommanderPermutation.Deck)
       ext1 i
       rw [Equiv.trans_apply, Equiv.trans_apply,
           Equiv.symm_apply_apply (e := s)]
+
+/- ================================================================
+   The 25/25 counting split (k1b_count_split and its pile structure).
+
+   For a deck `d` and a 50-card membership `M`, the number of 25/25
+   choices `(L, R)` for which the post-exchange membership equals `M`
+   is the indicator of `|leftCards d ∩ M| = 25`: the 25+25 split of `M`
+   is forced (the overlap `M ∩ leftCards d` must sit exactly in the
+   kept-left part, and `M`'s right-pile part exactly in the pulled-right
+   part), giving exactly one `(L, R)` — verified on the 4-card model
+   before proving (counts (0,0)/(1,1)/(0,0) by overlap 0/1/2).
+   ================================================================ -/
+
+-- The 49 cards occupying the right working positions of deck `d`.
+def rightCards (d : CommanderPermutation.Deck) : Finset (Fin 99) :=
+  (Finset.univ : Finset (Fin 49)).image (fun j => d (rightPosition j))
+
+theorem rightPosition_inj : Function.Injective rightPosition := by
+  intro a b h
+  apply Fin.ext
+  simpa [rightPosition] using congrArg Fin.val h
+
+theorem rightCards_card (d : CommanderPermutation.Deck) : (rightCards d).card = 49 := by
+  unfold rightCards
+  rw [Finset.card_image_of_injective]
+  · simp
+  · exact fun j1 j2 h => rightPosition_inj (d.injective h)
+
+-- The left and right piles of a deck are disjoint (distinct positions,
+-- injective deck map).
+theorem leftCards_rightCards_disjoint (d : CommanderPermutation.Deck) :
+    Disjoint (CommanderPermutation.leftCards d) (rightCards d) := by
+  classical
+  rw [Finset.disjoint_iff_inter_eq_empty]
+  apply Finset.ext
+  intro card
+  constructor
+  · intro h
+    rcases Finset.mem_inter.mp h with ⟨hL, hR⟩
+    rcases Finset.mem_image.mp hL with ⟨l, _, heqL⟩
+    rcases Finset.mem_image.mp hR with ⟨r, _, heqR⟩
+    have heq : d (CommanderPermutation.leftPosition l) =
+        d (rightPosition r) := heqL.trans heqR.symm
+    have hne : CommanderPermutation.leftPosition l ≠
+        rightPosition r := by
+      intro heq2
+      have hval : (CommanderPermutation.leftPosition l).val =
+          (rightPosition r).val := congrArg Fin.val heq2
+      have hL : (CommanderPermutation.leftPosition l).val < 50 := by
+        simp [CommanderPermutation.leftPosition]
+      have hR : 50 ≤ (rightPosition r).val := by
+        simp [rightPosition]
+      omega
+    have hne' : d (CommanderPermutation.leftPosition l) ≠
+        d (rightPosition r) :=
+      fun heq3 => hne (d.injective heq3)
+    exact False.elim (hne' heq)
+  · intro h
+    have hne : ¬ card ∈ (∅ : Finset (Fin 99)) := by simp
+    exact False.elim (hne h)
+
+theorem leftCards_rightCards_union_univ (d : CommanderPermutation.Deck) :
+    (CommanderPermutation.leftCards d) ∪ (rightCards d) = (Finset.univ : Finset (Fin 99)) := by
+  classical
+  apply Finset.ext
+  intro card
+  simp only [Finset.mem_union, Finset.mem_univ, CommanderPermutation.leftCards,
+      rightCards]
+  apply Iff.intro
+  · intro _
+    trivial
+  · intro _
+    rcases d.surjective card with ⟨p, hp⟩
+    by_cases hlt : p.val < 50
+    · left
+      have hw : p = CommanderPermutation.leftPosition ⟨p.val, hlt⟩ := by
+        apply Fin.ext
+        simp [CommanderPermutation.leftPosition]
+      rw [← hp, hw]
+      exact Finset.mem_image_of_mem _ (by simp)
+    · right
+      have hge : 50 ≤ p.val := by omega
+      have hw : p = rightPosition ⟨p.val - 50, by omega⟩ := by
+        apply Fin.ext
+        simp [rightPosition, Fin.val_mk]
+        omega
+      rw [← hp, hw]
+      exact Finset.mem_image_of_mem _ (by simp)
+
+-- The two parts of a 25/25 exchange, separately: the kept left cards
+-- (left positions outside `L`) and the pulled right cards (right
+-- positions inside `R`) — the exact two summands of `newLeftCards`.
+def swapLeftPart (d : CommanderPermutation.Deck) (L : Finset (Fin 50)) :
+    Finset (Fin 99) :=
+  Finset.image (fun l => d (CommanderPermutation.leftPosition l))
+    ((Finset.univ : Finset (Fin 50)) \ L)
+
+def swapRightPart (d : CommanderPermutation.Deck) (R : Finset (Fin 49)) :
+    Finset (Fin 99) :=
+  Finset.image (fun r => d (rightPosition r)) R
+
+-- Each part is a 25-card sub-pile: the kept-left part sits in the left
+-- pile, the pulled-right part in the right pile.
+theorem swapLeftPart_subset (d : CommanderPermutation.Deck) (L : Finset (Fin 50)) :
+    swapLeftPart d L ⊆ CommanderPermutation.leftCards d := by
+  unfold swapLeftPart CommanderPermutation.leftCards
+  exact Finset.image_mono (fun l => d (CommanderPermutation.leftPosition l))
+    (fun x hx => Finset.mem_univ x)
+
+theorem swapRightPart_subset (d : CommanderPermutation.Deck) (R : Finset (Fin 49)) :
+    swapRightPart d R ⊆ rightCards d := by
+  unfold swapRightPart
+  exact Finset.image_mono (fun r => d (rightPosition r)) (Finset.subset_univ R)
+
+theorem swapLeftPart_card25 (d : CommanderPermutation.Deck) (L : Finset (Fin 50))
+    (hL : L.card = 25) : (swapLeftPart d L).card = 25 := by
+  unfold swapLeftPart
+  rw [Finset.card_image_of_injective ((Finset.univ : Finset (Fin 50)) \ L)
+    (fun l1 l2 h => by
+      apply Fin.ext
+      simpa [CommanderPermutation.leftPosition] using (congrArg Fin.val ((Equiv.injective d) h)))]
+  rw [Finset.card_sdiff_of_subset]
+  · norm_num
+    rw [hL]
+  · exact Finset.subset_univ L
+
+theorem swapRightPart_card25 (d : CommanderPermutation.Deck) (R : Finset (Fin 49))
+    (hR : R.card = 25) : (swapRightPart d R).card = 25 := by
+  unfold swapRightPart
+  rw [Finset.card_image_of_injective R
+    (fun r1 r2 h => by
+      apply Fin.ext
+      simpa [rightPosition] using (congrArg Fin.val ((Equiv.injective d) h)))]
+  exact hR
+
+-- The kept-left part is the left pile minus the removed part, where the
+-- removed part is the image of `L` (the deck map is injective, so the
+-- image of a set difference is the set difference of images).
+def removedLeft (d : CommanderPermutation.Deck) (L : Finset (Fin 50)) : Finset (Fin 99) :=
+  Finset.image (fun l => d (CommanderPermutation.leftPosition l)) L
+
+theorem swapLeftPart_eq_complement (d : CommanderPermutation.Deck)
+    (L : Finset (Fin 50)) :
+    swapLeftPart d L =
+      CommanderPermutation.leftCards d \ removedLeft d L := by
+  unfold swapLeftPart removedLeft CommanderPermutation.leftCards
+  rw [Finset.image_sdiff]
+  · intro l1 l2 h
+    apply Fin.ext
+    simpa [CommanderPermutation.leftPosition] using (congrArg Fin.val ((Equiv.injective d) h))
+
+-- The map `L ↦ removedLeft d L` is injective (the position→card map is a
+-- bijection between the 50 left positions and the 50 left cards).
+theorem removedLeft_injective (d : CommanderPermutation.Deck) :
+    Function.Injective (fun (L : Finset (Fin 50)) => removedLeft d L) := by
+  have hInjOn : (Set.univ : Set (Fin 50)).InjOn (fun l => d (CommanderPermutation.leftPosition l)) := by
+    intro l1 hl1 l2 hl2 h
+    apply Fin.ext
+    simpa [CommanderPermutation.leftPosition] using (congrArg Fin.val ((Equiv.injective d) h))
+  have hInjOn' : (↑(Finset.univ : Finset (Fin 50)) : Set (Fin 50)).InjOn
+      (fun l => d (CommanderPermutation.leftPosition l)) := by simpa using hInjOn
+  intro L1 L2 h
+  dsimp only [removedLeft] at h ⊢
+  simpa using (Finset.image_eq_image_iff_of_injOn hInjOn' (Finset.subset_univ L1)
+      (Finset.subset_univ L2)).1 h
 
 end Shufflemath
