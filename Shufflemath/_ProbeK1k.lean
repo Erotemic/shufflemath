@@ -462,4 +462,66 @@ theorem sdiff_cancel (s a b : Finset (Fin 99)) (ha : a ⊆ s) (hb : b ⊆ s)
     rcases Finset.mem_sdiff.mp hmemB with ⟨_, hnotB⟩
     exact hnotB hx
 
+-- The image of the left-pile witness filter recovers the target set
+-- (the left-pile counterpart of `k1b_witnessRight`).
+theorem k1b_witnessLeft_image (Y : CommanderPermutation.Deck)
+    (A : Finset (Fin 99)) (hAsub : A ⊆ CommanderPermutation.leftCards Y) :
+    (Finset.image (fun l => Y (CommanderPermutation.leftPosition l)) (leftWitness Y A)) = A := by
+  apply Finset.ext
+  intro card
+  apply Iff.intro
+  · intro h
+    rcases Finset.mem_image.mp h with ⟨l, hmem, heq⟩
+    rcases Finset.mem_filter.mp hmem with ⟨_, hP⟩
+    simpa [heq.symm] using hP
+  · intro h
+    have hLc : card ∈ CommanderPermutation.leftCards Y := hAsub h
+    dsimp only [CommanderPermutation.leftCards] at hLc
+    rcases Finset.mem_image.mp hLc with ⟨l, hmem, heq⟩
+    have hP : Y (CommanderPermutation.leftPosition l) ∈ A := by simpa [heq.symm] using h
+    have hmem2 : l ∈ leftWitness Y A := by
+      simpa [leftWitness, Finset.mem_filter, Finset.mem_univ] using hP
+    exact Finset.mem_image.mpr ⟨l, hmem2, heq⟩
+
+-- Any 50-card set is the disjoint union of its left-pile and right-pile
+-- pieces (stated at full-expression level so `rw` can use it: local
+-- `set`-bound sets are opaque to the rewriter).
+theorem k1b_union_decomp (Y : CommanderPermutation.Deck)
+    (M : CommanderMembershipKernels.Membership) :
+    (M.1 ∩ CommanderPermutation.leftCards Y) ∪ (M.1 ∩ rightCards Y) = M.1 ∧
+      (M.1 ∩ CommanderPermutation.leftCards Y) ∩ (M.1 ∩ rightCards Y) = ∅ := by
+  refine ⟨?_, ?_⟩
+  · apply Finset.ext
+    intro x
+    apply Iff.intro
+    · intro hx
+      rcases Finset.mem_union.mp hx with hA | hB
+      · rcases Finset.mem_inter.mp hA with ⟨hM, _⟩
+        exact hM
+      · rcases Finset.mem_inter.mp hB with ⟨hM, _⟩
+        exact hM
+    · intro hx
+      have huniv : x ∈ CommanderPermutation.leftCards Y ∪ rightCards Y := by
+        rw [leftCards_rightCards_union_univ Y]
+        exact Finset.mem_univ x
+      rcases Finset.mem_union.mp huniv with hleft | hright
+      · exact Finset.mem_union.mpr (Or.inl (Finset.mem_inter.mpr ⟨hx, hleft⟩))
+      · exact Finset.mem_union.mpr (Or.inr (Finset.mem_inter.mpr ⟨hx, hright⟩))
+  · apply Finset.ext
+    intro x
+    apply Iff.intro
+    · intro hx
+      have hempty : CommanderPermutation.leftCards Y ∩ rightCards Y = ∅ :=
+        Finset.disjoint_iff_inter_eq_empty.1 (leftCards_rightCards_disjoint Y)
+      by_contra hnot
+      rcases Finset.mem_inter.mp hx with ⟨hA, hB⟩
+      rcases Finset.mem_inter.mp hA with ⟨_, hlc⟩
+      rcases Finset.mem_inter.mp hB with ⟨_, hrc⟩
+      have hmem : x ∈ CommanderPermutation.leftCards Y ∩ rightCards Y :=
+        Finset.mem_inter.mpr ⟨hlc, hrc⟩
+      rw [hempty] at hmem
+      simpa using hmem
+    · intro hx
+      simpa using hx
+
 end Shufflemath
