@@ -575,6 +575,69 @@ theorem map_uniform_mass {Y α : Type*} [Fintype Y]
   intro y _
   rw [mass_uniformDist, FiniteKernel.deterministic, Dist.mass_pointMass]
 
+/-- Pushing the uniform law on a finite type through an **injective** map puts
+  mass `1 / card A` at exactly the points that have a preimage, and `0`
+  elsewhere.  The injective analogue of `map_bijective_uniformDist`, and the
+  whnf-safe workhorse for orbit-fiber uniformity (the Gate 6 K1 wall): prove
+  it once over an *abstract* universe, then instantiate at any concrete
+  `Fintype` (e.g. the 99-card within-pile pair space) by name — without
+  normalizing that type's `Fintype.univ`, which is the reduction that pushes
+  the kernel past its recursion/heartbeat limit.  The only finitary content is
+  `Finset.sum_eq_single` over the abstract universe; the concrete universe
+  never enters a sum.  (Contrast: a global `simp` on the concrete ite *would*
+  normalize the universe and blow the limit.) -/
+theorem map_injective_uniform_mass {A B : Type*} [Fintype A] [DecidableEq A]
+    [DecidableEq B] [Nonempty A] (f : A → B) (hf : Function.Injective f) (b : B) :
+    Dist.mass ((uniformDist A).map f) b =
+      (if ∃ a : A, f a = b then (Fintype.card A : Rat)⁻¹ else 0) := by
+  classical
+  rw [map_uniform_mass]
+  by_cases hEx : ∃ a : A, f a = b
+  · obtain ⟨a0, ha0⟩ := hEx
+    have hEx' : ∃ a : A, f a = b := ⟨a0, ha0⟩
+    -- injectivity makes `f _ = b` equivalent to `· = a0` (the unique preimage)
+    have hiff (a : A) : b = f a ↔ a = a0 := by
+      constructor
+      · intro hba
+        exact hf (hba.symm.trans ha0.symm)  -- f a = b = f a0
+      · intro haeq
+        simpa [haeq] using ha0.symm  -- b = f a0 = f a
+    -- the (weighted) indicator of `f _ = b` is the indicator of `a0`
+    have hInd (a : A) : (Fintype.card A : Rat)⁻¹ * (if b = f a then 1 else 0) =
+        (Fintype.card A : Rat)⁻¹ * (if a = a0 then 1 else 0) := by
+      by_cases hp : b = f a
+      · -- b = f a → a = a0
+        have haeq : a = a0 := (hiff a).mp hp
+        split_ifs; simp
+      · -- ¬(b = f a) → a ≠ a0
+        have hnaeq : ¬a = a0 := by
+          intro haeq
+          exact hp ((hiff a).mpr haeq)
+        split_ifs; simp
+    rw [Finset.sum_congr rfl (fun _ _ => hInd _)]
+    -- the sum of the `a0`-indicator over the whole universe is its value at `a0`
+    have hZ (a : A) (ha : a ∈ (Finset.univ : Finset A)) (hne : a ≠ a0) :
+        (Fintype.card A : Rat)⁻¹ * (if a = a0 then 1 else 0) = 0 := by
+      by_cases h : a = a0
+      · exfalso
+        exact hne h
+      · split_ifs; simp
+    have hNotMem : a0 ∉ (Finset.univ : Finset A) →
+        (Fintype.card A : Rat)⁻¹ * (if a0 = a0 then 1 else 0) = 0 := by
+      intro hnm
+      exfalso
+      exact hnm (Finset.mem_univ a0)
+    rw [Finset.sum_eq_single a0 hZ hNotMem]
+    simp [hEx']
+  · -- no preimage: the (weighted) indicator is identically `0`
+    have hInd (a : A) : (Fintype.card A : Rat)⁻¹ * (if b = f a then 1 else 0) = 0 := by
+      by_cases hba : b = f a
+      · exfalso
+        exact hEx (⟨a, hba.symm⟩)
+      · split_ifs; simp
+    rw [Finset.sum_congr rfl (fun _ _ => hInd _), Finset.sum_const_zero]
+    simp [hEx]
+
 theorem nested_sum_eq_product_sum {A B : Type*} [DecidableEq A] [DecidableEq B] [AddCommMonoid M]
     (s : Finset A) (t : Finset B) (f : A × B → M) :
     ∑ p ∈ s ×ˢ t, f p = ∑ a ∈ s, ∑ b ∈ t, f (a, b) := by
