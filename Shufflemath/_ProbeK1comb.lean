@@ -2,6 +2,7 @@ module
 public import Mathlib
 public import Shufflemath.Finite
 public import Shufflemath.GSR
+public import Shufflemath._ProbeK1uniform
 
 @[expose]
 public section
@@ -157,5 +158,99 @@ theorem permImage_transitive (n k : Nat) (s t : Finset (Fin n)) (hs : s.card = k
     have w1S : w.1 ∈ s := w.2
     have hfw : f w.1 = x := by simp [f, w1S, hw]
     exact Finset.mem_image.mpr ⟨w.1, w1S, hfw⟩
+
+/-! The fiber of `e ↦ s.image e` over `t = s.image e0` is in bijection with the
+    reference fiber (the image-stabilizer of `s`), via left translation by `e0`.
+    Convention: `g * h` applies `h` first, then `g`. -/
+def fiberTransport (n : Nat) (s t : Finset (Fin n)) (e0 : Equiv.Perm (Fin n))
+    (h0 : s.image e0 = t) :
+    {e : Equiv.Perm (Fin n) // s.image e = t} ≃ {e : Equiv.Perm (Fin n) // s.image e = s} where
+  toFun e := ⟨e0.symm * e.1, by
+    calc s.image (e0.symm * e.1)
+      _ = (s.image e.1).image e0.symm := by simp [Finset.image_comp]
+      _ = t.image e0.symm := by rw [e.2]
+      _ = s := by
+        rw [← h0]
+        -- (s.image e0).image e0.symm = s,  membership-level:
+        ext x
+        constructor
+        · intro h
+          simp only [Finset.mem_image] at h ⊢
+          obtain ⟨y, ⟨z, hz, hy⟩, h2⟩ := h
+          have hx : x = z := by
+            calc x = e0.symm y := by rw [h2]
+              _ = e0.symm (e0 z) := by rw [hy]
+              _ = z := by simp
+          rwa [← hx] at hz
+        · intro hx
+          simp only [Finset.mem_image] at hx ⊢
+          refine ⟨e0 x, ?_, ?_⟩
+          · refine ⟨x, ?_, rfl⟩
+            exact hx
+          · simp
+  ⟩
+  invFun u := ⟨e0 * u.1, by
+    calc s.image (e0 * u.1)
+      _ = (s.image u.1).image e0 := by simp [Finset.image_comp]
+      _ = s.image e0 := by rw [u.2]
+      _ = t := h0
+  ⟩
+  left_inv u := by
+    refine Subtype.ext ?_
+    -- (e0 * (e0.symm * u.1)) x = e0 (e0.symm (u.1 x)) = u.1 x
+    apply Equiv.ext
+    intro x
+    simp
+  right_inv e := by
+    refine Subtype.ext ?_
+    -- (e0.symm * (e0 * e.1)) x = e0.symm (e0 (e.1 x)) = e.1 x
+    apply Equiv.ext
+    intro x
+    simp
+
+/-! The fiber of the image map over any `t = s.image e0` is equinumerous with the
+    reference (stabilizer) fiber -/
+theorem fibersEqualCard (n : Nat) (s t : Finset (Fin n)) (e0 : Equiv.Perm (Fin n))
+    (h0 : s.image e0 = t) :
+    Fintype.card {e : Equiv.Perm (Fin n) // s.image e = t} =
+      Fintype.card {e : Equiv.Perm (Fin n) // s.image e = s} :=
+  Fintype.card_congr (fiberTransport n s t e0 h0)
+
+/-! The image of a k-subset under a permutation is a k-subset. -/
+theorem imageCard (n k : Nat) (s : Finset (Fin n)) (hs : s.card = k) (e : Equiv.Perm (Fin n)) :
+    (s.image e).card = k := by
+  rw [Finset.card_image_of_injective s e.injective]
+  exact hs
+
+/-! **K1 headline** — pushing the uniform law on the full permutation group
+    through `e ↦ s0.image e` gives the uniform law on the `k`-subsets. -/
+theorem permImage_uniform (n k : Nat) (hn : 0 < n) (hk : k ≤ n) (s0 : SubsetsK n k)
+    [hne : Nonempty (SubsetsK n k)] :
+    (GSR.uniformDist (Equiv.Perm (Fin n))).map (fun (e : Equiv.Perm (Fin n)) =>
+        ⟨s0.1.image e, imageCard n k s0.1 s0.2 e⟩) =
+    GSR.uniformDist (SubsetsK n k) := by
+  classical
+  let f : Equiv.Perm (Fin n) → SubsetsK n k :=
+    fun e => ⟨s0.1.image e, imageCard n k s0.1 s0.2 e⟩
+  -- reference fiber: the image-stabilizer of s0.1
+  let m := Fintype.card {e : Equiv.Perm (Fin n) // s0.1.image e = s0.1}
+  -- 0 < m: the identity is in the reference fiber
+  have hm : 0 < m := Fintype.card_pos_iff.mpr ⟨⟨(1 : Equiv.Perm (Fin n)), by simp⟩⟩
+  -- every k-subset fiber of f has card m
+  have hFibers : ∀ (t : SubsetsK n k), Fintype.card {e : Equiv.Perm (Fin n) // f e = t} = m := by
+    intro t
+    -- the f-fiber over t is the image-map fiber over t.1 (Subtype equality)
+    have hfiber : Fintype.card {e : Equiv.Perm (Fin n) // f e = t} =
+        Fintype.card {e : Equiv.Perm (Fin n) // s0.1.image e = t.1} := by
+      apply Fintype.card_congr
+      refine ⟨fun z => ⟨z.1, ?_⟩, fun z => ⟨z.1, ?_⟩, ?_, ?_⟩
+      · simpa [Subtype.ext_iff, f] using z.2
+      · simpa [Subtype.ext_iff, f] using z.2
+      · exact fun z => by refine Subtype.ext ?_; rfl
+      · exact fun z => by refine Subtype.ext ?_; rfl
+    obtain ⟨e0, he0⟩ := permImage_transitive n k s0.1 t.1 s0.2 t.2
+    rw [hfiber]
+    exact fibersEqualCard n s0.1 t.1 e0 he0
+  exact map_equalFiber_uniform f m hm hFibers
 
 end Shufflemath
