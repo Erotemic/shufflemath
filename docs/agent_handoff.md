@@ -1,3 +1,20 @@
+> **✅ (session 80) — Gate-6 K1 is now fully closed on the correct-order side: both the finite round and its TV bound are in production.**
+> **`Shufflemath/Gate6K1Capstone.lean`** now carries the full correct-order (swap-then-local)
+> headline in addition to the ideal capstone `k1_capstone_correct`:
+> - **`ConvContractionLeft.convContractionLeft`** (new generic module, `Shufflemath/ConvContractionLeft.lean`):
+>   `TV(conv S F, conv S I) ≤ TV(F, I)` — the *left*-convolution contraction, the mirror of
+>   `Gate6Crux.convContraction` (right).  Fintype-free; the crux was a definitional
+>   bridge among `F.map`/`StdSimplex.map`, `tv`/`tvFinsupp`, and `tv_bijective_invariance`
+>   (closed with `simpa [Convexity.StdSimplex.map, tv_eq_tvFinsupp] using tv_bijective_invariance`).
+> - **`gate6_crux_correct`** : `TV(conv swapLaw rho99Finite, conv swapLaw rho99Ideal) ≤ 2401/8388608 = δ1` —
+>   the correct-order finite headline (mirror of `Gate6Crux.gate6_crux`), via `convContractionLeft`
+>   + `oneRoundDeckTV_le_delta1`; **`fullRoundDeck_correct_le_delta1`** is its deck-level corollary.
+> Full `Shufflemath` builds (8997/8998) and all 37 oracle tests pass.
+> **Only remaining K1 item:** the cosmetic mislabeled-order comment in `Gate6Crux` (its
+> `fullRoundFinite`/`fullRoundIdeal` are the opposite, local-then-swap order — still true, so this
+> is a comment/doc fix, not a proof).  Next substantive work per `docs/lean_plan.md` moves on to
+> the 3-round headline (`gate6_headline_lt_thousandth`) and the remaining campaign gates.
+>
 > **🎯 (2026-12-30, 77th session) — Gate-6 K1: the CORRECT-ORDER ideal capstone is CRACKED and PROMOTED to a real module.**
 > The open question in `.pi-glla/k1_capstone_assembly.md` is resolved: the residual
 > `k1_swapLift_eq_exchangeLift` is **false as stated** because `Gate6Crux.fullRoundIdeal

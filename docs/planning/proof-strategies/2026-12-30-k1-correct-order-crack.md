@@ -121,9 +121,20 @@ rho99Finite`, prove their ideal kernel equality directly via the already-proved
 
 Remaining to fully close Gate-6 K1:
 
-2. **Finite version** — `fullRoundFiniteCorrect = conv swapLaw rho99Finite` and its
-   equality-to-/TV-from- the ideal side. The ideal kernel equality
-   (`k1_capstone_correct`) plus the G6.1 `oneRoundDeckTV_le_delta1` gap give the bound.
+2. ✅ **Finite version (DONE, session 80).**  `fullRoundFiniteCorrect = conv
+   swapLaw rho99Finite` (the physical swap-then-local finite round) is defined and
+   its TV-from-ideal bound is proved, both in **`Shufflemath/Gate6K1Capstone.lean`**
+   (next to `fullRoundIdealCorrect` / `k1_capstone_correct`):
+   - **`gate6_crux_correct`** : `TV(fullRoundFiniteCorrect, fullRoundIdealCorrect) ≤
+     2401/8388608 = δ1` — the mirror of `Gate6Crux.gate6_crux` but in the correct
+     order: the fixed swap law is on the *left*, so the bound is the left-convolution
+     contraction `convContractionLeft` (item 3 above) composed with the committed G6.1
+     `oneRoundDeckTV_le_delta1` — a three-step calc, no collision counting, no 99!.  The
+     old `Gate6Crux.gate6_crux`/`fullRoundFinite`/`fullRoundIdeal` are the *opposite*
+     (local-then-swap) order; they stay as-is (still true, cosmetic).
+   - **`fullRoundDeck_correct_le_delta1`** : one physical round from deck `d` is within
+     `δ1` of the perfect round (one `tv_map_contraction` on `gate6_crux_correct`),
+     mirroring `Gate6Crux.fullRoundDeck_le_delta1` in the correct order.
 3. ✅ **One-round TV bound (DONE, 2026-12-30 / session 80).**  The milestone's
    "generic left-convolution contraction" (the `convContraction`-style
    non-expansion, but on the *left* factor: `conv S I` vs `conv S F`) is proved as
