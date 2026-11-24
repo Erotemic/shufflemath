@@ -296,6 +296,29 @@ theorem apply_deterministic_eq_map [Fintype alpha] [Fintype beta]
   simp [Finsupp.single_apply, eq_comm, deterministic, Dist.pointMass,
     Convexity.StdSimplex.single]
 
+/-- Fintype-free Giry-mondad unit lemma: pushing a distribution through the
+measure-valued map `x ↦ deterministic f (g x)` (i.e. the point mass at `f (g x)`) and
+joining is the same as pushing through `g` and then `f`.  This is the `apply`-form
+of the monadic unit `apply_deterministic_eq_map` above with the function split as
+`f ∘ g`, and it needs no `Fintype` and no mass computation: it is exactly the
+`StdSimplex` `map`-composition law plus the fact that `join` of a point-mass-of-a-
+distribution recovers the distribution (`iConvexComb_single`).  It is the unit
+identity the Gate-6 K1 swap/membership half (kernel `comp (PAK swapLaw) (deterministic
+membership) = rawExchangeMembership`) is closed by. -/
+theorem map_det_join_eq_map {alpha beta gamma : Type*} (nu : Dist alpha)
+    (g : alpha → gamma) (f : gamma → beta) :
+    (nu.map (fun x => deterministic f (g x))).join = (nu.map g).map f := by
+  have h0 : (fun x : alpha => deterministic f (g x)) = deterministic (f ∘ g) := by
+    funext x; dsimp [deterministic]
+  rw [h0]
+  change (nu.map (fun x => Convexity.StdSimplex.single ((f ∘ g) x))).join = (nu.map g).map f
+  rw [Dist.join_sConvexComb]
+  calc
+    _ = ((nu.map (f ∘ g)).map Convexity.StdSimplex.single).sConvexComb := by
+      rw [Convexity.StdSimplex.map_map]
+    _ = nu.map (f ∘ g) := Convexity.StdSimplex.iConvexComb_single (nu.map (f ∘ g))
+    _ = (nu.map g).map f := (Convexity.StdSimplex.map_map nu g f).symm
+
 /-- Associativity of kernel composition: `comp (comp K L) M = comp K (comp L M)`.
 
 Follows by applying `apply_comp` at a point mass, which makes `comp` a genuine
