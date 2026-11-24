@@ -20,9 +20,12 @@ open CommanderMembershipKernels
 open Finset
 open Fintype
 
--- The deep `newMembership` / `Membership`-Finset structure pushes some reductions past the
--- default recursion cap; bump it for this file's proof only (local, not global).
-set_option maxRecDepth 20000
+-- The deep `newMembership` / `Membership`-Finset structure pushes a few reductions to a
+-- recursion depth of ~70 (measured: this file builds at `maxRecDepth` 70 but not 60).  That
+-- is comfortably inside Lean's default cap (1000), so no local `maxRecDepth` bump is needed.
+-- The 66th-session wall that an old 20000 backstop hedged is gone: the final fiber-card
+-- bridge now uses the shallow, general `fintypeCard_subtypeCongr` (applied to `hP`) instead
+-- of a Membership-context `Equiv`, whose `ext`/reduction was the actual recursion source.
 
 /- 67th session — A3 part (i), the final 1B-bridge lemma: the  c-fiber  total mass of the
    raw-exchange-membership transition kernel equals the transition weight  (1 / #exchangeChoice)
