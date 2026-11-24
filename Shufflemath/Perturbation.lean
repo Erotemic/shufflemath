@@ -6,10 +6,11 @@ public import Mathlib.Data.Finset.Max
 public import Mathlib.Algebra.Group.Monoid
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
--- The protocol theorems whnf `dobrushinCoeff (compList …)` (a max over all
--- row pairs of the composed kernel) while elaborating the telescoping
--- bounds; give the compiler room for that one-time definitional expansion.
-set_option maxHeartbeats 400000
+-- The protocol theorems whnf `dobrushinCoeff (compList …)` (a max over all row pairs of the
+-- composed kernel) while elaborating the telescoping bounds.  That one-time definitional
+-- expansion peaks at ~1.5k heartbeats (measured: this file builds at `maxHeartbeats` 2000 but
+-- not 1000), comfortably inside Lean's default cap of 100000, so no local bump is needed —
+-- the earlier 400000 hedge was ~200x over-provisioned and is removed here.
 
 @[expose] public section
 
