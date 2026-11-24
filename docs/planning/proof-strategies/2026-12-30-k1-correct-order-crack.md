@@ -124,9 +124,18 @@ Remaining to fully close Gate-6 K1:
 2. **Finite version** — `fullRoundFiniteCorrect = conv swapLaw rho99Finite` and its
    equality-to-/TV-from- the ideal side. The ideal kernel equality
    (`k1_capstone_correct`) plus the G6.1 `oneRoundDeckTV_le_delta1` gap give the bound.
-3. **One-round TV bound** — the milestone's "generic left-convolution contraction"
-   (the `convContraction`-style non-expansion, but on the *left* factor: `conv S I`
-   vs `conv S F`) applied at the correct order.
+3. ✅ **One-round TV bound (DONE, 2026-12-30 / session 80).**  The milestone's
+   "generic left-convolution contraction" (the `convContraction`-style
+   non-expansion, but on the *left* factor: `conv S I` vs `conv S F`) is proved as
+   **`Shufflemath.ConvContractionLeft.lean`, `convContractionLeft`** (in the
+   aggregator, builds, no `sorry`): `TV(conv S F, conv S I) ≤ TV(F, I)`.  It is the
+   mirror of `Gate6Crux.convContraction` (which fixes `S` on the *right*); the
+   correct-order finite headline has the fixed swap law `S` on the *left*, so this
+   is the contraction it needs.  Fintype-free: `conv` is re-expressed as
+   `FiniteKernel.apply` over the swap support and the inner per-row mass
+   difference is bounded by the TV of the two permutation-action kernels via
+   `tv_bijective_invariance` (a pushforward-TV equality), so it never forces a 99!
+   reduction.
 4. **Fix the `Gate6Crux` comment** (it mislabels the order; cosmetic only).
 
 The opposite-order file (`_ProbeGate6K1` / `_ProbeK1cap2`) and its `sorry`'d
