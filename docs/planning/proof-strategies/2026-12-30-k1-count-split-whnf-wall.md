@@ -6,6 +6,46 @@ This corrects that handoff's assumption that the already-written `k1b_count_spli
 elaboration-depth / exponential-whnf blowup** plus an **incomplete 2b branch**,
 not the (already-fixed) trap list.
 
+## 2026-12-31 session (76th) — precise diagnosis of the 2b elaboration wall
+
+The wall was reproduced across **four structurally different 2b routes** and is now
+characterized precisely:
+
+1. **It is an elaboration-budget wall, not a proof error.** The 0-branch
+   (`k1b_count_non25`) must derive `(M.1 ∩ leftCards).card = 25` from a hit
+   `newMembership Y c = M`, then contradict the `≠ 25` hypothesis. Every route
+   whnf's the per-`c` `newMembership Y c` / `swapLeftPart Y c.1.1` / `newLeftCards
+   Y c.1.1 c.2.1` term, and that whnf overflows.
+2. **Two limits are tripped, and they interact.** With default options the error is
+   `maximum recursion depth has been reached` (at the `swapLeftPart_card25 Y c.1.1`
+   step). Raising `maxRecDepth` to 1000000 changes it to a **deterministic `whnf`
+   heartbeat timeout at the default 200000 heartbeats**; raising `maxHeartbeats` to
+   2000000 brings the recursion error back; `maxRecDepth` at 400 / 10000 / 50000 all
+   give the same recursion error at the same single step.
+3. **The blowup is pathological (likely exponential).** A *single* whnf step
+   (`swapLeftPart_card25 Y c.1.1`) needs >50000 recursion depth. Raising the limits
+   only makes the build slower before it fails or OOMs — it does not converge.
+4. **It is context-dependent, not term-dependent.** The *identical* `swapLeftPart Y
+   c.1.1` / `newMembership_set_eq` terms elaborate fine inside `k1b_count_25` (2a,
+   committed) with a *bigger* local context, but overflow in the 0-branch's smaller
+   context. The goal/context shape (not the term) decides whether the whnf stays
+   under the limits.
+5. **The membership-based `⊇` (non-circular) proof is sound.** It mirrors 2a's
+   `hUnique` in shape but proves `swapLeftPart Y c.1.1 = M.1 ∩ leftCards Y` by
+   membership + `leftCards_rightCards_disjoint`, avoiding the circular card argument
+   2a needed `hO25` for. It fails only at the elaboration budget, not the math
+   (WIP: `Shufflemath/_ProbeK1s.lean`).
+
+**Consequence:** 2b (`k1b_count_non25`) is not crackable by any in-session
+restructuring or limit-tuning of the per-c proof. The remaining routes are
+structural: (a) prove the per-c fact as a *separate* lemma whose conclusion names
+`newMembership Y c` directly (so the in-context whnf never fires) and instantiate it
+in the 0-branch, (b) raise the whole-project heartbeat budget (disallowed globally by
+AGENTS.md), or (c) a Lean toolchain change to bound the Finset-image/sdiff whnf. None
+are appropriate to force in-session. **2a (`k1b_count_25`) is the proven, committed
+half of the headline** (commit `e5932d4`); the full `k1b_count_split` assembly (2a +
+2b + `countFiber 25 = 0`) is blocked on 2b.
+
 ## State (verified on disk)
 
 - **Committed & green:** `_ProbeK1k.lean` (8967 jobs) holds the K1b
