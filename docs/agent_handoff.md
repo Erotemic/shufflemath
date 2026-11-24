@@ -60,18 +60,30 @@ in `_ProbeGate6K1` is exactly this theorem). Proven in that commit:
 `k1b_symm_pointwise` (`(swapPerm).symm i = (swapPerm) i` pointwise — right-inverse
 uniqueness + `swapFn_involution`; no 99! normalisation, only `s.injective`)
 and `k1b_inv_swap_membership` (`membership ((s_c).symm.trans d) = newMembership d L R`
-— K1a transported through the involution). **Next single action: `k1b_beta`
-— the combinatorial heart**: for every deck `X` and 25/25 choice `c`, `X` lies
-in the image of the fiber transport `q ↦ (s_c).trans q` (q in the fiber of `d`)
-iff `newMembership d L R = membership X` — checked on a 4-card Python model
-BEFORE proving (the two membership laws coincide; the 99!/25! normalisation wall
-is NOT in K1b — only `localLift_mass`/`fiberSet_membership_card` appear). Proof
-facts are in the file header. ⚠️ Per the K1d wall finding: carry the transport
-as `have` + `simpa`; NEVER `use`/`rcases`/`simp` on an image-membership
-existential carrying an open transport application (200k-heartbeat wall; safe
-close: `Finset.mem_image_of_mem`). After `k1b_beta`: mixture linearity of
-`apply` + `localLift_mass` assembles `k1b_swap_half`, then K1 assembles from
-`k1_lhs_bookkeeping` + K1a + K1b via `apply_comp`.
+— K1a transported through the involution). **`k1b_beta` is now PROVEN**
+(commit `5c30afe`): `(∃ q in the fiber of d, (s_c).trans q = X) ↔
+newMembership X L R = membership d` — the 25/25 **split-equality** of `X`,
+both directions pure retraction chains, **no 99! normalisation** (the
+statement avoids the `(s_c).symm.trans` composite entirely; it is carried
+through the *proven* equation `k1b_inv_swap_membership`, which `rw` matches
+without whnf).  **⚠️ CORRECTION to the earlier handoff:** the image condition
+is the split-equality `newMembership X = membership d`, **NOT**
+`newMembership d c = membership X` — the latter mismatches 24/96 pairs in the
+4-card model.  The headline deck laws still coincide for segregated AND
+non-segregated decks (16=16 distinct decks) via the **counting symmetry**
+`#{c : split_X(c) = m_d} = #{c : split_d(c) = m_X}`.  **Next single action:
+assemble `k1b_swap_half`** — per choice `c`, LHS mass at deck `X` is
+`#{c : split_X(c) = m_d}/(|C|·|F|)` (by `k1b_beta` + `localLift_mass` +
+mixture linearity of `apply` over the finite choice space) `=`
+`#{c : newMembership d c = m_X}/(|C|·|F|)` (the counting symmetry) `=` RHS
+mass `apply (rawExchangeMembership d) localLift` at `X`.  Then K1 =
+`k1_lhs_bookkeeping` + K1a + K1b via `apply_comp`.  This Mathlib gotchas
+that shaped the proof: `Equiv.Perm` is an `abbrev Equiv α α`; `trans_apply`
+is `(f.trans g) a = g (f a)` (f applied first); the `(s.symm ∘ s)` retraction
+= 2×`trans_apply` + `apply_symm_apply`, the `(s ∘ s.symm)` one = 2×`trans_apply`
++ `symm_apply_apply`; a let-bound swapPerm does **not** let `Equiv.symm s` and
+`s.symm` unify under `rw` — keep the `let` and pass `e := s` (the let) to the
+retraction lemma.
 **(4) Deck level:** `fullRoundDeck_le_delta1 (d) : TV(fullRoundFinite.map (·.trans d), fullRoundIdeal.map (·.trans d)) ≤ 2401/8388608` is now in `Gate6Crux.lean` — one line: `(Dist.tv_map_contraction …).trans gate6_crux`. Full verify green. **(5) 3-round headline — the remaining assembly is now a 3-lemma chain, all scoped:**
 - **K1 (the gate, deepest) — status (this session):** the **riffle half is now proved** —
   `k1a_riffle_half (d)` in `_ProbeGate6K1.lean` (commit `9fd92fd`):
