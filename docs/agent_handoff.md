@@ -1,3 +1,33 @@
+> **📦 (2026-11-25/26 session — the PERM-SUBSET K1 arc is COMPLETE: `permImage_uniform` landed in `_ProbeK1comb`, commit `3eaa943`.**
+This is the *permutation-action-on-k-subsets* arc (`_ProbeK1comb`/`_ProbeK1uniform`) —
+**a different "K1" from the Gate-6 3-round-headline K1-gate in the 🧭 note** (do not
+conflate; that gate is still the next target after this note). What landed:
+- **`permImage_uniform`** — the headline: `(GSR.uniformDist (Equiv.Perm (Fin n))).map
+  (e ↦ s0.image e) = GSR.uniformDist (SubsetsK n k)` for `0 < n`, `k ≤ n`,
+  `s0 : SubsetsK n k`. Assembled from `permImage_transitive` (surjective) +
+  `fibersEqualCard` (all fibers equinumerous with the image-stabilizer) +
+  `map_equalFiber_uniform` (the general equal-fiber pushforward lemma). The
+  `Nonempty (SubsetsK n k)` instance is an explicit theorem argument `[hne]` —
+  no global instance is possible (it needs the explicit `hk`).
+- Building blocks in the same file: `fiberTransport` (fiber-over-`s.image e0` ≃
+  reference fiber, via left translation; `image_comp` + membership-level ext for
+  the `(s.image e0).image e0.symm = s` step — `simp` does not unfold the nested
+  `image (·∘·)` composition there), `fibersEqualCard` (`Fintype.card_congr`),
+  `imageCard` (injective image stays k).
+- **`_ProbeK1uniform` repair (Mathlib drift, all now build):** `fiberSigmaEquiv.right_inv`
+  — `Sigma.mk.injEq` in this Mathlib is an *iff anchored on the given fst*
+  (`∀ fst snd, (⟨fst, ?y⟩ = ⟨fst, snd⟩) = (fst = fst ∧ ?y = snd)`); use `ext` +
+  `simp` instead (second component closes by proof irrelevance). `fiberCardPartition`
+  — **`Fintype.card_sigma` no longer exists**; the verified route is
+  `fiberCardPartition_nat` (fibers pairwise disjoint ⇒ `Finset.card_biUnion` gives
+  the Nat partition identity; each Finset-fiber-card bridges to the subtype-card
+  via `Fintype.card_subtype`) + `fintypeSumNatCast_eq_sumNatCast` (cast-bridge).
+  `fiber` must be a **non-protected** def: a bare `import Mathlib` puts a
+  non-protected `fiber` in scope and a `protected` local def cannot shadow it
+  ("Unknown identifier `fiber`" even though the def itself elaborates).
+Both modules build (`lake build Shufflemath._ProbeK1comb Shufflemath._ProbeK1uniform`);
+`./dev/verify_next_phase.sh` green (37 tests).
+
 > **🧹 (2026-11-23 — limit-bump audit; no `maxRecDepth`/`maxHeartbeats` left anywhere in `Shufflemath/`.)**
 **K1 wall (the gate, unit (5)) is now a *representation*, not a limit bump.** The per-deck orbit-fiber
 uniformity that used to need `set_option maxRecDepth` is proved in `Shufflemath/_ProbeK1wall.lean`
