@@ -113,9 +113,17 @@ Gate-6 K1:
    (the `convContraction`-style non-expansion, but on the *left* factor: `conv S I`
    vs `conv S F`) applied at the correct order.
 3. **Promotion** — move `k1a_riffle_half`, `convPush_eq_pointMassComp`,
-   `k1_swapMembership_eq_exchangeMembership`, `riffleApply`, and `k1_capstone_correct`
-   from probes into a real module (e.g. `Shufflemath/Gate6K1Capstone.lean`) and add it to
-   the `Shufflemath.lean` aggregator + `dev/verify_next_phase.sh`.
+   `riffleApply`, and `k1_capstone_correct` from probes into a real module (e.g.
+   `Shufflemath/Gate6K1Capstone.lean`: `module` + `public import` + `@[expose] public
+   section` + `namespace Shufflemath`, mirroring `Gate6K1BridgeA`), and add it to the
+   `Shufflemath.lean` aggregator + `dev/verify_next_phase.sh`. **Dependency chain to
+   re-house (all currently probe-only):** `k1a_riffle_half` → `k1wall_riffle_push_mass_factorial`
+   (`_ProbeK1wall.lean`, the factorial mass term) + `rho99Ideal_pairs`; `convPush_eq_pointMassComp`
+   → `convMapEqApplyMap`/`permutationActionKernel_eq_map` (already real). `k1_swapMembership_eq_exchangeMembership`
+   and `rhoRoundIdeal_eq_membershipLift` are already in real modules (`Gate6K1Swap`,
+   `RhoRoundIdealLift`) — `public import` them. Delete the superseded probe
+   `Shufflemath/_ProbeK1correctOrder.lean` once promoted (to avoid `Shufflemath.*` name
+   collisions with the real module).
 4. **Fix the `Gate6Crux` comment** (it mislabels the order; cosmetic only).
 
 The opposite-order file (`_ProbeGate6K1` / `_ProbeK1cap2`) and its `sorry`'d
