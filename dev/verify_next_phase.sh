@@ -50,7 +50,9 @@ lake build \
   Shufflemath.FiniteDeck.A3KernelLaw \
   Shufflemath.FiniteDeck.BLDisintegration \
   Shufflemath.FiniteDeck.PositionAction \
-  Shufflemath.FiniteDeck.ActionConvolution
+  Shufflemath.FiniteDeck.ActionConvolution \
+  Shufflemath.K1Wall \
+  Shufflemath.Gate6K1Capstone
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace

@@ -22,6 +22,16 @@ namespace Shufflemath
 /-!
 # Gate 6, batch 4 — K1: the state-dependent one-round law identity (probe stage)
 
+> **STATUS (2026-12-30): the two bookkeeping lemmas here are promoted, and this
+> file's own capstone is DEAD.** `convPush_eq_pointMassComp` and `k1a_riffle_half`
+> are now in the real module `Shufflemath.Gate6K1Capstone` (with the correct-order
+> capstone `k1_capstone_correct`). The capstone in *this* file,
+> `K1_oneRoundLaw_eq_exchangeThenLocalReset` (the 99! `sorry`), is the **opposite
+> (local-then-swap) order** and its residual `k1_swapLift_eq_exchangeLift` is **false
+> as stated** — it cannot be closed. See
+> `docs/planning/proof-strategies/2026-12-30-k1-correct-order-crack.md`. This probe is
+> retained only for its dependents (`_ProbeK1half`, `_ProbeK1close`, `_ProbeK1cap2`).
+
 The batch-4 headline `TV(3-round physical chain from μ0, uniform) ≤
 q3 + 3·δ1 < 1/1000` is assembled from the three-lemma chain
 K1 → K2 → K3.  This probe file develops **K1**:

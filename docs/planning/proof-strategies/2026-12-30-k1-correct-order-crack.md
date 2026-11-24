@@ -103,30 +103,33 @@ right-pile fiber-bijection crux. The only new mathematical content is `riffleApp
 The direct-K1 milestone (`.pi-glla/goals/2026-11-24-direct-k1-milestone.md`) prescribed
 exactly this: *"Define correct-order `conv swapLaw rho99Ideal` and `conv swapLaw
 rho99Finite`, prove their ideal kernel equality directly via the already-proved
-`k1a_riffle_half`."* The ideal kernel equality is now done. Remaining to fully close
-Gate-6 K1:
+`k1a_riffle_half`."* The ideal kernel equality is now **promoted to a real module**:
 
-1. **Finite version** — `fullRoundFiniteCorrect = conv swapLaw rho99Finite` and its
-   equality-to-/TV-from- the ideal side. The ideal kernel equality (`k1_capstone_correct`)
-   plus the G6.1 `oneRoundDeckTV_le_delta1` gap give the bound.
-2. **One-round TV bound** — the milestone's "generic left-convolution contraction"
+1. ✅ **Promotion (DONE, 2026-12-30).**  Two new real modules, both in the
+   `Shufflemath.lean` aggregator + `dev/verify_next_phase.sh` (verify passes, 37 tests
+   OK): **`Shufflemath/K1Wall.lean`** (the per-deck orbit-fiber uniformity
+   `k1wall_riffle_push_mass_factorial` + `rho99Ideal_pairs` + the `P99` pair-space
+   lemmas — promoted verbatim from `_ProbeK1wall`; all-real-module deps) and
+   **`Shufflemath/Gate6K1Capstone.lean`** (`convPush_eq_pointMassComp`,
+   `k1a_riffle_half`, `paK_rho99Ideal_eq_localLift`, `riffleApply`,
+   `fullRoundIdealCorrect`, `k1_capstone_correct` — importing `K1Wall` + the real
+   modules, **no probe imports**). The old probes `_ProbeK1wall` / `_ProbeGate6K1`
+   are marked superseded (retained only for their opposite-order dependents), and the
+   probe `_ProbeK1correctOrder` was deleted (fully superseded by `Gate6K1Capstone`).
+   The two new modules' names duplicate the probe copies but live in **disjoint
+   import graphs** (the aggregator imports no probes), so no name collision.
+
+Remaining to fully close Gate-6 K1:
+
+2. **Finite version** — `fullRoundFiniteCorrect = conv swapLaw rho99Finite` and its
+   equality-to-/TV-from- the ideal side. The ideal kernel equality
+   (`k1_capstone_correct`) plus the G6.1 `oneRoundDeckTV_le_delta1` gap give the bound.
+3. **One-round TV bound** — the milestone's "generic left-convolution contraction"
    (the `convContraction`-style non-expansion, but on the *left* factor: `conv S I`
    vs `conv S F`) applied at the correct order.
-3. **Promotion** — move `k1a_riffle_half`, `convPush_eq_pointMassComp`,
-   `riffleApply`, and `k1_capstone_correct` from probes into a real module (e.g.
-   `Shufflemath/Gate6K1Capstone.lean`: `module` + `public import` + `@[expose] public
-   section` + `namespace Shufflemath`, mirroring `Gate6K1BridgeA`), and add it to the
-   `Shufflemath.lean` aggregator + `dev/verify_next_phase.sh`. **Dependency chain to
-   re-house (all currently probe-only):** `k1a_riffle_half` → `k1wall_riffle_push_mass_factorial`
-   (`_ProbeK1wall.lean`, the factorial mass term) + `rho99Ideal_pairs`; `convPush_eq_pointMassComp`
-   → `convMapEqApplyMap`/`permutationActionKernel_eq_map` (already real). `k1_swapMembership_eq_exchangeMembership`
-   and `rhoRoundIdeal_eq_membershipLift` are already in real modules (`Gate6K1Swap`,
-   `RhoRoundIdealLift`) — `public import` them. Delete the superseded probe
-   `Shufflemath/_ProbeK1correctOrder.lean` once promoted (to avoid `Shufflemath.*` name
-   collisions with the real module).
 4. **Fix the `Gate6Crux` comment** (it mislabels the order; cosmetic only).
 
 The opposite-order file (`_ProbeGate6K1` / `_ProbeK1cap2`) and its `sorry`'d
-`K1_oneRoundLaw_eq_exchangeThenLocalReset` should be marked dead — it proves the wrong
-round and the residual is false, so no amount of work on `k1_swapLift_eq_exchangeLift`
-can close it.
+`K1_oneRoundLaw_eq_exchangeThenLocalReset` are marked dead (see the header notes) —
+it proves the wrong round and the residual is false, so no amount of work on
+`k1_swapLift_eq_exchangeLift` can close it.

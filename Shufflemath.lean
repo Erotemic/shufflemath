@@ -43,3 +43,5 @@ public import Shufflemath.UniformFiber
 public import Shufflemath.UniformOrbitLaw
 public import Shufflemath.RhoRoundIdealLift
 public import Shufflemath.Gate6K1BridgeA
+public import Shufflemath.K1Wall
+public import Shufflemath.Gate6K1Capstone

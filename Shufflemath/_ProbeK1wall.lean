@@ -25,6 +25,13 @@ open Finset
 /-!
 # The per-deck orbit-fiber uniformity (the K1 wall)
 
+> **PROMOTED to `Shufflemath.K1Wall`** (real module; identical content, added to the
+> aggregator + `dev/verify_next_phase.sh`). This probe is retained only for its
+> opposite-order dependents (`_ProbeK1half`, `_ProbeGate6K1`); the canonical version
+> of every theorem here now lives in `K1Wall`. The per-deck orbit-fiber uniformity
+> theorem `k1wall_riffle_push_mass_factorial` is the reusable core of the Gate-6 K1
+> capstone (see `docs/planning/proof-strategies/2026-12-30-k1-correct-order-crack.md`).
+
 Pushing the within-pile *uniform* riffle law from an *arbitrary* 99-card deck
 `d'` gives exactly the uniform law on `d'`'s membership fiber: the mass at a
 deck `X` is `1 / (50!·49!)` when `X` carries the same 99-card membership as

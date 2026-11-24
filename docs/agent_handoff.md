@@ -1,16 +1,19 @@
-> **🎯 (2026-12-30, 77th session) — Gate-6 K1: the CORRECT-ORDER ideal capstone is CRACKED.**
+> **🎯 (2026-12-30, 77th session) — Gate-6 K1: the CORRECT-ORDER ideal capstone is CRACKED and PROMOTED to a real module.**
 > The open question in `.pi-glla/k1_capstone_assembly.md` is resolved: the residual
 > `k1_swapLift_eq_exchangeLift` is **false as stated** because `Gate6Crux.fullRoundIdeal
 > = conv rho99Ideal swapLaw` is the **local-then-swap** order, but the goal's physical
 > round is **swap-then-local** = `conv swapLaw rho99Ideal`. The correct-order capstone
-> **`k1_capstone_correct`** now **builds** in `Shufflemath/_ProbeK1correctOrder.lean` (no
-> `sorry`), from the committed `k1a_riffle_half` + `k1_swapMembership_eq_exchangeMembership`
-> + a new `riffleApply` (linearity of the ideal riffle) — **no 99! wall, no K1b counting**.
-> Full analysis: `docs/planning/proof-strategies/2026-12-30-k1-correct-order-crack.md`.
-> **Next:** (1) the finite version `conv swapLaw rho99Finite`; (2) the one-round TV bound
-> via a left-convolution contraction; (3) promote the capstone + bridge lemmas to a
-> committed `Shufflemath/Gate6K1Capstone.lean` (add to aggregator + `dev/verify_next_phase.sh`);
-> (4) fix the mislabeled `Gate6Crux` order comment. The opposite-order file
+> **`k1_capstone_correct`** is proved (no `sorry`, no 99! wall, no K1b counting) from
+> `k1a_riffle_half` + `k1_swapMembership_eq_exchangeMembership` + a new `riffleApply`
+> (linearity of the ideal riffle). **It is now promoted to real modules**
+> `Shufflemath/Gate6K1Capstone.lean` (the capstone + bridge lemmas) and
+> `Shufflemath/K1Wall.lean` (the per-deck orbit-fiber uniformity it rests on), both in
+> the aggregator + `dev/verify_next_phase.sh` (verify passes, 37 tests OK); the probe
+> `_ProbeK1correctOrder` is deleted and the old probes marked superseded. Full analysis
+> + proof: `docs/planning/proof-strategies/2026-12-30-k1-correct-order-crack.md`.
+> **Next (to fully close Gate-6 K1):** (1) the finite version `conv swapLaw rho99Finite`
+> + its TV-from-ideal; (2) the one-round TV bound via a left-convolution contraction;
+> (3) fix the mislabeled `Gate6Crux` order comment (cosmetic). The opposite-order file
 > (`_ProbeGate6K1` / `_ProbeK1cap2`) is dead.
 
 > **📦 (2026-11-25/26 session — the PERM-SUBSET K1 arc is COMPLETE: `permImage_uniform` landed in `_ProbeK1comb`, commit `3eaa943`.**
