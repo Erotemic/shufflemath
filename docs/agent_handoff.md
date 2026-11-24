@@ -4108,3 +4108,90 @@ the simp set.  **Immediate next steps:** (1) define `embed_m` (the `.trans`-comp
 `embed_m_left`/`embed_m_right` (the leftover after `rw [finSplit_left, sumCongr_left]` is exactly
 `finSplit_symm_left (pl i)` — the composition `rw` chain is the remaining friction); (2) the free-orbit
 `Fintype.card` statement of §2.  WIP: `.pi-glla/f5orbit_wip.lean` (builds clean).
+
+
+---
+
+# G6-K1 handoff — permutation action on k-subsets: transitivity (DONE) + uniformity (WIP)
+
+## What landed (committed)
+
+**`Shufflemath/_ProbeK1comb.lean` — `permImage_transitive` (BUILDS, committed `4d4fb72`)**
+The K1 **combinatorial core**: for `0 < k ≤ n`, the permutation action on the k-subsets
+is **transitive** — every `k`-subset of `[n]` is the image of any other under some
+permutation of `[n]`.  (Mathematically trivial by the standard injective-map argument,
+but not in Mathlib and not reducible to a single built-in.)
+
+Proof: the crux is a Fintype `Equiv` between the two fiber sets
+`{e // e '' s0 = s1}` and `{e // e '' s0 = s0}`.  Nontrivial mechanics learned this
+session:
+- `MulAction` `•` unfolds to `Perm.image`, so each instance-field goal is `change`d
+  to `.image` form; `mul_smul` gives `(g*h)·s = g·(h·s)`.
+- The dite-reduction needs the explicit negation `∉ s0` (not `sᶜ` + `mem_compl`).
+- `Fintype.card_subtype` needs `Finset.card_univ` to bridge the `(s : Finset α)`
+  universe; use **concrete subtypes** (not let-bound names) so `Fintype.card` matches.
+- `⟨x, hx⟩ = ⟨y, hy⟩` needs the injectivity proof **inlined** into `congrArg`
+  (`(eST.injective hes)`, not a separately-named `heq`) to avoid open-type metavar.
+- A too-eager `rwa`/`aesop` in a `by` block silently closes the outer goal; use
+  targeted `simp` and `have`s, and a final `simp` to close the residual `Subtype.coe`
+  goal.
+
+## WIP — `Shufflemath/_ProbeK1uniform.lean` (committed `e57c248`)
+
+The **general lemma the K1 headline reduces to**: a surjective `f : X → Y` whose fibers
+all have size `m > 0` pushes `GSR.uniformDist X` to `GSR.uniformDist Y`.
+
+- **`fiberSum_eq` (PROVEN)**: the pushforward fiber-sum
+  `Σ_{x, f x = y} (card X)⁻¹ = (card {x // f x = y}) * (card X)⁻¹`.
+  Route: `simp [← Finset.sum_filter, Finset.sum_const, Fintype.card_subtype,
+  Finset.card_univ, Nat.cast_id, Nat.cast_mul]`.
+- **`map_equalFiber_uniform` (ASSEMBLED, 1 sorry)**: full proof — `hXcard : card X =
+  card Y * m`, then `ext y; change Dist.mass … = Dist.mass …`, LHS via
+  `Dist.map_mass_eq_univ_fiber` + `fiberSum_eq` + `hFibers`, RHS via `GSR.mass_uniformDist`,
+  closed by `field_simp [hm, hposY]`.  The ONLY remaining `sorry` is
+  **`fiberCardPartition`**: `card X = Σ_y card {x // f x = y}`.
+- **`fiberCardPartition` (the WIP sorry)**: prove the partition.  Route (documented in
+  the file): `X ≃ Σ y, {x // f x = y}` (toFun `x ↦ ⟨f x, ⟨x, rfl⟩⟩`, invFun `p ↦ p.2.val`)
+  + `Fintype.card_sigma` + `sum_const`.  The `right_inv` bridges the fiber-subtype
+  predicate `f p.2.val = p.1` via `Subtype.ext`.  Alternatively a double-sum Fubini:
+  `|X| = Σ_x 1 = Σ_y Σ_x [f x = y] = Σ_y |fiber y|`.
+
+## Path to the K1 headline `permImage_uniform`
+
+`Shufflemath/_ProbeK1comb.lean` has `permImage_uniform` (currently a skeleton `sorry`):
+
+    theorem permImage_uniform [Fintype (Fin n)] [DecidableEq (Fin n)]
+        [Fintype (Set (Fin n))] [DecidableEq (Set (Fin n))]
+        (k : ℕ) (hk : 0 < k) (hkn : k ≤ n) (s0 : Set (Fin n)) (hs0 : s0.card = k) :
+        (GSR.uniformDist (Equiv.Perm (Fin n))).map fun e => s0.image e
+          = GSR.uniformDist {s : Set (Fin n) // s.card = k}
+
+Apply **`map_equalFiber_uniform`** with `f (e : Equiv.Perm (Fin n)) := s0.image e` into
+the k-subset type:
+- **surjective**: `permImage_transitive` (done — the core, above).
+- **equal fibers + the `m`**: for any two k-subsets `s0 s1`, the conjugation
+  `e ↦ e.trans g` (where `g '' s0 = s1`) is a bijection between the fibers
+  `{e // f e = s0}` and `{e // f e = s1}` — so all fibers have equal cardinality `m`.
+  (This is the same conjugation structure as the `_ProbeK1iso` fiber bijection, now
+  generalized from the basepoint `s0` to any pair of k-subsets.)  Prove
+  `hFibers : ∀ s, card {e // f e = s} = m` by: pick a reference `s*`, show each fiber
+  ≃ the reference fiber via conjugation (`Fintype.card_congr`), so all = card(reference fiber).
+- then `map_equalFiber_uniform f (by m>0) hFibers` gives `permImage_uniform`.
+
+**Next session, in order:**
+1. Prove `fiberCardPartition` (drop the `sorry` in `_ProbeK1uniform.lean`) — the general
+   lemma is then complete.
+2. Prove the **equal-fibers** lemma `permImage_equalFibers` in `_ProbeK1comb.lean`
+   (conjugation `e ↦ e.trans g` gives all fibers equinumerous; `Fintype.card_congr`).
+3. Assemble `permImage_uniform` from `map_equalFiber_uniform` + the two above.
+4. Add `Shufflemath._ProbeK1comb` / `_ProbeK1uniform` to `Shufflemath.lean` once clean,
+   and re-run `./dev/verify_next_phase.sh`.
+
+## Build / verify
+
+```
+lake build Shufflemath._ProbeK1comb Shufflemath._ProbeK1uniform
+```
+
+## Do NOT stop (the standing directive)
+Compaction is not a stopping signal.  Continue from here.
