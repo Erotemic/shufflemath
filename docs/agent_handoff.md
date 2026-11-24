@@ -52,6 +52,26 @@ over limit-increasing. Commits: `7a64345` (K1 wall + GSR lemma), `0313309` (Comm
 itself (unit (5) in the 🧭 note below) is the next target.
 
 > **🧭 (this session, after the crux commit — unit (4) LANDED + unit (5) assembly mapped.)
+**K1b LANDED (next session, commit `e85ea34`, `Shufflemath/_ProbeK1k.lean`):**
+`k1b_swap_half (d) : apply (apply (pointMass (membership d)) localLift) (PAK swapLaw)
+= apply (rawExchangeMembership d) localLift` — the swap half — is STATED and
+ELABORATES (the remaining `sorry` of `K1_oneRoundLaw_eq_exchangeThenLocalReset`
+in `_ProbeGate6K1` is exactly this theorem). Proven in that commit:
+`k1b_symm_pointwise` (`(swapPerm).symm i = (swapPerm) i` pointwise — right-inverse
+uniqueness + `swapFn_involution`; no 99! normalisation, only `s.injective`)
+and `k1b_inv_swap_membership` (`membership ((s_c).symm.trans d) = newMembership d L R`
+— K1a transported through the involution). **Next single action: `k1b_beta`
+— the combinatorial heart**: for every deck `X` and 25/25 choice `c`, `X` lies
+in the image of the fiber transport `q ↦ (s_c).trans q` (q in the fiber of `d`)
+iff `newMembership d L R = membership X` — checked on a 4-card Python model
+BEFORE proving (the two membership laws coincide; the 99!/25! normalisation wall
+is NOT in K1b — only `localLift_mass`/`fiberSet_membership_card` appear). Proof
+facts are in the file header. ⚠️ Per the K1d wall finding: carry the transport
+as `have` + `simpa`; NEVER `use`/`rcases`/`simp` on an image-membership
+existential carrying an open transport application (200k-heartbeat wall; safe
+close: `Finset.mem_image_of_mem`). After `k1b_beta`: mixture linearity of
+`apply` + `localLift_mass` assembles `k1b_swap_half`, then K1 assembles from
+`k1_lhs_bookkeeping` + K1a + K1b via `apply_comp`.
 **(4) Deck level:** `fullRoundDeck_le_delta1 (d) : TV(fullRoundFinite.map (·.trans d), fullRoundIdeal.map (·.trans d)) ≤ 2401/8388608` is now in `Gate6Crux.lean` — one line: `(Dist.tv_map_contraction …).trans gate6_crux`. Full verify green. **(5) 3-round headline — the remaining assembly is now a 3-lemma chain, all scoped:**
 - **K1 (the gate, deepest) — status (this session):** the **riffle half is now proved** —
   `k1a_riffle_half (d)` in `_ProbeGate6K1.lean` (commit `9fd92fd`):
