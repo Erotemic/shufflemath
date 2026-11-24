@@ -12,6 +12,7 @@ public import Shufflemath.FiniteDeck.TwoPile
 public import Shufflemath.FiniteDeck.PositionAction
 public import Shufflemath.FiniteDeck.ActionConvolution
 public import Shufflemath.Gate6Crux
+public import Shufflemath._ProbeK1wall
 
 @[expose]
 public section
@@ -142,6 +143,41 @@ theorem k1_rhs_bookkeeping :
       FiniteKernel.identity :=
     CommanderMembershipKernels.localLift_preserves_membership
   rw [hassoc, hident, FiniteKernel.comp_id_left]
+
+/-- **K1a — the riffle half (the batch-5b bridge generalized to an arbitrary
+   deck).**  Pushing the ideal within-pile riffle law from deck `d` (the
+   permutation-action kernel of `rho99Ideal` applied at `d`) gives exactly the
+   uniform fiber lift at `d`'s membership:  both sides carry mass
+   `1 / (50!·49!)` at the decks carrying the same membership as `d` and `0`
+   elsewhere.  LHS mass: `k1wall_riffle_push_mass_factorial` (the K1-wall
+   per-deck orbit-fiber uniformity, `GSR.map_injective_uniform_mass` — the
+   99! deck universe never enters a sum).  RHS mass: `localLift_mass` +
+   `fiberSet_membership_card` (every membership fiber has `50!·49!` decks).
+   Definitional bridges: `rho99Ideal` unfolds to the same `roundEmbedMap`-pushed
+   pair law as the K1-wall's `rho99Ideal_pairs`;  `act` is definitionally
+   `·.trans ·`. -/
+theorem k1a_riffle_half (d : Equiv.Perm (Fin 99)) :
+    FiniteKernel.apply (Dist.pointMass d)
+      (FiniteDeck.permutationActionKernel Gate6Crux.rho99Ideal) =
+      FiniteKernel.apply
+        (Dist.pointMass (CommanderMembershipKernels.membership d))
+        CommanderMembershipKernels.localLift := by
+  ext1
+  ext1 X
+  rw [FiniteKernel.apply_pointMass, FiniteDeck.permutationActionKernel_eq_map,
+      FiniteKernel.apply_pointMass]
+  change (Dist.mass (Gate6Crux.rho99Ideal.map (fun p => Equiv.trans p d)) X) =
+      (Dist.mass (CommanderMembershipKernels.localLift (CommanderMembershipKernels.membership d)) X)
+  rw [CommanderMembershipKernels.localLift_mass,
+      CommanderMembershipKernels.fiberSet_membership_card]
+  have hBr : Gate6Crux.rho99Ideal = rho99Ideal_pairs := by rfl
+  rw [hBr]
+  -- The K1-wall mass fact as a *term* (no `rw`, whose normalisation would
+  -- pull the pair-law's Fintype-instance wall into whnf);  `simpa` bridges
+  -- the definitional gaps (lambda beta, ite condition) without reducing the
+  -- `map` term.
+  have hmass := k1wall_riffle_push_mass_factorial d X
+  simpa using hmass
 
 /- **K1 statement** (assembly pending the per-deck orbit-fiber uniformity). -/
 theorem K1_oneRoundLaw_eq_exchangeThenLocalReset :
