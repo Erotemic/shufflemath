@@ -42,3 +42,4 @@ public import Shufflemath.FiniteDeck.BLDisintegration
 public import Shufflemath.UniformFiber
 public import Shufflemath.UniformOrbitLaw
 public import Shufflemath.RhoRoundIdealLift
+public import Shufflemath.Gate6K1BridgeA
