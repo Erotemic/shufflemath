@@ -115,3 +115,38 @@ Riffle-first: `comp (PAK swapLaw) (PAK rho99Ideal)`, i.e. `apply (apply
 - No `sorry`/`admit` in `Finite.lean`, `Gate6K1Swap.lean`, `_ProbeK1ideal.lean`,
   or the other `_ProbeK1*` files; `lake build` of `Gate6K1Swap` + `Gate6K1Direct`
   + `_ProbeK1half` + `_ProbeGate6K1` + `_ProbeK1ideal` is green.
+
+## The single remaining proof — a finite 25-swap counting target (derived 2026-12-25)
+
+Working the deck-level fiber-uniformity pointwise in the target deck `X` reduces
+the K1 capstone to an explicit finite count, isolating the *one* new combinatorial
+claim.  With `F := 50!·49!` (`fiberSet_membership_card`): the capstone
+`apply (localLift (membership d)) (PAK swapLaw) = apply (rawExchangeMembership d)
+localLift` is, after `apply_mass_finsupp` (`Finite.lean`) + `localLift_mass` +
+`fiberSet_membership_card` on **both** sides, exactly equivalent to
+
+```
+Σ_{s ∈ swapLaw.support} swapLaw s · 𝟏{ membership (s.symm·X) = membership d }
+  = Dist.mass (rawExchangeMembership d) (membership X)          (∗)   for all d, X
+```
+
+- **LHS** of (∗): the total `swapLaw` weight of the swaps `s` whose inverse image
+  `s.symm·X` lies in the source fiber (`membership d`).  Each `s` is a bijection,
+  so at most one source deck maps to `X` per `s` — no `99!` sum.
+- **RHS** of (∗): the exchanged-membership law at `membership X`; by the §3.3 swap
+  half `= (swapLaw).map (fun s => membership (s.trans d))` at `membership X`.
+- Total mass of each side is `25/74` (= `swapLaw`'s mass, a sub-probability law),
+  so (∗) is mass-consistent and not trivially false.
+
+**Next action.**  Prove (∗) as `k1_swap_fiber_count : ∀ d X, …` in a fresh
+`Shufflemath/_ProbeK1b*.lean`.  Route: `swapLaw` has exactly 25 point masses
+(25 `swapCard` permutations, each weight `1/74`), so both sides are sums over
+`Finset.range 25`; expand both and match the `membership (swapCard_l · (·))` bookkeeping
+against `newMembership d` (the exchange-choice law).  The 25-card structure of
+`swapCard (Finset.range 25) l (Finset.range 74) (l+25)` and `newMembership` are
+the concrete objects to compute on — this is the batch-5b within-pile-orbit =
+uniform-fiber counting.  Do **not** introduce a `Fintype (Equiv.Perm (Fin 99))`.
+After (∗), the K1 capstone is `apply_mass_finsupp` + `localLift_mass` +
+`fiberSet_membership_card` in both directions, and the whole one-round law
+`K1_oneRoundLaw_eq_exchangeThenLocalReset` follows by the already-committed
+`k1_lhs_bookkeeping` / `k1_rhs_bookkeeping`.
