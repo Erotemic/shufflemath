@@ -150,3 +150,21 @@ After (∗), the K1 capstone is `apply_mass_finsupp` + `localLift_mass` +
 `fiberSet_membership_card` in both directions, and the whole one-round law
 `K1_oneRoundLaw_eq_exchangeThenLocalReset` follows by the already-committed
 `k1_lhs_bookkeeping` / `k1_rhs_bookkeeping`.
+
+**Refinement (why the naive per-choice equivalence fails).**  `newLeftCards d L R
+= image (fun l => d (leftPosition l)) (univ \ L) ∪ image (fun r => d (rightPosition
+r)) R` — the second union term reads specific **right-pile cards** `d (rightPosition
+r)` for `r ∈ R`, so `newMembership d L R` is *not* a function of the left-pile
+membership `membership d` alone; it also depends on the right-pile card
+assignment.  Consequently the naive per-choice statement
+`membership ((swapPerm c)⁻¹·X) = membership d ↔ newMembership d c = membership X`
+for a fixed `c` is **not** the right lemma (the RHS carries full-deck information
+the LHS bare-membership side does not).  The genuine core is the **right-pile-
+dependent fiber bijection**: for each choice `c`, `swapPerm c` maps the source
+fiber `fiber (membership d)` bijectively onto the target fiber `fiber (newMembership
+d c)`, where the target membership tracks the right-pile assignment.  This is the
+batch-5b within-pile-orbit = uniform-fiber bridge, and it is the single remaining
+proof — not a `Finset.filter` count of a membership-only predicate.  Proving it
+requires working with the right-pile card sets (`d ∘ rightPosition`), the
+`swapPerm`/`canonicalPairing` construction, and the `50!·49!` fiber cardinality;
+a `Fintype (Equiv.Perm (Fin 99))` must not be introduced.
