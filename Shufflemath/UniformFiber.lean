@@ -11,44 +11,26 @@ namespace Shufflemath
 open GSR
 
 /-!
-Uniform laws on fibers and orbits (Nov 23 Gate 6 plan, "Proof separation").
+Uniform law on a fiber (Nov 23 Gate 6 plan, "Proof separation", step 2).
 
-This module holds the two reusable building blocks that `uniformOrbitLaw N m`
-(the Gate 6 headline) instantiates to the membership observation:
+This module holds the genuinely new reusable building block that the Gate 6
+headline `uniformOrbitLaw N m` composes with the *existing* `GSR.map_bijective_uniformDist`
+(step 1, the fact that pushing a uniform law through an equivalence gives the
+uniform law on the target):
 
-- `uniform_map_equiv`: pushing the uniform law on `A` through an equivalence
-  `e : A ≃ B` gives the uniform law on `B` (step 1);
 - `uniformFiberMapEqFiberLaw`: the uniform law on the fiber
   `{ b // observe b = x }` pushed through `Subtype.val` equals the disintegration
   `fiberLaw observe hsurj x` (step 2).
 
-Both are stated generically (no 99! / Fintype unrolling). The only cardinality
-step in each is a `Fintype.card_*` congruence; the pointwise mass is computed via
-`Finsupp.mapDomain` — the in-image case via `Finsupp.mapDomain_apply_of_injective`
-(mirroring `GSR.map_bijective_uniformDist`) and the not-in-image case via
-`Finsupp.mapDomain_of_notMem_range`.
+`uniformOrbitLaw` needs step 1 (uniform is invariant under the equiv
+`fiberOrbit_equiv`) and step 2 (the resulting fiber uniform, pushed through the
+fiber's `Subtype.val`, is the `fiberLaw`). Step 1 is `GSR.map_bijective_uniformDist`
+already; this file supplies only step 2. Everything is generic (no 99! /
+Fintype unrolling): the only cardinality step is `Fintype.card_subtype`, and the
+pointwise mass is computed via `Finsupp.mapDomain` (the in-fiber case via
+`mapDomain_apply_of_injective`, mirroring `GSR.map_bijective_uniformDist`, the
+not-in-fiber case via `mapDomain_of_notMem_range`).
 -/
-
-/-- Pushing the uniform law on `A` through an equivalence `e : A ≃ B` gives the
-  uniform law on `B`. Every `b : B` has a unique preimage `e.symm b`, so it
-  receives mass `1/|A| = 1/|B|` (via `Fintype.card_congr e`); because `e` is onto,
-  every point of `B` lies in the image. -/
-theorem uniform_map_equiv {A B : Type*} [Fintype A] [Fintype B]
-    [Nonempty A] [Nonempty B] (e : A ≃ B) :
-    (uniformDist A).map e = uniformDist B := by
-  classical
-  ext b
-  -- LHS: push uniform through the bijection e; b's unique preimage is e.symm b
-  have hLHS : Dist.mass ((uniformDist A).map e) b = (Fintype.card A : Rat)⁻¹ := by
-    simp only [Dist.mass, Convexity.StdSimplex.map]
-    have hb : b = e (e.symm b) := Eq.symm (e.apply_symm_apply b)
-    rw [hb, Finsupp.mapDomain_apply_of_injective e.injective]
-    simp only [uniformDist, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm]
-  -- RHS: uniform on B
-  have hRHS : Dist.mass (uniformDist B) b = (Fintype.card B : Rat)⁻¹ := by
-    simp only [Dist.mass, uniformDist, Dist.ofFun, Finsupp.coe_equivFunOnFinite_symm]
-  change Dist.mass ((uniformDist A).map e) b = Dist.mass (uniformDist B) b
-  rw [hLHS, hRHS, Fintype.card_congr e]
 
 /-- The uniform law on the fiber `{ b // observe b = x }` pushed through
   `Subtype.val` is the uniform conditional `fiberLaw observe hsurj x`.
