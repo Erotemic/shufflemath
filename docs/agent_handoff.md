@@ -1,3 +1,26 @@
+> **🧹 (2026-11-23 — limit-bump audit; no `maxRecDepth`/`maxHeartbeats` left anywhere in `Shufflemath/`.)**
+**K1 wall (the gate, unit (5)) is now a *representation*, not a limit bump.** The per-deck orbit-fiber
+uniformity that used to need `set_option maxRecDepth` is proved in `Shufflemath/_ProbeK1wall.lean`
+(`k1wall_riffle_push_mass_factorial`: the per-deck riffle-push law has mass `1/(50!·49!)` exactly on
+the deck's membership fiber, `0` off it) by instantiating a new **reusable** lemma
+**`Shufflemath.GSR.map_injective_uniform_mass`** — push a uniform law through an *injective* map and
+the result is `1/card A` at the points with a preimage, `0` elsewhere — proved **once over an abstract
+universe using only `Finset.sum_eq_single`** (never normalizing the concrete `50!·49!` `Fintype.univ`, which
+is the reduction that blew the recursion limit). The headline uses targeted `ite_eq_left`/`ite_eq_right`
+reductions, never a global `simp` (a global `simp` would normalize the universe and re-hit the wall).
+**Also removed two over-provisioned limit bumps found by a whole-tree audit** (each verified to build at
+Lean's *default* cap, so the bump was pure margin, not a genuine need):
+`Shufflemath/CommanderA3Mass.lean` dropped `maxRecDepth 20000` → default (its deep `Membership`/`Finset`
+reductions peak at ~70, well under the 1000 default; the 20000 was a ~300× stale hedge against the
+66th-session wall that the `fintypeCard_subtypeCongr` representation fix already removed), and
+`Shufflemath/Perturbation.lean` dropped `maxHeartbeats 400000` → default (the `dobrushinCoeff (compList …)`
+elaboration peaks at ~1.5k heartbeats, under the 100000 default; 400000 was a ~200× hedge).
+**Net: `grep -E 'set_option (maxRecDepth|maxHeartbeats)'` over `Shufflemath/` now returns nothing** —
+the whole library builds at the standard caps, per the goal objective to prefer better representations
+over limit-increasing. Commits: `7a64345` (K1 wall + GSR lemma), `0313309` (CommanderA3Mass),
+`df4531b` (Perturbation). Full `dev/verify_next_phase.sh` green (37 tests). The deeper **K1 gate identity**
+itself (unit (5) in the 🧭 note below) is the next target.
+
 > **🧭 (this session, after the crux commit — unit (4) LANDED + unit (5) assembly mapped.)
 **(4) Deck level:** `fullRoundDeck_le_delta1 (d) : TV(fullRoundFinite.map (·.trans d), fullRoundIdeal.map (·.trans d)) ≤ 2401/8388608` is now in `Gate6Crux.lean` — one line: `(Dist.tv_map_contraction …).trans gate6_crux`. Full verify green. **(5) 3-round headline — the remaining assembly is now a 3-lemma chain, all scoped:**
 - **K1 (the gate, deepest):** the *state-dependent* one-round law identity
