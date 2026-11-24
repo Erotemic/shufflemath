@@ -323,6 +323,18 @@ theorem swapLeftPart_eq_complement (d : CommanderPermutation.Deck)
 
 -- The map `L ↦ removedLeft d L` is injective (the position→card map is a
 -- bijection between the 50 left positions and the 50 left cards).
+theorem leftCards_card (d : CommanderPermutation.Deck) :
+    (CommanderPermutation.leftCards d).card = 50 := by
+  unfold CommanderPermutation.leftCards
+  rw [Finset.card_image_of_injective]
+  · simp
+  · intro l1 l2 h
+    have hpos : CommanderPermutation.leftPosition l1 = CommanderPermutation.leftPosition l2 :=
+      d.injective h
+    apply Fin.ext
+    simp [CommanderPermutation.leftPosition] at hpos ⊢
+    exact hpos
+
 theorem removedLeft_injective (d : CommanderPermutation.Deck) :
     Function.Injective (fun (L : Finset (Fin 50)) => removedLeft d L) := by
   have hInjOn : (Set.univ : Set (Fin 50)).InjOn (fun l => d (CommanderPermutation.leftPosition l)) := by
@@ -430,5 +442,24 @@ theorem k1b_witnessRight (Y : CommanderPermutation.Deck)
     have hmem2 : r ∈ rightWitness Y S := by
       simpa [rightWitness, Finset.mem_filter, Finset.mem_univ] using hP
     exact Finset.mem_image.mpr ⟨r, hmem2, heq⟩
+
+-- If `s \ a = s \ b` and both sets sit inside `s`, then `a = b`.
+theorem sdiff_cancel (s a b : Finset (Fin 99)) (ha : a ⊆ s) (hb : b ⊆ s)
+    (h : s \ a = s \ b) : a = b := by
+  apply Finset.ext
+  intro x
+  apply Iff.intro
+  · intro hx
+    by_contra hnot
+    have hmemB : x ∈ s \ b := by simpa [Finset.mem_sdiff] using ⟨ha hx, hnot⟩
+    have hmemA : x ∈ s \ a := by simpa [h] using hmemB
+    rcases Finset.mem_sdiff.mp hmemA with ⟨_, hnotA⟩
+    exact hnotA hx
+  · intro hx
+    by_contra hnot
+    have hmemA : x ∈ s \ a := by simpa [Finset.mem_sdiff] using ⟨hb hx, hnot⟩
+    have hmemB : x ∈ s \ b := by simpa [h] using hmemA
+    rcases Finset.mem_sdiff.mp hmemB with ⟨_, hnotB⟩
+    exact hnotB hx
 
 end Shufflemath
