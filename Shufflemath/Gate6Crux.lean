@@ -68,8 +68,15 @@ noncomputable abbrev rho99Finite : Dist (Equiv.Perm (Fin 99)) :=
 noncomputable abbrev rho99Ideal : Dist (Equiv.Perm (Fin 99)) :=
   rhoRoundIdeal 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 23) (by norm_num)
 
--- The full-round permutation laws, physical order `g * s` (swap first, then
--- within-pile riffle): `conv A B` pushes the joint by `z.1 * z.2`.
+-- The full-round permutation laws, `conv rho99· swapLaw`.  Note `conv A B`
+-- pushes the joint by `z.1 * z.2`, which acts as "`z.1` first, then `z.2`"
+-- (`act_composition`), so `conv rho99· swapLaw` is **local-then-swap** (the
+-- within-pile riffle first, then the literal swap) — the *opposite* of the
+-- physical swap-then-local round.  These definitions remain (the TV bound
+-- `gate6_crux` below is order-independent via `convContraction`, so still
+-- valid); the *physical* correct-order versions `conv swapLaw rho99·` and the
+-- headline `gate6_crux_correct` / `k1_capstone_correct` live in
+-- `Shufflemath/Gate6K1Capstone.lean`.  See the 2026-12-30 correct-order note.
 noncomputable def fullRoundFinite : Dist (Equiv.Perm (Fin 99)) :=
   FiniteDeck.conv rho99Finite swapLaw
 noncomputable def fullRoundIdeal : Dist (Equiv.Perm (Fin 99)) :=
