@@ -40,3 +40,4 @@ public import Shufflemath.CommanderPerDeckKernel
 public import Shufflemath.FiniteDeck.A3KernelLaw
 public import Shufflemath.FiniteDeck.BLDisintegration
 public import Shufflemath.UniformFiber
+public import Shufflemath.UniformOrbitLaw
