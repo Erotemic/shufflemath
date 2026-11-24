@@ -53,7 +53,23 @@ itself (unit (5) in the 🧭 note below) is the next target.
 
 > **🧭 (this session, after the crux commit — unit (4) LANDED + unit (5) assembly mapped.)
 **(4) Deck level:** `fullRoundDeck_le_delta1 (d) : TV(fullRoundFinite.map (·.trans d), fullRoundIdeal.map (·.trans d)) ≤ 2401/8388608` is now in `Gate6Crux.lean` — one line: `(Dist.tv_map_contraction …).trans gate6_crux`. Full verify green. **(5) 3-round headline — the remaining assembly is now a 3-lemma chain, all scoped:**
-- **K1 (the gate, deepest):** the *state-dependent* one-round law identity
+- **K1 (the gate, deepest) — status (this session):** the **riffle half is now proved** —
+  `k1a_riffle_half (d)` in `_ProbeGate6K1.lean` (commit `9fd92fd`):
+  `apply (pointMass d) (PAK rho99Ideal) = apply (pointMass (membership d)) localLift` for
+  *every* 99-card deck `d` — the batch-5b bridge generalized (LHS mass via
+  `k1wall_riffle_push_mass_factorial`; RHS via `localLift_mass` +
+  `fiberSet_membership_card`; the two membership ites then coincide). **Next single
+  action: K1b (the swap half)** — pushing a uniform fiber law of a membership `m`
+  through `PAK swapLaw` gives the uniform fiber law of the *post-exchange* membership:
+  per choice `c`, `p ↦ p * swapPerm c` is a fiber-to-fiber bijection (membership of the
+  post-swap deck = post-exchange membership — the `newMembership_conjugate`-family fact),
+  and the uniform mixture over `c` is `apply (rawExchangeMembership d) localLift`.
+  Then K1 assembles from `k1_lhs_bookkeeping` + K1a + K1b (`apply_comp`).
+  **Wall note (this session):** the K1-wall theorem must be consumed as a local `have`
+  + `simpa` — a direct `rw [k1wall_riffle_push_mass_factorial]` normalises its LHS and
+  whnf's the pair law's `Fintype`-instance wall (200k-heartbeat timeout); `have`/`simpa`
+  avoid the normalisation. The statement of the K1 theorem itself elaborates fine.
+  The K1 statement itself:** the *state-dependent* one-round law identity
   `fullRoundIdeal.map (·.trans d) = apply (pointMass d) (exchangeThenLocalReset membership localLift rawExchange)`
   for every 50/49 deck `d`. Semantically both sides are: uniform 25/25-subset choice →
   *uniform fiber law of the post-exchange membership* — `rhoRoundIdeal` is the **full
