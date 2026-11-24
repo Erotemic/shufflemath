@@ -28,6 +28,26 @@ conflate; that gate is still the next target after this note). What landed:
 Both modules build (`lake build Shufflemath._ProbeK1comb Shufflemath._ProbeK1uniform`);
 `./dev/verify_next_phase.sh` green (37 tests).
 
+> **🧹 (2026-11-25 — K1b count-split helpers landed; main theorem handoff written.)**
+**K1b count-split progress (this session):** `Shufflemath/_ProbeK1k.lean` (green at
+`b696768`) now contains the full helper stack for the K1b headline
+`k1b_count_split`: `k1b_witnessLeft_removed`/`k1b_witnessRight` + their card
+proofs (ef0441a, a89a242, f457e5b), `leftCards_card` (9c76287),
+`k1b_witnessLeft_image` (the left-pile witness recovers the target set —
+simp-based `mem_image`/`sdiff` membership transport; no `preimage` API)
+and `k1b_union_decomp` (b696768, disjoint 25/25 decomposition of any
+50-card set — `simp only [Finset.mem_inter, Finset.mem_union, Finset.mem_sdiff]` +
+`omega`, with `\` second-operands parenthesized). **THE REMAINING TASK is the
+single theorem `k1b_count_split`** (1 iff M splits 25/25, else 0; unique choice
+= witness pair). Its complete intended proof (≈230 lines) plus a **numbered
+trap list** (10 traps: `\` EOL continuation, `\`-vs-`∩` precedence, rcases bare
+names, def-in-tactic, `rightPosition` namespace, set-let `rw` opacity,
+filter≠image, ordered `rw`, deprecated `if_pos`, `mem_sdiff` shapes) and a
+per-site error budget are in **`/tmp/k1b_count_split_handoff.md`** — the next
+session splices that block in before `end Shufflemath`, builds, and commits.
+⚠️ The session deadline in the do-not-stop rule (Wed Nov 24 23:59:59 EST)
+has lapsed — confirm with the user before continuing autonomous K-work.
+
 > **🧹 (2026-11-23 — limit-bump audit; no `maxRecDepth`/`maxHeartbeats` left anywhere in `Shufflemath/`.)**
 **K1 wall (the gate, unit (5)) is now a *representation*, not a limit bump.** The per-deck orbit-fiber
 uniformity that used to need `set_option maxRecDepth` is proved in `Shufflemath/_ProbeK1wall.lean`
