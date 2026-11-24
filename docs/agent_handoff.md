@@ -58,12 +58,23 @@ itself (unit (5) in the 🧭 note below) is the next target.
   `apply (pointMass d) (PAK rho99Ideal) = apply (pointMass (membership d)) localLift` for
   *every* 99-card deck `d` — the batch-5b bridge generalized (LHS mass via
   `k1wall_riffle_push_mass_factorial`; RHS via `localLift_mass` +
-  `fiberSet_membership_card`; the two membership ites then coincide). **Next single
+  **Swap-half FOUNDATION LANDED (this session, commit `054056a`, `Shufflemath/_ProbeK1b.lean`):**
+  `K1a_stmt_only (d) (L) (hL) (R) (hR) (b) : membership ((swapPerm 99 50 h50le99 L R b).trans d)
+  = newMembership d L hL R hR` — the `newMembership_conjugate`-family fact, proved by
+  `Subtype.ext` → `membership_leftCards` → `←finiteDeck_leftCards_99_50_eq_commander` →
+  re-read as the `.1` of the parameterized membership → B1 `swapPerm_membership_eq`
+  (from `_ProbeGate6K1`) → `dsimp` the two `.1` projections → the new **B5 finset
+  bridge** `newLeftCards_99_50_eq_commander` (the parameterized `newLeftCards` at
+  99/50 is the commander's: both positions are `⟨i.val,·⟩`/`⟨50+i.val,·⟩`, proof
+  irrelevance closes it — bare `dsimp`, no simp). Same commit lands clean arc
+  siblings `_ProbeK1e` (`K1e_bridge`), `_ProbeK1f` (`K1f_appEquiv`). **Next single
   action: K1b (the swap half)** — pushing a uniform fiber law of a membership `m`
   through `PAK swapLaw` gives the uniform fiber law of the *post-exchange* membership:
-  per choice `c`, `p ↦ p * swapPerm c` is a fiber-to-fiber bijection (membership of the
-  post-swap deck = post-exchange membership — the `newMembership_conjugate`-family fact),
-  and the uniform mixture over `c` is `apply (rawExchangeMembership d) localLift`.
+  per choice `c`, `p ↦ p * swapPerm c` is a fiber-to-fiber bijection (now backed by
+  `K1a_stmt_only`), and the uniform mixture over `c` is `apply (rawExchangeMembership d)
+  localLift`. ⚠️ `_ProbeK1c`/`_ProbeK1d` on disk hold BROKEN WIP for this arc
+  (`K1c_probe`; `K1d_bridge` with a `Subtype.ext` unification failure; `K1d_memrcases`
+  with `d : sorry`) — they do not build; fix or replace them.
   Then K1 assembles from `k1_lhs_bookkeeping` + K1a + K1b (`apply_comp`).
   **Wall note (this session):** the K1-wall theorem must be consumed as a local `have`
   + `simpa` — a direct `rw [k1wall_riffle_push_mass_factorial]` normalises its LHS and
