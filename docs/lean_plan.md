@@ -57,6 +57,33 @@ phase notes are linked at the end; they do not override this plan. Read
 > `DobrushinDecay99` (41 perfect exchanges, any macrostate, fiber-uniform start).
 > See [agent_handoff.md](agent_handoff.md) and the 2026-11-21 Gate 6 hint doc §5/§6.
 
+> **Gate 6 batch-4 K1 bookkeeping (2026-12-16 session):** the K1 normal-form
+> lemmas now BUILD in `Shufflemath/_ProbeGate6K1.lean` (the 3-lemma chain's
+> K1 step): (1) `convPush_eq_pointMassComp` — *generic in `N`*:
+> `(conv μ W).map (·.act·d) = apply (pointMass d) (comp (PAK μ) (PAK W))`,
+> proved by term-level composition of the committed `convMapEqApplyMap` / `←
+> apply_comp` / `apply_pointMass` / `permutationActionKernel_eq_map` (no
+> rewrite search — the wall-free core); (2) `k1_lhs_bookkeeping` — the 99-card
+> instance (`fullRoundIdeal.map (·.act·d)` = point-mass through the composed
+> `rho99Ideal`-then-`swapLaw` action kernels); (3) `k1_rhs_bookkeeping` —
+> `apply (pointMass d) (exchangeThenLocalReset …) = apply (rawExchangeMembership
+> d) localLift` (apply_comp / apply_pointMass / associativity /
+> `localLift_preserves_membership` → identity). The **K1 statement**
+> assembles with both bookkeeping rewrites; its single remaining `sorry` is
+> the known **per-deck orbit-fiber uniformity wall**: at each deck `d`, the
+> two-step action kernel `comp (PAK rho99Ideal) (PAK swapLaw)` must equal the
+> oracle-exchange + fiber-resample kernel `rawExchangeMembership d |>.map
+> localLift` (candidate route: the batch-5b headline machinery adapted to
+> kernel equality, or fiber-cardinality equinumerosities F3-style). Key
+> proof-engineering lessons (cost a failed build each, recorded in
+> `.pi-glla/gate6k1_status.md`): concrete 99!-laden law references must never
+> enter an `rw` pattern-search goal (prove generic in N, instantiate by
+> `exact`); `act` and `Equiv.trans` are two whnf forms — keep one form per
+> proof, bridge by `congrArg + funext + rfl`; fold trailing rewrites into one
+> `rw […` list (a separate later tactic errors when an earlier `rw`
+> auto-closed the goal). Next: the orbit-fiber wall, then **K1a** (membership
+> enabler), then **K2** (the headline).
+
 > **Toolchain note (2026-02-10):** the library now uses Lean 4.34's `module`
 > system (`module` header + `public import` + `@[expose] public section`). See
 > `agent_handoff.md` §"Lean 4 module-system migration" for the exact recipe
