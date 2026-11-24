@@ -39,3 +39,4 @@ public import Shufflemath.FiniteDeck.Gate6TieRank
 public import Shufflemath.CommanderPerDeckKernel
 public import Shufflemath.FiniteDeck.A3KernelLaw
 public import Shufflemath.FiniteDeck.BLDisintegration
+public import Shufflemath.UniformFiber
