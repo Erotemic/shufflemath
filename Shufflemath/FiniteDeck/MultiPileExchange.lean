@@ -641,5 +641,43 @@ theorem lumpedTransition_le_one (c : Nat) (X Y : Fin c → Nat) (k : Nat) (a b :
         mul_le_mul_of_nonneg_left hcb (by norm_num)
     _ = 1 := one_mul 1
 
+/-! ## The lumped conditional mass is exactly supported on the valid allocations
+
+The kernel is a proper probability-like object: its numerator is a product of
+per-category `Nat.choose` factors, so any per-category violation (some `a j > X j`)
+forces a zero factor, hence a zero product, hence a zero normalized mass — and any
+fully valid allocation gives a positive product, hence a positive mass.  No other
+support: the transition kernel is zero exactly on the allocations that do not
+fit the pile. -/
+
+/-- A per-category violation (`a j > X j` for some `j`) forces the lumped
+    conditional mass to be zero: the product of per-category `choose` factors
+    vanishes, and the zero over any denominator is still zero. -/
+theorem lumpedConditionalMass_eq_zero_of_exceed (c : Nat) (X a : Fin c → Nat) (k : Nat)
+    {j : Fin c} (hj : a j > X j) :
+    lumpedConditionalMass c X a k = 0 := by
+  simp only [lumpedConditionalMass, lumpedNum]
+  have h0 : (Finset.univ : Finset (Fin c)).prod (fun i => Nat.choose (X i) (a i)) = 0 := by
+    exact Finset.prod_eq_zero (Finset.mem_univ j)
+      (Nat.choose_eq_zero_of_lt hj)
+  rw [h0]
+  simp
+
+/-- A fully valid allocation (`a j ≤ X j` for all `j`), summed to `k`, gives a
+    positive lumped conditional mass: every per-category `choose` factor is
+    positive (`Nat.choose_pos`), the universal denominator is positive
+    (`k ≤ ΣX`), and the quotient is positive. -/
+theorem lumpedConditionalMass_pos_of_valid (c : Nat) (X a : Fin c → Nat) (k : Nat)
+    (hsum : Finset.univ.sum a = k) (h : ∀ j, a j ≤ X j) :
+    0 < lumpedConditionalMass c X a k := by
+  simp only [lumpedConditionalMass, lumpedNum]
+  have hnum : 0 < (Finset.univ : Finset (Fin c)).prod (fun i => Nat.choose (X i) (a i)) :=
+    Finset.prod_pos (fun i _ => Nat.choose_pos (h i))
+  have hle : k ≤ Finset.univ.sum X := by
+    rw [← hsum]
+    exact Finset.sum_le_sum (fun i _ => h i)
+  have hden : 0 < Nat.choose (Finset.univ.sum X) k := Nat.choose_pos hle
+  exact div_pos (Nat.cast_pos.mpr hnum) (Nat.cast_pos.mpr hden)
+
 end FiniteDeck
 end Shufflemath
