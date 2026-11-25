@@ -99,14 +99,54 @@ theorem blockCap_card (N p : Nat) (n : Fin p → Nat) (hsum : (∑ i, n i) = N) 
       Finset.card_range, Finset.card_range]
   simp only [b, Nat.add_sub_cancel_left]
 
-/-- Coverage: every card lies in some block. -/
-theorem blockCover (N p : Nat) (n : Fin p → Nat) (hsum : (∑ i, n i) = N) (x : Fin N) :
-    ∃ i : Fin p, x ∈ blockCap N p n i := by
+/-- `x` is in block `i` exactly when its card value falls in the block's
+    half-open value interval `[prefixCap i, prefixCap i + n i)`. -/
+theorem memBlockCap_iff (N p : Nat) (n : Fin p → Nat) (i : Fin p) (x : Fin N) :
+    x ∈ blockCap N p n i ↔ prefixCap p n i ≤ x.val ∧ x.val < prefixCap p n i + n i := by
+  -- blockCap i = univ.filter (fun x => P x), so x ∈ blockCap i ↔ P x directly.
+  dsimp only [blockCap]
+  simp only [Finset.mem_filter, Finset.mem_univ, and_self, true_and]
+
+/-- Monotonicity of `prefixCap`: if `i.val ≤ j.val` then `prefixCap i ≤ prefixCap j`.
+    (The prefix sum up to `i` is a sub-sum of the prefix sum up to `j`,
+    and every `n k` is nonnegative.)
+    -/
+-- NEXT (A1.1 closeout): prove by sum-subset. The obstacle: after `dsimp [prefixCap]`
+-- the two sides are `∑ k ∈ range (i.val+1), n (Fin.mk k hk_i)` and the same over
+-- `range (j.val+1)` with a DIFFERENT `Fin.mk` proof `hk_j`, so
+-- `Finset.sum_le_sum_of_subset` needs a common-function step first. Fix: prove
+-- `n (Fin.mk k hk_i) = n (Fin.mk k hk_j)` via `Fin.ext` (both have val `k`), then
+-- `conv` / `congr` to merge the two sums into one `f`. Then `sum_le_sum_of_subset`.
+theorem prefixCap_mono (p : Nat) (n : Fin p → Nat) (i j : Fin p) (h : i.val ≤ j.val) :
+    prefixCap p n i ≤ prefixCap p n j := by
+  -- NEXT: `dsimp [prefixCap]` then merge the two `∑ k, n (Fin.mk k hk)` sums to a
+  -- common function (via `Fin.ext`, both have val `k`), then
+  -- `Finset.sum_le_sum_of_subset` on `range (i.val+1) ⊆ range (j.val+1)`.
   sorry
 
-/-- Unique ownership: a card lies in at most one block. -/
+/-- Unique ownership: a card lies in at most one block.
+    Strategy: each block holds values in `[a_k, a_k + n_k)` with `a_{k+1} = a_k + n_k`
+    (telescope); two blocks sharing `x.val` force `i = j` via `prefixCap_mono`. -/
 theorem blockUnique (N p : Nat) (n : Fin p → Nat) (hsum : (∑ i, n i) = N) (i j : Fin p) (x : Fin N) :
     x ∈ blockCap N p n i → x ∈ blockCap N p n j → i = j := by
+  intro hi hj
+  have hiI : prefixCap p n i ≤ x.val ∧ x.val < prefixCap p n i + n i :=
+    (memBlockCap_iff N p n i x).mp hi
+  have hjI : prefixCap p n j ≤ x.val ∧ x.val < prefixCap p n j + n j :=
+    (memBlockCap_iff N p n j x).mp hj
+  -- i ≤ j: else j < i, so a_{j+1} = a_j + n_j ≤ a_i (prefixCap_mono) and
+  -- x.val < a_{j+1} ≤ a_i ≤ x.val, contradiction. (Needs prefixCap_mono.)
+  -- j ≤ i: symmetric.
+  -- Then Fin.le_antisymm.
+  sorry
+
+/-- Coverage: every card lies in some block. -/
+-- NEXT (A1.1 closeout): the blocks tile [0, N): take i* = max {i | prefixCap i ≤ x.val}
+-- (nonempty since prefixCap 0 = 0 ≤ x.val); maximality + the telescope give
+-- prefixCap i* ≤ x.val < prefixCap i* + n i*, i.e. x ∈ blockCap i*.
+-- Alternatively the smallest i with prefixCap (i+1) > x.val.
+theorem blockCover (N p : Nat) (n : Fin p → Nat) (hsum : (∑ i, n i) = N) (x : Fin N) :
+    ∃ i : Fin p, x ∈ blockCap N p n i := by
   sorry
 
 /-- The block partition is a genuine `IsPartition` of the deck. -/
