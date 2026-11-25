@@ -39,6 +39,8 @@ public import Shufflemath.GSRSegConfinement
 public import Shufflemath.FiniteDeck.Gate6TieRank
 public import Shufflemath.CommanderPerDeckKernel
 public import Shufflemath.FiniteDeck.A3KernelLaw
+public import Shufflemath.FiniteDeck.Piles
+public import Shufflemath.FiniteDeck.Partition
 public import Shufflemath.FiniteDeck.BLDisintegration
 public import Shufflemath.UniformFiber
 public import Shufflemath.UniformOrbitLaw
@@ -46,4 +48,5 @@ public import Shufflemath.RhoRoundIdealLift
 public import Shufflemath.Gate6K1BridgeA
 public import Shufflemath.K1Wall
 public import Shufflemath.Gate6K1Capstone
+public import Shufflemath.Gate6K1Bridges
 public import Shufflemath.FiniteDeck.Gate6ThreeRound

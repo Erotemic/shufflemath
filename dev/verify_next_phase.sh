@@ -53,7 +53,9 @@ lake build \
   Shufflemath.FiniteDeck.ActionConvolution \
   Shufflemath.FiniteDeck.Piles \
   Shufflemath.K1Wall \
-  Shufflemath.Gate6K1Capstone
+  Shufflemath.Gate6K1Capstone \
+  Shufflemath.Gate6K1Bridges \
+  Shufflemath.FiniteDeck.Partition \
   Shufflemath.FiniteDeck.Gate6ThreeRound
 
 if [[ "${1:-}" == "--pair" ]]; then
