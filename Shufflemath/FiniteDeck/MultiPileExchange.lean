@@ -592,5 +592,34 @@ theorem lumpedConditionalMass_le_one (c : Nat) (X a : Fin c → Nat) (k : Nat)
     rw [div_le_iff₀ hc]
     simpa using hcast
 
+/-! ## The two-pile lumped transition is bounded by 1
+
+Composing the two per-pile conditional-mass bounds (`lumpedConditionalMass_le_one`),
+the two-pile T5 transition kernel — the product of the two per-pile conditional
+masses — is bounded by `1` for any pair of valid allocations.  Each factor is a
+probability-like quantity in `[0, 1]`, so the product is too. -/
+
+/-- The two-pile T5 transition kernel for any valid pair of allocations `(a, b)`
+    (`Σa = Σb = k`) is at most `1`, provided both piles have a nonempty number of
+    `k`-subsets (`choose (ΣX) k ≠ 0` and `choose (ΣY) k ≠ 0`). -/
+theorem lumpedTransition_le_one (c : Nat) (X Y : Fin c → Nat) (k : Nat) (a b : Fin c → Nat)
+    (hsumA : Finset.univ.sum a = k) (hsumB : Finset.univ.sum b = k)
+    (hX : (Nat.choose (Finset.univ.sum X) k : Rat) ≠ 0)
+    (hY : (Nat.choose (Finset.univ.sum Y) k : Rat) ≠ 0) :
+    lumpedTransition c X Y k a b ≤ 1 := by
+  rw [lumpedTransition_factors c X Y k a b hX hY]
+  have hca := lumpedConditionalMass_le_one c X a k hsumA
+  have hcb := lumpedConditionalMass_le_one c Y b k hsumB
+  have hna : 0 ≤ lumpedConditionalMass c X a k := by
+    rw [lumpedConditionalMass]; positivity
+  have hnb : 0 ≤ lumpedConditionalMass c Y b k := by
+    rw [lumpedConditionalMass]; positivity
+  calc lumpedConditionalMass c X a k * lumpedConditionalMass c Y b k
+      ≤ 1 * lumpedConditionalMass c Y b k :=
+        mul_le_mul_of_nonneg_right hca hnb
+    _ ≤ 1 * 1 :=
+        mul_le_mul_of_nonneg_left hcb (by norm_num)
+    _ = 1 := one_mul 1
+
 end FiniteDeck
 end Shufflemath
