@@ -6,6 +6,7 @@ public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.Finset.Disjoint
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Data.Nat.Choose.Vandermonde
 public import Mathlib.Data.Finset.NatAntidiagonal
@@ -327,19 +328,93 @@ theorem exchangeTargets_symmetric (N : Nat) (A B A' B' : Finset (Fin N)) (k : Na
   have h2 : (S.image f).card = S'.card := by rw [hImg]
   exact h1.trans h2
 
+/-! ## T5: the two-pile exchange kernel is well-defined on the allocation-level
+     state space, and its normalized transition is stochastic
+
+A pile with per-category card counts `X : List Nat` exchanges `k` cards with a
+second pile `Y`: the transition is counted by the product of the two piles' 
+per-category Vandermonde totals (`histAllocSum`), and the sum of the numerator
+over every valid pair of category selections is the *universal* denominator
+`choose (∑ X) k * choose (∑ Y) k` (independent of the category counts).  Hence
+the normalized two-pile T5 transition kernel has row-sum `1` for every 
+histogram — it is a valid Markov transition and a stationary-law candidate.
+
+The **well-definedness** step is the `FiberMP` state space below: a `k`-
+exchange of two disjoint `(m,n)`-piles lands again on a disjoint `(m,n)`-pair
+(`exchangePairFiberMP`), so the exchange kernel is a self-map of the
+allocation-level state space.  This is the prerequisite for the remaining T5 
+steps — the column-sum / reversibility (Fintype-walled) and the 
+multivariate-hypergeometric stationary law. -/
+
+/- The allocation-level state space of the two-pile exchange: the disjoint
+    `(m,n)`-pairs of piles in an `N`-card deck. -/
+def FiberMP (N m n : Nat) : Type :=
+  { p : Finset (Fin N) × Finset (Fin N) // p.1.card = m ∧ p.2.card = n ∧ Disjoint p.1 p.2 }
+
+/- **Well-definedness on the state space.**  A `k`-exchange of two disjoint
+    `(m,n)`-piles lands again on a disjoint `(m,n)`-pair: the exchanged pair 
+    preserves both pile sizes (the moved `k`-subsets have equal cardinality) and 
+    disjointness (each card stays in exactly one of the two piles), so the 
+    exchange kernel maps the allocation-level state space to itself. -/
+theorem exchangePairFiberMP (N m n k : Nat) (A' B' oi oj : Finset (Fin N))
+    (hA' : A'.card = m) (hB' : B'.card = n) (hDis' : Disjoint A' B')
+    (hOi : oi ⊆ A') (hoiK : oi.card = k) (hOj : oj ⊆ B') (hojK : oj.card = k) :
+    ∃ p : FiberMP N m n, p.val = exchangePair N A' B' oi oj := by
+  have hKm : k ≤ m := by rw [←hoiK, ←hA']; exact Finset.card_le_card hOi
+  have hKn : k ≤ n := by rw [←hojK, ←hB']; exact Finset.card_le_card hOj
+  have hOiA : Disjoint (A' \ oi) oj := by
+    rw [Finset.disjoint_iff_ne]
+    intro x hxA' y hxo hxy
+    have hxInA : x ∈ A' := (Finset.mem_sdiff.mp hxA').1
+    have hyInB : y ∈ B' := hOj hxo
+    exact (Finset.disjoint_iff_ne.mp hDis' x hxInA y hyInB) hxy
+  have hOjB : Disjoint (B' \ oj) oi := by
+    rw [Finset.disjoint_iff_ne]
+    intro x hxB' y hyo hxy
+    have hyInA : y ∈ A' := hOi hyo
+    have hxInB : x ∈ B' := (Finset.mem_sdiff.mp hxB').1
+    exact (Finset.disjoint_iff_ne.mp hDis' y hyInA x hxInB) hxy.symm
+  have hSizeA : (exchangePair N A' B' oi oj).1.card = m := by
+    rw [exchangePair, Finset.card_union_of_disjoint hOiA, Finset.card_sdiff_of_subset hOi, hA', hoiK]
+    omega
+  have hSizeB : (exchangePair N A' B' oi oj).2.card = n := by
+    rw [exchangePair, Finset.card_union_of_disjoint hOjB, Finset.card_sdiff_of_subset hOj, hB', hojK]
+    omega
+  have hDis : Disjoint (exchangePair N A' B' oi oj).1 (exchangePair N A' B' oi oj).2 := by
+    rw [exchangePair, Finset.disjoint_iff_ne]
+    intro x hxA y hyB hxy
+    have hxAu : x ∈ A' \ oi ∨ x ∈ oj := Finset.mem_union.mp hxA
+    have hyBu : x ∈ B' \ oj ∨ x ∈ oi := by rw [←hxy] at hyB; exact Finset.mem_union.mp hyB
+    rcases hxAu with hxA'' | hOjx
+    · rcases hyBu with hyB'' | hyO
+      · -- x in A'\oi and x in B'\oj  =>  x in A' and x in B'
+        have hxA' : x ∈ A' := (Finset.mem_sdiff.mp hxA'').1
+        have hyB' : x ∈ B' := (Finset.mem_sdiff.mp hyB'').1
+        exact (Finset.disjoint_iff_ne.mp hDis' x hxA' x hyB') rfl
+      · -- x in A'\oi and x in oi  =>  contradiction (x notin oi)
+        exact (Finset.mem_sdiff.mp hxA'').2 (hyO)
+    · rcases hyBu with hyB'' | hyO
+      · -- x in oj and x in B'\oj  =>  contradiction (x notin oj)
+        exact (Finset.mem_sdiff.mp hyB'').2 (hOjx)
+      · -- x in oj and x in oi  =>  x in B' and x in A'
+        have hyInB : x ∈ B' := hOj hOjx
+        have hxInA : x ∈ A' := hOi hyO
+        exact (Finset.disjoint_iff_ne.mp hDis' x hxInA x hyInB) rfl
+  exact ⟨⟨exchangePair N A' B' oi oj, ⟨hSizeA, hSizeB, hDis⟩⟩, rfl⟩
+
 /-!
 # T5: the two-pile multi-category transition is stochastic
 
 A pile with per-category card counts `X : List Nat` exchanges `k` cards with a
-second pile `Y`: the transition is counted by the product of the two piles'
+second pile `Y`: the transition is counted by the product of the two piles' 
 per-category Vandermonde totals (`histAllocSum`), and the sum of the numerator
 over every valid pair of category selections is the *universal* denominator
 `choose (∑ X) k * choose (∑ Y) k` (independent of the category counts).  Hence
-the normalized two-pile T5 transition kernel has row-sum `1` for every
+the normalized two-pile T5 transition kernel has row-sum `1` for every 
 histogram — it is a valid Markov transition and a stationary-law candidate.  The
-column-sum (symmetry) and the multivariate-hypergeometric stationary law are the
-remaining T5 steps (allocation-level fiber symmetry, Fintype-walled).
--/
+column-sum / reversibility (allocation-level fiber symmetry, Fintype-walled) and
+the multivariate-hypergeometric stationary law are the remaining T5 steps.
+-/ 
 
 /-- **T5 two-pile transition stochasticity (numerator form).**  The total
     number of category-counted `k`-exchanges between two piles whose per-category
