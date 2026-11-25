@@ -90,15 +90,29 @@ Then `Finset.max'_le` / `sup_le` closes `kernelDiscrepancy K L ≤ δ1` (no 99!
 enumeration: `Equiv.Perm (Fin 99)` has a compact `Fintype`, and the bound is
 proved pointwise, not by evaluation).
 
-## Sub-lemma B: `TV(apply mu (compList [L,L,L]), uniform) ≤ q3`
+## Sub-lemma B: `TV(apply mu (compList [L,L,L]), uniform) ≤ q3` — **DONE (session 82)**
 
-- `L = exchangeThenLocalReset membership localLift rawExchange` (bridge).
-- `compList [L,L,L]` applied to `mu` = `run L 3 mu` — now a committed lemma:
-  `_ProbeCompListRun.g6_threeRound_compList3_eq_run` (unroll `compList` to the
-  nested `comp` chain / triple `apply` = the three `run_succ` steps; no
-  equinumerosity). Sub-lemma B is therefore a `simpa` chaining
-  `g6_3round_idealKernel_eq_fullRound` + `g6_threeRound_compList3_eq_run` +
-  the `Gate6Crux.swapLaw` TV-to-uniform identity.
+Proven as `_ProbeG6ThreeRoundHeadline.g6_threeRound_finiteRun3_tv_le_q3`. It is
+a two-rewrite `simp` (no equinumerosity / `native_decide` / 99! enumeration):
+
+1. `compList [L,L,L]` applied to `mu` = `run L 3 mu` — the committed
+   `_ProbeCompListRun.g6_threeRound_compList3_eq_run` (unroll `compList` to the
+   nested `comp` chain / triple `apply` = the three `run_succ` steps).
+2. The already-proved
+   `CommanderFullDeckDisintegration.three_physical_perfect_exchanges_uniform_
+   unconditional` states `TV (run L 3 mu) (uniform) = q3` (the exact 3-round
+   ideal residual; `q3` *is* that fraction, `FiniteDeck/Gate6FiniteGSR`), whence
+   `≤ q3`.
+
+Here `L = exchangeThenLocalReset membership localLift rawExchange` and
+`mu = apply (pointMass commanderSegregatedState) (fiberLaw project
+project_surjective)` — the exact kernel/start of that theorem, so the second
+`rw` matches after a `dsimp` of the two local defs. (No `Gate6Crux.swapLaw`
+TV-identity is needed: the q3 theorem already fixes the TV to the ideal value.)
+
+So sub-lemma B needs no swapLaw argument — the finite 3-round run is TV-`q3`
+from uniform, and the only remaining headline gap is the per-round collision
+budget `3·δ1` (sub-lemma A).
 - `mu = apply (pointMass commanderSegregatedState) (fiberLaw project
   project_surjective)` = exactly the start of
   `CommanderFullDeckDisintegration.three_physical_perfect_exchanges_uniform_unconditional`,
