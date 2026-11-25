@@ -442,5 +442,26 @@ theorem twoPileTransitionStochastic (X Y : List Nat) (k : Nat)
   rw [twoPileExchangeTotal X Y k]
   field_simp [hnz]
 
+/-! ## Bridge: the finite-`c`-indexed total agrees with the list-form total
+
+The `Fin c → ℕ`-indexed kernels in `Histograms.lean` (`lumpedConditionalMass`,
+`lumpedTransition`) normalize by `choose (Finset.univ.sum X) k` — the finite-`c`
+form of the universal denominator.  The antidiagonal-recursive `histAllocSum`
+identity `histAllocSum_choose` proves the identical identity in the list form.
+This bridge connects the two spellings, so the per-(a,b) kernels in the
+`Fin c → ℕ` form inherit the antidiagonal-route total with no extra
+machinery. -/
+
+/-- The finite-`c`-indexed per-pile numerator total agrees with the
+antidiagonal-recursive `histAllocSum` on the list form of the same allocation:
+`histAllocSum (List.ofFn X) k = choose (univ.sum X) k`.  This is the bridge
+between the `Fin c → ℕ` kernels in `Histograms.lean` and the list-form T5
+totals. -/
+theorem fin_lumped_rowSum (c : Nat) (X : Fin c → ℕ) (k : Nat) :
+    histAllocSum (List.ofFn X) k = Nat.choose (Finset.univ.sum X) k := by
+  rw [histAllocSum_choose (List.ofFn X) k]
+  congr 1
+  simp [List.sum_ofFn]
+
 end FiniteDeck
 end Shufflemath
