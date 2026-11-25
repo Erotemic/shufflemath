@@ -95,13 +95,14 @@ multi-pile exchange kernel-equality on top.
    integrated; B3's lumping core is green.
 2. ~~`lump_categoryTotal` (column-total)~~ — **DONE** (this session): proved from a
    pairwise-disjoint-piles hypothesis by `Finset.card_biUnion` + `Finset.filter_biUnion`.
-3. **Wall 2 — Fintype sub-wall CRACKED + `pileEquiv` LANDED.** `twoPile_card`
-   (this session) and the per-pile restriction equiv **`pileEquiv`** (new module
-   `Shufflemath/FiniteDeck/PileEquiv.lean`, integrated) are both in.  Remaining:
-   the general-`k` product-equiv `MultiFiber N k P C ≃ (fun i => Equiv (↥(P i)) (↥(C i)))`
-   on top of `pileEquiv`, the count formula `Fintype.card (MultiFiber N k P C) =
-   ∏_i (|C i|)!` (a `Fin k → …` product `Fintype` via `Fintype.Pi`), then
-   `G5capstone` (the multi-pile exchange kernel-equality) on top.
+3. **Wall 2 — Fintype sub-wall CRACKED + `pileEquiv` + `PileFiber` LANDED.**
+   `twoPile_card` and the per-pile restriction equiv **`pileEquiv`**
+   (`Shufflemath/FiniteDeck/PileEquiv.lean`) are in, and the fiber bijection's
+   forward map + inverse + crux (`Shufflemath/FiniteDeck/PileFiber.lean`, see
+   below) are in too.  Remaining: the two round-trip inverse laws → the `Equiv`
+   `MultiFiber N k P C ≃ Π i, Equiv (↥(P i)) (↥(C i))` → the count formula
+   `Fintype.card (MultiFiber N k P C) = ∏_i (|C i|)!` → `G5capstone` (the
+   multi-pile exchange kernel-equality).
 4. **B4** `MultiExchange` + **T5** within-pile orbit, on top of the above.
 
 The build gate stays green (37 tests) through all of it.
@@ -142,4 +143,40 @@ do NOT fix it; only giving the `by` a concrete `have` goal does.) **Rule of thum
 for the next product-equiv / G5capstone:** any `by` that rewrites a subtype
 membership from a pile-equality hypothesis must be wrapped in a named `have` with
 an explicit concrete type, not inlined as an anonymous `by` argument.
+
+## `PileFiber.lean` (deck ↔ per-pile equivs) — **LANDED**
+
+The general-`k` fiber bijection's forward map, inverse, and crux realization, in
+a new module `Shufflemath/FiniteDeck/PileFiber.lean` (integrated into the
+aggregator + verify script; gate green, 37 tests).  Built on `pileEquiv`
+(per-pile restriction equiv) and `glueBlocks` (generic partition/Sigma gluing
+from `Partition.lean`):
+
+- `multiPileToEquivs (d : MultiFiber N k P C) : (i : Fin k) → Equiv (↥(P i)) (↥(C i))`
+  — a realizing deck gives, per pile, the restriction equiv (just `pileEquiv`).
+- `gluedRealizes` — **the crux**: the deck `glueBlocks P C hP hC e` obtained by
+  gluing a family of per-pile equivs *realizes the allocation*: each
+  `(P i).image (glueBlocks …) = C i`.  Proved by `Finset.ext` + `Finset.mem_image`:
+  ⊆ via `glueBlocks_apply_member` (the glued deck on `x ∈ P i` equals the local
+  equiv at `x`, which lands in `C i`) and ⊇ via the local equiv's surjectivity
+  (`(e i).surjective`).
+- `equivsToMultiPile` — packages `⟨glueBlocks P C hP hC e, gluedRealizes⟩`, the
+  inverse direction (per-pile equivs → a realizing deck).
+
+**Remaining (the true general-`k` fiber theorem, next increment):** prove the two
+maps are mutual inverses — `roundTripDecks`
+(`equivsToMultiPile (multiPileToEquivs d) = d`) and `roundTripEquivs`
+(`multiPileToEquivs (equivsToMultiPile e) = e`) — both reducing to
+`glueBlocks_apply_member` + `pileEquiv_toFun` + `Subtype.ext` + `IsPartition`
+unique-ownership.  From those, `Equiv.ofBijective` yields the fiber equiv
+`MultiFiber N k P C ≃ Π i, Equiv (↥(P i)) (↥(C i))`, and (via `Fintype.Pi` +
+`Fintype.card_perm`) the count `Fintype.card (MultiFiber N k P C) = ∏ i, (|C i|)!`,
+the general-`k` lift of `twoPile_card`.
+
+**Elaboration notes for the round-trips:** keep the gluing family / deck *inlined*
+(bare `glueBlocks …`, not a named def) so `glueBlocks_apply_member` applies without
+def-unfolding; `change` eta-reduces `(fun q => d q)` to `d` inside the image; and a
+section-bound `variable e` must be *applied explicitly* (`gluedRealizes N k P C hP
+hC e`) when a sibling def references it — a bare reference is treated as an
+unapplied function (the same `@`-apply pattern as `pileF` inside `pileEquiv`).
 
