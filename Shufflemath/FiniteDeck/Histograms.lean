@@ -7,6 +7,8 @@ public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Finset.Union
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Nat.Basic
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Tactic
@@ -148,6 +150,30 @@ def allocCard (c : ℕ) (X a : Fin c → ℕ) (i : Fin c) : ℕ :=
 theorem allocCard_choose (c : ℕ) (X a : Fin c → ℕ) (i : Fin c) :
     allocCard c X a i = Nat.choose (X i) (a i) := by
   unfold allocCard
+  rw [Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
+
+/-- The per-category fiber: the `a_j`-subsets of the `X_j`-card category `j`.
+    (Declared as its concrete `Finset` type so it can be used with `Finset.pi`.) -/
+def catAlloc (c : ℕ) (X a : Fin c → ℕ) (j : Fin c) : Finset (Finset (Fin (X j))) :=
+  Finset.powersetCard (a j) (Finset.univ : Finset (Fin (X j)))
+
+/- **Product-over-categories numerator.**  The number of full category-allocations
+   of one pile — choose `a_j` cards of each category `j` from its `X_j` cards, for
+   every `j` — is the product of the per-category binomials `∏_c C(X_c, a_c)`, the
+   per-pile factor of the T5 histogram numerator.  Proved via `Finset.card_pi`, a
+   pure `Finset.card` computation, which **bypasses the Fintype-of-`Π` sub-wall**
+   (a `Fintype` instance of the product `Π j, catAlloc … j` does not synthesize at
+   statement level; see the G5 state doc, Wall 2).  Composes with `allocCard_choose`
+   (per-category) and the follow-up-4 denominator (`histAllocSum_choose`) toward the
+   full T5 transition `Pr(a,b|X)`. -/
+theorem allocPi_card (c : ℕ) (X a : Fin c → ℕ) :
+    ((Finset.univ : Finset (Fin c)).pi (fun j => catAlloc c X a j)).card =
+      (Finset.univ : Finset (Fin c)).prod (fun j => Nat.choose (X j) (a j)) := by
+  classical
+  rw [Finset.card_pi]
+  apply Finset.prod_congr rfl
+  intro j _
+  dsimp [catAlloc]
   rw [Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
 
 end FiniteDeck

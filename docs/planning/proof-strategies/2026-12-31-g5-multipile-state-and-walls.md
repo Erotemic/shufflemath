@@ -208,10 +208,33 @@ T5 numerator `∏_c C(X_{i,c}, a_c)·C(X_{j,c}, b_c)`; it composes with follow-u
 `Pr(a,b|X) = [∏_c C(X_{i,c},a_c)·C(X_{j,c},b_c)] / [C(n_i,k)·C(n_j,k)]`.  It is
 self-sufficient (`Finset.card_powersetCard` + `Finset.card_univ` +
 `Fintype.card_fin`; the only new import is `Mathlib.Data.Nat.Choose.Basic`).
-**Next B4:** the product-over-categories numerator (count of full category-
-allocations = `∏_c C(X_c, a_c)` — the Fintype-of-`Π` sub-wall of Wall 2, which
-resists `haveI : ∀ i, Fintype (allocType i)` in a `Π`-context) and the stationary
-law.
+**Next B4:** the *stationary law* (the multivariate-hypergeometric `π` is the
+invariant measure of the exchange kernel) — the product-over-categories numerator
+itself is now landed in follow-up 6.
+
+**2026-12-31 follow-up 6 (B4 histogram numerator — product over categories;
+Fintype-of-`Π` sub-wall bypassed):** the **product-over-categories numerator** is
+now proven in `Histograms.lean`.  `catAlloc c X a j : Finset (Finset (Fin (X j)))`
+is the per-category fiber (the `a_j`-subsets of the `X_j`-card category), and
+`allocPi_card` proves
+`((Finset.univ : Finset (Fin c)).pi (fun j => catAlloc c X a j)).card =
+ (Finset.univ : Finset (Fin c)).prod (fun j => choose (X j) (a j))` — the number of
+full category-allocations of one pile is the product of the per-category
+binomials, i.e. the per-pile factor `∏_c C(X_{i,c}, a_c)` of the T5 numerator.
+**Key route (bypasses the Fintype-of-`Π` sub-wall):** the theorem is stated with
+`Finset.pi` + `Finset.card_pi` (a pure `Finset.card` computation), **not** with a
+`Fintype (Π j, catAlloc … j)` instance — the latter does not synthesize at
+statement level.  The root cause (isolated this session): the premise
+`∀ j, Fintype (catAlloc … j)` itself fails for a *generic* `j` (the per-category
+`Fintype (Finset.powersetCard …)` has no auto instance once the index is a free
+variable, so `Pi.instFintype`'s `[∀ a, Fintype (β a)]` premise is unprovable at
+statement level).  `Finset.card_pi` (`#(s.pi t) = ∏_{i ∈ s} #(t i)`) reduces the
+product count to the per-category `#(t i) = choose (X i) (a i)` (the same
+`Finset.card_powersetCard` + `card_univ` + `card_fin` as `allocCard_choose`).
+New imports: `Mathlib.Data.Finset.Prod` (for `Finset.pi`) and
+`Mathlib.Data.Fintype.BigOperators` (for `Finset.card_pi`).
+**Next B4:** the stationary law (multivariate-hypergeometric `π` invariant under
+the exchange kernel) and the `G5capstone` multi-pile kernel-equality headline.
 
 The build gate stays green (37 tests) through all of it.
 
