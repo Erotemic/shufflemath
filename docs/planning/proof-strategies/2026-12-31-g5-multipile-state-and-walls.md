@@ -469,3 +469,42 @@ genuine combinatorial identity, see roadmap line 176 caveat).  Next increment:
 either crack the allocation-level symmetry (transport the Fintype through the
 explicit `Equiv`, per `g5-multipile-twoPile-reduction.md` option 1) or state and
 probe the detailed balance directly.
+
+---
+
+## 2026-11-25 session follow-up (post-F3/G5 resync): capstone state
+
+**Repo state at resync:** `lake build` + `dev/verify_next_phase.sh` green (37 tests, exit 0).
+The G5 fiber structure is fully landed (`PileFiber.lean`, `MultiPileFiber.lean`):
+`multiPile_equivFiber` (fiber ≃ per-pile equiv family) and the count
+`multiPile_card : Fintype.card (MultiFiber N k P C) = ∏_i (|C i|)!`
+(`∏ i, Nat.factorial ((C i).card)` form via `Fintype.card_congr` + `Fintype.card_pi` +
+`equivFiberCard`).  The 2-pile numeric corollary `twoPile_card` (`Piles.lean`), the
+3-pile/2-category example (`ThreePileTwoColor.lean`, fiber count 8 + row/col totals),
+the T5 within-pile orbit core (`MultiPileOrbit.lean`), the B3 histogram core
+(`Histograms.lean`, `lump_pileTotal`/`lump_categoryTotal`), and the B4 allocation-level
+kernel are all landed and green.
+
+**B4 kernel-side (landed in `MultiPileExchange.lean`):** allocation-level count
+(`pairwiseExchangeCount` = `choose m k * choose n k`), involutivity
+(`exchangePair_involution`), the allocation-level kernel symmetry
+(`exchangeTargets_symmetric`: `#(exchangeTargets A B A' B' k) = #(exchangeTargets A' B' A B k)`),
+the multivariate-hypergeometric numerator identity (`histAllocSum_choose`), the
+two-pile stochasticity (`twoPileExchangeTotal` + `twoPileTransitionStochastic` — the
+normalized two-pile T5 transition kernel has row-sum 1), and the `FiberMP`
+well-definedness (`exchangePairFiberMP`, the exchange kernel lands in the allocation
+state space).
+
+**What remains (the G5capstone), honestly:**
+1. The *histogram-level* lumped kernel — derive `Pr(a,b|X) = [∏_c C(X_{i,c},a_c)·C(X_{j,c},b_c)] / [C(n_i,k)·C(n_j,k)]` from the allocation chain (the list-based `histAllocSum` Vandermonde is the clean route; the `Sigma`-lumping route is Fintype-walled) and prove its row-sum/stochastic + column-sum/symmetry.
+2. The *multivariate-hypergeometric stationary law* `π K = π` (the T2 `π` from `docs/planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md` line ~107, not landed anywhere in the repo).
+3. The full `G5capstone` kernel-equality headline tying the fiber structure to the exchange dynamics.
+
+The numeric machinery is fully proven; the remaining items are genuinely-open
+combinatorial identities (the lumped detailed balance), not improvable tactics or
+new walls.  A redundant reinvention of the general-`k` fiber bijection (a fresh
+`_ProbeG5prodCard.lean` using `pileOf`) was tried this session and hit the same
+dependent-subtype-rewrite wall documented in `g5-multipile-twoPile-reduction.md`
+(`rw`/`simp`/`conv` fail on the pile-index-dependent `⟨q, ⋯⟩` subtype-proof term);
+it was deleted rather than committed — the landed `multiPile_equivFiber` route
+(`glueBlocks`) is the correct one and needs no new work.
