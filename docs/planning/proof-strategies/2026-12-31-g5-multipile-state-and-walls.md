@@ -509,6 +509,13 @@ mass = numerator / choose(ΣX, k) — the multivariate-hypergeometric conditiona
 `lumpedTransition_factors` proving the two-pile kernel is the product of the two per-pile conditional
 masses. All verified (lake build + full 37-test gate green).
 
+**Landed (this session, commit `ffad091`):** the **exact support** of the lumped conditional mass —
+`lumpedConditionalMass_eq_zero_of_exceed` (any per-category violation `a j > X j` forces a zero factor in
+the product, hence a zero numerator and a zero mass) and `lumpedConditionalMass_pos_of_valid` (a fully valid
+allocation `a j ≤ X j` for all `j`, summed to `k`, gives a positive product (`Nat.choose_pos`), a positive
+denominator (`k ≤ ΣX`), and hence a positive mass).  The kernel is zero exactly on the allocations that do
+not fit the pile.  Verified (lake build + full 37-test gate green).
+
 **Landed (this session, commit `6af4fbb`):** the **two-pile normalized row-sum** (Fin-c form) —
 `lumpedTransition_rowSum`: the joint numerator `histAllocSum (ofFn X) k * histAllocSum (ofFn Y) k` row-sums to
 the joint universal denominator `choose (ΣX) k · choose (ΣY) k` in the `Fin c → ℕ`-indexed spelling — the
