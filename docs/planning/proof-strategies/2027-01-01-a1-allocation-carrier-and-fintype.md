@@ -338,6 +338,35 @@ only needed if a future step requires it as a named theorem.
 
 Build: `lake build Shufflemath.FiniteDeck.MultiExchange` + `Shufflemath.FiniteDeck.
 UniformExchange`, 0 errors, no `sorry`/`admit`, only the file's pre-existing `simpa`/
-`letI` style lints.  A1.4's relabel-invariance headline is **done**; the open A1.4 items
-are the small-`N` sanity witness (handoff §2) and, optionally, an independent full
-commutation if ever required.
+`letI` style lints.  A1.4's relabel-invariance headline is **done**.
+
+## Addendum (2027-01-05, A1.5) — the small-`N` sanity witness is **done**
+
+The last open A1.4 item (the small-`N` sanity witness) is landed in a new module,
+`Shufflemath/FiniteDeck/A1Witness.lean` (now in the standard build target).  It is the
+hand-enumerable `N = 2`, `p = 2`, capacities `(1,1)` check the doc required ("do not
+accept a claim"): two one-card-per-pile owners of a two-card deck (identity `A0` and
+its swap `A1`), the exchange carrying `A0` to `A1` and back, and the A1.4
+relabel-invariance headline instantiated at `N = 2`.  Concretely compiled:
+
+- `A0 : Allocation 2 2 n2` with `A0_owner : ↑A0 0 = 0 ∧ ↑A0 1 = 1` (card `x` in pile `x`).
+- `A1 : Allocation 2 2 n2 := swapPiles A0 0 1` with `A1_owner : ↑A1 0 = 1 ∧ ↑A1 1 = 0`
+  (card 0 in pile 1, card 1 in pile 0) — validity inherited from `swapPiles`'s
+  `swapOwner_capacity`, so no separate pAlloc proof is needed.
+- `A0_ne_A1 : A0 ≠ A1` (the exchange has a nontrivial target).
+- `swapPiles_A0_eq_A1 : swapPiles A0 0 1 = A1` and `swapPiles_A1_eq_A0 : swapPiles A1
+  0 1 = A0` (the exchange and its involution on the concrete deck).
+- `swapKernel_equivariant_at2 (σ) (B) : Dist.mass (swapRelabel _ σ A0) (relabel σ B) =
+  Dist.mass (swapKernel _ A0) B` — the A1.4 headline at `N = 2`.
+
+All 9 declarations compile; no `sorry`/`admit`.  **Caveat (repeated, not a defect):** a
+full `native_decide` computation of the carrier's `Fintype.card` (= 2) was attempted and
+hits the same **noncomputable-decider wall** that blocks the N=99 computation (the
+valid-owner `Fintype`/`Finset` instance is built over `Classical`, so `native_decide`
+cannot drive it, and `Fin 2` `cases` does not enumerate the two values).  The
+"exactly two owners" content is therefore established concretely by `A0`, `A1`, and
+`A0_ne_A1` rather than by an enumerator.
+
+The optionally-listed independent full commutation (`relabel σ (swapPiles A a b) =
+swapPiles (relabel σ A) (σ a) (σ b)` as a *named* theorem) remains blocked by the
+`noncomputable`-def elaboration wall and is not required for any landed result.
