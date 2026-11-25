@@ -509,6 +509,11 @@ mass = numerator / choose(ΣX, k) — the multivariate-hypergeometric conditiona
 `lumpedTransition_factors` proving the two-pile kernel is the product of the two per-pile conditional
 masses. All verified (lake build + full 37-test gate green).
 
+**Landed (this session, commit `cbbe214`):** the Fin`c` ↔ List bridge — `fin_lumped_rowSum`
+states `histAllocSum (List.ofFn X) k = choose (Finset.univ.sum X) k`, so the `Fin c → ℕ` kernels in
+`Histograms.lean` (`lumpedConditionalMass` / `lumpedTransition`, normalized by `choose (univ.sum X) k`) inherit
+the antidiagonal-route total with no new machinery. Verified (lake build + full 37-test gate green).
+
 **What remains (the G5capstone), honestly:**
 1. The *histogram-level* lumped kernel — derive `Pr(a,b|X) = [∏_c C(X_{i,c},a_c)·C(X_{j,c},b_c)] / [C(n_i,k)·C(n_j,k)]` from the allocation chain (the list-based `histAllocSum` Vandermonde is the clean route; the `Sigma`-lumping route is Fintype-walled) and prove its row-sum/stochastic + column-sum/symmetry.
 2. The *multivariate-hypergeometric stationary law* `π K = π` (the T2 `π` from `docs/planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md` line ~107, not landed anywhere in the repo).
