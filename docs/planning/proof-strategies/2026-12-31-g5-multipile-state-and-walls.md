@@ -12,6 +12,16 @@ EXIT 0); everything committed. **Both B3 histogram lemmas are now proven**:
 `lump_pileTotal` (row-total = pile size) and `lump_categoryTotal` (column-total =
 category-`j` count of the piles' union, from a disjoint-piles hypothesis).
 
+**2026-12-31 follow-up (2-category example):** the reusable G5 machinery now
+compiles for `k >= 3` and `c >= 2` in a worked concrete instance —
+`Shufflemath/FiniteDeck/ThreePileTwoColor.lean` (six named cards, two categories,
+three piles of two) proves its fiber count (`Fintype.card (MultiFiber 6 3 pile3
+pile3) = 8`, via the reusable `multiPile_card`) and its lumped-histogram row/column
+totals (via the reusable `lump_pileTotal` / `lump_categoryTotal`). The concrete
+combinatorial premises (partition, disjointness) are proved constructively; the
+pure `Nat`/`Finset` computation facts use `native_decide`, legitimate here because
+the card space is the six-element `Fin 6`, not a `99!` universe.
+
 ## What is in the repo right now (ground truth)
 
 - `Shufflemath/FiniteDeck/Piles.lean` — **committed, builds clean.** The 2-pile
@@ -215,4 +225,48 @@ factorial postfix `!` mis-parses before `)` — write `Nat.factorial ((C i).card
 and `Fintype.card_pi` as *separate* `rw`s and close with `Finset.prod_congr rfl`
 (same finset on both sides); (d) when calling a same-section theorem you must pass
 the section variables explicitly (`equivFiberCard N k P C i …`).  **Then `G5capstone`.**
+
+## `ThreePileTwoColor.lean` — the 3-pile, 2-category example — **LANDED**
+
+A worked concrete instance proving the G5 machinery compiles for `k >= 3` and
+`c >= 2`.  Six named cards (`Fin 6`), two categories, three piles of two:
+
+- `color6 : Fin 6 → Fin 2` — cards `0,1,2` are category `0`, cards `3,4,5` are
+  category `1` (three of each).
+- `pile3 : Fin 3 → Finset (Fin 6)` — pile `i` is `{x // x.val / 2 = i.val}`,
+  i.e. `0 = {0,1}`, `1 = {2,3}`, `2 = {4,5}` (consecutive pairs).
+- `pile3_mem (x) (i) : x ∈ pile3 i ↔ x.val / 2 = i.val` — the membership
+  characterization (via `Finset.mem_filter` + `Finset.mem_univ`, built as a
+  manual `And` since `Finset.mem_univ` is a proof, not an `iff`, and cannot sit
+  in a `rw` list).
+- `pile3_partition : IsPartition pile3` — **constructive** (coverage via
+  `Nat.div_lt_iff_lt_mul` + `Fin.isLt`; unique ownership via `Fin.eq_of_val_eq`).
+- `pile3_disjoint : ∀ i j, i ≠ j → Disjoint (pile3 i) (pile3 j)` — proven by
+  `rw [Finset.disjoint_iff_inter_eq_empty]` then `refine Finset.ext fun x => ?_`
+  (NOT `rw [Finset.ext]` — `Finset.ext` is a *function* `(∀ x, x ∈ s ↔ x ∈ t) →
+  s = t`, and rw-ing it leaves a metavariable pattern) and `simp [Finset.mem_inter,
+  pile3_mem]` (the full `simp` set reduces `x ∈ ∅` to `False`; `Finset.mem_empty`
+  does not exist).  The reduced goal `x.val/2 = i.val → ¬(x.val/2 = j.val)` is a
+  single implication, not a conjunction.
+- **`example3_fiberCard : Fintype.card (MultiFiber 6 3 pile3 pile3) = 8`** — via
+  `rw [multiPile_card 6 3 pile3 pile3 … (fun i => rfl)]` then the pure-Nat
+  `prod3 : (∏ i : Fin 3, (|pile3 i|)!) = 8` by `native_decide`.
+- **`example3_rowTotal0`** (row-total = `2`) and **`example3_colTotal0` /
+  `example3_colTotal1`** (each column-total = `3`, the two-category
+  demonstration) — via `lump_pileTotal` / `lump_categoryTotal` (called with all
+  implicit args `(k := 3) (N := 6) (c := 2)` made explicit) then `native_decide`
+  on the resulting pure `Finset` computation.
+
+**Why `native_decide` is fine here (and where it is not):** the reusable
+`multiPile_card` / `lump_*` theorems do the structural work; `native_decide` is
+only ever asked to compute a **concrete, closed** `Nat`/`Finset` value (`prod3`,
+the row/col totals) over the six-element `Fin 6` — never a `99!` universe and
+never a goal with a free `Fin` index (a free variable makes `native_decide`
+report *“Expected type must not contain free variables”*).  That is why the
+partition/disjoint premises are proved **constructively** and the row total is
+stated for a *concrete* pile (`pile 0`), not a general `i`.  `IsPartition` and
+`Finset.Disjoint` (Set-coerced) are not `native_decide`-able (their `Decidable`
+instances fall back to classical `propDecidable`, and `Disjoint`'s `intro`-ed
+hypotheses are Set-memberships, not Finset-memberships) — hence the constructive
+`IsPartition` proof and the `disjoint_iff_inter_eq_empty` route.
 
