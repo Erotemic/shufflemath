@@ -49,6 +49,22 @@
 > `rhoRoundIdeal 99 50 … = localLift segMembership` assembles from `map_mass_eq_univ_fiber` +
 > `localLift_mass` + `fiberSet_segMembership_card`.
 >
+> **📌 (this session, 2026-12-30) — the leftPosition Fin-defeq is SOLVED; the wall moves to the
+> elementwise `Finset` subset.** The `leftPosition i = Fin.castLE hm i` def-equality need not be bridged
+> by hand: `leftCards_embed_eq_segLeft` is now **proved and builds clean** in `_Probe5b.lean` by working
+> *entirely in the `FiniteDeck` frame* — `rw [← finiteDeck_leftCards_99_50_eq_commander, FiniteDeck.leftCards]`
+> then `exact FiniteDeck.embed_m_imageLeft` (the 99-card `leftCards` bridges to `FiniteDeck.leftCards` via
+> the existing frame bridge, and `embed_m_imageLeft` gives the left-set invariance). Two more wall-free
+> lemmas landed in the same file: `membership_embed_eq_segMembership` (specific-deck membership →
+> `segMembership`, via the linchpin + `membership_iff_leftCards`) and `withinPile_pairs_card`
+> (`Fintype.card (Equiv.Perm (Fin 50) × Equiv.Perm (Fin 49)) = 50!·49!`). **The remaining wall** is now the
+> *elementwise* `Finset` subset `image (roundEmbedMap) ⊆ FiberDisintegration.fiberSet …`: deciding
+> `x ∈ fiberSet` (i.e. `membership x = segMembership` inside a `Finset.filter` predicate, even after
+> specializing `x` to `roundEmbedMap p`) recurses (`maximum recursion depth has been reached`), while the
+> identical bare-deck equality elaborates fine. Full diagnosis + not-yet-tried wall-free routes
+> (`Fintype`/subtype membership; a direct `Fintype` equinumerosity `image ≃ fiber`; **no** `maxHeartbeats`
+> bump) are in **`.pi-glla/5b_subset_wall_20261230.md`**.
+>
 > **✅ (session 80) — Gate-6 K1 is now fully closed on the correct-order side: both the finite round and its TV bound are in production.**
 > **`Shufflemath/Gate6K1Capstone.lean`** now carries the full correct-order (swap-then-local)
 > headline in addition to the ideal capstone `k1_capstone_correct`:

@@ -26,7 +26,15 @@ theorem leftCards_embed_eq_segLeft :
   exact FiniteDeck.embed_m_imageLeft 99 50 hm5099 pl pr
 
 /-- Forward membership: any `roundEmbedMap` image sits in the segregated-membership
-  fiber. Wall-free: the linchpin + `membership_iff_leftCards`. -/
+  fiber. Wall-free: the linchpin + `membership_iff_leftCards` (specific deck,
+  so the 99-card membership equality is computable). -/
 theorem membership_embed_eq_segMembership :
     membership (roundEmbedMap 99 50 hm5099 (pl, pr)) = segMembership := by
   rw [membership_iff_leftCards, roundEmbedMap, leftCards_embed_eq_segLeft]
+
+/-- The within-pile pair type (`50!` left × `49!` right permutations) has
+  `50!·49!` elements. -/
+theorem withinPile_pairs_card :
+    Fintype.card (Equiv.Perm (Fin 50) × Equiv.Perm (Fin 49)) = 50! * 49! := by
+  rw [Fintype.card_prod]
+  simp only [Fintype.card_perm, Fintype.card_fin]
