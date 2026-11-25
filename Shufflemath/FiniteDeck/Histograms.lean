@@ -212,5 +212,44 @@ theorem twoPile_lumpedNum_factor (c : ℕ) (X a Y b : Fin c → ℕ) :
         (Nat.choose (X j) (a j) * Nat.choose (Y j) (b j)) := by
   rw [lumpedNum, lumpedNum, ← Finset.prod_mul_distrib]
 
+/-! ## The normalized two-pile lumped transition (the T5 kernel shape)
+
+The T5 kernel's two-pile per-pile factors are **conditional masses**: the
+probability that a `k`-card choice from a pile (whose per-category counts are
+`X`) lands on the category-breakdown `a`.  Normalizing the per-pile numerator
+by the universal denominator `choose (ΣX) k` gives the per-pile conditional
+mass; the two piles are chosen independently, so the lumped two-pile
+transition is the product of the two conditional masses. -/
+
+/-- The **per-pile conditional lumped mass** for a fixed category-allocation
+`a`: the number of category-level selections of `a_j` cards from the pile's
+`X_j` cards of category `j`, normalized by the total number of ways to choose
+`k` cards from the pile.  This is the multivariate-hypergeometric conditional
+mass of the per-pile factor of the T5 histogram transition. -/
+def lumpedConditionalMass (c : ℕ) (X a : Fin c → ℕ) (k : ℕ) : Rat :=
+  (lumpedNum c X a : Rat) / (Nat.choose (Finset.univ.sum X) k : Rat)
+
+/-- The **two-pile lumped transition** for a fixed `(a, b)` pair: the product
+of the per-pile lumped numenators, normalized by the universal denominator
+`choose (ΣX) k * choose (ΣY) k` — the T5 histogram-level transition kernel. -/
+def lumpedTransition (c : ℕ) (X Y : Fin c → ℕ) (k : ℕ) (a b : Fin c → ℕ) : Rat :=
+  (lumpedNum c X a * lumpedNum c Y b : Rat) /
+    ((Nat.choose (Finset.univ.sum X) k * Nat.choose (Finset.univ.sum Y) k : Nat) : Rat)
+
+/-- The two-pile lumped transition factors as the product of the two per-pile
+conditional masses: the two piles' allocations are chosen independently, and
+the lumped kernel is the product of the two per-pile conditional masses.  This
+is the mathematical shape of the T5 transition — the key factorization from
+the counting core toward the `G5capstone` kernel-equality headline. -/
+theorem lumpedTransition_factors (c : ℕ) (X Y : Fin c → ℕ) (k : ℕ) (a b : Fin c → ℕ)
+    (hX : (Nat.choose (Finset.univ.sum X) k : Rat) ≠ 0)
+    (hY : (Nat.choose (Finset.univ.sum Y) k : Rat) ≠ 0) :
+    lumpedTransition c X Y k a b =
+      lumpedConditionalMass c X a k * lumpedConditionalMass c Y b k := by
+  simp only [lumpedTransition, lumpedConditionalMass]
+  field_simp [hX, hY]
+  push_cast
+  ring
+
 end FiniteDeck
 end Shufflemath
