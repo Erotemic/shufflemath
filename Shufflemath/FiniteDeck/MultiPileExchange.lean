@@ -463,6 +463,26 @@ theorem fin_lumped_rowSum (c : Nat) (X : Fin c → ℕ) (k : Nat) :
   congr 1
   simp [List.sum_ofFn]
 
+/-! ## The two-pile T5 normalized row-sum is 1
+
+Composing the per-pile row-sum with the `fin_lumped_rowSum` bridge, the
+two-pile T5 numerator row-sums to the universal denominator
+`choose (ΣX) k · choose (ΣY) k` — the joint normalized total is `1` for any legal
+`k` in both piles (`k ≤ ΣX` and `k ≤ ΣY`).  This is the `Fin c → ℕ`-indexed form of the
+joint stochasticity in `twoPileTransitionStochastic`. -/
+
+/-- The two-pile T5 numerator row-sums to the universal denominator: for any legal
+    `k` in both piles, the joint numerator / the joint universal denominator is `1`. -/
+theorem lumpedTransition_rowSum (c : Nat) (X Y : Fin c → ℕ) (k : Nat)
+    (hX : k ≤ Finset.univ.sum X) (hY : k ≤ Finset.univ.sum Y) :
+    (histAllocSum (List.ofFn X) k * histAllocSum (List.ofFn Y) k : Rat) /
+      ((Nat.choose (Finset.univ.sum X) k * Nat.choose (Finset.univ.sum Y) k : Nat) : Rat) = 1 := by
+  rw [fin_lumped_rowSum c X k, fin_lumped_rowSum c Y k, Nat.cast_mul]
+  have hnz : (Nat.choose (Finset.univ.sum X) k : Rat) * (Nat.choose (Finset.univ.sum Y) k : Rat) ≠ 0 := by
+    exact mul_ne_zero (Nat.cast_ne_zero.mpr (Nat.ne_of_gt (Nat.choose_pos hX)))
+      (Nat.cast_ne_zero.mpr (Nat.ne_of_gt (Nat.choose_pos hY)))
+  exact div_self hnz
+
 /-! ## The per-pile T5 row-sum is 1 (the normalized per-pile total)
 
 The `Fin c → ℕ`-indexed kernels in `Histograms.lean` normalize by `choose (ΣX) k`;
