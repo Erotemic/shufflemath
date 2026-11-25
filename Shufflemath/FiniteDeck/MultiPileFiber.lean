@@ -1,0 +1,84 @@
+module
+
+public import Shufflemath.FiniteDeck.PileEquiv
+public import Shufflemath.FiniteDeck.PileFiber
+public import Shufflemath.FiniteDeck.Partition
+public import Mathlib.Data.Fintype.Perm
+public import Mathlib.Data.Finset.Basic
+public import Mathlib.Tactic
+
+@[expose]
+public section
+
+namespace Shufflemath
+namespace FiniteDeck
+
+open Classical
+
+variable (N k : Nat) (P C : Fin k → Finset (Fin N))
+variable (hP : IsPartition P) (hC : IsPartition C)
+variable (e : (i : Fin k) → Equiv {x : Fin N // x ∈ P i} {x : Fin N // x ∈ C i})
+
+/-!
+# G5: the multi-pile fiber — the general-k fiber `Equiv` and the equiv round-trip
+
+`PileFiber` supplies the two directions of the general-`k` fiber correspondence:
+`multiPileToEquivs` (a realizing deck restricts, per pile, to `↥(P i) ≃ ↥(C i)`)
+and `equivsToMultiPile` (a family of per-pile equivs is glued into a realizing
+deck, realizing by `gluedRealizes`).  This file proves the equiv round-trip and
+packages the two directions into the headline fiber `Equiv`.
+
+* `roundTripEquivs` — taking the per-pile equivs of a glued deck recovers the
+  family.  (The deck-direction round-trip, `roundTripDecks`, is in `PileFiber`.)
+* `multiPile_equivFiber` — **HEADLINE**: the realizing-deck fiber
+  `MultiFiber N k P C` is in canonical bijection with the family of per-pile
+  equivs `Π i, ↥(P i) ≃ ↥(C i)`.
+-/
+
+/-- Equiv round-trip: taking the per-pile equivs of a glued deck recovers the
+    family `e`.  Both this and `roundTripDecks` reduce to
+    `glueBlocks_apply_member` + `pileF` + `Subtype.ext` (`⟨x.val, x.property⟩
+    = x`), once the glued deck's per-pile equiv is recognized as
+    `pileEquiv … i (glueBlocks …) (gluedRealizes … i)`. -/
+theorem roundTripEquivs :
+    multiPileToEquivs N k P C (equivsToMultiPile N k P C hP hC e) = e := by
+  funext i
+  apply Equiv.ext
+  intro x
+  change (pileF N k P C i (glueBlocks P C hP hC e) (gluedRealizes N k P C hP hC e i)) x = e i x
+  apply Subtype.ext
+  dsimp only [pileF]
+  have hglue : (glueBlocks P C hP hC e) x.val = (e i ⟨x.val, x.property⟩).val :=
+    glueBlocks_apply_member P C hP hC e i x.val x.property
+  have hx : ⟨x.val, x.property⟩ = x := Subtype.ext rfl
+  simpa [hglue, hx]
+
+/-- **HEADLINE — general-k multi-pile fiber structure.**  The fiber of
+    realizing decks of a partition pair `(P, C)` (both partitions of `Fin N`
+    into `k` blocks of equal size) is in canonical bijection with the family of
+    per-pile equivs `↥(P i) ≃ ↥(C i)`.  Forward: a deck restricts to a per-pile
+    equiv (`multiPileToEquivs`).  Inverse: a family of per-pile equivs is glued
+    into a realizing deck (`equivsToMultiPile`, realizing by `gluedRealizes`).
+    The two round-trips `roundTripDecks` / `roundTripEquivs` make the forward
+    map a bijection, so `Equiv.ofBijective` packages the whole thing.  For `k =
+    2` this specializes to the earlier two-pile fiber result. -/
+noncomputable def multiPile_equivFiber :
+    Equiv (MultiFiber N k P C)
+          ((i : Fin k) → Equiv {x : Fin N // x ∈ P i} {x : Fin N // x ∈ C i}) := by
+  classical
+  apply Equiv.ofBijective (multiPileToEquivs N k P C)
+  constructor
+  · intro a b hab
+    apply Subtype.ext
+    have hga : a.1 = (equivsToMultiPile N k P C hP hC (multiPileToEquivs N k P C a)).1 := by
+      simpa using (roundTripDecks N k P C hP hC a).symm
+    have hgb : b.1 = (equivsToMultiPile N k P C hP hC (multiPileToEquivs N k P C b)).1 := by
+      simpa using (roundTripDecks N k P C hP hC b).symm
+    calc a.1 = (equivsToMultiPile N k P C hP hC (multiPileToEquivs N k P C a)).1 := hga
+      _ = (equivsToMultiPile N k P C hP hC (multiPileToEquivs N k P C b)).1 := by simpa [hab]
+      _ = b.1 := hgb.symm
+  · intro f
+    exact ⟨equivsToMultiPile N k P C hP hC f, roundTripEquivs N k P C hP hC f⟩
+
+end FiniteDeck
+end Shufflemath
