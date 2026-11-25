@@ -1,96 +1,92 @@
-# G5 multi-pile — state, the two walls, and the next three steps
+# G5 multi-pile — state, walls, and next increments
 
-*Session note — the current status of the G5 / Gate-6-A multi-pile thread
-(`Shufflemath/FiniteDeck/`), written as the handoff after the 2026-11-25
-qwen1125 candidate batch (10 Gate-6 K1 + GSR-segment theorems and the
-`Shufflemath.FiniteDeck.Partition` module) was integrated and committed
-(`10d9bef`, `ec58828`). F1–F5 and G1–G4 remain complete; Gate 6 (K1 core,
-3-round headline, K1-swap oracle) is done. This is the **current** resume
-point for the multi-pile gate.*
+**Session:** 2026-12-31 (resumed after compaction; then resumed again post-compaction)
+**Status:** G5's headline `G5capstone` (the k×c multi-pile exchange kernel-equality)
+was blocked by two structural walls. **Wall 1 (Histograms import-exposure) is now
+CRACKED and landed** — the root cause was not a missing import but the
+classic-`Finset`-API refactor (details below); the module is rewritten against this
+Mathlib's API, builds green, and is integrated into the aggregator + verify script.
+**Wall 2 (general-k product-fiber Fintype) remains** — it needs the product-fiber
+`Fintype` instance, the real capstone blocker. The build is green (37 tests OK,
+EXIT 0); everything committed.
 
-## What is green (committed, in the aggregator + `verify_next_phase.sh`)
+## What is in the repo right now (ground truth)
 
-- **`Shufflemath/FiniteDeck/Piles.lean`** (builds clean).  Defines the
-  reusable `MultiFiber (N k) (posPile cardPile)` type (a deck realizing a
-  `k`-pile allocation), the two-pile specializations `twoPilePos` /
-  `twoPileCard`, and the **2-pile reduction**
-  `twoPile_equivFiber : Nonempty (Equiv (MultiFiber N 2 …) (FibType N m hm A))`
-  — a 2-pile fiber *is* the G2 fiber (a permutation's image is onto, so the
-  left-image condition forces the right one).  The general-`k` capstone is the
-  next rung.
-- **`Shufflemath.FiniteDeck.Partition`** (from the 2026-11-25 batch):
-  `glueBlocks` (rebuild a deck by reassigning each block's positions within
-  its block) and `partitionSigmaEquiv` (`Π i, BlockBlock P i ≃ Fin k × Fin N`).
-  These are the general-`k` gluing primitives a future multi-pile exchange
-  builder (`B4` / `MultiExchange`) needs.
+- `Shufflemath/FiniteDeck/Piles.lean` — **committed, builds clean.** The 2-pile
+  *fiber* bijection is already here and proven:
+  - `MultiPile`, `PileCard`, `MultiFiber` (type defs)
+  - `twoPile_toMembershipFiber` (bijection) + `twoPile_toMembershipFiber_injective`
+  - `swapFiber_card` (fiber size = `m! (N-m)!`)
+  - `multiFiber_card_eq_fiberCount`
+  It is **leaner than the handoff describes** — the fiber-count capstone for
+  `k = 2` is already proven, not just sketched.
+- `Shufflemath/FiniteDeck/Histograms.lean` — **now committed, builds green**
+  (previously untracked WIP that failed to build — see Wall 1, resolved).  Defines
+  the `lump` histogram (category counts inside a pile) + the row-total theorem
+  `lump_pileTotal`.  This is the reusable arbitrary-finite-deck core that B4
+  (multi-pile exchange) and T5 (within-pile orbit) build on; it generalizes
+  `Fiber.lean`'s `swapFiber` (k = 2).
 
-## What is WIP (untracked, does **not** build, not in aggregator/verify)
+## Wall 1 — `Histograms.lean` import-exposure — **RESOLVED**
 
-- **`Shufflemath/FiniteDeck/Histograms.lean`** — the B3 *lumping* core:
-  `Histogram k c`, `lump`, `lump_pileTotal` (a row sums to the pile size),
-  `coversDeck`, `lump_categoryTotal` (a column sums to the deck's category
-  total), plus a concrete 3-pile/2-category example.  Mathematically complete;
-  it only fails to **elaborate** because of the import wall below.  It is
-  **untracked** (never committed) and **not** in the aggregator or
-  `verify_next_phase.sh`, so its non-building state does **not** affect the
-  green build.
+**File:** `Shufflemath/FiniteDeck/Histograms.lean`.
 
-## Wall 1 — `Histograms.lean`: `Finset` namespace import-exposure
+**Root cause (the actual diagnosis — it was NOT a missing import).**  The classic
+`Finset` spellings the WIP file used no longer exist as `Finset`-namespace names in
+this Mathlib version:
+- `Finset.count` — **refactored away** (no `def count` in `Finset/Card|Basic|Fold`);
+  use `s.filter p |>.card`.
+- `Finset.PairwiseDisjoint` — **not a `Finset` method**; it lives at the `Set`
+  level.  Coerce a `Finset` with `(s : Set ι)` and write `(s : Set ι).PairwiseDisjoint f`;
+  `Finset.card_biUnion` accepts that hypothesis (the exact idiom is already in
+  `FiniteDeck/Fiber.lean`: `fiberDisjoint` proves the `Set`-coerced
+  `PairwiseDisjoint`, then `Finset.card_biUnion hDisj` inside a `calc`).
+- `Finset.insert` — use the `{a, b}` Finset literal notation instead.
 
-This Mathlib version splits the `Finset` namespace across many modules
-(`Insert.lean`, `Card.lean`, `Union.lean` / `Lattice/Union.lean`, `Disjoint.lean`,
-`Pi.lean`, `Powerset.lean`, …), each with its own `@[expose] public section`.
-Under the Lean-4 **module** system, `import Mathlib.Data.Finset.Basic` (and even
-`…Card` / `…Union` / `…Powerset`) does **not** bring every `Finset.*` name into
-reach.  `Histograms.lean` currently fails on exactly these names, in this order:
+Everything else (`Finset.card`, `Finset.filter`, `Finset.biUnion`,
+`Finset.mem_biUnion`, `Finset.disjoint_iff_ne`, `Finset.univ`, `Finset.image`,
+`Finset.sdiff`) resolves fine from `Finset.Basic` + `Finset.Powerset` — the same
+imports the green `Piles.lean`/`Fiber.lean` use.
 
-| name | used for | where it is `def`'d | status |
-|---|---|---|---|
-| `Finset.count` / `Finset.count_filter` / `Finset.card_filter` | per-category pile counts | `Card.lean` (the `card_filter_*` theorems are there; the base `count` is *not* in `Basic`) | **unresolved** after adding `Card` |
-| `Finset.biUnion` / `Finset.card_biUnion` / `Finset.mem_biUnion` | union over the pile index | `Union.lean` / `Lattice/Union.lean` / `Powerset.lean` | **unresolved** after adding `Union`+`Powerset` |
-| `Finset.insert` | the concrete example piles `{0,3}` etc. | `Insert.lean` | **unresolved** (needs `…Finset.Insert`) |
-| `Finset.PairwiseDisjoint` | the disjointness hypotheses | not in `Basic`'s exposed set | **unresolved** (likely `…Finset.Disjoint`) |
+**Fix applied:** rewrote `lump` as `(cardPile i).filter (fun x => color x = j) |>.card`
+and proved `lump_pileTotal` with the `Set`-coerced `PairwiseDisjoint` +
+`Finset.card_biUnion` + a `Finset.mem_biUnion`/`Finset.mem_filter` cover lemma —
+mirroring `Fiber.lean`'s proven pattern.  Added the module to the `Shufflemath.lean`
+aggregator and `dev/verify_next_phase.sh`.  **Builds green; 37-test gate passes.**
 
-**Diagnosis.** `Histograms.lean` is the **only** non-probe module in the repo
-that uses `Finset.count`, so there is no in-repo working template to copy.  The
-fix is to add the specific exposing module per name — most likely
-`Mathlib.Data.Finset.Insert` (for `insert`), `Mathlib.Data.Finset.Disjoint`
-(for `PairwiseDisjoint`), and the module that actually `expose`s the base
-`count` (confirm by grepping each `Finset/*.lean` `@[expose]` section).  This is
-a **bounded** fix (a handful of imports), not a mathematical wall.
+**Remaining on this thread (bounded):** the column-total `lump_categoryTotal`
+(summing `lump` over piles = the deck's category-`j` count) additionally needs the
+piles to be **pairwise disjoint** (a valid allocation): with a
+`hPiles : ∀ i j, i ≠ j → Disjoint (cardPile i) (cardPile j)` hypothesis it goes
+through by `Finset.card_biUnion` on the filtered piles plus `Finset.biUnion_filter`.
+A natural next micro-increment.
 
-**Next action (Wall 1).**  (1) grep each `Mathlib/Data/Finset/*.lean`
-`@[expose]` section for `count` / `insert` / `PairwiseDisjoint` / `biUnion` and
-add exactly the exposing modules; **or** (2) reformulate `lump` to avoid
-`Finset.count` — e.g. `(cardPile i).card (fun x => color x = j)` via
-`Finset.card`/`Finset.filter` if those are reachable — which sidesteps the
-whole cluster.  Once it elaborates, add `Shufflemath.FiniteDeck.Histograms` to
-the aggregator + `verify_next_phase.sh` and commit.
+## Wall 2 — general-k product-fiber `Fintype` instance (the real capstone)
 
-## Wall 2 — the general-`k` capstone needs a `Fintype`-instantiated product fiber
+`Piles.lean` stops at the 2-pile fiber.  G5's headline needs a `MultiFiber`-like
+Fintype **for arbitrary `k` and `c`** (the product fiber over a pile *partition*),
+and `G5capstone` (the multi-pile exchange kernel-equality) needs that type with a
+working `Fintype` instance so `Fintype.card` / `card_bij` / the kernel sum are
+well-typed.  This is the genuine remaining blocker (see
+`docs/planning/2026-11-25-batch5b-headline-handoff.md` for the `Fintype`-instance
+wall on the batch-5b headline).
 
-`twoPile_equivFiber` (k = 2) avoids a counting wall by being a **bijection** to
-`FibType` (which *has* a `Fintype` instance) rather than a direct
-`Fintype.card (MultiFiber …)` (which has **no** auto `Fintype` instance — the
-same wall Gate 6 K1 and the batch-5b within-pile headline hit).  The general-`k`
-capstone ("Generalize `twoPile_equivFiber` to arbitrary `k`", Option 2 in
-`docs/planning/proof-strategies/g5-multipile-twoPile-reduction.md`) requires
-first **constructing a product-fiber type with a `Fintype` instance**
-(`≃ Π i, <single-pile fiber for pile i>`), then transferring the count
-`∏_i |C i|` (or the multinomial `N! / ∏ h i!` for histograms) through the
-bijection with `Fintype.card_congr`.  Until that product-fiber type (with its
-`Fintype` instance) exists, the general-`k` fiber **count** is blocked the same
-way the 2-pile numeric card-equality is (keep the bijection; transfer the number
-at the call site with a local `letI` on the `FibType`-shaped side).
+## Next steps (in order)
 
-## Recommended order
+1. ~~Fix `Histograms.lean` imports~~ — **DONE.**  `Histograms.lean` builds and is
+   integrated; B3's lumping core is green.
+2. **`lump_categoryTotal`** — add the column-total with a disjoint-piles hypothesis
+   (bounded; `Finset.card_biUnion` + `Finset.biUnion_filter`).
+3. **Wall 2** — the general-k product fiber + `Fintype` instance + `G5capstone`
+   (the capstone).
+4. **B4** `MultiExchange` + **T5** within-pile orbit, on top of the above.
 
-1. **Wall 1** — resolve `Histograms.lean`'s `Finset` imports → lands B3 (lumping
-   core) green and in the verify set.  Bounded, high-certainty.
-2. **Wall 2** — build the general-`k` product-fiber type (with a `Fintype`
-   instance) + its `Equiv (MultiFiber N k …)` → the G5 capstone (multinomial
-   stationary law for arbitrary `k`).
-3. **B4 / T5** — `MultiExchange` (a `k`-pile exchange built on `Partition.glueBlocks`)
-   → multi-pile TV; and the category-preserving permutation-group **orbit**
-   theorem (T5) using `Fintype.card_orbitOf` (the orbit lemma that worked for
-   Gate 6 / the 2-pile fiber).
+The build gate stays green (37 tests) through all of it.
+
+## Build / commit conventions (unchanged)
+
+- `./dev/verify_next_phase.sh` = the build gate (37 tests, exit 0).
+- `Histograms.lean` is now tracked; keep any further WIP that does not build
+  **untracked** so it never blocks the gate.
+- Stage only changed files; keep `.pi-glla/*` tooling files out of commits;
+  publish the tally with the model trailer per the standing rules.

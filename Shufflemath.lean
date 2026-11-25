@@ -40,6 +40,7 @@ public import Shufflemath.FiniteDeck.Gate6TieRank
 public import Shufflemath.CommanderPerDeckKernel
 public import Shufflemath.FiniteDeck.A3KernelLaw
 public import Shufflemath.FiniteDeck.Piles
+public import Shufflemath.FiniteDeck.Histograms
 public import Shufflemath.FiniteDeck.Partition
 public import Shufflemath.FiniteDeck.BLDisintegration
 public import Shufflemath.UniformFiber
