@@ -110,3 +110,37 @@ The build gate stays green (37 tests) through all of it.
   **untracked** so it never blocks the gate.
 - Stage only changed files; keep `.pi-glla/*` tooling files out of commits;
   publish the tally with the model trailer per the standing rules.
+
+## `pileEquiv` (per-pile restriction equiv) — proven, not yet landed (session 80)
+
+**Mathematical status: PROVEN.** `pileEquiv (N k) (P C) (i) (e) (hi) :
+Equiv {x : Fin N // x ∈ P i} {x : Fin N // x ∈ C i}` is a real bijection, and a
+standalone probe (`_ProbeG5pile.lean`, `import Shufflemath.FiniteDeck.Piles`) with
+`hi` as an **explicit def parameter** proves it (EXIT 0): injective via
+`Subtype.ext` + `Equiv.symm_apply_apply` + `e` injective; surjective via
+`Finset.mem_image.mp` (a preimage `w ∈ P i` with `e w = z.1`) + `Equiv.apply_eq`. It
+uses `Equiv.ofBijective` (needs `noncomputable`). This is the building block of the
+general-`k` product-fiber equivariance (Wall 2): the full `MultiFiber` fiber is a
+product of these per-pile equivs, `Fintype.card = ∏_i (|P i|)! = ∏_i (|C i|)!`.
+
+**Obstacle (Lean elaboration, NOT math):** the SAME proof does **not** elaborate as
+a top-level `def` or inside a `section` **in `Piles.lean` itself** — the SURJECTIVITY
+line `rcases Finset.mem_image.mp (by simpa [← hi] using z.2) with …` (turning
+`z.1 ∈ C i` into `z.1 ∈ (P i).image (fun q => e q)` using `hi`) fails with
+*“tactic execution is stuck, goal contains metavariables.”* The INJECTIVITY side
+(`pileF`, `⟨e x.1, by simpa [← hi] using Finset.mem_image.mpr …⟩`) elaborates fine in
+the section; only the surjectivity rewrite is stuck. Tried and **all still stuck**:
+`rw`, `simpa`, `Eq.mp`/`Eq.mpr` (wrong tool — they act on the Finset *values*, not the
+membership `Prop`), and eta-reducing the image to a local `hi' : (P i).image e = C i`
+(`by simpa [funext] using hi`). The lambda `(fun q => e q)` inside the image appears to
+block the membership unification when `hi` is a module-level parameter (it works when
+`hi` is a parameter of a def in a *standalone* file that imports Piles).
+
+**Next steps (in order):** (1) move `pileF`/`pileEquiv` to a **standalone module**
+(e.g. `FiniteDeck/PileEquiv.lean`) and `import` it — the probe shows this elaborates;
+(2) if that fails, re-prove surjectivity **without** the membership rewrite — e.g. via
+`Finset.mem_image` (the iff) + `Finset.ext`, or by building the witness directly from
+`hi`/`z.2` with `Finset.image`'s definition; (3) `#check`/`#reduce` the stuck goal to
+see the exact unresolvable metavariable. **Until one of these lands, `Piles.lean` is
+reverted to `twoPile_card` only** (the non-elaborating `pileEquiv` is not committed).
+
