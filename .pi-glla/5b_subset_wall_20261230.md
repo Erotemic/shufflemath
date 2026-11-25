@@ -42,3 +42,38 @@ Forward `image ⊆ fiberSet` (this wall) + equal 50!·49! cardinality (both wall
    escalation for a wall); route (1)/(2) is the intended wall-free path.
 
 **Do NOT** put `sorry` here. The three wall-free lemmas are the real, committed progress.
+
+---
+
+## Sharpened diagnosis (later this same session)
+
+Tried the **leftCards-level** analog: `leftCardsFiber = (univ : Finset (Perm (Fin 99))).filter
+(fun d => leftCards d = segLeft)` and the inclusion `image ⊆ leftCardsFiber` (same shape, but
+`leftCards` is a 50-element image, *not* the 99-card `membership`). **It recurses too**
+(`maximum recursion depth has been reached` at the theorem).
+
+⇒ The wall is **not** `membership`-specific. It is the **elementwise `.mem` / `.filter` on the
+99! `Finset.univ : Finset (Equiv.Perm (Fin 99))` universe** — i.e. *any* pointwise predicate over the
+99! deck `Finset` (membership, leftCards, …) recurses when Lean decides `x ∈ filter …` for a general
+deck. This is why `fiberSet_segMembership_card` builds (it computes a **card** via
+`Fintype.card_subtype`, never a pointwise `.mem`), while any elementwise `Finset` inclusion/recap does
+not.
+
+**Consequence for the headline** `rhoRoundIdeal = localLift segMembership`: a *pointwise* mass proof
+must decide, for a **general** `d : Perm (Fin 99)`, whether `d` is in the fiber / image — exactly the
+99!-universe `.mem` that recurses. So the headline cannot be closed pointwise at N=99 without a
+fundamentally different route that avoids the 99! `Finset` entirely:
+
+1. **Fintype-level equinumerosity** — prove the within-pile-pairs `Fintype` and the fiber `Fintype`
+   `{d // membership d = segMembership}` are `Equiv` (a `Fintype.card`-level bijection, no `Finset.mem`),
+   then transport the uniform law across the equiv. Risk: constructing that `Equiv` is essentially the
+   `fiberOrbit_equiv` bijection, which is where the original `.val` wall came from — so this may just
+   relocate the wall. Verify at the *card* level first (`Fintype.card_subtype`), which is known-good.
+2. **A distributional (non-pointwise) argument** — show both laws are the unique uniform law on the
+   same `50!·49!`-element `Fintype` via their *marginals/moment* structure, without deciding any
+   individual deck's membership. This would need a characterization lemma that doesn't reference the
+   99! `Finset`.
+
+Both are genuinely open; neither is a `maxHeartbeats` bump (forbidden by build discipline). The
+three wall-free lemmas (`leftCards_embed_eq_segLeft`, `membership_embed_eq_segMembership`,
+`withinPile_pairs_card`) are the durable, committed content of this work.
