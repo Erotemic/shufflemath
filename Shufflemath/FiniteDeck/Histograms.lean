@@ -8,6 +8,7 @@ public import Mathlib.Data.Finset.Union
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Nat.Basic
+public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Tactic
 
 @[expose]
@@ -126,6 +127,28 @@ theorem lump_categoryTotal
       = (((Finset.univ : Finset (Fin k)).biUnion hf)).card := (Finset.card_biUnion hDisj).symm
     _ = (((Finset.univ : Finset (Fin k)).biUnion cardPile).filter p).card := by
         simp only [Finset.filter_biUnion, hf, p]
+
+/- T5 numerator: the per-category binomial.
+
+The histogram-level T5 exchange probability (see the roadmap T5 section) has
+numerator `∏_c binom(X_{i,c}, a_c) · binom(X_{j,c}, b_c)` and denominator
+`binom(n_i, k) · binom(n_j, k)`.  This section proves the per-category atom:
+the number of ways to choose exactly `a_c` cards from the `X_c` cards of
+category `c` is the binomial coefficient `choose (X c) (a c)`, the single-factor
+building block of the numerator.  The product over categories and the two-pile
+product are the next assembly steps (see the G5/T5 state note). -/
+
+/-- The number of ways to choose exactly `a i` cards from the `X i` cards of
+    category `i`: the cardinality of the `a_i`-subsets of the `X_i`-card category. -/
+def allocCard (c : ℕ) (X a : Fin c → ℕ) (i : Fin c) : ℕ :=
+  (Finset.powersetCard (a i) (Finset.univ : Finset (Fin (X i)))).card
+
+/-- The per-category numerator factor of the T5 histogram exchange: choosing
+    `a_i` of the `X_i` cards of category `i` is counted by `choose (X i) (a i)`. -/
+theorem allocCard_choose (c : ℕ) (X a : Fin c → ℕ) (i : Fin c) :
+    allocCard c X a i = Nat.choose (X i) (a i) := by
+  unfold allocCard
+  rw [Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
 
 end FiniteDeck
 end Shufflemath

@@ -196,6 +196,23 @@ per-category numerator over all `k`-allocations of a pile recovers `choose m k`
 for that pile.  **Next B4:** the per-allocation *numerator* (multivariate
 hypergeometric mass for a fixed `(a,b)`) and the stationary law.
 
+**2026-12-31 follow-up 5 (B4 histogram numerator — per-category binomial atom):**
+the per-category building block of the T5 numerator is now proven in
+`Histograms.lean`.  `allocCard c X a i` counts the ways to choose exactly `a i`
+cards from the `X i` cards of category `i` (the `a_i`-subsets of the `X_i`-card
+category, as a `Finset.powersetCard`); `allocCard_choose` proves
+`allocCard c X a i = choose (X i) (a i)`, the single-factor binomial.  This is the
+atom whose **product over categories** (and the two-pile product) gives the full
+T5 numerator `∏_c C(X_{i,c}, a_c)·C(X_{j,c}, b_c)`; it composes with follow-up 4's
+`histAllocSum_choose` (the denominator) to build the full histogram transition
+`Pr(a,b|X) = [∏_c C(X_{i,c},a_c)·C(X_{j,c},b_c)] / [C(n_i,k)·C(n_j,k)]`.  It is
+self-sufficient (`Finset.card_powersetCard` + `Finset.card_univ` +
+`Fintype.card_fin`; the only new import is `Mathlib.Data.Nat.Choose.Basic`).
+**Next B4:** the product-over-categories numerator (count of full category-
+allocations = `∏_c C(X_c, a_c)` — the Fintype-of-`Π` sub-wall of Wall 2, which
+resists `haveI : ∀ i, Fintype (allocType i)` in a `Π`-context) and the stationary
+law.
+
 The build gate stays green (37 tests) through all of it.
 
 ## Build / commit conventions (unchanged)
