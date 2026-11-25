@@ -13,6 +13,14 @@ and the **linchpin bridge** is proven + committed (`d2793d8`):
   assembly `comp (PAK swapLaw) (PAK rho99Ideal) = comp rawExchangeMembership
   localLift` via `rw [hH, ← comp_assoc, hK]` from the two proven halves.
   (The old riffle-first / `sorry` investigation in that file is dropped.)
+- **Session 82** (this file's successor): `_ProbeCompListRun.g6_threeRound_`\
+  `compList3_eq_run` — the `compList`↔`run` alignment
+  (`apply μ (compList [K,K,K]) = run K 3 μ`), the ingredient sub-lemma B's
+  second bullet needs. Committed `803ee38`. Note: `_ProbeG6ThreeRound.lean`
+  stays the clean single-bridge file; an exploratory `g6_threeRound_*` rewrite
+  (which renamed the bridge and re-derived `_ProbeK1close`/`Gate6K1Capstone`
+  work) was reverted to the committed form, and its one new artifact — the
+  `compList↔run` bridge — was preserved as the standalone `_ProbeCompListRun`.
 
 So the `q3` A3 kernel (three exchange-and-local-resets) is **exactly** the
 correct-order full-round ideal kernel `L = comp (PAK swapLaw) (PAK
@@ -85,8 +93,12 @@ proved pointwise, not by evaluation).
 ## Sub-lemma B: `TV(apply mu (compList [L,L,L]), uniform) ≤ q3`
 
 - `L = exchangeThenLocalReset membership localLift rawExchange` (bridge).
-- `compList [L,L,L]` applied to `mu` = `run (exchangeThenLocalReset …) 3 mu`
-  (align `compList`/`run`; `Finite.run` is the `Nat.recOn` iteration).
+- `compList [L,L,L]` applied to `mu` = `run L 3 mu` — now a committed lemma:
+  `_ProbeCompListRun.g6_threeRound_compList3_eq_run` (unroll `compList` to the
+  nested `comp` chain / triple `apply` = the three `run_succ` steps; no
+  equinumerosity). Sub-lemma B is therefore a `simpa` chaining
+  `g6_3round_idealKernel_eq_fullRound` + `g6_threeRound_compList3_eq_run` +
+  the `Gate6Crux.swapLaw` TV-to-uniform identity.
 - `mu = apply (pointMass commanderSegregatedState) (fiberLaw project
   project_surjective)` = exactly the start of
   `CommanderFullDeckDisintegration.three_physical_perfect_exchanges_uniform_unconditional`,
