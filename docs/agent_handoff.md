@@ -34,6 +34,20 @@
 > + `fiberSet_segMembership_card`. This is a within-pile *side-result*; the on-mission
 > `TV < 1/1000` certificate is already met independently (this session's 3-round headline
 > + the 41-exchange `DobrushinDecay99`).
+> **WIP seed (session 83):** `Shufflemath/_Probe5b.lean` (not imported — won't break verify)
+> proves the wall-free forward left-card fact `leftCards_embed_eq_segLeft :
+> leftCards (embed_m 99 50 hm pl pr) = segLeft` via a single `Finset.ext` using
+> `FiniteDeck.embed_m_left` + bijection image-invariance (never the `.val`). It is **one line
+> from done**: the only remaining friction is that the 99-card `CommanderPermutation.leftPosition
+> i` (`⟨i.val, by omega⟩`) and `FiniteDeck.leftPosition 99 50 hm i` (`= Fin.castLE hm i`,
+> `⟨i.val, by linarith⟩`) are extensional-equal Fin values but not definitionally, so `simpa` won't
+> bridge them. Fix: first bridge `leftPosition i = Fin.castLE hm5099 i` via `Fin.ext` (both vals are
+> `i.val`) — i.e. `dsimp` the 99-card `leftPosition` to `Fin.castLE` *before* the `Finset.ext` — then
+> `simpa using embed_m_left` fires. After that the `Finset.image roundEmbedMap = fiberSet segMembership`
+> follows by (forward subset from this lemma + `roundEmbedMap_99_50_injective` gives
+> `image.card = 50!·49! = fiberSet_segMembership_card` → `Finset.ext`), and the headline
+> `rhoRoundIdeal 99 50 … = localLift segMembership` assembles from `map_mass_eq_univ_fiber` +
+> `localLift_mass` + `fiberSet_segMembership_card`.
 >
 > **✅ (session 80) — Gate-6 K1 is now fully closed on the correct-order side: both the finite round and its TV bound are in production.**
 > **`Shufflemath/Gate6K1Capstone.lean`** now carries the full correct-order (swap-then-local)
