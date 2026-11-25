@@ -2,24 +2,7 @@ module
 
 public import Mathlib
 public import Shufflemath.Finite
-public import Shufflemath.GSR
-public import Shufflemath.TotalVariation
-public import Shufflemath.CommanderPermutation
-public import Shufflemath.CommanderMembershipKernels
-public import Shufflemath.CommanderPhysicalExchange
-public import Shufflemath.PhysicalExchangeReduction
-public import Shufflemath.FiberDisintegration
-public import Shufflemath.BernoulliLaplace
 public import Shufflemath.Perturbation
-public import Shufflemath.FiniteDeck.TwoPile
-public import Shufflemath.FiniteDeck.PositionAction
-public import Shufflemath.FiniteDeck.ActionConvolution
-public import Shufflemath.Gate6Crux
-public import Shufflemath.ConvContractionLeft
-public import Shufflemath.Gate6K1Swap
-public import Shufflemath.K1Wall
-public import Shufflemath.Gate6K1Capstone
-public import Shufflemath.FiniteDeck.Gate6FiniteGSR
 
 @[expose]
 public section
