@@ -51,6 +51,7 @@ lake build \
   Shufflemath.FiniteDeck.BLDisintegration \
   Shufflemath.FiniteDeck.PositionAction \
   Shufflemath.FiniteDeck.ActionConvolution \
+  Shufflemath.FiniteDeck.Piles \
   Shufflemath.K1Wall \
   Shufflemath.Gate6K1Capstone
   Shufflemath.FiniteDeck.Gate6ThreeRound
