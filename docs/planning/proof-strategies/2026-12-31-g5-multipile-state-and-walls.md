@@ -509,6 +509,13 @@ mass = numerator / choose(ΣX, k) — the multivariate-hypergeometric conditiona
 `lumpedTransition_factors` proving the two-pile kernel is the product of the two per-pile conditional
 masses. All verified (lake build + full 37-test gate green).
 
+**Landed (this session, commit `6af4fbb`):** the **two-pile normalized row-sum** (Fin-c form) —
+`lumpedTransition_rowSum`: the joint numerator `histAllocSum (ofFn X) k * histAllocSum (ofFn Y) k` row-sums to
+the joint universal denominator `choose (ΣX) k · choose (ΣY) k` in the `Fin c → ℕ`-indexed spelling — the
+joint normalized total is `1` for any legal `k` in both piles (`k ≤ ΣX`, `k ≤ ΣY`).  This is the
+Fin-`c`-indexed form of the joint stochasticity in `twoPileTransitionStochastic`.  Verified (lake build +
+full 37-test gate green).
+
 **Landed (this session, commit `899bb0c`):** the **two-pile conditional-mass bound** —
 `lumpedTransition_le_one`: the two-pile T5 transition kernel (product of the two per-pile conditional masses)
 is at most `1` for any valid pair of allocations `(a, b)` (`Σa = Σb = k`), requiring both piles to have a
