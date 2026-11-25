@@ -6,17 +6,26 @@ module in the G0–G9 generalization roadmap,
 Builds clean (`lake build Shufflemath.FiniteDeck.Piles` → EXIT 0). No other
 module imports it yet.
 
+> **Status correction (2026-12-31).** The "What landed" list below was partly
+> aspirational when first written. The declarations actually present in
+> `Piles.lean` are `realizesAllocation`, `MultiFiber`, the `twoPile*` defs and
+> their unfolding lemmas, `univImage_eq_univ`, `twoPile_pred_iff`, `finTwo_cases`,
+> and `twoPile_equivFiber`. The type aliases `PileCard`/`PilePos` and the count
+> theorems `multiFiber_prodCard` / `multiFiber_prodCard_one` were **never
+> proven** (verified absent from every tracked commit), and the count form
+> `∏_i |C i|` in the original note was also wrong: the general-`k` fiber count is
+> `∏_i (|C i|)!`, a product of **factorials** (the generalization of G2's
+> `fiberCount` = `m!·(N-m)!`). They remain next increments — see "Next
+> increment options" below.
+
 ## What landed
 
 Type machinery (the `k`-pile generalization of the G2 `Membership` fiber):
-- `PileCard N k (C : Fin k → Finset (Fin N))` / `PilePos N k (P : Fin k → Finset (Fin N))` —
-  per-pile target / source finsets.
-- `realizesAllocation N k P C (e)` — `∀ i, (P i).image (·∘e) = C i` (pile `i`'s
-  cards land exactly on its target).
-- `MultiFiber N k P C` — `{e : Deck N // realizesAllocation N k P C e}`.
-- `multiFiber_prodCard` — for disjoint singleton targets,
-  `Fintype.card (MultiFiber N k P C) = ∏_i |C i|`; `multiFiber_prodCard_one`
-  specializes `k = 1` to the one-pile case.
+- `realizesAllocation N k (posPile cardPile : Fin k → Finset (Fin N)) (e)` —
+  `∀ p, (posPile p).image (· ∘ e) = cardPile p` (pile `p`'s positions map onto
+  the corresponding card pile).
+- `MultiFiber N k (posPile cardPile) : Type` — `{e : Deck N // realizesAllocation
+  N k posPile cardPile e}` (all decks realizing the allocation).
 
 Two-pile specialization (`k = 2`):
 - `twoPilePos N m hm : Fin 2 → Finset (Fin N)` — `0 ↦ leftPositions`, `1 ↦ rightPositions`.
@@ -75,11 +84,15 @@ not worth a separate blocked increment.
    a global instance on a `∀`-subtype may pollute/compete; prefer keeping the
    bijection and, if the number is needed at a call site, transfer it there
    with a local `letI` *on the `FibType`-shaped* side instead.
-2. **Generalize `twoPile_equivFiber` to arbitrary `k`** (the real G5 capstone):
-   for disjoint singleton `C i`, `MultiFiber N k (singletonPilePos) C ≃` the
-   product fiber, count `∏_i |C i|` (already in `multiFiber_prodCard`). This is
-   the `k ≥ 3` generalization of the committed 2-pile bijection and is the
-   next rung of the G0–G9 ladder.
+2. **Generalize `twoPile_equivFiber` to arbitrary `k`** (the real G5 capstone) —
+   **the next increment, not yet landed.** For disjoint `posPile`/`cardPile`
+   partitions with `|posPile i| = |cardPile i|`, build the explicit bijection
+   `MultiFiber N k posPile cardPile ≃ ∏_i Equiv (posPile i) (cardPile i)` and
+   compute `Fintype.card (MultiFiber …) = ∏_i (|cardPile i|)!` (the product of
+   per-pile bijection counts — the generalization of G2's `m!·(N-m)!`, **not**
+   `∏_i |C i|`). The `letI`-on-`∀`-subtype `Fintype` wall below is sidestepped
+   by transporting the `Fintype` through the explicit `Equiv` to a `Finset.Prod`
+   type that does have a `Fintype` instance.
 
 ## Build / verify
 
