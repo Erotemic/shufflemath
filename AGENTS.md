@@ -22,9 +22,9 @@ Every agent-authored commit must carry a `Co-authored-by:` trailer naming the ex
   `card_biUnion_pd`). F1 and F2 are complete.
 - **Active do-not-stop rule:** `docs/agent_handoff.md` contains a
   **Standing rules** section (the revived October autonomous-build protocol)
-  that is **active until Wed Nov 24 23:59:59 EST 2026** (extended from the
-  original Thu Nov 12 22:27:06 EST, then to Wed Nov 18, and now to Wed Nov 24,
-  each at the user's request): do not stop, ask,
+  that is **active until Sat Dec 25 23:59:59 EST 2026** (extended from the
+  original Thu Nov 12 22:27:06 EST, then to Wed Nov 18, then to Wed Nov 24, and
+  now to Sat Dec 25, each at the user's request): do not stop, ask,
   or
   end the session before then; compaction is not a stopping signal; its
   compaction-resume protocol, small-batch commit gates, and stuck protocol are

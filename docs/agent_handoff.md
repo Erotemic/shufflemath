@@ -133,6 +133,9 @@ per-site error budget are in **`/tmp/k1b_count_split_handoff.md`** — the next
 session splices that block in before `end Shufflemath`, builds, and commits.
 ⚠️ The session deadline in the do-not-stop rule (Wed Nov 24 23:59:59 EST)
 has lapsed — confirm with the user before continuing autonomous K-work.
+*(Superseded Nov 24, later that day: the user extended the deadline to Sat
+Dec 25 23:59:59 EST, so the autonomous build continues — see the Standing-rules
+rule 1 and the READ-FIRST banner above.)*
 
 > **🧹 (2026-11-23 — limit-bump audit; no `maxRecDepth`/`maxHeartbeats` left anywhere in `Shufflemath/`.)**
 **K1 wall (the gate, unit (5)) is now a *representation*, not a limit bump.** The per-deck orbit-fiber
@@ -258,7 +261,7 @@ retraction lemma.
 > **and it elaborates at N=99** — the identical mathematical object on the lazy `.map`/`.join` carrier never materializes the 99!² universe. The swap/riffle building blocks (`exchangeLCard/RCard`, `canonicalPairing`, `swapLaw`, `rho99Finite/ideal` — copied from the green `_ProbeGate6Fin2`) are unchanged; only the product carrier changed. **Next unit (in order):** (1) **Finsupp-level TV-mixture subadditivity**: `TV((P.map (fun s => f s)).join, (P.map (fun s => g s)).join) ≤ ∑_s mass P s · TV(f s, g s)` — proven via the Finsupp TV (`tv_eq_tvFinsupp` bridge) WITHOUT a `Finset.univ` sum over a product type; (2) **TV-invariance under bijective pushforward**: `TV(μ.map h, ν.map h) = TV(μ, ν)` when `h` is a bijection (`tv_map_contraction` + the same for `h.symm`); (3) **the crux**: `TV(fullRoundFinite, fullRoundIdeal) ≤ δ1` — `conv P A = mixture over s of (right-mul-by-s pushforward of A)`, so (1)+(2) give `TV(conv P A, conv P B) ≤ ∑_s mass P s · TV(A, B) = TV(A, B)`, then `oneRoundDeckTV_le_delta1` (50!×49! — elaborates fine); (4) **deck level**: `TV((·.trans d)_* fullRoundFinite, (·.trans d)_* fullRoundIdeal) ≤ δ1` by `tv_map_contraction` (a *single* 99! sum — safe, cf. `rhoRoundTransport_le_twoPile`); (5) **3-round headline**: `FiniteKernel.run finiteRound 3 (pointMass d0)` via the `powConv` representation + `gate6_headline_telescope` + `gate6_headline_bound` + the `q3` sub-part (`TV((powConv rho99Ideal-ish 3).map (·.trans d0), uniform)` — the remaining batch-4 piece, now also Finsupp-representable). **Guiding invariant (unchanged):** TV bounds stay at the `Dist`/Finsupp level; never a `Finset.univ` sum over a 99!² (or 99!³) product.
 >
 > ⚠️ **DO NOT STOP — READ FIRST (re-read after every compaction).**
-> **Autonomous build active until: Wed 2026-11-24 23:59:59 EST** (the user may
+> **Autonomous build active until: Sat 2026-12-25 23:59:59 EST** (the user may
 > extend this — if a later dated note gives a later date, that one wins).
 > **Do not stop, ask, or end the session before that deadline.** Compaction is
 > NOT a stopping signal. Never emit a "session summary" / "state of the world"
@@ -1472,10 +1475,11 @@ priority; `AGENTS.md` governs repository behavior.
 
 ## Standing rules for the agent reading this document (non-negotiable)
 
-1. **Do not stop, ask, or end the session before Wed Nov 24 23:59:59 EST 2026.**
+1. **Do not stop, ask, or end the session before Sat Dec 25 23:59:59 EST 2026.**
    (Deadline extended at the user's request: originally Thu Nov 12 22:27:06
-   EST, then Wed Nov 18 23:59:59 EST, now Wed Nov 24 23:59:59 EST — the latest
-   extension was given on the Nov 17 session.) This is a long autonomous build.
+   EST, then Wed Nov 18 23:59:59 EST, then Wed Nov 24 23:59:59 EST, now
+   Sat Dec 25 23:59:59 EST — the latest extension was given on the Nov 24
+   session.) This is a long autonomous build.
    You **will be compacted multiple times**; compaction is normal and is not
    a stopping signal.
    **"Do not stop" includes never presenting a status.** A "session summary",
