@@ -64,15 +64,30 @@ over all piles equals the category-`j` count of the piles' union, from a
 `Disjoint` is the bare (Set-coerced) one; this Mathlib has **no `Finset.Disjoint`**
 (the same classic-`Finset`-API refactor that removed `Finset.count`).
 
-## Wall 2 — general-k product-fiber `Fintype` instance (the real capstone)
+## Wall 2 — general-k product-fiber `Fintype` (Fintype sub-wall CRACKED under `Classical`)
 
 `Piles.lean` stops at the 2-pile fiber.  G5's headline needs a `MultiFiber`-like
 Fintype **for arbitrary `k` and `c`** (the product fiber over a pile *partition*),
 and `G5capstone` (the multi-pile exchange kernel-equality) needs that type with a
 working `Fintype` instance so `Fintype.card` / `card_bij` / the kernel sum are
-well-typed.  This is the genuine remaining blocker (see
-`docs/planning/2026-11-25-batch5b-headline-handoff.md` for the `Fintype`-instance
-wall on the batch-5b headline).
+well-typed.
+
+**Fintype sub-wall CRACKED (2026-12-31).** The reason the `{e // ∀ p : Fin k, …}`
+subtype did not synthesize a `Fintype` constructively is that the per-pile
+image-membership predicate is not constructively decidable.  Under `open Classical`
+it is: `Fintype (MultiFiber N k posPile cardPile)` **synthesizes for arbitrary
+`k`** (probed `#check Fintype.card (MultiFiber N k …) : ℕ`, no error).  The 2-pile
+numeric corollary `twoPile_card : Fintype.card (MultiFiber N 2 (twoPilePos) (twoPileCard))
+= m!·(N-m)!` is now **proved** in `Piles.lean` via `Classical.choice (twoPile_equivFiber …)`
++ `Fintype.card_congr` + `fiberCount` — the standard classical escape, not the
+`letI`-on-`∀`-subtype chase (see `docs/planning/2026-11-25-batch5b-headline-handoff.md`
+for the original `Fintype`-instance wall on the batch-5b headline).
+
+**Remaining for `G5capstone`** (now bounded): the explicit bijection
+`MultiFiber N k P C ≃ (fun i => Equiv (P i) (C i))` for disjoint
+`|P i| = |C i|` piles, and the count formula `Fintype.card (MultiFiber N k P C) =
+∏_i (|C i|)!` (a `Fin k → …` product `Fintype` via `Fintype.Pi`), then the
+multi-pile exchange kernel-equality on top.
 
 ## Next steps (in order)
 
@@ -80,9 +95,10 @@ wall on the batch-5b headline).
    integrated; B3's lumping core is green.
 2. ~~`lump_categoryTotal` (column-total)~~ — **DONE** (this session): proved from a
    pairwise-disjoint-piles hypothesis by `Finset.card_biUnion` + `Finset.filter_biUnion`.
-3. **Wall 2** — the general-k product fiber + `Fintype` instance + `G5capstone`
-   (the capstone): a `MultiFiber`-like `Fintype` for arbitrary `k` and `c` so the
-   multi-pile exchange kernel-equality is well-typed.
+3. **Wall 2 — Fintype sub-wall now CRACKED** (under `Classical`; `twoPile_card`
+   landed this session).  Remaining: the general-`k` product-equiv bijection
+   `MultiFiber N k P C ≃ fun i => Equiv (P i) (C i)` + the count `∏_i (|C i|)!` +
+   `G5capstone` (the multi-pile exchange kernel-equality) on top.
 4. **B4** `MultiExchange` + **T5** within-pile orbit, on top of the above.
 
 The build gate stays green (37 tests) through all of it.

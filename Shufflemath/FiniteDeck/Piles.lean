@@ -3,6 +3,7 @@ module
 public import Shufflemath.FiniteDeck.TwoPile
 public import Shufflemath.FiniteDeck.Fiber
 public import Mathlib.Data.Fintype.Basic
+public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Tactic
 
@@ -11,6 +12,12 @@ public section
 
 namespace Shufflemath
 namespace FiniteDeck
+
+-- `open Classical` is required at section level (before the `Fintype` on the
+-- `∀ p : Fin k` subtype is needed): the per-pile image-membership predicate is
+-- not constructively decidable, so the `Fintype (MultiFiber …)` instance only
+-- synthesizes under classical logic (the `twoPile_card` / general-`k` route).
+open Classical
 
 /-!
 # G5: multi-pile algebra — the pile-partition type definitions
@@ -139,6 +146,23 @@ theorem twoPile_equivFiber (N m : Nat) (hm : m ≤ N) (A : Membership N m) :
         simpa [twoPilePos0, twoPileCard0] using y.2
       · subst hp1
         simpa [twoPilePos1, twoPileCard1] using (twoPile_pred_iff N m hm A y.1).2 y.2 |>.2
+
+/-- **G5 two-pile fiber count.** The two-pile `MultiFiber` over the allocation
+    `(A, univ \ A)` has exactly `m!·(N-m)!` decks — the same count as the G2
+    `FibType` (`fiberCount`), transferred across the `twoPile_equivFiber`
+    bijection.  The `Fintype` of the `{e // ∀ p : Fin 2, …}` subtype is obtained
+    under `Classical`: the per-pile image-membership predicate is not
+    constructively decidable, so the `letI`-on-`∀`-subtype `Fintype` wall (see
+    the module doc) is sidestepped by the standard classical decidability
+    escape — `Fintype.card (MultiFiber N 2 …)` synthesizes once `Classical`
+    is open. -/
+
+theorem twoPile_card (N m : Nat) (hm : m ≤ N) (A : Membership N m) :
+    Fintype.card (MultiFiber N 2 (twoPilePos N m hm) (twoPileCard N m A)) =
+      Nat.factorial m * Nat.factorial (N - m) := by
+  let e : Equiv (MultiFiber N 2 (twoPilePos N m hm) (twoPileCard N m A)) (FibType N m hm A) :=
+    Classical.choice (twoPile_equivFiber N m hm A)
+  exact (Fintype.card_congr e).trans (fiberCount N m hm A)
 
 end FiniteDeck
 end Shufflemath

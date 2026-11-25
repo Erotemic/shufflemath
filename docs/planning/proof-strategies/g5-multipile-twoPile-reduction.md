@@ -49,13 +49,16 @@ Proofs:
   (counting `m!(N-m)!`, disintegration, TV headlines) transfer to the 2-pile
   setting **without** re-proving them and without `N!` enumeration.
 
-## The Fintype wall (documented, not chased)
+## The Fintype wall — CRACKED under `Classical`; `twoPile_card` now proven
 
 The **card-equality** corollary
 `Fintype.card (MultiFiber N 2 (twoPilePos N m hm) (twoPileCard N m A))
    = Nat.factorial m * Nat.factorial (N - m)`
-is *true* (it follows from `twoPile_equivFiber` + `fiberCount`), but it is
-**blocked on a Lean instance-elaboration wall**, not on the math:
+is proved as **`twoPile_card`** (2026-12-31): the `Fintype` on the
+`{e // ∀ p : Fin 2, …}` subtype does not synthesize constructively (image
+membership is not constructively decidable), but it **does** under `open
+Classical`, so the corollary closes via `Classical.choice (twoPile_equivFiber …)`
++ `Fintype.card_congr` + `fiberCount`.  The original wall, recorded here:
 
 - `Fintype (FibType N m hm A)` **does** synthesize (a single Finset-equality
   predicate; `fiberCount` in `Fiber.lean` uses `Fintype.card (FibType …)` in
