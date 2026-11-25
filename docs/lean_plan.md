@@ -237,6 +237,17 @@ they do not establish the separate, still-open F1-F5 theorems.
 > (B1 is now largely satisfied by `Partition.lean`; B2 fiber bijection → `twoPile_equivFiber`+
 > `glueBlocks`; B3 histogram counting; B4 multi-pile TV). The parallel session-83/84 Gate-6
 > three-round thread below is unchanged.
+>
+> **G5 resume point (2026-12-31 follow-up):** the two walls left before the general-`k`
+> capstone are *structural*, not mathematical — (1) the untracked WIP `Histograms.lean`
+> (B3 lumping core) fails only on this Mathlib's split `Finset` namespace import-exposure
+> (`Finset.count` / `insert` / `PairwiseDisjoint` / `biUnion` live in separate modules' `@[expose]`
+> sections; it is the repo's only `Finset.count` user, so no in-repo template to copy) — a
+> bounded import fix, and since the file is untracked the green build is untouched; (2) the
+> general-`k` fiber **count** needs a product-fiber type with a `Fintype` instance (a direct
+> `Fintype.card (MultiFiber …)` has none — the same wall Gate 6 K1 / batch-5b hit); build the
+> product fiber + its `Equiv`, then transfer `∏_i |C i|` / the multinomial count. Precise
+> diagnosis + the next three steps: `docs/planning/proof-strategies/2026-12-31-g5-multipile-state-and-walls.md`.
 
 > **Status (session 83, 2026-12-30 build):** **Gate 6 is complete** — the three-round
 > *physical* headline `g6_threeRound_headline` (`TV(finiteRound³ start, uniform) < 1/1000`)
