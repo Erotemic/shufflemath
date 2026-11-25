@@ -463,5 +463,119 @@ theorem fin_lumped_rowSum (c : Nat) (X : Fin c → ℕ) (k : Nat) :
   congr 1
   simp [List.sum_ofFn]
 
+/-! ## Per-pile lumped numerator bound (the Vandermonde single-term bound)
+
+Each individual per-pile numerator term for a valid category allocation
+`a` — the product of the per-category binomial coefficients `∏_c C(X_c, a_c)` —
+is bounded by the universal total `choose (ΣX) k`.  This is the "each term of a
+nonneg sum is bounded by the total" inequality, proved by induction on the
+category list using the antidiagonal recursion of `histAllocSum` and
+`Finset.single_le_sum`: the term `(a0, aRest.sum)` is one summand of the
+Vandermonde expansion, so it is at most the expansion's total.  It is the
+per-(a) numerator half of the T5 kernel's well-definedness. -/
+
+/-- The per-pile lumped numerator of a valid category allocation `a` (same
+length as the pile's per-category counts `X`, sum `a = k`) is bounded by the
+universal denominator `choose (ΣX) k`. -/
+theorem lumpedNumList_le_choose (X : List Nat) :
+    ∀ (a : List Nat) (_hlen : X.length = a.length) (k : Nat), a.sum = k →
+      ((X.zip a).map fun pa => Nat.choose pa.1 pa.2).prod ≤ Nat.choose X.sum k := by
+  induction X with
+  | nil =>
+      intro a _hlen k hsum
+      cases a with
+      | nil =>
+          rw [List.sum_nil] at hsum
+          simp [hsum]
+      | cons x aRest =>
+          simp at _hlen
+  | cons x rest IH =>
+      intro a _hlen k hsum
+      cases a with
+      | nil =>
+          simp at _hlen
+      | cons a0 aRest =>
+          have hLen : rest.length = aRest.length := by
+            simp only [List.length_cons] at _hlen
+            omega
+          have hsumRest : a0 + aRest.sum = k := by
+            rw [List.sum_cons] at hsum
+            exact hsum
+          have hIH : ((rest.zip aRest).map fun pa => Nat.choose pa.1 pa.2).prod ≤
+              Nat.choose rest.sum aRest.sum :=
+            IH aRest hLen aRest.sum rfl
+          rw [List.zip_cons_cons, List.map_cons, List.prod_cons]
+          have hLHS : Nat.choose x a0 * ((rest.zip aRest).map fun pa => Nat.choose pa.1 pa.2).prod ≤
+              Nat.choose x a0 * Nat.choose rest.sum aRest.sum :=
+            Nat.mul_le_mul_left (Nat.choose x a0) hIH
+          rw [← hsumRest]
+          rw [List.sum_cons, Nat.add_choose_eq]
+          have hPair : (a0, aRest.sum) ∈ antidiagonal (a0 + aRest.sum) := by
+            rw [mem_antidiagonal]
+          exact hLHS.trans
+            (Finset.single_le_sum
+              (fun ij _ => Nat.zero_le (Nat.choose x ij.1 * Nat.choose rest.sum ij.2)) hPair)
+
+
+/-! ## The Fin `c`-indexed per-pile numerator bound
+
+The List-form bound above (`lumpedNumList_le_choose`) is the workhorse; this
+section bridges it to the `Fin c → ℕ`-indexed form used by the T5 kernels.
+The only non-trivial step is the list bridge: `((List.ofFn X).zip (List.ofFn a)).map
+(choose) = List.ofFn (fun j => choose (X j) (a j))`, proved by induction on `c`
+via `List.ofFn_succ`. -/
+
+/-- `(List.ofFn X zip List.ofFn a).map (fun pa => choose pa.1 pa.2)` is the
+    `List.ofFn` of the pointwise binomial coefficient — the list bridge for
+    `lumpedNum_le_choose`. -/
+theorem list_zip_ofFn_map_choose (c : Nat) (X a : Fin c → Nat) :
+    ((List.ofFn X).zip (List.ofFn a)).map (fun pa => Nat.choose pa.1 pa.2) =
+      List.ofFn (fun j => Nat.choose (X j) (a j)) := by
+  induction c with
+  | zero => rfl
+  | succ c ih =>
+    rw [List.ofFn_succ, List.ofFn_succ, List.ofFn_succ, List.zip_cons_cons, List.map_cons]
+    congr 1
+    exact ih (fun i => X (Fin.succ i)) (fun i => a (Fin.succ i))
+
+/-- The `Fin c`-indexed per-pile lumped numerator is bounded by the universal
+denominator `choose (ΣX) k`, for any allocation `a` with `Σa = k` — the
+`Fin c → ℕ`-indexed form of `lumpedNumList_le_choose`, via the list bridge. -/
+theorem lumpedNum_le_choose (c : Nat) (X a : Fin c → Nat) (k : Nat)
+    (hsum : Finset.univ.sum a = k) :
+    lumpedNum c X a ≤ Nat.choose (Finset.univ.sum X) k := by
+  have hlen : (List.ofFn X).length = (List.ofFn a).length := by simp
+  have hsumList : (List.ofFn a).sum = k := by rw [List.sum_ofFn]; exact hsum
+  have hLHS : lumpedNum c X a =
+      (((List.ofFn X).zip (List.ofFn a)).map fun pa => Nat.choose pa.1 pa.2).prod := by
+    rw [lumpedNum, ← List.prod_ofFn, ← list_zip_ofFn_map_choose]
+  rw [← List.sum_ofFn]
+  rw [hLHS]
+  exact lumpedNumList_le_choose (List.ofFn X) (List.ofFn a) hlen k hsumList
+
+
+/-! ## The lumped conditional mass is a probability-like bound
+
+Since the per-pile numerator is at most the universal denominator
+(`lumpedNum_le_choose`, the Fin-c-indexed form, just landed above), the
+normalized conditional mass is bounded by `1` — the category-level
+selections of `a` out of a pile can never outnumber the total number of ways
+to choose `k` cards from the pile. -/
+
+/-- The lumped conditional mass of any valid allocation `a` is at most `1`. -/
+theorem lumpedConditionalMass_le_one (c : Nat) (X a : Fin c → Nat) (k : Nat)
+    (hsum : Finset.univ.sum a = k) :
+    lumpedConditionalMass c X a k ≤ 1 := by
+  rw [lumpedConditionalMass]
+  by_cases hpos : Nat.choose (Finset.univ.sum X) k = 0
+  · rw [hpos]
+    simp
+  · have hposNat : 0 < Nat.choose (Finset.univ.sum X) k := Nat.pos_of_ne_zero hpos
+    have hcast : (lumpedNum c X a : Rat) ≤ (Nat.choose (Finset.univ.sum X) k : Rat) :=
+      Nat.cast_le.mpr (lumpedNum_le_choose c X a k hsum)
+    have hc : (0 : Rat) < (Nat.choose (Finset.univ.sum X) k : Rat) := Nat.cast_pos.mpr hposNat
+    rw [div_le_iff₀ hc]
+    simpa using hcast
+
 end FiniteDeck
 end Shufflemath
