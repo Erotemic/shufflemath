@@ -77,3 +77,24 @@ fundamentally different route that avoids the 99! `Finset` entirely:
 Both are genuinely open; neither is a `maxHeartbeats` bump (forbidden by build discipline). The
 three wall-free lemmas (`leftCards_embed_eq_segLeft`, `membership_embed_eq_segMembership`,
 `withinPile_pairs_card`) are the durable, committed content of this work.
+
+## Fintype-card asymmetry (final probe this session)
+
+- `Fintype.card {d : Perm (Fin 99) // membership d = segMembership}` **builds** (this is exactly what
+  `fiberSet_segMembership_card` proves, `= 50!·49!`).
+- `Fintype.card {d : Perm (Fin 99) // leftCards d = segLeft}` **recurses** (`maximum recursion depth
+  has been reached`) — even as a bare goal type, before any proof.
+
+So the *membership-record* subtype is well-behaved under `Fintype.card` (its `Membership` records have
+a decidable instance Lean can normalize), while the *Finset-equality* predicate (`leftCards d = segLeft`)
+triggers recursion in the same machinery. Net: the Fintype-equinumerosity route (route 1) must be
+carried on the **membership-subtype** (the one that computes), not the leftCards-subtype — and building
+the actual `Equiv` (within-pile pairs ≃ membership-fiber) is where the original `fiberOrbit_equiv` `.val`
+wall reappears. **This is a genuinely hard, multi-week elaborator battle, not a one-session item.**
+
+**Recommended disposition:** leave the batch-5b headline parked at this wall. The on-mission result
+(`TV < 1/1000`) is already met and committed independently (the 3-round headline + the 41-exchange
+`DobrushinDecay99`). The three wall-free lemmas here are the durable yield. If a future session wants to
+resume, start from the *membership-subtype* (computes) and attempt the `Equiv` construction at the
+`Fintype` level, verifying each step only at the *card* level (never `Finset.mem` / pointwise over the
+99! `Finset`). Do **not** use `maxHeartbeats`/`set_option` bumps.
