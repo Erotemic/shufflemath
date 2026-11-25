@@ -1,3 +1,28 @@
+> **✅ (session 85) — qwen1125 candidate lemmas integrated into library modules (B1 + A0–A4 building blocks).**
+> The two operator-supplied *uncompiled* candidates in `dev/qwen-hints/2026-11-25/` were each
+> compiled cleanly (`lake env lean`) and **migrated to natural library homes** (commit
+> `10d9bef`; full `Shufflemath` aggregator + `./dev/verify_next_phase.sh` green, 37 tests
+> pass):
+> - `PartitionSeeds.lean` → **`Shufflemath/FiniteDeck/Partition.lean`** — generic
+>   `IsPartition`, `partitionSigmaEquiv`, `sigmaBlockEquiv`, `glueBlocks`,
+>   `glueBlocks_apply_member` (the **B1** foundation: disjoint-union-of-member-subtypes ≃
+>   underlying set + per-block gluing into a global bijection; no `Fintype`/positivity
+>   assumptions, empty blocks allowed).
+> - `GenericClosure.lean` → **`Shufflemath/Gate6K1Bridges.lean`** — the **A0–A4** generic
+>   bridge lemmas: `uniform_same_image`, `range_iff_mem_of_card_eq`, `reset_absorption`,
+>   `equal_after_first_run`, `action_comp_eq_conv`, `action_run_tv_noise`,
+>   `permInverseEquiv`, `perm_inverse_uniform`, `perm_inverse_tv`, `ideal_batch5b` (all
+>   generic kernel algebra; only `ideal_batch5b` reuses the already-proved K1 capstone
+>   bridge `paK_rho99Ideal_eq_localLift`).
+>
+> Both new modules and `FiniteDeck.Piles` were added to the `Shufflemath.lean` aggregator;
+> `Partition` and `Gate6K1Bridges` added to `dev/verify_next_phase.sh` (that edit also
+> fixes a pre-existing missing backslash so `Gate6ThreeRound` is actually built by the
+> script). **Scope:** only the reusable *building blocks* were integrated — the **theorems**
+> A1–A4 (Gate-6 arbitrary-start closure) and B1–B4 (multi-pile fiber bijection, histogram
+> counting, multi-pile TV) still need to be written on top of these blocks (see
+> `docs/planning/proof-strategies/2026-11-25-gate6-and-multipile-executable-handoff.md`).
+>
 > **✅ (session 84, 2026-12-30) — the Gate-6 three-round headline is PROMOTED to a canonical module.** The five
 > `_ProbeG6ThreeRound*` theorems (bridge `g6_3round_idealKernel_eq_fullRound`, sub-lemma B
 > `g6_threeRound_finiteRun3_tv_le_q3`, sub-lemma A `g6_threeRound_kernelDiscrepancy_le_δ1`,

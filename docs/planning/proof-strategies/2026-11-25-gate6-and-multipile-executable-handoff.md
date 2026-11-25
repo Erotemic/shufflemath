@@ -8,6 +8,27 @@ candidates**, not new established lemmas. Compile each separately, correct
 ordinary syntax/API errors, then migrate successful declarations to natural
 library homes. No need to apply the previous undelivered overlay.
 
+> **Integration status (this session, commit `10d9bef`):** Both uncompiled
+> candidates have been compiled (each separately via `lake env lean`) and
+> migrated to natural library homes; the full `Shufflemath` aggregator and
+> `./dev/verify_next_phase.sh` are green (37 python tests pass):
+> - `PartitionSeeds.lean` → **`Shufflemath/FiniteDeck/Partition.lean`** —
+>   generic `IsPartition`, `partitionSigmaEquiv`, `sigmaBlockEquiv`,
+>   `glueBlocks`, `glueBlocks_apply_member` (the **B1** foundation; no `Fintype`
+>   / positivity assumptions, empty blocks allowed). Added to the aggregator.
+> - `GenericClosure.lean` → **`Shufflemath/Gate6K1Bridges.lean`** — the **A0–A4**
+>   generic bridge lemmas: `uniform_same_image`, `range_iff_mem_of_card_eq`,
+>   `reset_absorption`, `equal_after_first_run`, `action_comp_eq_conv`,
+>   `action_run_tv_noise`, `permInverseEquiv`, `perm_inverse_uniform`,
+>   `perm_inverse_tv`, `ideal_batch5b` (all generic kernel algebra; only
+>   `ideal_batch5b` reuses the already-proved K1 capstone bridge).
+>
+> Only the **reusable building blocks** were integrated. The **theorem**
+> statements A1–A4 / B1–B4 (the actual multi-round Gate-6 finish and the B2
+> fiber bijection, B3 histogram counting, B4 multi-pile TV) still need to be
+> written on top of these blocks. The original `dev/qwen-hints/2026-11-25/*.lean`
+> candidates remain as tracked references outside the compile tree.
+
 ## 0. Dispatch: one small obligation at a time
 
 - Gate 6 actual finish line: a theorem with `∀ d : Deck`, input `Dist.pointMass d`,

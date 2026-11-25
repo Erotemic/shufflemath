@@ -228,6 +228,16 @@ they do not establish the separate, still-open F1-F5 theorems.
 
 ## Current entry point
 
+> **G5 / Gate-6-A thread (session 85, commit `10d9bef`):** the operator-supplied qwen1125
+> candidate building blocks are now integrated — `Shufflemath/FiniteDeck/Partition.lean`
+> (B1 partition/Sigma/gluing) and `Shufflemath/Gate6K1Bridges.lean` (A0–A4 Gate-6 generic
+> bridges) — both in the aggregator and `./dev/verify_next_phase.sh` (green, 37 tests).
+> **Next on that thread:** write the A1–A4 / B1–B4 theorems on top of those blocks, per
+> `docs/planning/proof-strategies/2026-11-25-gate6-and-multipile-executable-handoff.md`
+> (B1 is now largely satisfied by `Partition.lean`; B2 fiber bijection → `twoPile_equivFiber`+
+> `glueBlocks`; B3 histogram counting; B4 multi-pile TV). The parallel session-83/84 Gate-6
+> three-round thread below is unchanged.
+
 > **Status (session 83, 2026-12-30 build):** **Gate 6 is complete** — the three-round
 > *physical* headline `g6_threeRound_headline` (`TV(finiteRound³ start, uniform) < 1/1000`)
 > is proved in `Shufflemath/_ProbeG6ThreeRoundCapstone.lean` (sub-lemmas A + B + the
