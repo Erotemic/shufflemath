@@ -68,9 +68,33 @@ theorem blockCap_card (N p : Nat) (n : Fin p → Nat) (hsum : (∑ i, n i) = N) 
     rw [← (Finset.card_image_of_injective (blockCap N p n i) hinj)]
   have himg : Finset.image (·.val) (blockCap N p n i) =
       (Finset.range N).filter (fun v => a ≤ v ∧ v < b) := by
-    sorry
+    dsimp only [blockCap, a, b]
+    ext v
+    constructor
+    · intro hv
+      obtain ⟨x, hxmem, hxeq⟩ := Finset.mem_image.mp hv
+      -- hxmem : x ∈ univ.filter (fun x => P x), hxeq : x.val = v
+      have hP : prefixCap p n i ≤ x.val ∧ x.val < prefixCap p n i + n i :=
+        (Finset.mem_filter.mp hxmem).2
+      have hvN : v < N := by rw [← hxeq]; exact x.isLt
+      refine Finset.mem_filter.mpr ⟨Finset.mem_range.mpr hvN, ⟨?_, ?_⟩⟩
+      · rw [← hxeq]; exact hP.1
+      · rw [← hxeq]; exact hP.2
+    · intro hv
+      have hmem : v < N ∧ a ≤ v ∧ v < b := by
+        have h1 := Finset.mem_filter.mp hv
+        exact ⟨Finset.mem_range.mp h1.1, h1.2.1, h1.2.2⟩
+      obtain ⟨hvn, hA, hB⟩ := hmem
+      refine Finset.mem_image.mpr ⟨Fin.mk v hvn, ?_, rfl⟩
+      exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, ⟨hA, hB⟩⟩
   have h2 : (Finset.range N).filter (fun v => a ≤ v ∧ v < b) = Finset.range b \ Finset.range a := by
-    sorry
+    ext v
+    simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_sdiff]
+    constructor
+    · rintro ⟨hNv, hav, hvb⟩
+      exact ⟨hvb, Nat.not_lt.2 hav⟩
+    · rintro ⟨hvb, hnotva⟩
+      exact ⟨Nat.lt_of_lt_of_le hvb hbN, Nat.not_lt.1 hnotva, hvb⟩
   rw [hcard_inj, himg, h2, Finset.card_sdiff_of_subset (Finset.range_subset_range.mpr (by omega)),
       Finset.card_range, Finset.card_range]
   simp only [b, Nat.add_sub_cancel_left]
