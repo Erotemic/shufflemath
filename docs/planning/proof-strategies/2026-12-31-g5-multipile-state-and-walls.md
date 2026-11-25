@@ -502,6 +502,13 @@ numerator factors as the product of the per-pile weights** (`twoPile_lumpedNum_f
 factorization that is the explicit per-(a,b) target of the G5capstone. Both theorems
 verified (`lake build Shufflemath.FiniteDeck.Histograms` + full 37-test gate green).
 
+**Landed (this session, commit `b9e732a`):** the **normalized** two-pile lumped transition is
+now a named `Rat`-valued object in `Histograms.lean`: `lumpedConditionalMass` (per-pile conditional
+mass = numerator / choose(ΣX, k) — the multivariate-hypergeometric conditional factor) and
+`lumpedTransition` (the joint numerator / universal denominator), with
+`lumpedTransition_factors` proving the two-pile kernel is the product of the two per-pile conditional
+masses. All verified (lake build + full 37-test gate green).
+
 **What remains (the G5capstone), honestly:**
 1. The *histogram-level* lumped kernel — derive `Pr(a,b|X) = [∏_c C(X_{i,c},a_c)·C(X_{j,c},b_c)] / [C(n_i,k)·C(n_j,k)]` from the allocation chain (the list-based `histAllocSum` Vandermonde is the clean route; the `Sigma`-lumping route is Fintype-walled) and prove its row-sum/stochastic + column-sum/symmetry.
 2. The *multivariate-hypergeometric stationary law* `π K = π` (the T2 `π` from `docs/planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md` line ~107, not landed anywhere in the repo).
