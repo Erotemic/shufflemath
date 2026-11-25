@@ -193,3 +193,22 @@ section-bound `variable e` must be *applied explicitly* (`gluedRealizes N k P C 
 hC e`) when a sibling def references it — a bare reference is treated as an
 unapplied function (the same `@`-apply pattern as `pileF` inside `pileEquiv`).
 
+**The count formula — exact route + gotchas (2026-12-31 session, in progress).**
+Prove `Fintype.card (MultiFiber N k P C) = ∏ i, (|C i|)!` (as
+`(Finset.univ : Finset (Fin k)).prod (fun i => Nat.factorial ((C i).card))`) for
+`hCardEq : ∀ i, (P i).card = (C i).card`.  Route:
+`rw [Fintype.card_congr (multiPile_equivFiber N k P C hP hC), Fintype.card_pi]`,
+then `Finset.prod_congr`, then per pile `i`:
+get `e : (Finset.subtype (P i)) ≃ (Finset.subtype (C i))` from
+`Fintype.equivOfCardEq (by simp [Fintype.card_coe, hCardEq i])` and close with
+`rw [Fintype.card_equiv e, Fintype.card_coe, hCardEq i, Fintype.card_coe]` —
+**`Fintype.card_equiv [Fintype α] [Fintype β] (e : α ≃ β) : Fintype.card (α ≃ β)
+= (Fintype.card α)!`** (in `Mathlib.Data.Fintype.Perm`) is the key lemma.
+**Gotchas:** (1) the factorial postfix `!` mis-parses before `)` — write
+`Nat.factorial ((C i).card)`; (2) `multiPile_equivFiber`'s *closed* def takes
+`N k P C hP hC` (both `IsPartition` args — `#print` to confirm); (3) `Fintype.card_pi`
+can reduce the `∏ i, …` product so the goal displays as `Finset.univ = Finset.univ`
+— apply `Fintype.card_congr` and `Fintype.card_pi` as *separate* `rw`s (not one
+combined `rw`) and normalize the `∏`/`univ.prod` forms before `Finset.prod_congr`,
+or land the per-pile equality as a standalone lemma first.  Then `G5capstone`.
+
