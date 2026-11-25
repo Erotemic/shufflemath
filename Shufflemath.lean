@@ -46,6 +46,7 @@ public import Shufflemath.FiniteDeck.PileFiber
 public import Shufflemath.FiniteDeck.MultiPileFiber
 public import Shufflemath.FiniteDeck.MultiPileOrbit
 public import Shufflemath.FiniteDeck.MultiPileExchange
+public import Shufflemath.FiniteDeck.MultiExchange
 public import Shufflemath.FiniteDeck.Partition
 public import Shufflemath.FiniteDeck.BLDisintegration
 public import Shufflemath.UniformFiber
