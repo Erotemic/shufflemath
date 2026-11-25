@@ -463,6 +463,21 @@ theorem fin_lumped_rowSum (c : Nat) (X : Fin c → ℕ) (k : Nat) :
   congr 1
   simp [List.sum_ofFn]
 
+/-! ## The per-pile T5 row-sum is 1 (the normalized per-pile total)
+
+The `Fin c → ℕ`-indexed kernels in `Histograms.lean` normalize by `choose (ΣX) k`;
+the numerators sum to exactly that universal denominator (`fin_lumped_rowSum`).  So
+the normalized per-pile total is `1` — the per-pile half of the stochastic kernel —
+for any legal `k` (`k ≤ ΣX`). -/
+
+/-- The per-pile T5 numerator row-sums to the universal denominator: for any legal
+    `k` (`k ≤ ΣX`), `numerator / choose (ΣX) k = 1`. -/
+theorem lumpedConditionalMass_rowSum (c : Nat) (X : Fin c → ℕ) (k : Nat)
+    (h : k ≤ Finset.univ.sum X) :
+    (histAllocSum (List.ofFn X) k : Rat) / (Nat.choose (Finset.univ.sum X) k : Rat) = 1 := by
+  rw [fin_lumped_rowSum c X k]
+  field_simp [Nat.ne_of_gt (Nat.choose_pos h)]
+
 /-! ## Per-pile lumped numerator bound (the Vandermonde single-term bound)
 
 Each individual per-pile numerator term for a valid category allocation
