@@ -203,6 +203,52 @@ theorem conjugate_transposition (σ : Equiv.Perm (Fin N)) (a b x : Fin N) :
         contradiction
       simp [cardTransposition, hna, hnb, ha, hb, Equiv.apply_symm_apply]
 
+/-! ### A1.4 — the relabeling action and its commutation with the exchange
+
+A **relabeling** of the card indices is a permutation `σ : Fin N ≃ Fin N`.  It acts on
+the allocation carrier by precomposing the owner function with `σ.symm` (card `x` of the
+relabelled allocation holds the card that `σ.symm x` held before).  The action is a
+genuine bijection, and — by conjugation — it commutes with the exchange: swapping the
+two images `σ a, σ b` of the relabelled state is the relabelling of swapping `a, b`.  This
+is the equivariance needed to show the uniform swap kernel is invariant under relabeling
+(see `UniformExchange.swapKernel_equivariant`). -/
+
+/-- The relabeling action: a permutation `σ` of the card indices acts on an
+    allocation by precomposing its owner function with `σ.symm`.  The result is again a
+    valid allocation (each i-fiber is in bijection, via `σ.symm`, with the corresponding
+    fiber of the original, so its cardinality is `n i`). -/
+def relabel (σ : Equiv.Perm (Fin N)) (A : Allocation N p n) : Allocation N p n :=
+  ⟨fun x => A.val (σ.symm x), fun i => by
+      set τ : Fin N ≃ Fin N := σ.symm
+      have hcomp : ∀ x, A.val (σ.symm x) = A.val (τ x) := fun x => rfl
+      classical
+      have hE : {x : Fin N // A.val (σ.symm x) = i} ≃ {y : Fin N // A.val y = i} :=
+        Equiv.ofBijective (fun z => ⟨τ z.val, by simpa [hcomp] using z.property⟩)
+          (⟨fun z w h =>
+              Subtype.ext (by simpa [Equiv.symm_apply_apply]
+                using (congrArg (τ.symm) (congrArg (·.val) h))),
+           fun w =>
+             ⟨⟨τ.symm w.val, by simpa [hcomp, Equiv.apply_symm_apply] using w.property⟩,
+              by simpa [Equiv.symm_apply_apply]⟩⟩)
+      have h1 : (Finset.univ.filter (fun x => A.val (σ.symm x) = i)).card =
+          Fintype.card {x : Fin N // A.val (σ.symm x) = i} := by
+        simpa only [Fintype.card_subtype]
+      have h2 : Fintype.card {x : Fin N // A.val (σ.symm x) = i} =
+          Fintype.card {y : Fin N // A.val y = i} := by
+        simpa using Fintype.card_congr hE
+      have h3 : Fintype.card {y : Fin N // A.val y = i} =
+          (Finset.univ.filter (fun y => A.val y = i)).card := by
+        simpa only [Fintype.card_subtype]
+      rw [h1, h2, h3, A.property i]⟩
+
+/-- Relabeling is invertible: `relabel (σ.symm) (relabel σ A) = A` — hence the
+    action is a genuine bijection of the allocation carrier. -/
+theorem relabel_symm_relabel (σ : Equiv.Perm (Fin N)) (A : Allocation N p n) :
+    relabel (σ.symm) (relabel σ A) = A := by
+  apply Subtype.ext
+  funext x
+  simp [relabel, Equiv.symm_symm, Equiv.symm_apply_apply]
+
 /-- **The exchange is a well-defined self-map of the allocation carrier:**
     swapping two cards' piles preserves every pile's size (so the result is
     again an `Allocation`).  Reason: `swapOwner = A.val ∘ σ` for the
