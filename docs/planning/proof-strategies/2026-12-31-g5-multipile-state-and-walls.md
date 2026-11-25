@@ -180,11 +180,10 @@ packages the headline fiber bijection **`multiPile_equivFiber : MultiFiber N k P
 ≃ (i : Fin k) → Equiv (↥(P i)) (↥(C i))`** (`MultiPileFiber.lean`): injective via
 `roundTripDecks` (`a.1 = (g (f a)).1`, then `f a = f b` collapses the two glued
 decks, then `(g (f b)).1 = b.1`), surjective via `roundTripEquivs` (`f (g f') = f'`).
-**Remaining next step:** the count formula `Fintype.card (MultiFiber N k P C) =
-∏ i, (|C i|)!` — transport the fiber `Equiv` through `Fintype.card_congr` to
-`Π i, Equiv (↥(P i)) (↥(C i))`, then `Fintype.card_pi` to `∏ i, (|P i|)!` and
-`hCardEq` (`|P i| = |C i|`) to `∏ i, (|C i|)!` (each `Equiv`-fiber's card is a
-permutation count via `Fintype.card_perm`). Then `G5capstone`.
+**Count formula — LANDED.**  `multiPile_card : Fintype.card (MultiFiber N k P C)
+= ∏ i, (|C i|)!` (with per-pile `equivFiberCard`) is in `MultiPileFiber.lean`.
+**Remaining next step:** `G5capstone` — the multi-pile exchange kernel-equality
+(the headline theorem tying the fiber structure to the exchange dynamics).
 
 **Elaboration notes for the round-trips:** keep the gluing family / deck *inlined*
 (bare `glueBlocks …`, not a named def) so `glueBlocks_apply_member` applies without
@@ -193,22 +192,27 @@ section-bound `variable e` must be *applied explicitly* (`gluedRealizes N k P C 
 hC e`) when a sibling def references it — a bare reference is treated as an
 unapplied function (the same `@`-apply pattern as `pileF` inside `pileEquiv`).
 
-**The count formula — exact route + gotchas (2026-12-31 session, in progress).**
-Prove `Fintype.card (MultiFiber N k P C) = ∏ i, (|C i|)!` (as
-`(Finset.univ : Finset (Fin k)).prod (fun i => Nat.factorial ((C i).card))`) for
-`hCardEq : ∀ i, (P i).card = (C i).card`.  Route:
-`rw [Fintype.card_congr (multiPile_equivFiber N k P C hP hC), Fintype.card_pi]`,
-then `Finset.prod_congr`, then per pile `i`:
-get `e : (Finset.subtype (P i)) ≃ (Finset.subtype (C i))` from
-`Fintype.equivOfCardEq (by simp [Fintype.card_coe, hCardEq i])` and close with
-`rw [Fintype.card_equiv e, Fintype.card_coe, hCardEq i, Fintype.card_coe]` —
-**`Fintype.card_equiv [Fintype α] [Fintype β] (e : α ≃ β) : Fintype.card (α ≃ β)
-= (Fintype.card α)!`** (in `Mathlib.Data.Fintype.Perm`) is the key lemma.
-**Gotchas:** (1) the factorial postfix `!` mis-parses before `)` — write
-`Nat.factorial ((C i).card)`; (2) `multiPile_equivFiber`'s *closed* def takes
-`N k P C hP hC` (both `IsPartition` args — `#print` to confirm); (3) `Fintype.card_pi`
-can reduce the `∏ i, …` product so the goal displays as `Finset.univ = Finset.univ`
-— apply `Fintype.card_congr` and `Fintype.card_pi` as *separate* `rw`s (not one
-combined `rw`) and normalize the `∏`/`univ.prod` forms before `Finset.prod_congr`,
-or land the per-pile equality as a standalone lemma first.  Then `G5capstone`.
+**The count formula — LANDED (2026-12-31 session).**  Two lemmas in
+`MultiPileFiber.lean`:
+* `equivFiberCard (i : Fin k) (hCard : (P i).card = (C i).card) :
+   Fintype.card (Equiv {x // x ∈ P i} {x // x ∈ C i}) = Nat.factorial ((C i).card)`
+   — build `he : ↥(P i) ≃ ↥(C i)` via `Fintype.equivOfCardEq (by simp [Fintype.card_coe,
+   hCard])`, then `rw [Fintype.card_equiv he]` and `simp [Fintype.card_coe, hCard]`.
+   The key lemma is `Fintype.card_equiv [Fintype α] [Fintype β] (e : α ≃ β) :
+   Fintype.card (α ≃ β) = (Fintype.card α)!` (`Mathlib.Data.Fintype.Perm`).
+* `multiPile_card (hP) (hC) (hCardEq : ∀ i, (P i).card = (C i).card) :
+   Fintype.card (MultiFiber N k P C) = (Finset.univ : Finset (Fin k)).prod
+   (fun i => Nat.factorial ((C i).card))` — `rw [Fintype.card_congr (multiPile_equivFiber
+   N k P C hP hC)]` then `rw [Fintype.card_pi]` (*separate* `rw`s), then
+   `apply Finset.prod_congr rfl`, then `intro i _` and
+   `exact equivFiberCard N k P C i (hCardEq i)`.
+**Gotchas that cost the session:** (a) a section-bound `variable (hP)`/`(hC)` is
+picked up as an implicit parameter of a later **`def`** but NOT of a later
+**`theorem`** when it is not named in the statement — so `multiPile_card` takes
+`hP`/`hC` as *explicit* parameters (the body then reads them fine); (b) the
+factorial postfix `!` mis-parses before `)` — write `Nat.factorial ((C i).card)`;
+(c) `Fintype.card_pi` reduces the bare `∏ i, …` form, so apply `Fintype.card_congr`
+and `Fintype.card_pi` as *separate* `rw`s and close with `Finset.prod_congr rfl`
+(same finset on both sides); (d) when calling a same-section theorem you must pass
+the section variables explicitly (`equivFiberCard N k P C i …`).  **Then `G5capstone`.**
 

@@ -4,6 +4,9 @@ public import Shufflemath.FiniteDeck.PileEquiv
 public import Shufflemath.FiniteDeck.PileFiber
 public import Shufflemath.FiniteDeck.Partition
 public import Mathlib.Data.Fintype.Perm
+public import Mathlib.Data.Fintype.Basic
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Tactic
 
@@ -80,5 +83,48 @@ noncomputable def multiPile_equivFiber :
   · intro f
     exact ⟨equivsToMultiPile N k P C hP hC f, roundTripEquivs N k P C hP hC f⟩
 
+/-!
+## G5: the fiber count — `|MultiFiber| = ∏ i, (|C i|)!
+
+The headline `multiPile_equivFiber` puts the realizing-deck fiber in bijection
+with the family of per-pile equivs; this section counts that family.  The
+per-pile count (`equivFiberCard`) says a single pile's equiv fiber has `(|C i|)!`
+members (a bijection between two equal-size sets); the product over piles
+(`multiPile_card`) then gives the full fiber count.  For `k = 2` this is the
+earlier `twoPile_card` headline.
+-/
+
+/-- The **per-pile** fiber count: the family of equivs `↥(P i) ≃ ↥(C i)` over a
+    single pile has cardinality `(|C i|)!` — each is a bijection between two
+    sets of the same size `|P i| = |C i|`, so there are `|C i|!` of them
+    (`Fintype.card_equiv`). -/
+theorem equivFiberCard (i : Fin k) (hCard : (P i).card = (C i).card) :
+    Fintype.card (Equiv {x : Fin N // x ∈ P i} {x : Fin N // x ∈ C i}) =
+      Nat.factorial ((C i).card) := by
+  classical
+  have he : {x : Fin N // x ∈ P i} ≃ {x : Fin N // x ∈ C i} :=
+    Fintype.equivOfCardEq (by simp [Fintype.card_coe, hCard])
+  rw [Fintype.card_equiv he]
+  simp [Fintype.card_coe, hCard]
+
+/-- **G5 count headline.**  The number of realizing decks of a partition pair
+    `(P, C)` (pile `i` of `P` the same size as pile `i` of `C` for each `i`) is
+    `∏ i, (|C i|)!`: the fiber `MultiFiber N k P C` is in bijection with the
+    per-pile equiv family (`multiPile_equivFiber`), whose card is the product,
+    over piles, of the per-pile equiv counts (`equivFiberCard`).  For `k = 2`
+    this recovers the two-pile count `(|C 0|)! · (|C 1|)!`. -/
+theorem multiPile_card (hP : IsPartition P) (hC : IsPartition C)
+    (hCardEq : ∀ i, (P i).card = (C i).card) :
+    Fintype.card (MultiFiber N k P C) =
+      (Finset.univ : Finset (Fin k)).prod (fun i => Nat.factorial ((C i).card)) := by
+  classical
+  have he := multiPile_equivFiber N k P C hP hC
+  rw [Fintype.card_congr he]
+  rw [Fintype.card_pi]
+  apply Finset.prod_congr rfl
+  intro i _
+  exact equivFiberCard N k P C i (hCardEq i)
+
 end FiniteDeck
+
 end Shufflemath
