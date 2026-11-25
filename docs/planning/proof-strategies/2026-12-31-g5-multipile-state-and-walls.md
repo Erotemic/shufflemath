@@ -509,6 +509,12 @@ mass = numerator / choose(ΣX, k) — the multivariate-hypergeometric conditiona
 `lumpedTransition_factors` proving the two-pile kernel is the product of the two per-pile conditional
 masses. All verified (lake build + full 37-test gate green).
 
+**Landed (this session, commit `7c13ef4`):** the **per-pile normalized row-sum** —
+`lumpedConditionalMass_rowSum`: `numerator / choose (ΣX) k = 1` for any legal `k` (`k ≤ ΣX`), via
+`fin_lumped_rowSum` (the Fin c ↔ List bridge) and `field_simp` — the per-pile half of the T5 stochasticity
+headline (the two-pile version `twoPileTransitionStochastic` composes the same numerator structure at the
+joint level). Verified (lake build + full 37-test gate green).
+
 **Landed (this session, commit `db28f32`):** the single-term **Vandermonde bound** on the lumped numerator —
 `lumpedNumList_le_choose` (the List-form bound: each per-pile numerator term `∏ C(X_c,a_c)` is at most the universal
 denominator `choose (ΣX) k`, by induction on the category list, each cons-step a
