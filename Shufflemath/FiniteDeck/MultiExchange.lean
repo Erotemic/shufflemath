@@ -3,6 +3,7 @@ module
 public import Shufflemath.FiniteDeck.Partition
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Set.Card
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Tactic
 
@@ -47,7 +48,7 @@ def pAlloc {N p : Nat} (n : Fin p → Nat) (o : Fin N → Fin p) : Prop :=
 def Allocation (N p : Nat) (n : Fin p → Nat) : Type :=
   { owner : Fin N → Fin p // pAlloc n owner }
 
-variable {N p : Nat} (n : Fin p → Nat)
+variable {N p : Nat} {n : Fin p → Nat}
 
 /-- The allocation carrier is a genuine finite type: the valid owners are the
     filter of the universal owner set, and `Fintype.subtype` gives its
@@ -104,6 +105,108 @@ theorem Allocation.nonemptyOfPartition
     (P : Fin p → Finset (Fin N)) (hP : IsPartition P) :
     Nonempty (Allocation N p (fun i => (P i).card)) :=
   ⟨Allocation.ofPartition P hP⟩
+
+/-! ### A1.3 — the exchange: swapping two cards' piles
+
+The elementary **exchange** of the multi-pile state swaps the *piles* of two
+named cards `a` and `b` (leaving the order inside each pile untouched, since
+the state records only ownership).  This is the finite-deck analogue of the
+two-pile `PileEquiv.swap`.  We show it is a well-defined **self-map of the
+allocation carrier**: `swapOwner A a b` is again an `Allocation`, because it is
+`A.val` composed with the transposition `a ↔ b`, a bijection, and a bijection
+preserves every fiber's cardinality.
+
+All statements are for a general `N` and arbitrary pile count `p` with
+capacities `n` — a reusable arbitrary-finite-deck foundation.
+-/ 
+
+/-- The owner function after swapping the piles of two cards `a` and `b`:
+    card `a` takes `b`'s pile, card `b` takes `a`'s, all other cards fixed. -/
+def swapOwner (A : Allocation N p n) (a b : Fin N) (x : Fin N) : Fin p :=
+  if x = a then A.val b else if x = b then A.val a else A.val x
+
+/-- The transposition of two card indices: the map that swaps `a` and `b`
+    and fixes every other card. -/
+def cardTransposition (a b : Fin N) (x : Fin N) : Fin N :=
+  if x = a then b else if x = b then a else x
+
+/-- `cardTransposition` is an involution: applying it twice is the identity. -/
+theorem cardTransposition_involution (a b : Fin N) (x : Fin N) :
+    cardTransposition a b (cardTransposition a b x) = x := by
+  by_cases hab : a = b
+  · subst hab
+    by_cases hx : x = a
+    · subst hx
+      simp [cardTransposition]
+    · simp [cardTransposition, hx]
+  · by_cases ha : x = a
+    · subst ha
+      simp [cardTransposition, hab]
+    · by_cases hb : x = b
+      · subst hb
+        simp [cardTransposition, hab]
+      · simp [cardTransposition, ha, hb]
+
+/-- The transposition is a genuine equivalence (bijection). -/
+noncomputable def transposition (a b : Fin N) : Fin N ≃ Fin N := by
+  classical
+  refine Equiv.ofBijective (cardTransposition a b) ?_
+  constructor
+  · intro x y h
+    have h1 := congrArg (cardTransposition a b) h
+    simp [cardTransposition_involution] at h1
+    exact h1
+  · intro y
+    exact ⟨cardTransposition a b y, by simp [cardTransposition_involution]⟩
+
+/-- Swapping the piles of two cards is `A.val` composed with the pointwise
+    transposition `cardTransposition`: card `x` takes the pile that `cardTransposition a b x` had. -/
+theorem swapOwner_eq_cardTransposition (A : Allocation N p n) (a b x : Fin N) :
+    swapOwner A a b x = A.val (cardTransposition a b x) := by
+  dsimp only [swapOwner, cardTransposition]
+  split_ifs <;> simp_all
+
+/-- The transposition equivalence applies as the pointwise `cardTransposition`. -/
+theorem transposition_apply (a b x : Fin N) : (transposition a b) x = cardTransposition a b x := by
+  dsimp [transposition]
+  rfl
+
+/-- **The exchange is a well-defined self-map of the allocation carrier:**
+    swapping two cards' piles preserves every pile's size (so the result is
+    again an `Allocation`).  Reason: `swapOwner = A.val ∘ σ` for the
+    transposition `σ`, a bijection, and a bijection preserves each fiber's
+    cardinality (counted here via `Fintype.card` of the fibers, which is
+    invariant under the transposition). -/
+theorem swapOwner_capacity (A : Allocation N p n) (a b : Fin N) (i : Fin p) :
+    (Finset.univ.filter (fun x => swapOwner A a b x = i)).card = n i := by
+  set σ : Fin N ≃ Fin N := (transposition a b)
+  have hcomp : ∀ x, swapOwner A a b x = A.val (σ x) := fun x => by
+    rw [swapOwner_eq_cardTransposition, ← transposition_apply]
+  classical
+  -- the i-fiber of (A.val ∘ σ) is in bijection with the i-fiber of A.val, via x ↦ σ x
+  have hE : {x : Fin N // swapOwner A a b x = i} ≃ {y : Fin N // A.val y = i} :=
+    Equiv.ofBijective (fun z => ⟨σ z.val, by simpa [hcomp] using z.property⟩)
+      (⟨fun z w h =>
+          Subtype.ext (by simpa [Equiv.symm_apply_apply]
+            using (congrArg (σ.symm) (congrArg (·.val) h))),
+        fun w =>
+          ⟨⟨σ.symm w.val, by simpa [hcomp, Equiv.apply_symm_apply] using w.property⟩,
+           by simpa [Equiv.symm_apply_apply]⟩⟩)
+  have h1 : (Finset.univ.filter (fun x => swapOwner A a b x = i)).card =
+      Fintype.card {x : Fin N // swapOwner A a b x = i} := by
+    simpa only [Fintype.card_subtype]
+  have h2 : Fintype.card {x : Fin N // swapOwner A a b x = i} =
+      Fintype.card {y : Fin N // A.val y = i} := by
+    simpa using Fintype.card_congr hE
+  have h3 : Fintype.card {y : Fin N // A.val y = i} =
+      (Finset.univ.filter (fun y => A.val y = i)).card := by
+    simpa only [Fintype.card_subtype]
+  rw [h1, h2, h3, A.property i]
+
+/-- Swapping two cards' piles yields a valid allocation (the exchange
+    operation, packaged as a self-map of the carrier). -/
+noncomputable def swapPiles (A : Allocation N p n) (a b : Fin N) : Allocation N p n :=
+  ⟨fun x => swapOwner A a b x, fun i => swapOwner_capacity A a b i⟩
 
 end FiniteDeck
 end Shufflemath
