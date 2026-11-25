@@ -495,6 +495,13 @@ normalized two-pile T5 transition kernel has row-sum 1), and the `FiberMP`
 well-definedness (`exchangePairFiberMP`, the exchange kernel lands in the allocation
 state space).
 
+**Landed (this session, commit `ec03a3c`):** the per-(a,b) lumped numerator is now a
+standalone named `def` in `Histograms.lean` (`lumpedNum`), and the **two-pile joint
+numerator factors as the product of the per-pile weights** (`twoPile_lumpedNum_factor`:
+`∏_c C(X_c,a_c) · ∏_c C(Y_c,b_c) = ∏_c [C(X_c,a_c)·C(Y_c,b_c)]`) — the Fubini-style
+factorization that is the explicit per-(a,b) target of the G5capstone. Both theorems
+verified (`lake build Shufflemath.FiniteDeck.Histograms` + full 37-test gate green).
+
 **What remains (the G5capstone), honestly:**
 1. The *histogram-level* lumped kernel — derive `Pr(a,b|X) = [∏_c C(X_{i,c},a_c)·C(X_{j,c},b_c)] / [C(n_i,k)·C(n_j,k)]` from the allocation chain (the list-based `histAllocSum` Vandermonde is the clean route; the `Sigma`-lumping route is Fintype-walled) and prove its row-sum/stochastic + column-sum/symmetry.
 2. The *multivariate-hypergeometric stationary law* `π K = π` (the T2 `π` from `docs/planning/roadmaps/2026-11-15-arbitrary-finite-deck-generalization.md` line ~107, not landed anywhere in the repo).
