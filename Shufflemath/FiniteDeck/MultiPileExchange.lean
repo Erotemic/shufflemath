@@ -5,6 +5,8 @@ public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Data.Nat.Choose.Vandermonde
+public import Mathlib.Data.Finset.NatAntidiagonal
 public import Mathlib.Logic.Equiv.Basic
 public import Mathlib.Tactic
 
@@ -13,6 +15,8 @@ public section
 
 namespace Shufflemath
 namespace FiniteDeck
+
+open Finset Finset.Nat
 
 /-!
 # Multi-pile pairwise exchange count (the general-`k` B4, allocation level)
@@ -183,6 +187,36 @@ theorem exchangePair_involution (N : Nat) (A B oi oj : Finset (Fin N))
     have fOinotOj : x ∈ oi → x ∉ oj := by rintro hOiX hOjX; exact disjoint_notMem A B hDis x (fOiA hOiX) (fOjB hOjX)
     have fOjnotOi : x ∈ oj → x ∉ oi := by rintro hOjX hOiX; exact disjoint_notMem A B hDis x (fOiA hOiX) (fOjB hOjX)
     tauto
+
+/-!
+## Histogram-level transition denominator (multivariate Vandermonde)
+
+`histAllocSum xs k` sums, over every allocation of `k` cards across the category
+counts `xs = [X_0, …, X_{c-1}]`, the product of the per-category binomial
+coefficients `∏_i C(X_i, a_i)` — the *numerator* of the T5 histogram-level
+transition (lumping the allocation chain).  The theorem below is the
+**multivariate Vandermonde identity** `histAllocSum xs k = C(∑ xs, k)`, proved
+by induction on `xs` with each cons-step an application of Mathlib's 2-way
+`Nat.add_choose_eq`; the antidiagonal form is used throughout, so no
+range↔antidiagonal transport is required.
+-/
+def histAllocSum (xs : List Nat) (k : Nat) : Nat :=
+  match xs with
+  | [] => if k = 0 then 1 else 0
+  | a :: rest => ∑ ij ∈ antidiagonal k, (a.choose ij.1) * histAllocSum rest (ij.2)
+
+theorem histAllocSum_choose (xs : List Nat) :
+    ∀ k, histAllocSum xs k = Nat.choose (xs.sum) k := by
+  induction xs with
+  | nil =>
+      intro k
+      simp only [histAllocSum]
+      cases k <;> simp
+  | cons x xs ih =>
+      intro k
+      rw [histAllocSum, List.sum_cons, Nat.add_choose_eq]
+      refine Finset.sum_congr rfl fun ij _ ↦ ?_
+      rw [ih (ij.2)]
 
 end FiniteDeck
 end Shufflemath

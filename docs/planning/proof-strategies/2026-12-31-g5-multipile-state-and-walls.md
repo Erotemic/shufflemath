@@ -176,10 +176,25 @@ aggregator + verify gate (green, 37 tests).  The **involutivity/reversibility**
    `exchangePair_involution` (the exchange is an involution up to the swap of
    the leaving sets — the T5 "reversible symmetric kernel" at the allocation
    level, roadmap T5 line 167).  **Remaining B4 sub-steps, in order**:
-   (a) **histogram lumping** — lump the allocation chain over colors to obtain
-   the multivariate-hypergeometric T5 transition and prove its stationary law;
-   then (b) the `G5capstone` multi-pile exchange kernel-equality (the full
-   headline).
+   (a) **histogram lumping** — the transition *denominator* (the multivariate
+   Vandermonde, follow-up 4 below) is now **landed**; what remains is the
+   transition *numerator* (per-allocation multivariate-hypergeometric mass) and
+   the stationary law; then (b) the `G5capstone` multi-pile exchange
+   kernel-equality (the full headline).
+
+**2026-12-31 follow-up 4 (B4 histogram denominator — multivariate Vandermonde):**
+the *denominator* of the T5 histogram-level transition is now proven in
+`MultiPileExchange.lean`.  `histAllocSum xs k` sums, over every allocation of
+`k` cards across the category counts `xs = [X_0, …, X_{c-1}]`, the product of
+per-category binomials `∏_i C(X_i, a_i)`; `histAllocSum_choose` proves
+`histAllocSum xs k = C(∑ xs, k)` — the **multivariate Vandermonde** (the
+c-category generalization of Mathlib's 2-way `Nat.add_choose_eq`), proved by
+induction on `xs` reusing `Nat.add_choose_eq` at each cons-step, entirely in the
+antidiagonal form so no range↔antidiagonal transport is needed.  This lumps the
+allocation-level exchange count into the histogram level: summing the
+per-category numerator over all `k`-allocations of a pile recovers `choose m k`
+for that pile.  **Next B4:** the per-allocation *numerator* (multivariate
+hypergeometric mass for a fixed `(a,b)`) and the stationary law.
 
 The build gate stays green (37 tests) through all of it.
 
