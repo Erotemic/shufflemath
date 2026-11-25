@@ -121,3 +121,100 @@ membership reduction does not simplify cleanly).
   (`{n : Fin p → Nat}`) so that `Allocation N p n`-referencing defs are called
   as `swapOwner A a b x` (the capacity is inferred from `A`).  This is safe for
   the existing `Allocation.pileCard` / `Fintype` instance.
+
+## A1.3b (done 2027-01-02): the uniform-transposition exchange kernel — a `Dist` that is symmetric
+
+**Module:** `Shufflemath/FiniteDeck/UniformExchange.lean` (added to the
+`Shufflemath.lean` aggregator).  Builds directly on the A1.3a primitive
+(`swapPiles`, `swapOwner_eq_cardTransposition`, `cardTransposition`) in
+`MultiExchange.lean`.  This is the **first stochastic exchange kernel** on the
+A1 carrier, and the cleanest possible one: pick two card indices uniformly at
+random and swap their piles.
+
+### The kernel and its headline properties
+
+- **`swapKernel (hN : 0 < N) (A : Allocation N p n) : Dist (Allocation N p n)`**
+  — the pushforward of `GSR.uniformDist (Fin N × Fin N)` (the uniform law on all
+  `N^2` card pairs, the `a = b` pair being the no-op) under
+  `fun ab => swapPiles A ab.1 ab.2`.  A pushforward of a `Dist`, so every row
+  sums to `1` by construction — a genuine stochastic kernel, no separate
+  stochasticity proof needed.  Since `FiniteKernel α β := α → Dist β` is a bare
+  **abbrev** (`Finite.lean:105`), `swapKernel hN` is *already* a
+  `FiniteKernel (Allocation N p n) (Allocation N p n)` with no packaging.
+
+- **`swapOwner_involutive`** — swapping `a, b` twice restores the original owner
+  function.  Composes `swapOwner_eq_cardTransposition` with
+  `cardTransposition_involution`; the intermediate step is the `simp [swapPiles]`
+  identity `(swapPiles A a b).val = swapOwner A a b`.
+
+- **`swapPiles_involution` / `swapPiles_swap_iff`** — the self-map is an
+  involution on the carrier, and, stated as an `iff`,
+  `swapPiles A a b = A' ↔ swapPiles A' a b = A`.  This `iff` is the
+  **fiber-symmetry** fact: the preimage fiber of `A'` under the `a, b` swap is
+  exactly the preimage fiber of `A` under the same swap.  Both directions close
+  by `rw [← h]` + the involution with the correct carrier (`A` in `→`, `A'` in
+  `←`) — the `rw [← h]` in the backward branch replaces the bare `A` target, not
+  the `A` inside `swapPiles A`, so the two directions use *different*
+  involution instances.
+
+- **`swapKernel_mass`** — the explicit mass at `A'`:
+  `Dist.mass (swapKernel hN A) A' = ∑ s : Fin N × Fin N, (N*N : Rat)⁻¹ · 1[A' = swapPiles A s.1 s.2]`.
+  Follows by a `show` that unfolds `swapKernel` back to
+  `(GSR.uniformDist (Fin N × Fin N)).map …`, then `GSR.map_uniform_mass`
+  (GSR.lean:565) + `Fintype.card (Fin N × Fin N) = N*N` (a single
+  `simp [Fintype.card_prod, Fintype.card_fin]` — do *not* `rw` `card_fin` twice,
+  it over-fires and errors; `simp` to fixpoint).  The final `simp [hcard]` (full
+  simp set, not `simp only`) is what normalizes the residual
+  `↑(N*N)⁻¹ = ↑N * ↑N⁻¹` cast (`Nat.cast_mul`) and closes the sum.
+
+- **`swapKernel_symmetric`** — the headline: `mass (swapKernel hN A) A' =
+  mass (swapKernel hN A') A` (the kernel is **doubly stochastic** / symmetric).
+  Rewrite both sides by `swapKernel_mass` and `Finset.sum_congr`; the two fiber
+  indicators are pointwise equivalent by `swapPiles_swap_iff` (the involution),
+  so each summand closes with `ite_eq_left`/`ite_eq_right` (the modern names —
+  `if_pos`/`if_neg` are deprecated).  **Do not** `simp only [h, h2]` here:
+  `h : A' = swapPiles A …` and `h2 : A = swapPiles A' …` are mutually-rewriting
+  equalities and recurse to the max-recursion depth; decide each `ite` directly
+  with `ite_eq_*` instead.
+
+### Key technical point: the `Nonempty` wall and how it was routed around
+
+`GSR.uniformDist β` (GSR.lean:444) requires `[Nonempty β]` (its `1/card β`
+mass law needs `card β ≠ 0`).  The **pair** type `Fin N × Fin N` is nonempty
+iff `0 < N`, so the kernel takes `hN : 0 < N` as an **explicit parameter**
+(the same pattern as `GSR.idealShuffle (n a) (ha : 0 < a)`), and the two
+theorems that unfold `swapKernel` back to `uniformDist` provide the instance
+locally via `letI : Nonempty (Fin N × Fin N) := ⟨(⟨0, hN⟩, ⟨0, hN⟩)⟩`.  This
+avoids the dead-end of `swapKernel` pulling `hN` up as an implicit leading
+argument (which made `swapKernel A` misapply at the statement level), and of
+making `[Nonempty]` an instance argument (which then had to be synthesized in
+every statement with no instance in scope).  The two `letI`-in-a-proof sites
+trigger a cosmetic `linter.style.haveILetI` note; that linter is a **false
+positive** here — `letI` (not `let`) is required to register the instance,
+and the note does not block (AGENTS.md: style-only linter suggestions do not
+hold up substantive progress).
+
+### Status / next (the uniform-stationarity capstone, then A1.4)
+
+`Markov.detailedBalance_implies_stationary` (Markov.lean:51) shows a
+**symmetric** kernel has the **uniform** measure as stationary.  `swapKernel`
+is symmetric (above), so the capstone
+
+    Dist.mass (FiniteKernel.apply (GSR.uniformDist (Allocation N p n)) (swapKernel hN)) A
+      = Dist.mass (GSR.uniformDist (Allocation N p n)) A
+
+is the immediate next increment.  **Blocker / hypothesis needed:** that law
+needs `[Nonempty (Allocation N p n)]`, i.e. the allocation space itself
+nonempty, which holds iff the capacities fill the deck: **`∑ i, n i = N`**
+(`hN : 0 < N` alone does not give it).  So the capstone carries that hypothesis
+and needs a `Nonempty (Allocation N p n)` witness from it (build one from
+`∑ n i = N`, e.g. via A1.1's positional-partition route `ofPartition` /
+`nonemptyOfPartition`).  The detailed-balance computation is then short: both
+sides of the balance equation share the constant factor `1 / card (Allocation
+N p n)`, so it reduces to `swapKernel_symmetric`.  After that, **A1.4**
+(relabel-invariance under a `Perm (Fin N)` acting on owners) is the final piece
+of the A1 program.
+
+Full `lake build` (9021 jobs) and `./dev/verify_next_phase.sh` (37 tests OK)
+both pass with the new module; it is warning-clean except the two cosmetic
+`haveILetI` notes above.
