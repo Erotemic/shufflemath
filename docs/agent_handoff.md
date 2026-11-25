@@ -1,3 +1,26 @@
+> **✅ (session 84, 2026-12-30) — the Gate-6 three-round headline is PROMOTED to a canonical module.** The five
+> `_ProbeG6ThreeRound*` theorems (bridge `g6_3round_idealKernel_eq_fullRound`, sub-lemma B
+> `g6_threeRound_finiteRun3_tv_le_q3`, sub-lemma A `g6_threeRound_kernelDiscrepancy_le_δ1`,
+> capstone `g6_threeRound_headline`, and the `compList↔run` bridge
+> `g6_threeRound_compList3_eq_run`) plus the two K1 kernel-algebra bridges they reused
+> (`k1_idealKernel_eq_membershipLift`, `K1_swapFirst_eq_exchangeLift`) now live in one canonical
+> module **`Shufflemath/FiniteDeck/Gate6ThreeRound.lean`** (added to the `Shufflemath.lean`
+> aggregator and to `dev/verify_next_phase.sh`; full `lake build` green, 9010 jobs, 0 `sorry`).
+> The six scratch files are retired/deleted: `_ProbeG6ThreeRound`, `_ProbeG6ThreeRoundCapstone`,
+> `_ProbeG6ThreeRoundHeadline`, `_ProbeG6ThreeRoundKernelDelta`, `_ProbeK1close`,
+> `_ProbeCompListRun`. (`k1a_riffle_half`/`k1_swapMembership_eq_exchangeMembership` resolve to
+> their canonical homes `Gate6K1Capstone`/`Gate6K1Swap`; all `FiniteKernel.*` names are qualified
+> to keep the merged module free of `open`-ambiguity.) The stale `> _ProbeG6ThreeRound*` names
+> in the session-83 note below are now `Shufflemath.FiniteDeck.Gate6ThreeRound`.
+>
+> **Next real item (unchanged): the batch-5b within-pile headline**
+> `rhoRoundIdeal 99 50 … = localLift segMembership` (`Shufflemath/GSRSegHeadline`) — a
+> *side-result* (the on-mission `TV < 1/1000` is already met by this session-83 headline + the
+> 41-exchange `DobrushinDecay99`). It is at a known **elaborator-recursion wall** (elementwise
+> `Finset` subset `image (roundEmbedMap) ⊆ fiberSet …`), not a math gap; diagnosis + not-yet-tried
+> wall-free routes are in `.pi-glla/5b_subset_wall_20261230.md`. The clean next *gate* on the
+> G0–G9 ladder is **G5 (multi-pile algebra: `FiniteDeck/Piles`, `Histograms`, `MultiExchange`)**.
+>
 > **✅ (session 83, 2026-12-30 build) — the Gate-6 *three-round physical* headline is PROVEN and committed: the last Gate-6 deep-work item is closed.**
 > `Shufflemath/_ProbeG6ThreeRoundCapstone.g6_threeRound_headline`: the 99-card physical
 > three-round finite shuffler — three iterations of the correct-order full round

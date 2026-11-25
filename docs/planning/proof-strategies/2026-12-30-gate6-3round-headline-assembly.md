@@ -189,6 +189,11 @@ met BOTH on-mission (`DobrushinDecay99`, 41 exchanges) and via the 3-round
 physical certificate. (The within-pile batch-5b headline remains a separate
 side-result, off this path.)
 
-**Follow-up (not blocking):** promote `_ProbeG6ThreeRound*` to canonical names and
-add the headline to the `Shufflemath.lean` aggregator once the `_Probe` → canonical
-renames are batched.
+**Follow-up (RESOLVED — session 84, 2026-12-30):** the five theorems plus the two K1
+kernel-algebra bridges are now a single canonical module
+**`Shufflemath/FiniteDeck/Gate6ThreeRound.lean`** (aggregator +
+`dev/verify_next_phase.sh` wired; full `lake build` green, 9010 jobs, 0 `sorry`).
+The six scratch files `_ProbeG6ThreeRound*`, `_ProbeK1close`, `_ProbeCompListRun`
+are deleted; every `FiniteKernel.*` name is qualified in the merged module so the
+`open` surface stays exactly the sub-lemma-B probe's (no ambiguity). The stale
+`_Probe*` names in the body of this doc are now the `Gate6ThreeRound` declarations.
