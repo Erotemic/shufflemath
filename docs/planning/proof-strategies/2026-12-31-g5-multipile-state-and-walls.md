@@ -95,9 +95,12 @@ multi-pile exchange kernel-equality on top.
    integrated; B3's lumping core is green.
 2. ~~`lump_categoryTotal` (column-total)~~ — **DONE** (this session): proved from a
    pairwise-disjoint-piles hypothesis by `Finset.card_biUnion` + `Finset.filter_biUnion`.
-3. **Wall 2 — Fintype sub-wall now CRACKED** (under `Classical`; `twoPile_card`
-   landed this session).  Remaining: the general-`k` product-equiv bijection
-   `MultiFiber N k P C ≃ fun i => Equiv (P i) (C i)` + the count `∏_i (|C i|)!` +
+3. **Wall 2 — Fintype sub-wall CRACKED + `pileEquiv` LANDED.** `twoPile_card`
+   (this session) and the per-pile restriction equiv **`pileEquiv`** (new module
+   `Shufflemath/FiniteDeck/PileEquiv.lean`, integrated) are both in.  Remaining:
+   the general-`k` product-equiv `MultiFiber N k P C ≃ (fun i => Equiv (↥(P i)) (↥(C i)))`
+   on top of `pileEquiv`, the count formula `Fintype.card (MultiFiber N k P C) =
+   ∏_i (|C i|)!` (a `Fin k → …` product `Fintype` via `Fintype.Pi`), then
    `G5capstone` (the multi-pile exchange kernel-equality) on top.
 4. **B4** `MultiExchange` + **T5** within-pile orbit, on top of the above.
 
@@ -111,36 +114,32 @@ The build gate stays green (37 tests) through all of it.
 - Stage only changed files; keep `.pi-glla/*` tooling files out of commits;
   publish the tally with the model trailer per the standing rules.
 
-## `pileEquiv` (per-pile restriction equiv) — proven, not yet landed (session 80)
+## `pileEquiv` (per-pile restriction equiv) — **LANDED** (`Shufflemath/FiniteDeck/PileEquiv.lean`)
 
-**Mathematical status: PROVEN.** `pileEquiv (N k) (P C) (i) (e) (hi) :
-Equiv {x : Fin N // x ∈ P i} {x : Fin N // x ∈ C i}` is a real bijection, and a
-standalone probe (`_ProbeG5pile.lean`, `import Shufflemath.FiniteDeck.Piles`) with
-`hi` as an **explicit def parameter** proves it (EXIT 0): injective via
-`Subtype.ext` + `Equiv.symm_apply_apply` + `e` injective; surjective via
-`Finset.mem_image.mp` (a preimage `w ∈ P i` with `e w = z.1`) + `Equiv.apply_eq`. It
-uses `Equiv.ofBijective` (needs `noncomputable`). This is the building block of the
-general-`k` product-fiber equivariance (Wall 2): the full `MultiFiber` fiber is a
-product of these per-pile equivs, `Fintype.card = ∏_i (|P i|)! = ∏_i (|C i|)!`.
+**Mathematical status: PROVEN and now in the library.** `pileEquiv (N k) (P C)
+(i) (e) (hi) : Equiv {x : Fin N // x ∈ P i} {x : Fin N // x ∈ C i}` is a bijection:
+injective via `Subtype.ext` + `Equiv.symm_apply_apply` + `e` injective; surjective
+via `Finset.mem_image.mp` (a preimage `w ∈ P i` with `e w = z.1`) + `Equiv.apply_eq`.
+It is a `noncomputable def` (uses `Equiv.ofBijective`) in its own module
+`Shufflemath/FiniteDeck/PileEquiv.lean` (added to the aggregator + verify script;
+gate green, 37 tests). It is the building block of the general-`k` product-fiber
+equivariance (Wall 2): the full `MultiFiber` fiber is a product of these per-pile
+equivs, `Fintype.card = ∏_i (|P i|)! = ∏_i (|C i|)!`.
 
-**Obstacle (Lean elaboration, NOT math):** the SAME proof does **not** elaborate as
-a top-level `def` or inside a `section` **in `Piles.lean` itself** — the SURJECTIVITY
-line `rcases Finset.mem_image.mp (by simpa [← hi] using z.2) with …` (turning
-`z.1 ∈ C i` into `z.1 ∈ (P i).image (fun q => e q)` using `hi`) fails with
-*“tactic execution is stuck, goal contains metavariables.”* The INJECTIVITY side
-(`pileF`, `⟨e x.1, by simpa [← hi] using Finset.mem_image.mpr …⟩`) elaborates fine in
-the section; only the surjectivity rewrite is stuck. Tried and **all still stuck**:
-`rw`, `simpa`, `Eq.mp`/`Eq.mpr` (wrong tool — they act on the Finset *values*, not the
-membership `Prop`), and eta-reducing the image to a local `hi' : (P i).image e = C i`
-(`by simpa [funext] using hi`). The lambda `(fun q => e q)` inside the image appears to
-block the membership unification when `hi` is a module-level parameter (it works when
-`hi` is a parameter of a def in a *standalone* file that imports Piles).
-
-**Next steps (in order):** (1) move `pileF`/`pileEquiv` to a **standalone module**
-(e.g. `FiniteDeck/PileEquiv.lean`) and `import` it — the probe shows this elaborates;
-(2) if that fails, re-prove surjectivity **without** the membership rewrite — e.g. via
-`Finset.mem_image` (the iff) + `Finset.ext`, or by building the witness directly from
-`hi`/`z.2` with `Finset.image`'s definition; (3) `#check`/`#reduce` the stuck goal to
-see the exact unresolvable metavariable. **Until one of these lands, `Piles.lean` is
-reverted to `twoPile_card` only** (the non-elaborating `pileEquiv` is not committed).
+**Elaboration root cause (precise, for the next product-equiv attempt):** the
+surjectivity step rewrites the membership `z.1 ∈ C i` into `z.1 ∈ (P i).image
+(fun q => e q)` using `hi : (P i).image (fun q => e q) = C i`.  This works in a
+*plain* file (the `_ProbeG5pile.lean` probe) but **fails in any `module` file**
+(Piles.lean, or a standalone module) with *“tactic execution is stuck, goal
+contains metavariables: `?m.108 ∈ Finset.image ?m.106 ?m.107`.”*  The module system's
+**deferred** elaboration runs the anonymous `by` inside `Finset.mem_image.mp (by
+rw [hi]; …)` *before* the expected-type metavariables (`z.1`, `P i`, `e`) are
+unified, so `rw` sees an all-metavariable goal.  The fix (applied): pull the
+proof into a **named `have hmem : z.1 ∈ (P i).image (fun q => e q) := by rw [hi];
+exact z.2`** with a *concrete* type — the `have`'s goal is fully resolved, so `rw`
+sees concrete terms.  (`open Classical`, `Eq.mp/mpr`, and eta-reducing the image
+do NOT fix it; only giving the `by` a concrete `have` goal does.) **Rule of thumb
+for the next product-equiv / G5capstone:** any `by` that rewrites a subtype
+membership from a pile-equality hypothesis must be wrapped in a named `have` with
+an explicit concrete type, not inlined as an anonymous `by` argument.
 
