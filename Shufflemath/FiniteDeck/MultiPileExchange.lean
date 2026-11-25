@@ -679,5 +679,62 @@ theorem lumpedConditionalMass_pos_of_valid (c : Nat) (X a : Fin c → Nat) (k : 
   have hden : 0 < Nat.choose (Finset.univ.sum X) k := Nat.choose_pos hle
   exact div_pos (Nat.cast_pos.mpr hnum) (Nat.cast_pos.mpr hden)
 
+/-! ## The two-pile lumped transition has the same exact support
+
+Composing the per-pile support lemmas, the two-pile kernel is zero when either
+pile's allocation is invalid (either per-category violation forces a zero
+product factor) and positive for any pair of fully valid allocations — the
+two-pile analogue of the exact-support pair, with no dependence on the other pile. -/
+
+/-- The two-pile lumped transition is zero when the left pile's allocation
+    `a` violates a per-category bound (`a j > X j`): `lumpedNum c X a` vanishes,
+    so the numerator — and hence the ratio — is zero. -/
+theorem lumpedTransition_eq_zero_of_exceed_left (c : Nat) (X Y : Fin c → Nat) (k : Nat) (a b : Fin c → Nat)
+    {j : Fin c} (hj : a j > X j) :
+    lumpedTransition c X Y k a b = 0 := by
+  have h0 : lumpedNum c X a = 0 := by
+    rw [lumpedNum]
+    exact Finset.prod_eq_zero (Finset.mem_univ j) (Nat.choose_eq_zero_of_lt hj)
+  rw [lumpedTransition, h0]
+  simp
+
+/-- The two-pile lumped transition is zero when the right pile's allocation
+    `b` violates a per-category bound (`b j > Y j`). -/
+theorem lumpedTransition_eq_zero_of_exceed_right (c : Nat) (X Y : Fin c → Nat) (k : Nat) (a b : Fin c → Nat)
+    {j : Fin c} (hj : b j > Y j) :
+    lumpedTransition c X Y k a b = 0 := by
+  have h0 : lumpedNum c Y b = 0 := by
+    rw [lumpedNum]
+    exact Finset.prod_eq_zero (Finset.mem_univ j) (Nat.choose_eq_zero_of_lt hj)
+  rw [lumpedTransition, h0]
+  simp
+
+/-- For any pair of fully valid allocations (`a j ≤ X j` and `b j ≤ Y j`
+    per category), summed to `k`, the two-pile lumped transition is positive:
+    the numerator product of per-pile numerators is positive (each factor
+    via `Nat.choose_pos`), and the universal denominator is positive
+    (`k ≤ ΣX`, `k ≤ ΣY`). -/
+theorem lumpedTransition_pos_of_valid (c : Nat) (X Y : Fin c → Nat) (k : Nat) (a b : Fin c → Nat)
+    (hsumA : Finset.univ.sum a = k) (hsumB : Finset.univ.sum b = k)
+    (hA : ∀ j, a j ≤ X j) (hB : ∀ j, b j ≤ Y j) :
+    0 < lumpedTransition c X Y k a b := by
+  have hnumA : 0 < lumpedNum c X a := by
+    rw [lumpedNum]
+    exact Finset.prod_pos (fun i _ => Nat.choose_pos (hA i))
+  have hnumB : 0 < lumpedNum c Y b := by
+    rw [lumpedNum]
+    exact Finset.prod_pos (fun i _ => Nat.choose_pos (hB i))
+  have hleA : k ≤ Finset.univ.sum X := by
+    rw [← hsumA]
+    exact Finset.sum_le_sum (fun i _ => hA i)
+  have hleB : k ≤ Finset.univ.sum Y := by
+    rw [← hsumB]
+    exact Finset.sum_le_sum (fun i _ => hB i)
+  have hdenA : 0 < Nat.choose (Finset.univ.sum X) k := Nat.choose_pos hleA
+  have hdenB : 0 < Nat.choose (Finset.univ.sum Y) k := Nat.choose_pos hleB
+  simp only [lumpedTransition, Nat.cast_mul]
+  exact div_pos (mul_pos (Nat.cast_pos.mpr hnumA) (Nat.cast_pos.mpr hnumB))
+    (mul_pos (Nat.cast_pos.mpr hdenA) (Nat.cast_pos.mpr hdenB))
+
 end FiniteDeck
 end Shufflemath
