@@ -3,6 +3,7 @@ module
 public import Shufflemath.FiniteDeck.Partition
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Set.Card
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Tactic
@@ -170,6 +171,37 @@ theorem swapOwner_eq_cardTransposition (A : Allocation N p n) (a b x : Fin N) :
 theorem transposition_apply (a b x : Fin N) : (transposition a b) x = cardTransposition a b x := by
   dsimp [transposition]
   rfl
+
+/-! ### A1.4 core — conjugation of a transposition by a relabeling
+
+The next layer of the A1 program is **relabel-invariance**: the multi-pile exchange
+structure should not depend on the arbitrary names we have given the cards.  The
+foundational equivariance fact is that a permutation `σ` of the card indices
+*conjugates* the transposition of `a, b` to the transposition of their images `σ a, σ b`.
+This is what makes swapping two cards' piles commute with relabeling, and (via the
+uniform `(a, b)`-choice being relabel-invariant) what makes the uniform swap kernel
+invariant under relabeling.  Stated for a general `N`; `σ` may be any permutation, and
+no allocation is involved. -/
+
+/-- Conjugation: a permutation `σ` conjugates the transposition of `a, b` to the
+    transposition of their images `σ a, σ b`. -/
+theorem conjugate_transposition (σ : Equiv.Perm (Fin N)) (a b x : Fin N) :
+    σ (cardTransposition a b (σ.symm x)) = cardTransposition (σ a) (σ b) x := by
+  by_cases ha : x = σ a
+  · subst ha
+    simp [cardTransposition, Equiv.symm_apply_apply]
+  · by_cases hb : x = σ b
+    · subst hb
+      simp [cardTransposition, Equiv.symm_apply_apply, ha]
+    · have hna : σ.symm x ≠ a := by
+        intro h
+        have hx : x = σ a := by rw [(σ.apply_symm_apply x).symm, h]
+        contradiction
+      have hnb : σ.symm x ≠ b := by
+        intro h
+        have hx : x = σ b := by rw [(σ.apply_symm_apply x).symm, h]
+        contradiction
+      simp [cardTransposition, hna, hnb, ha, hb, Equiv.apply_symm_apply]
 
 /-- **The exchange is a well-defined self-map of the allocation carrier:**
     swapping two cards' piles preserves every pile's size (so the result is
