@@ -8,7 +8,9 @@ classic-`Finset`-API refactor (details below); the module is rewritten against t
 Mathlib's API, builds green, and is integrated into the aggregator + verify script.
 **Wall 2 (general-k product-fiber Fintype) remains** — it needs the product-fiber
 `Fintype` instance, the real capstone blocker. The build is green (37 tests OK,
-EXIT 0); everything committed.
+EXIT 0); everything committed. **Both B3 histogram lemmas are now proven**:
+`lump_pileTotal` (row-total = pile size) and `lump_categoryTotal` (column-total =
+category-`j` count of the piles' union, from a disjoint-piles hypothesis).
 
 ## What is in the repo right now (ground truth)
 
@@ -54,12 +56,13 @@ and proved `lump_pileTotal` with the `Set`-coerced `PairwiseDisjoint` +
 mirroring `Fiber.lean`'s proven pattern.  Added the module to the `Shufflemath.lean`
 aggregator and `dev/verify_next_phase.sh`.  **Builds green; 37-test gate passes.**
 
-**Remaining on this thread (bounded):** the column-total `lump_categoryTotal`
-(summing `lump` over piles = the deck's category-`j` count) additionally needs the
-piles to be **pairwise disjoint** (a valid allocation): with a
-`hPiles : ∀ i j, i ≠ j → Disjoint (cardPile i) (cardPile j)` hypothesis it goes
-through by `Finset.card_biUnion` on the filtered piles plus `Finset.biUnion_filter`.
-A natural next micro-increment.
+**Column-total `lump_categoryTotal` — now proven (2026-12-31):** summing `lump`
+over all piles equals the category-`j` count of the piles' union, from a
+`hPiles : ∀ i j, i ≠ j → Disjoint (cardPile i) (cardPile j)` hypothesis, by
+`Finset.card_biUnion` on the filtered sub-piles plus `Finset.filter_biUnion`
+(the actual lemma name — `Finset.biUnion_filter` does not exist in this Mathlib).
+`Disjoint` is the bare (Set-coerced) one; this Mathlib has **no `Finset.Disjoint`**
+(the same classic-`Finset`-API refactor that removed `Finset.count`).
 
 ## Wall 2 — general-k product-fiber `Fintype` instance (the real capstone)
 
@@ -75,10 +78,11 @@ wall on the batch-5b headline).
 
 1. ~~Fix `Histograms.lean` imports~~ — **DONE.**  `Histograms.lean` builds and is
    integrated; B3's lumping core is green.
-2. **`lump_categoryTotal`** — add the column-total with a disjoint-piles hypothesis
-   (bounded; `Finset.card_biUnion` + `Finset.biUnion_filter`).
+2. ~~`lump_categoryTotal` (column-total)~~ — **DONE** (this session): proved from a
+   pairwise-disjoint-piles hypothesis by `Finset.card_biUnion` + `Finset.filter_biUnion`.
 3. **Wall 2** — the general-k product fiber + `Fintype` instance + `G5capstone`
-   (the capstone).
+   (the capstone): a `MultiFiber`-like `Fintype` for arbitrary `k` and `c` so the
+   multi-pile exchange kernel-equality is well-typed.
 4. **B4** `MultiExchange` + **T5** within-pile orbit, on top of the above.
 
 The build gate stays green (37 tests) through all of it.

@@ -4,6 +4,7 @@ public import Mathlib.Data.Fin.Basic
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Finset.Union
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Nat.Basic
@@ -37,13 +38,13 @@ available in this Mathlib version: `count` has been refactored away (use
 API, mirroring the `fiberDisjoint` / `fiberCard` / `Finset.card_biUnion`
 idiom already in `FiniteDeck/Fiber.lean`.
 
-### Column total (next increment)
+### Column total
 
 `lump_categoryTotal` — summing the `i`-counts over all piles equals the deck's
 category-`j` count — additionally needs the piles to be **pairwise disjoint**
 (a valid allocation); with a `hPiles : ∀ i j, i ≠ j → Disjoint (cardPile i)
 (cardPile j)` hypothesis it goes through by `Finset.card_biUnion` on the
-filtered piles plus `Finset.biUnion_filter`.  Left as the next increment.
+filtered piles plus `Finset.filter_biUnion`.  Proved below.
 -/
 
 /-- The lumped count of category-`j` cards inside pile `i`.
@@ -89,6 +90,42 @@ theorem lump_pileTotal (cardPile : Fin k → Finset (Fin N)) (color : Fin N → 
   calc (Finset.univ : Finset (Fin c)).sum (fun j => (hf j).card)
       = (((Finset.univ : Finset (Fin c)).biUnion hf)).card := (Finset.card_biUnion hDisj).symm
     _ = (cardPile i).card := congrArg Finset.card hCover
+
+/-- Column-sum: summing the `i`-counts over all piles equals the number of
+    category-`j` cards in the union of the piles.  The piles are assumed
+    pairwise disjoint (a valid allocation); disjoint piles make the filtered
+    (category-`j`) sub-piles disjoint, so their `card`s sum to the `card` of
+    their `biUnion`, which (by `Finset.filter_biUnion`) is the filter of the
+    piles' `biUnion`.  When the piles partition the whole deck, the right side
+    is the deck's category-`j` count. -/
+theorem lump_categoryTotal
+    (cardPile : Fin k → Finset (Fin N)) (color : Fin N → Fin c)
+    (hPiles : ∀ i j, i ≠ j → Disjoint (cardPile i) (cardPile j))
+    (j : Fin c) :
+    (Finset.univ : Finset (Fin k)).sum (fun i => lump cardPile color i j) =
+      (((Finset.univ : Finset (Fin k)).biUnion cardPile).filter (fun x => color x = j)).card := by
+  let p (x : Fin N) : Prop := color x = j
+  let hf (i : Fin k) := (cardPile i).filter p
+  -- Unfold `lump` to the filtered sub-pile card counts.
+  have hLump : (Finset.univ : Finset (Fin k)).sum (fun i => lump cardPile color i j) =
+      (Finset.univ : Finset (Fin k)).sum (fun i => (hf i).card) := by
+    simp only [lump, hf, p]
+  -- The filtered sub-piles are disjoint: a card common to two of them would be
+  -- in two disjoint piles.  Mirrors the disjointness step of `lump_pileTotal`.
+  have hDisj : ((Finset.univ : Finset (Fin k)) : Set (Fin k)).PairwiseDisjoint hf := by
+    intros a _ b _ hne
+    change Disjoint (hf a) (hf b)
+    rw [Finset.disjoint_iff_ne]
+    intro x hx y hy hxy
+    simp only [hf, p, Finset.mem_filter] at hx hy
+    have hPD := Finset.disjoint_iff_ne.mp (hPiles a b hne)
+    exact (hPD x hx.1 y hy.1) hxy
+  -- Sum the disjoint sub-pile cards to the `biUnion`'s card, then commute the
+  -- `filter` across the `biUnion`.
+  calc (Finset.univ : Finset (Fin k)).sum (fun i => (hf i).card)
+      = (((Finset.univ : Finset (Fin k)).biUnion hf)).card := (Finset.card_biUnion hDisj).symm
+    _ = (((Finset.univ : Finset (Fin k)).biUnion cardPile).filter p).card := by
+        simp only [Finset.filter_biUnion, hf, p]
 
 end FiniteDeck
 end Shufflemath
