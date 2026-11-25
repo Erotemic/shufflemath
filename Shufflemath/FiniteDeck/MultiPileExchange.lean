@@ -44,12 +44,18 @@ The two-pile result is the special case `B = univ \ A` (`n = N - m`).  The
 proof is structural (membership `ext` + `tauto` over disjointness); there is no
 `native_decide` and no enumeration of the full deck.
 
-## Next steps (documented, not yet proven here)
-- **Involutivity / reversibility:** `exchangePair ((A\oi)∪oj) ((B\oj)∪oi) oj oi
-  = (A, B)`, i.e. the exchange kernel is a reversible symmetric kernel (the
-  T5 "unique (out_i, out_j) argument").
+## Involutivity / reversibility (proven here)
+`exchangePair_involution` shows the exchange is an involution up to the swap of
+the two leaving sets: applying it again to the exchanged pair, with the leaving
+sets `(oj, oi)` (the cards each pile *borrowed*), recovers the original pair:
+`exchangePair ((A\oi)∪oj) ((B\oj)∪oi) oj oi = (A, B)`.  Hence the allocation-level
+pairwise-exchange kernel is a **reversible symmetric kernel** — the T5 "unique
+`(out_i, out_j)` argument" at the allocation level (roadmap T5 line 167).
+
+## Remaining next step (documented, not yet proven here)
 - **Histogram lumping:** lump the allocation chain over colors to obtain the
-  multivariate-hypergeometric T5 transition and prove its stationarity.
+  multivariate-hypergeometric T5 transition and prove its stationarity; then
+  the `G5capstone` multi-pile exchange kernel-equality (the full headline).
 -/
 
 /-- The exchanged pair: `oi` cards leave `A` (entering `B`), `oj` cards leave
@@ -141,6 +147,42 @@ theorem pairwiseExchangeCount (N m n k : Nat)
     exchangePair_injOn N A B k hDis D (Finset.Subset.refl _)
   rw [Finset.card_image_of_injOn hInj, Finset.card_product,
       Finset.card_powersetCard, hA, Finset.card_powersetCard, hB]
+
+/-!
+## B4 involutivity / reversibility (allocation-level, T5 "reversible symmetric
+kernel")
+
+The `k`-exchange is an involution up to the swap of the two leaving sets:
+applied again to the exchanged pair, with the leaving sets `(oj, oi)` (the
+cards each pile *borrowed*), it recovers the original pair.  Hence the
+allocation-level pairwise-exchange kernel is a **reversible symmetric kernel** —
+the T5 "unique `(out_i, out_j)` argument" (roadmap T5 line 167), at the
+allocation level.
+-/
+theorem exchangePair_involution (N : Nat) (A B oi oj : Finset (Fin N))
+    (hOi : oi ⊆ A) (hOj : oj ⊆ B) (hDis : Disjoint A B) :
+    exchangePair N ((A \ oi) ∪ oj) ((B \ oj) ∪ oi) oj oi = (A, B) := by
+  refine Prod.ext ?_ ?_
+  · -- ((A \ oi) ∪ oj) \ oj ∪ oi = A
+    ext x
+    simp only [exchangePair, Finset.mem_sdiff, Finset.mem_union]
+    have fOiA : x ∈ oi → x ∈ A := subset_mem oi A hOi x
+    have fOjB : x ∈ oj → x ∈ B := subset_mem oj B hOj x
+    have fAnotOj : x ∈ A → x ∉ oj := by rintro hA hOjX; exact disjoint_notMem A B hDis x hA (fOjB hOjX)
+    have fOjnotA : x ∈ oj → x ∉ A := by rintro hOjX hA; exact disjoint_notMem A B hDis x hA (fOjB hOjX)
+    have fOjnotOi : x ∈ oj → x ∉ oi := by rintro hOjX hOiX; exact disjoint_notMem A B hDis x (fOiA hOiX) (fOjB hOjX)
+    have fOinotOj : x ∈ oi → x ∉ oj := by rintro hOiX hOjX; exact disjoint_notMem A B hDis x (fOiA hOiX) (fOjB hOjX)
+    tauto
+  · -- ((B \ oj) ∪ oi) \ oi ∪ oj = B
+    ext x
+    simp only [exchangePair, Finset.mem_sdiff, Finset.mem_union]
+    have fOiA : x ∈ oi → x ∈ A := subset_mem oi A hOi x
+    have fOjB : x ∈ oj → x ∈ B := subset_mem oj B hOj x
+    have fBnotOi : x ∈ B → x ∉ oi := by rintro hB hOiX; exact disjoint_notMem A B hDis x (fOiA hOiX) hB
+    have fOinotB : x ∈ oi → x ∉ B := by rintro hOiX hB; exact disjoint_notMem A B hDis x (fOiA hOiX) hB
+    have fOinotOj : x ∈ oi → x ∉ oj := by rintro hOiX hOjX; exact disjoint_notMem A B hDis x (fOiA hOiX) (fOjB hOjX)
+    have fOjnotOi : x ∈ oj → x ∉ oi := by rintro hOjX hOiX; exact disjoint_notMem A B hDis x (fOiA hOiX) (fOjB hOjX)
+    tauto
 
 end FiniteDeck
 end Shufflemath

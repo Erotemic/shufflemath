@@ -163,22 +163,23 @@ denominator of the T5 histogram kernel and the multi-pile generalization of the
 exchange map injective on `(k-subsets of A) × (k-subsets of B)`
 (`exchangePair_injOn`), so the reachable count is the domain count
 (`Finset.card_image_of_injOn` + `Finset.card_powersetCard`).  Integrated into the
-aggregator + verify gate (green, 37 tests).  Remaining B4: the exchange
-**involutivity/reversibility** (`exchangePair ((A\oi)∪oj) ((B\oj)∪oi) oj oi = (A,B)`
-— the T5 "unique (out_i,out_j) argument" / reversible symmetric kernel), the
-**histogram lumping** (multivariate-hypergeometric T5 transition + stationary
-law), and the `G5capstone` kernel-equality.
-6. **B4 allocation-level count** — **DONE (this session).**  New module
-   `Shufflemath/FiniteDeck/MultiPileExchange.lean` proves
+aggregator + verify gate (green, 37 tests).  The **involutivity/reversibility**
+(`exchangePair_involution`: `exchangePair ((A\oi)∪oj) ((B\oj)∪oi) oj oi = (A,B)`
+— the T5 "unique (out_i,out_j) argument" / reversible symmetric kernel) is now
+**also proven** in the same module.  Remaining B4: the **histogram lumping**
+(multivariate-hypergeometric T5 transition + stationary law) and the
+`G5capstone` kernel-equality.
+6. **B4 allocation-level count + involutivity** — **DONE (this session).**  New
+   module `Shufflemath/FiniteDeck/MultiPileExchange.lean` proves
    `pairwiseExchangeCount` (the T5 denominator `choose m k * choose n k`, the
-   disjoint-pile generalization of the 2-pile `subsetExchangeCount`).  The
-   **remaining B4 sub-steps, in order**: (a) the exchange
-   **involutivity/reversibility** — `exchangePair` applied to the exchanged pair
-   with the leaving sets swapped recovers the original pair, i.e. the T5
-   "reversible symmetric kernel"; (b) **histogram lumping** — lump the allocation
-   chain over colors to obtain the multivariate-hypergeometric T5 transition and
-   prove its stationary law; then (c) the `G5capstone` multi-pile exchange
-   kernel-equality (the full headline).
+   disjoint-pile generalization of the 2-pile `subsetExchangeCount`) and
+   `exchangePair_involution` (the exchange is an involution up to the swap of
+   the leaving sets — the T5 "reversible symmetric kernel" at the allocation
+   level, roadmap T5 line 167).  **Remaining B4 sub-steps, in order**:
+   (a) **histogram lumping** — lump the allocation chain over colors to obtain
+   the multivariate-hypergeometric T5 transition and prove its stationary law;
+   then (b) the `G5capstone` multi-pile exchange kernel-equality (the full
+   headline).
 
 The build gate stays green (37 tests) through all of it.
 
