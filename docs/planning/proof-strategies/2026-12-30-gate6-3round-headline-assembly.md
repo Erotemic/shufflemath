@@ -149,38 +149,46 @@ budget `3·δ1` (sub-lemma A).
 
 ## Status
 
-- **Bridge**: done, committed (`d2793d8`).
-- **Sub-lemma B** (`TV(apply mu (compList [L,L,L]), uniform) ≤ q3`): done,
-  committed (`f9f8435`, `_ProbeG6ThreeRoundHeadline.g6_threeRound_`
-  `finiteRun3_tv_le_q3`).
-- **Sub-lemma A** (`kernelDiscrepancy K L ≤ δ1`): done, committed (session 83,
-  `_ProbeG6ThreeRoundKernelDelta.g6_threeRound_kernelDiscrepancy_le_δ1`) — row
-  decomposition through the PAK action law + `apply_discrepancy_bound` (A1) +
-  `tv_map_contraction` (A2) + `oneRoundDeckTV_le_delta1` (A3). `convContraction`
-  is NOT applicable (the differing kernels are the inner/right factor).
-- **Headline assembly** (`g6_threeRound_headline`): **the last piece.** Combines
-  sub-lemma A (finite-vs-ideal 3-run `≤ 3·δ1` via
-  `compList_telescope_nstep_le_n_times_d`) + sub-lemma B (`≤ q3`) +
-  `tv_triangle` + `gate6_headline_lt_thousandth` (`q3 + 3·δ1 < 1/1000`).
-  - The only fiddly part is the telescope's `hΔle` argument: after
-    `rcases List.mem_map.mp ha`, decompose `a ∈ ([K,K,K].zip [L,L,L]).map (fun p
-    => kernelDiscrepancy p.1 p.2)` to the single repeated pair `kd K L ≤ δ1`
-    (4-branch `rcases` on the `∨ False` chain; `dsimp` to compute the zip;
-    `rw [δ1_eq_2401_over_8388608]; norm_num` for `0 ≤ δ1`).
-  - **Heartbeat caution**: the combined file (sub-lemma A + B + headline in one
-    module) exhausts `whnf`/heartbeat budget (the big `g6ThreeRoundFiniteKernel`/`PAK`
-    defs get unfolded repeatedly in the `hΔle` simp). Build the headline in a
-    separate module importing sub-lemma A (`_ProbeG6ThreeRoundKernelDelta`) and
-    sub-lemma B (`_ProbeG6ThreeRoundHeadline`) + the bridge (`_ProbeG6ThreeRound`) —
-    or trim the `hΔle` to avoid `simp`/`dsimp` on the big kernel defs (use
-    explicit `rw [hK, hF, g6_3round_idealKernel_eq_fullRound]` + `exact`).
-  - **Import-collision note**: `_ProbeCompListRun` (sub-lemma B's dep) imports
-    `K1Wall`; `_ProbeG6ThreeRound` (the bridge) → `_ProbeK1close` →
-    `_ProbeGate6K1` → `_ProbeK1wall`. Both define `rho99Ideal_pairs` in namespace
-    `Shufflemath`, so a file importing both fails. **Trim `_ProbeCompListRun`'s
-    imports to `Mathlib`/`Finite`/`Perturbation`** (its theorem is pure kernel
-    algebra; the `K1Wall`/`Gate6K1Capstone`/… imports are unused) — done locally
-    this session; re-apply if reverted (the file is tracked, so commit the trim).
+**✅ COMPLETE (session 83, Dec 30 build). The Gate 6 three-round physical
+`TV < 1/1000` headline is proven and committed — all three sub-lemmas plus the
+final assembly build, 0 `sorry`.**
 
-This is the final Gate 6 deep-work item; the on-mission `TV < 1/1000` is already
-met independently by `DobrushinDecay99` (41 exchanges).
+- **Bridge**: done, committed (`d2793d8`) — `g6_3round_idealKernel_eq_fullRound`:
+  `exchangeThenLocalReset … = comp (PAK swapLaw) (PAK rho99Ideal)`.
+- **Sub-lemma B**: done, committed (`f9f8435`) — `g6_threeRound_finiteRun3_tv_le_q3`:
+  the 3-round finite run from the fiber-uniform start is TV `≤ q3` from uniform.
+- **Sub-lemma A**: done, committed (session 83) — `g6_threeRound_kernelDiscrepancy_le_δ1`:
+  `kd (comp (PAK S)(PAK F)) (comp (PAK S)(PAK I)) ≤ δ1`.
+- **Headline assembly**: done, committed (session 83) —
+  `_ProbeG6ThreeRoundCapstone.g6_threeRound_headline`:
+  `TV (apply g6ThreeRoundStart (compList [g6ThreeRoundFiniteRound ×3])) (uniform) < 1/1000`.
+  Assembled from: **hAccum** = the n-step telescope
+  (`compList_telescope_nstep_le_n_times_d`) with per-row bound = sub-lemma A
+  (`≤ 3·δ1`); **hIdeal** = sub-lemma B (`≤ q3`); `gate6_headline_lt_thousandth`
+  (`q3 + 3·δ1 < 1/1000`) + `Dist.tv_triangle`.
+
+**Key unblocking tricks (session 83):**
+1. **Isolation** — sub-lemma A and the headline each live in their own module
+   (importing only the pieces they need), so the combined file's `whnf`/heartbeat
+   cascade is avoided.
+2. **`Eq.subst` (`hL ▸ …`) instead of `rw [hL]`** — the hΔle branch must transport
+   sub-lemma A's bound (stated for `comp (PAK S)(PAK I)`) across the bridge
+   `hL : g6ThreeRoundFiniteKernel = comp (PAK S)(PAK I)`. `rw [hL]` *unfolds*
+   `g6ThreeRoundFiniteKernel` (the big `exchangeThenLocalReset` def) to match, and
+   that recursion is exactly what killed the combined file. `hL ▸ t` uses the
+   equality as a type-transport (no unfolding) — no recursion.
+3. **Import-collision hygiene** — `_ProbeCompListRun` (sub-lemma B's dep) and
+   `_ProbeK1wall` (the bridge's `_ProbeK1close → _ProbeGate6K1` chain) both used to
+   define `rho99Ideal_pairs`; trimming `_ProbeCompListRun` to `Mathlib`/`Finite`/
+   `Perturbation` removed `K1Wall` from the graph so only `_ProbeK1wall` remains.
+   Also removed sub-lemma A's redundant `g6ThreeRoundDeck` `abbrev` (it collided
+   with `_ProbeCompListRun`'s, which is used by its theorem).
+
+This closes the last Gate 6 deep-work item. The on-mission `TV < 1/1000` is now
+met BOTH on-mission (`DobrushinDecay99`, 41 exchanges) and via the 3-round
+physical certificate. (The within-pile batch-5b headline remains a separate
+side-result, off this path.)
+
+**Follow-up (not blocking):** promote `_ProbeG6ThreeRound*` to canonical names and
+add the headline to the `Shufflemath.lean` aggregator once the `_Probe` → canonical
+renames are batched.

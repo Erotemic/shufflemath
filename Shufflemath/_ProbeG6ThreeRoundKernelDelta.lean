@@ -41,9 +41,6 @@ composition, but the two kernels that differ (finite vs ideal A3) are the
 factor — so the row decomposition through the `PAK` action law is the
 right route. No oracle, no `native_decide`, no `native_defeq`/`WHNF` wall. -/
 
--- The one-card commander deck state, as a full deck permutation.
-abbrev g6ThreeRoundDeck := Equiv.Perm (Fin 99)
-
 /-- The finite 3-round round kernel: swap (left shuffle) first, then the A3
     physical perfect-shuffle round (resample + exchange). -/
 noncomputable def g6ThreeRoundFiniteRound : FiniteKernel Deck Deck :=
