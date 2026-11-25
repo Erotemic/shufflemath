@@ -105,18 +105,37 @@ step**, then the multi-pile exchange kernel-equality on top (`G5capstone`).
 
 1. ~~Fix `Histograms.lean` imports~~ — **DONE.**  `Histograms.lean` builds and is
    integrated; B3's lumping core is green.
-2. ~~`lump_categoryTotal` (column-total)~~ — **DONE** (this session): proved from a
-   pairwise-disjoint-piles hypothesis by `Finset.card_biUnion` + `Finset.filter_biUnion`.
-3. **Wall 2 — Fintype sub-wall CRACKED + `pileEquiv` + `PileFiber` +
-   `MultiPileFiber` LANDED.**  `twoPile_card` and the per-pile restriction equiv
-   **`pileEquiv`** (`Shufflemath/FiniteDeck/PileEquiv.lean`) are in, and the fiber
-   bijection's forward map + inverse + crux + deck round-trip
-   (`Shufflemath/FiniteDeck/PileFiber.lean`), the equiv round-trip + the headline
-   fiber `Equiv` **`multiPile_equivFiber : MultiFiber N k P C ≃ Π i, Equiv
-   (↥(P i)) (↥(C i))`** (`Shufflemath/FiniteDeck/MultiPileFiber.lean`) are in too.
-   Remaining: the count formula `Fintype.card (MultiFiber N k P C) = ∏_i
-   (|C i|)!` → `G5capstone` (the multi-pile exchange kernel-equality).
-4. **B4** `MultiExchange` + **T5** within-pile orbit, on top of the above.
+2. ~~`lump_categoryTotal` (column-total)~~ — **DONE.**  Proved from a
+   pairwise-disjoint-piles hypothesis by `Finset.card_biUnion` +
+   `Finset.filter_biUnion`.
+3. ~~Wall 2 Fintype sub-wall + `pileEquiv` + `PileFiber` + `MultiPileFiber`~~
+   — **DONE.**  `twoPile_card`, the per-pile restriction equiv `pileEquiv`, the
+   fiber bijection (forward/inverse/crux/deck + equiv round-trips),
+   `multiPile_equivFiber`, and the count formula **`multiPile_card`
+   (`Fintype.card (MultiFiber N k P C) = ∏_i (|C i|)!`)** are all landed in
+   `MultiPileFiber.lean`.
+4. ~~3-pile, 2-category example (static)~~ — **DONE (2026-12-31, commit `f3446cd`).**
+   `Shufflemath/FiniteDeck/ThreePileTwoColor.lean` compiles the reusable
+   machinery for `k = 3`, `c = 2`: fiber count = `8` (via `multiPile_card`) and
+   the row/column histogram totals (via `lump_pileTotal` / `lump_categoryTotal`).
+   This satisfies the G5 gate's **"at least one 3-pile, 2-category example
+   compiles"** acceptance (roadmap line 235).
+5. **NEXT — T5 / multi-pile within-pile orbit (the example's *dynamics* half).**
+   Generalize `WithinPileOrbit.lean`'s 2-pile `act_d` /
+   `act_d_preservesMembership` / `wPreserves{Left,Right}OfFiber` (a within-pile
+   permutation preserves the other pile's membership) to a **multi-pile**
+   setting: a permutation of pile `i` (identity on all other piles — via the
+   `glueBlocks` / `PileFiber` per-pile-equiv machinery) preserves the membership
+   *and* the histogram row of every other pile `j ≠ i`.  Then apply it to the
+   3-pile example: a uniform riffle on pile `0` preserves piles `1` and `2`.
+   Conceptually easy (a within-pile perm can't move a card across piles), but the
+   Lean elaboration must port the 2-pile `embed_m_imageLeft` /
+   `Finset.image_image` route to the multi-pile `glueBlocks_apply_member` route —
+   likely a new `FiniteDeck/MultiPileOrbit.lean` (or extend `ThreePileTwoColor.lean`).
+   This is the **"k ≥ 3 / histogram-level T5 kernel"** item (roadmap line 182) and
+   the dynamics half of the 3-pile, 2-category example gate (roadmap line 285).
+6. **B4** `MultiExchange` (pairwise multi-pile exchange kernel + lumping) on top,
+   then the `G5capstone` multi-pile exchange kernel-equality (the full headline).
 
 The build gate stays green (37 tests) through all of it.
 
