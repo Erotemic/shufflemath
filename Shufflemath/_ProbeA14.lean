@@ -188,9 +188,87 @@ theorem blockUnique (N p : Nat) (n : Fin p → Nat) (hsum : (∑ i, n i) = N) (i
 -- (nonempty since prefixCap 0 = 0 ≤ x.val); maximality + the telescope give
 -- prefixCap i* ≤ x.val < prefixCap i* + n i*, i.e. x ∈ blockCap i*.
 -- Alternatively the smallest i with prefixCap (i+1) > x.val.
+/- A finite family of pairwise-disjoint finsets has union-card equal to the sum of
+  the members' cardinalities. Proved by induction on the index finset. -/
+private theorem finsetBiUnion_card_ofDisjoint [DecidableEq β] {ι} (s : Finset ι)
+    (f : ι → Finset β) (hdisj : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → f i ∩ f j = ∅) :
+    (Finset.biUnion s f).card = Finset.sum s (fun i => (f i).card) := by
+  induction s using Finset.induction_on
+  case empty =>
+    simp
+  case insert a s' ha ih =>
+    -- ih : (∀ i ∈ s', ∀ j ∈ s', i ≠ j → f i ∩ f j = ∅) → (s'.biUnion f).card = ∑ i ∈ s', (f i).card
+    -- The hdisj condition for s' follows from the main hdisj (s' ⊆ insert a s').
+    have hdisj_s' : ∀ i ∈ s', ∀ j ∈ s', i ≠ j → f i ∩ f j = ∅ := by
+      intro i hi j hj hne
+      exact hdisj i (Finset.mem_insert_of_mem hi) j (Finset.mem_insert_of_mem hj) hne
+    have ih' := ih hdisj_s'
+    -- a is disjoint from every block in s'.
+    have hdisj_a : ∀ j ∈ s', f a ∩ f j = ∅ := by
+      intro j hj
+      exact hdisj a (Finset.mem_insert_self a s') j (Finset.mem_insert_of_mem hj) (by
+        intro heq; exact ha (heq ▸ hj))
+    rw [Finset.biUnion_insert, Finset.sum_insert ha]
+    have hdisj_union : f a ∩ (Finset.biUnion s' f) = ∅ := by
+      ext x
+      constructor
+      · intro hx
+        obtain ⟨hx_a, hex⟩ := Finset.mem_inter.mp hx
+        obtain ⟨j, hj, hxj⟩ := Finset.mem_biUnion.mp hex
+        have hmem : x ∈ f a ∩ f j := Finset.mem_inter.mpr ⟨hx_a, hxj⟩
+        rw [hdisj_a j hj] at hmem
+        exact hmem
+      · intro h
+        simpa using h
+    rw [Finset.card_union, hdisj_union, Finset.card_empty, ih']
+    simp
+
 theorem blockCover (N p : Nat) (n : Fin p → Nat) (hsum : (∑ i, n i) = N) (x : Fin N) :
     ∃ i : Fin p, x ∈ blockCap N p n i := by
-  sorry
+  -- The blocks are pairwise disjoint, each has exactly n i cards, and their union is a
+  -- subset of the deck with the same total size (N) — hence the union is the whole deck,
+  -- so every card lies in some block.
+  let B : Finset (Fin N) := (Finset.univ : Finset (Fin p)).biUnion (fun i => blockCap N p n i)
+  let U : Finset (Fin N) := Finset.univ
+  -- Each block is a filter of the deck, so the union is a deck-subset.
+  have hsub : B ⊆ U := by
+    dsimp only [B]
+    intro x hx
+    obtain ⟨i, _, hxblock⟩ := Finset.mem_biUnion.1 hx
+    dsimp only [blockCap] at hxblock
+    exact (Finset.mem_filter.mp hxblock).1
+  -- The blocks are pairwise disjoint (blockUnique): a card in two blocks forces index equality.
+  have hdisj : ∀ i j : Fin p, i ≠ j → blockCap N p n i ∩ blockCap N p n j = ∅ := by
+    intro i j hne
+    ext x
+    constructor
+    · intro hx
+      have hxi : x ∈ blockCap N p n i := (Finset.mem_inter.mp hx).1
+      have hxj : x ∈ blockCap N p n j := (Finset.mem_inter.mp hx).2
+      exact False.elim (hne (blockUnique N p n hsum i j x hxi hxj))
+    · intro h
+      simpa using h
+  -- Union-card = sum of the per-block cards = N.
+  have hcard : B.card = N := by
+    dsimp only [B]
+    rw [finsetBiUnion_card_ofDisjoint (Finset.univ : Finset (Fin p)) (fun i => blockCap N p n i)
+           (fun i _ j _ hne => hdisj i j hne)]
+    have hB : (∑ i, (blockCap N p n i).card) = ∑ i, n i := by
+      apply Finset.sum_congr rfl
+      intro i hi
+      exact blockCap_card N p n hsum i
+    simpa [hB] using hsum
+  -- The union and the deck have the same size and the union is a deck-subset, so they are equal.
+  have hUcard : U.card = N := by dsimp only [U]; simp only [Finset.card_univ, Fintype.card_fin]
+  -- B ⊆ U and U.card = B.card, so the two finsets are equal (no card can be missing).
+  have hUleB : U.card ≤ B.card := by
+    have : U.card = B.card := by rw [hUcard, hcard]
+    exact le_of_eq this
+  have hBeq : B = U := (Finset.eq_iff_card_le_of_subset hsub).1 hUleB
+  have hxB : x ∈ B := by rw [hBeq]; exact Finset.mem_univ x
+  rw [Finset.mem_biUnion] at hxB
+  obtain ⟨i, _, hxmem⟩ := hxB
+  exact ⟨i, hxmem⟩
 
 /-- The block partition is a genuine `IsPartition` of the deck. -/
 theorem blockIsPartition (N p : Nat) (n : Fin p → Nat) (hsum : (∑ i, n i) = N) :
