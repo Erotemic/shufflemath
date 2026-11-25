@@ -176,5 +176,41 @@ theorem allocPi_card (c : ℕ) (X a : Fin c → ℕ) :
   dsimp [catAlloc]
   rw [Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
 
+/-! ## The per-pile lumped numerator, as a standalone function
+
+The per-pile factor of the T5 histogram transition — the number of full
+category-level selections of `a_j` cards from the `X_j` cards of each category
+`j` — is `allocPi_card`'s right-hand side.  This section spells it as an explicit
+standalone `def`, so the two-pile T5 kernel can be written as a product of per-pile
+weights without restating the product form. -/
+
+/-- The **per-pile lumped numerator** as a standalone function: the number of
+    category-level selections of `a_j` cards from the `X_j` cards of each
+    category `j`, product over all categories.  This is exactly the
+    right-hand side of `allocPi_card`, spelled as its own `def`. -/
+def lumpedNum (c : ℕ) (X a : Fin c → ℕ) : ℕ :=
+  (Finset.univ : Finset (Fin c)).prod fun j => Nat.choose (X j) (a j)
+
+/-- The per-pile lumped numerator agrees with `allocPi_card`'s right-hand side:
+    the allocation-level counting identity (a `Finset.card` computation) and the
+    explicit weight form agree. -/
+theorem lumpedNum_eq_allocPi_card_rhs (c : ℕ) (X a : Fin c → ℕ) :
+    lumpedNum c X a = (Finset.univ : Finset (Fin c)).prod fun j => Nat.choose (X j) (a j) := rfl
+
+/-! ## The two-pile joint numerator factors as the product of per-pile weights
+
+This is the Fubini-style factorization that makes the two-pile T5 kernel a product of
+two per-pile weights — the mathematical key step from the counting core
+(`allocPi_card`) toward the lumped kernel-equality headline (`G5capstone`). -/
+
+/-- The **two-pile joint numerator** factors as the product of the per-pile lumped
+    numerators: the `(a, b)`-allocation count across two piles with per-category
+    counts `X` and `Y` is the product of the separate per-pile allocation counts. -/
+theorem twoPile_lumpedNum_factor (c : ℕ) (X a Y b : Fin c → ℕ) :
+    lumpedNum c X a * lumpedNum c Y b =
+      (Finset.univ : Finset (Fin c)).prod fun j =>
+        (Nat.choose (X j) (a j) * Nat.choose (Y j) (b j)) := by
+  rw [lumpedNum, lumpedNum, ← Finset.prod_mul_distrib]
+
 end FiniteDeck
 end Shufflemath
