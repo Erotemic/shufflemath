@@ -250,9 +250,9 @@ they do not establish the separate, still-open F1-F5 theorems.
 > histogram lumping + stationary law + final kernel-equality headline). Precise diagnosis + steps:
 > `docs/planning/proof-strategies/2026-12-31-g5-multipile-state-and-walls.md`.
 
-> **Status (session 83, 2026-12-30 build):** **Gate 6 is complete** — the three-round
+> **Status (session 84, 2026-12-30 build, canonical module):** **Gate 6 is complete** — the three-round
 > *physical* headline `g6_threeRound_headline` (`TV(finiteRound³ start, uniform) < 1/1000`)
-> is proved in `Shufflemath/_ProbeG6ThreeRoundCapstone.lean` (sub-lemmas A + B + the
+> is proved in `Shufflemath/FiniteDeck/Gate6ThreeRound.lean` (sub-lemmas A + B + the
 > ideal-kernel bridge + the n-step telescope + `gate6_headline_lt_thousandth`; the
 > `Eq.subst`/`hL ▸ t` trick avoids the `exchangeThenLocalReset` elaboration recursion).
 > **Next real item:** the batch-5b within-pile headline `rhoRoundIdeal 99 50 … =
