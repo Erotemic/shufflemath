@@ -119,10 +119,15 @@ theorem memBlockCap_iff (N p : Nat) (n : Fin p → Nat) (i : Fin p) (x : Fin N) 
 -- `conv` / `congr` to merge the two sums into one `f`. Then `sum_le_sum_of_subset`.
 theorem prefixCap_mono (p : Nat) (n : Fin p → Nat) (i j : Fin p) (h : i.val ≤ j.val) :
     prefixCap p n i ≤ prefixCap p n j := by
-  -- NEXT: `dsimp [prefixCap]` then merge the two `∑ k, n (Fin.mk k hk)` sums to a
-  -- common function (via `Fin.ext`, both have val `k`), then
-  -- `Finset.sum_le_sum_of_subset` on `range (i.val+1) ⊆ range (j.val+1)`.
-  sorry
+  -- prefixCap i = ∑_{k, k.val < i.val} n k and prefixCap j = ∑_{k, k.val < j.val} n k.
+  -- Since i.val ≤ j.val, {k | k.val < i.val} ⊆ {k | k.val < j.val}, so the summand is
+  -- pointwise ≤ (the smaller ite is 0 wherever the larger one might add, and n k ≥ 0).
+  dsimp only [prefixCap]
+  refine Finset.sum_le_sum fun k _ => ?_
+  by_cases hklt : k.val < i.val
+  · have hkj : k.val < j.val := Nat.lt_of_lt_of_le hklt h
+    simp [hklt, hkj]
+  · simp [hklt]
 
 /-- Unique ownership: a card lies in at most one block.
     Strategy: each block holds values in `[a_k, a_k + n_k)` with `a_{k+1} = a_k + n_k`
