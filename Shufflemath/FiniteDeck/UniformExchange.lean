@@ -85,6 +85,48 @@ theorem swapKernel_mass (hN : 0 < N) (A A' : Allocation N p n) :
   rw [GSR.map_uniform_mass]
   simp [hcard]
 
+/-! ### A1.4 — the uniform swap kernel is equivariant under relabeling
+
+The headline of the A1.4 program: relabeling the cards (`relabel σ`) preserves the
+uniform swap kernel's mass.  Push the kernel's output distribution forward by
+`relabel σ` — i.e. swap the piles with a uniform pair of indices, then relabel —
+and the mass that lands on the relabelled target `relabel σ B` is exactly the mass
+the original kernel `swapKernel hN A` puts on `B`.  The `swapRelabel` def bakes in
+the `Nonempty (Fin N × Fin N)` instance (the same pattern as `swapKernel`), so the
+distribution is usable bare in statements.  The proof uses only the **injectivity**
+of `relabel σ` (a bijection, by `relabel_symm_relabel`): the two families of
+indicators — `relabel σ B = relabel σ (swapPiles A ab.1 ab.2)` and
+`B = swapPiles A ab.1 ab.2` — are equivalent *term-by-term* over the same `ab`
+pairs, so no sum reindexing is needed.  Together with `swapKernel_symmetric` this
+is the content of "the kernel is invariant under relabeling." -/
+
+/-- The distribution "swap the piles with a uniform pair of indices, then relabel
+    by `σ`".  Consumes the `[Nonempty (Fin N × Fin N)]` instance inside the def
+    (the same pattern as `swapKernel`), leaving a bare `Dist (Allocation N p n)`
+    usable in statements. -/
+noncomputable def swapRelabel (hN : 0 < N) (σ : Equiv.Perm (Fin N)) (A : Allocation N p n) :
+    Dist (Allocation N p n) := by
+  letI : Nonempty (Fin N × Fin N) := ⟨(⟨0, hN⟩, ⟨0, hN⟩)⟩
+  exact (GSR.uniformDist (Fin N × Fin N)).map (fun ab => relabel σ (swapPiles A ab.1 ab.2))
+
+/-- Relabeling preserves the uniform swap kernel's mass: the distribution
+    `swapRelabel hN σ A` (swap with a uniform pair of indices, then relabel by
+    `σ`) has, at the relabelled state `relabel σ B`, exactly the mass that
+    `swapKernel hN A` has at `B`. -/
+theorem swapKernel_equivariant (hN : 0 < N) (σ : Equiv.Perm (Fin N)) (A B : Allocation N p n) :
+    Dist.mass (swapRelabel hN σ A) (relabel σ B) = Dist.mass (swapKernel hN A) B := by
+  letI : Nonempty (Fin N × Fin N) := ⟨(⟨0, hN⟩, ⟨0, hN⟩)⟩
+  have hcard : Fintype.card (Fin N × Fin N) = N * N := by
+    simp [Fintype.card_prod, Fintype.card_fin]
+  rw [swapRelabel, GSR.map_uniform_mass, swapKernel_mass hN A B, hcard, Nat.cast_mul]
+  -- both sides are now `∑ (N*N)⁻¹ · 1[·]` over the *same* `ab` pairs; the two indicators
+  -- agree term-by-term because `relabel σ` is a bijection (`relabel_eq_iff`): for each
+  -- pair, `relabel σ B = relabel σ (swapPiles A a b) ↔ B = swapPiles A a b`.  No
+  -- reindexing is needed — the goal already carries the `relabel σ (swapPiles …)`
+  -- indicator, so the iff rewrites it to the plain `swapPiles` one and the sums match.
+  refine Finset.sum_congr rfl fun ab _ => by
+    simp [relabel_eq_iff σ B (swapPiles A ab.1 ab.2)]
+
 /-- The uniform-transposition kernel is **symmetric** (doubly stochastic):
     `mass (swapKernel A) A' = mass (swapKernel A') A`.  The two fiber indicators
     are pointwise equivalent by `swapPiles_swap_iff` (the involution). -/

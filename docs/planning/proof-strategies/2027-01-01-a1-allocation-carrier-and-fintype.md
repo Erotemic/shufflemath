@@ -60,6 +60,13 @@ Define, over `Allocation N p n`:
 - **A1.4** then: the kernel is **invariant under relabeling** (a `Perm (Fin N)`
   acting on owners preserves the kernel), and uniform `⊗` invariant is
   **stationary** via `symmetric_stationary` (Finite.lean:1836).
+  **Core done (2027-01-03):** `relabel`/`relabel_symm_relabel` + the owner-level
+  commutation `relabel_commute_owner` + the kernel equivariance `swapKernel_equivariant`
+  (uniform swap-kernel mass at `relabel σ B` equals the mass at `B`) — the
+  A1.4 relabel-invariance headline, plus the clean `relabel_eq_iff` injectivity lemma.
+  Remaining: the concrete small-`N` sanity witness (§2) and, if a *full*
+  `relabel (swapPiles …) = swapPiles (relabel …)` commutation is later needed, the
+  `noncomputable`-def elaboration wall (owner-level route only).
 
 A **concrete example** (a small `N`, `p = 2`, capacities `(1, 1)`) must be
 included as a sanity witness (handoff §0 item 3, §2 "Do not accept a claim").
@@ -288,3 +295,40 @@ bijection of the allocation carrier, commit `989983e`) — all in
 `swapKernel_equivariant` in `FiniteDeck/UniformExchange.lean` via
 `Dist.mass_map` + `Finset.sum_congr` using the injectivity of `relabel σ` (no sum
 reindexing — the same `ab` pairs, indicators equal term-by-term).
+
+## Addendum (2027-01-03, A1.4 CRACKED) — both core results landed
+
+**`relabel_commute_owner`** (MultiExchange.lean) — the owner-level commutation
+`swapOwner (relabel σ A) (σ a) (σ b) x = A.val (cardTransposition a b (σ.symm x))`,
+proved exactly as the previous addendum predicted: `rw [swapOwner_eq_cardTransposition,
+relabel]` then `have hc : σ.symm (cardTransposition (σ a) (σ b) x) = cardTransposition a b
+(σ.symm x) := by simpa [Equiv.symm_apply_apply] using (congrArg (σ.symm) (congrArg σ (conjugate_transposition
+σ a b x)))` and `rw [hc]`.  The key was the conjugation's **reversed order**
+(`cardTransposition a b (σ.symm x) = σ.symm (cardTransposition (σ a) (σ b) x)`), reached
+by conjugating the canonical `conjugate_transposition` on the *right* by `σ.symm`.
+
+**`swapKernel_equivariant`** (UniformExchange.lean) — `Dist.mass (swapRelabel hN σ A)
+(relabel σ B) = Dist.mass (swapKernel hN A) B`, exactly the doc's recipe: `rw
+[swapRelabel, GSR.map_uniform_mass, swapKernel_mass, hcard, Nat.cast_mul]` puts both
+sides as `∑ (N*N)⁻¹ · 1[·]` over the *same* `ab` pairs, then `Finset.sum_congr` +
+`simp [relabel_eq_iff …]` matches the two fiber indicators term-by-term — **no sum
+reindexing**.
+
+**The elaboration-wall escape:** the *full*-Allocation commutation
+`relabel σ (swapPiles A a b) = swapPiles (relabel σ A) (σ a) (σ b)` (two `noncomputable`
+defs with implicit `N p n` in one expression) still fails to elaborate in the local
+module (the wall the previous addendum recorded).  The workaround that lands the
+headline anyway: the equivariance never needs the full commutation as a *named* theorem —
+it needs only that the two *indicators* are equivalent, and that is the **general**
+`relabel_eq_iff (σ) (B) (Y) : relabel σ B = relabel σ Y ↔ B = Y` (a bijection's
+fiber-equality, `relabel_symm_relabel` both ways), with `Y := swapPiles A a b` supplied
+*as an argument* of the iff (the goal already carries `relabel σ (swapPiles …)`, so the
+instantiation elaborates without the def-of-def wall).  Owner-level is the route;
+the full commutation remains blocked by the `noncomputable`-def elaboration wall and is
+only needed if a future step requires it as a named theorem.
+
+Build: `lake build Shufflemath.FiniteDeck.MultiExchange` + `Shufflemath.FiniteDeck.
+UniformExchange`, 0 errors, no `sorry`/`admit`, only the file's pre-existing `simpa`/
+`letI` style lints.  A1.4's relabel-invariance headline is **done**; the open A1.4 items
+are the small-`N` sanity witness (handoff §2) and, optionally, an independent full
+commutation if ever required.

@@ -249,6 +249,50 @@ theorem relabel_symm_relabel (σ : Equiv.Perm (Fin N)) (A : Allocation N p n) :
   funext x
   simp [relabel, Equiv.symm_symm, Equiv.symm_apply_apply]
 
+/-! ### A1.4 — the exchange commutes with relabeling
+
+Swapping the two *images* `σ a, σ b` of the relabelled allocation `relabel σ A` gives
+the same owner at `x` as relabelling the allocation obtained by swapping `a, b`.  This
+is the owner-function form of the commutation `relabel σ ∘ swapPiles(a,b) =
+swapPiles(σ a, σ b) ∘ relabel σ`, and is the one that elaborates in this module (it
+names only the single `noncomputable` def `relabel`, not both `relabel` and `swapPiles`). -/
+
+/-- Relabeling and the exchange commute at the owner level: swapping the images
+    `σ a, σ b` of the relabelled state has, at `x`, the owner that the original state
+    had at the card that both the swap and the relabelling send `x` to — i.e. the owner
+    `A.val (cardTransposition a b (σ.symm x))`.  A direct consequence of the conjugation
+    of a transposition by `σ`. -/
+theorem relabel_commute_owner (σ : Equiv.Perm (Fin N)) (A : Allocation N p n) (a b x : Fin N) :
+    swapOwner (relabel σ A) (σ a) (σ b) x = A.val (cardTransposition a b (σ.symm x)) := by
+  -- the left side, by the transposition form of the swap, is the relabelled owner at the
+  -- transposed index; unfolding `relabel` beta-reduces it to `A.val` at `σ.symm` of that index
+  have hUnf : (relabel σ A).val (cardTransposition (σ a) (σ b) x) =
+      A.val (σ.symm (cardTransposition (σ a) (σ b) x)) := by
+    dsimp only [relabel]
+  rw [swapOwner_eq_cardTransposition, hUnf]
+  -- now both sides are `A.val` of two indices; fold the relabelling into the transposition
+  -- using the conjugation `σ ∘ τ_{a,b} ∘ σ⁻¹ = τ_{σ a, σ b}`
+  have hc : σ.symm (cardTransposition (σ a) (σ b) x) = cardTransposition a b (σ.symm x) := by
+    have h := congrArg (σ.symm) (conjugate_transposition σ a b x)
+    simpa [Equiv.symm_apply_apply] using h.symm
+  rw [hc]
+
+/-- `relabel σ` is a **bijection** (its two-sided inverse is `relabel σ.symm`, by
+    `relabel_symm_relabel`), so it is injective: it sends equal allocations to equal
+    allocations and conversely.  Equivalently, for any two allocations `B` and `Y`,
+    `relabel σ B = relabel σ Y ↔ B = Y`.  This is the term-by-term bridge the A1.4
+    kernel-equivariance `swapKernel_equivariant` uses to match its two fiber sums over
+    the *same* index pairs (no reindexing): instantiate `Y := swapPiles A a b`. -/
+theorem relabel_eq_iff (σ : Equiv.Perm (Fin N)) (B Y : Allocation N p n) :
+    relabel σ B = relabel σ Y ↔ B = Y := by
+  constructor
+  · intro h
+    -- apply the inverse relabeling `relabel (σ.symm)` to both sides, then fold
+    have h1 := congrArg (fun z => (relabel (σ.symm) z)) h
+    simpa [relabel_symm_relabel] using h1
+  · intro h
+    simpa [h]
+
 /-- **The exchange is a well-defined self-map of the allocation carrier:**
     swapping two cards' piles preserves every pile's size (so the result is
     again an `Allocation`).  Reason: `swapOwner = A.val ∘ σ` for the
