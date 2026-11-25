@@ -54,6 +54,7 @@ lake build \
   Shufflemath.FiniteDeck.Piles \
   Shufflemath.FiniteDeck.Histograms \
   Shufflemath.FiniteDeck.PileEquiv \
+  Shufflemath.FiniteDeck.MultiPileOrbit \
   Shufflemath.K1Wall \
   Shufflemath.Gate6K1Capstone \
   Shufflemath.Gate6K1Bridges \

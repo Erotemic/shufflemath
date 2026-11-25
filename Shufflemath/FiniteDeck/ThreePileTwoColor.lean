@@ -3,6 +3,7 @@ module
 public import Shufflemath.FiniteDeck.Piles
 public import Shufflemath.FiniteDeck.Histograms
 public import Shufflemath.FiniteDeck.MultiPileFiber
+public import Shufflemath.FiniteDeck.MultiPileOrbit
 public import Shufflemath.FiniteDeck.Partition
 public import Mathlib.Data.Fin.Basic
 public import Mathlib.Data.Finset.Basic
@@ -115,6 +116,19 @@ theorem example3_colTotal1 :
     (Finset.univ : Finset (Fin 3)).sum (fun i => lump pile3 color6 i 1) = 3 := by
   rw [lump_categoryTotal (k := 3) (N := 6) (c := 2) (cardPile := pile3) (color := color6) (hPiles := pile3_disjoint) (j := 1)]
   native_decide
+
+/-- **Within-pile dynamics (via the reusable `glueBlocks_preservesEveryPile`).**
+    Any within-pile action on the 3-pile allocation — a family of per-pile
+    equivs, e.g. a riffle on pile `0` with identity on piles `1` and `2` —
+    preserves the membership of every pile: the `glueBlocks`-glued deck sends
+    each `pile3 j` to itself, so the allocation / fiber is unchanged.  This is
+    the "a uniform local riffle on a pile preserves membership of the other
+    zones" half of the G5 3-pile, 2-category gate (roadmap line 285),
+    generalized to `k = 3` and proved structurally (no `native_decide`). -/
+theorem example3_withinPile
+    (e : ∀ j : Fin 3, {x : Fin 6 // x ∈ pile3 j} ≃ {x : Fin 6 // x ∈ pile3 j}) :
+    ∀ j : Fin 3, (pile3 j).image (glueBlocks pile3 pile3 pile3_partition pile3_partition e) = pile3 j :=
+  glueBlocks_preservesEveryPile (N := 6) (k := 3) pile3 pile3_partition e
 
 end FiniteDeck
 

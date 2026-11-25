@@ -22,6 +22,19 @@ combinatorial premises (partition, disjointness) are proved constructively; the
 pure `Nat`/`Finset` computation facts use `native_decide`, legitimate here because
 the card space is the six-element `Fin 6`, not a `99!` universe.
 
+**2026-12-31 follow-up 2 (T5 within-pile orbit, general `k`):** the 2-pile
+`WithinPileOrbit.embed_m_imageLeft` result is generalized to arbitrary `k` in a
+new module `Shufflemath/FiniteDeck/MultiPileOrbit.lean`.  `glueBlocks_imagePile`
+proves that a global deck glued from a *family of per-pile equivalences*
+`e i : {x // x ∈ P i} ≃ {x // x ∈ P i}` maps each pile `P i` onto itself
+(structurally, via `glueBlocks_apply_member` — no `native_decide`, no `99!`
+enumeration), and `glueBlocks_preservesEveryPile` lifts it to
+`∀ j, (P j).image (glueBlocks … e) = P j`: the within-pile action group preserves
+the whole allocation/fiber.  `example3_withinPile` (in `ThreePileTwoColor.lean`)
+instantiates it for the 3-pile allocation.  This is the membership-preservation
+half of the G5 3-pile gate; the distribution-level within-pile kernel and B4 /
+`G5capstone` remain.
+
 ## What is in the repo right now (ground truth)
 
 - `Shufflemath/FiniteDeck/Piles.lean` — **committed, builds clean.** The 2-pile
@@ -120,22 +133,25 @@ step**, then the multi-pile exchange kernel-equality on top (`G5capstone`).
    the row/column histogram totals (via `lump_pileTotal` / `lump_categoryTotal`).
    This satisfies the G5 gate's **"at least one 3-pile, 2-category example
    compiles"** acceptance (roadmap line 235).
-5. **NEXT — T5 / multi-pile within-pile orbit (the example's *dynamics* half).**
-   Generalize `WithinPileOrbit.lean`'s 2-pile `act_d` /
-   `act_d_preservesMembership` / `wPreserves{Left,Right}OfFiber` (a within-pile
-   permutation preserves the other pile's membership) to a **multi-pile**
-   setting: a permutation of pile `i` (identity on all other piles — via the
-   `glueBlocks` / `PileFiber` per-pile-equiv machinery) preserves the membership
-   *and* the histogram row of every other pile `j ≠ i`.  Then apply it to the
-   3-pile example: a uniform riffle on pile `0` preserves piles `1` and `2`.
-   Conceptually easy (a within-pile perm can't move a card across piles), but the
-   Lean elaboration must port the 2-pile `embed_m_imageLeft` /
-   `Finset.image_image` route to the multi-pile `glueBlocks_apply_member` route —
-   likely a new `FiniteDeck/MultiPileOrbit.lean` (or extend `ThreePileTwoColor.lean`).
-   This is the **"k ≥ 3 / histogram-level T5 kernel"** item (roadmap line 182) and
-   the dynamics half of the 3-pile, 2-category example gate (roadmap line 285).
-6. **B4** `MultiExchange` (pairwise multi-pile exchange kernel + lumping) on top,
-   then the `G5capstone` multi-pile exchange kernel-equality (the full headline).
+5. ~~T5 / multi-pile within-pile orbit (the example's *dynamics* half)~~ —
+   **DONE (this session).**  New module
+   `Shufflemath/FiniteDeck/MultiPileOrbit.lean` generalizes the 2-pile
+   `WithinPileOrbit.embed_m_imageLeft` route to arbitrary `k`:
+   `glueBlocks_imagePile` proves a global deck glued from a *family of per-pile
+   equivalences* `e i : {x // x ∈ P i} ≃ {x // x ∈ P i}` maps each pile `P i`
+   onto itself, and `glueBlocks_preservesEveryPile` lifts that to
+   `∀ j, (P j).image (glueBlocks … e) = P j` — i.e. the within-pile action group
+   (riffle on one pile, identity elsewhere) preserves the whole allocation /
+   fiber.  Proved **structurally** via `glueBlocks_apply_member` (no
+   `native_decide`, no `99!` enumeration).  `example3_withinPile` in
+   `ThreePileTwoColor.lean` instantiates it for the `pile3` allocation (k=3).
+   This lands the **membership-preservation** half of the G5 3-pile, 2-category
+   gate (roadmap line 285) and the multi-pile T5 orbit core (roadmap line 182).
+   The *distribution-level* within-pile kernel (uniform measure over the orbit +
+   the histogram row-invariance) is the remaining T5 refinement.
+6. **NEXT — B4** `MultiExchange` (pairwise multi-pile exchange kernel + lumping)
+   on top, then the `G5capstone` multi-pile exchange kernel-equality (the full
+   headline).
 
 The build gate stays green (37 tests) through all of it.
 
