@@ -203,6 +203,15 @@ hold up substantive progress).
 
 ### Status / next (the uniform-stationarity capstone, then A1.4)
 
+> **COMPLETE (2027-01-03):** both the uniform-stationarity capstone (`swapKernel_uniformStationary`,
+> A1 headline, commit `96328fd`) and **A1.4** (`relabel_commute_owner` + `swapKernel_equivariant`
+> + `relabel_eq_iff`, commit `19af892`) are landed and build.  The **A1 allocation-carrier
+> program is now complete**.  What's next is the broader campaign's remaining gates (per the
+> goal objective): the **A1.4 small-`N` sanity witness** (handoff §2, still open), then
+> dealing/drawing/discarding, finite-shuffle mixing bounds, generic protocol certificates, and
+> cost optimization — see the "A1.4 CRACKED" addendum at the bottom for the elaboration-wall
+> status of any future full-Allocation commutation.
+
 `Markov.detailedBalance_implies_stationary` (Markov.lean:51) shows a
 **symmetric** kernel has the **uniform** measure as stationary.  `swapKernel`
 is symmetric (above), so the capstone
