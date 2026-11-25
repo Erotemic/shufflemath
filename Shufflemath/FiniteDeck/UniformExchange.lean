@@ -1,7 +1,9 @@
 module
 
 public import Shufflemath.FiniteDeck.MultiExchange
+public import Shufflemath.FiniteDeck.BlockPartition
 public import Shufflemath.GSR
+public import Shufflemath.Markov
 public import Shufflemath.Finite
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fintype.Basic
@@ -99,6 +101,44 @@ theorem swapKernel_symmetric (hN : 0 < N) (A A' : Allocation N p n) :
         intro hc
         exact h ((swapPiles_swap_iff A A' s.1 s.2).2 hc.symm).symm
       rw [ite_eq_right h, ite_eq_right h2]
+
+/-- The **uniform law over the allocation carrier** with feasible capacities
+    (`∑ i, n i = N`).  Wraps `GSR.uniformDist` so the `[Nonempty]` instance (from the
+    block-partition witness `nonemptyOfSumCapacities`) is consumed inside the def,
+    leaving a bare `Dist (Allocation N p n)` usable in statements — the same pattern
+    as `swapKernel` consuming `0 < N` for the uniform pair law. -/
+noncomputable def uniformAlloc (hsum : (∑ i, n i) = N) : Dist (Allocation N p n) := by
+  letI : Nonempty (Allocation N p n) := nonemptyOfSumCapacities N p n hsum
+  exact GSR.uniformDist (Allocation N p n)
+
+/-- The **A1 capstone**: for feasible capacities (`∑ i, n i = N`), the uniform law
+    over the allocation carrier is **stationary** under the swap transition.
+    `swapKernel hN` is symmetric (`swapKernel_symmetric`), and a symmetric kernel
+    has its uniform measure stationary (`detailedBalance_implies_stationary`): the
+    detailed-balance equation `mass mu x * mass (K x) y = mass mu y * mass (K y) x`
+    has both uniform masses equal to the same constant `1 / card (Allocation N p n)`,
+    so it reduces to `mass (K x) y = mass (K y) x`, i.e. exactly the symmetry. -/
+theorem swapKernel_uniformStationary (hN : 0 < N) (hsum : (∑ i, n i) = N)
+    (A : Allocation N p n) :
+    Dist.mass (FiniteKernel.apply (uniformAlloc hsum) (swapKernel hN)) A
+      = Dist.mass (uniformAlloc hsum) A := by
+  letI hnon : Nonempty (Allocation N p n) := nonemptyOfSumCapacities N p n hsum
+  exact Shufflemath.detailedBalance_implies_stationary
+      (uniformAlloc hsum) (swapKernel hN)
+      (by
+        intro x y
+        have hmx : Dist.mass (uniformAlloc hsum) x = (Fintype.card (Allocation N p n) : Rat)⁻¹ := by
+          change Dist.mass (GSR.uniformDist (Allocation N p n)) x =
+            (Fintype.card (Allocation N p n) : Rat)⁻¹
+          exact GSR.mass_uniformDist x
+        have hmy : Dist.mass (uniformAlloc hsum) y = (Fintype.card (Allocation N p n) : Rat)⁻¹ := by
+          change Dist.mass (GSR.uniformDist (Allocation N p n)) y =
+            (Fintype.card (Allocation N p n) : Rat)⁻¹
+          exact GSR.mass_uniformDist y
+        have hsym : Dist.mass (swapKernel hN x) y = Dist.mass (swapKernel hN y) x :=
+          swapKernel_symmetric hN x y
+        rw [hmx, hmy, hsym])
+      A
 
 end FiniteDeck
 end Shufflemath

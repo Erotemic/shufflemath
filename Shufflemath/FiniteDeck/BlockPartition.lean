@@ -1,9 +1,7 @@
 module
 
 public import Shufflemath.FiniteDeck.MultiExchange
-public import Shufflemath.FiniteDeck.UniformExchange
-public import Shufflemath.GSR
-public import Shufflemath.Markov
+public import Shufflemath.FiniteDeck.Partition
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Finset.Basic
@@ -14,6 +12,17 @@ public section
 
 namespace Shufflemath.FiniteDeck
 open Classical
+
+/-! A **block partition** of a deck of `N` cards into `p` consecutive blocks of
+    capacities `n : Fin p → Nat`.  When the capacities fill the deck
+    (`∑ i, n i = N`), the blocks `blockCap N p n i` tile `Fin N` exactly (each
+    block `i` holds the cards whose value lies in the half-open interval
+    `[prefixCap i, prefixCap i + n i)`), which yields the `Nonempty` witness
+    `nonemptyOfSumCapacities` for the A1 allocation carrier.  This is the
+    reusable "feasible capacities admit a valid allocation" foundation that the
+    A1 uniform-stationarity capstone
+    (`UniformExchange.swapKernel_uniformStationary`) consumes for its
+    `[Nonempty (Allocation N p n)]` hypothesis. -/
 
 /-- Cumulative number of cards in piles strictly before `i`.  (No `N`: the
     cumulative count of pile capacities does not depend on the deck size.) -/
@@ -286,13 +295,9 @@ theorem nonemptyOfSumCapacities (N p : Nat) (n : Fin p → Nat) (hsum : (∑ i, 
   have heq : (fun i : Fin p => (P i).card) = n := funext fun i => blockCap_card N p n hsum i
   exact heq ▸ Allocation.nonemptyOfPartition P hP
 
--- NOTE (A1 capstone, deferred to handoff): `swapKernel hN` is a bare transition
--- `Allocation → Dist (Allocation)`, NOT a `FiniteKernel`, so the `DetailedBalance`/
--- `FiniteKernel.apply` machinery does not apply directly. The correct statement is
--- that the **uniform law over feasible allocations is stationary** under the swap
--- transition, proved via (i) row-stochasticity `∑_A mass (swapKernel hN B) A = 1`
--- (from `swapKernel_mass` — a row is `(N*N)⁻¹` over the `N*N` swap positions) and
--- (ii) `swapKernel_symmetric`, which flips `∑_A mass (K A) B` to `∑_A mass (K B) A = 1`.
--- This is documented in the handoff rather than stubbed here.
+-- The A1 capstone `swapKernel_uniformStationary` (the uniform law over feasible
+-- allocations is stationary under the swap transition) lives in
+-- `Shufflemath/FiniteDeck/UniformExchange.lean`; it consumes `nonemptyOfSumCapacities`
+-- from this module as its `[Nonempty (Allocation N p n)]` witness.
 
 end FiniteDeck
