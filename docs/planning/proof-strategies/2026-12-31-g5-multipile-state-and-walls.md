@@ -162,16 +162,29 @@ from `Partition.lean`):
   (`(e i).surjective`).
 - `equivsToMultiPile` — packages `⟨glueBlocks P C hP hC e, gluedRealizes⟩`, the
   inverse direction (per-pile equivs → a realizing deck).
+- `roundTripDecks` — **LANDED**: `equivsToMultiPile (multiPileToEquivs d) .1 = d.1`
+  — gluing a deck's own per-pile equivs recovers the deck.  Proof: `Equiv.ext` →
+  unique-ownership `hP.1 x` gives the pile `j` owning `x` → `glueBlocks_apply_member`
+  (the glued deck on `x ∈ P j` = the local equiv at `x`) → `simp [pileF, pileEquiv,
+  Equiv.ofBijective]` (the local equiv is `pileEquiv … j d.1 (d.2 j)`, whose
+  forward map `pileF` sends `⟨x, hxj⟩` to `⟨d.1 x, _⟩`).
 
-**Remaining (the true general-`k` fiber theorem, next increment):** prove the two
-maps are mutual inverses — `roundTripDecks`
-(`equivsToMultiPile (multiPileToEquivs d) = d`) and `roundTripEquivs`
-(`multiPileToEquivs (equivsToMultiPile e) = e`) — both reducing to
-`glueBlocks_apply_member` + `pileEquiv_toFun` + `Subtype.ext` + `IsPartition`
-unique-ownership.  From those, `Equiv.ofBijective` yields the fiber equiv
-`MultiFiber N k P C ≃ Π i, Equiv (↥(P i)) (↥(C i))`, and (via `Fintype.Pi` +
-`Fintype.card_perm`) the count `Fintype.card (MultiFiber N k P C) = ∏ i, (|C i|)!`,
-the general-`k` lift of `twoPile_card`.
+**Round-trip status:** `roundTripDecks` (gluing a deck's own per-pile equivs
+recovers the deck) is **LANDED** in `PileFiber.lean`.  `roundTripEquivs` (taking
+the per-pile equivs of a glued deck recovers the family) is the **remaining
+next step** — it is one unfolding away: after `Equiv.ext` + `Subtype.ext` +
+`dsimp [multiPileToEquivs, equivsToMultiPile, pileEquiv]` +
+`glueBlocks_apply_member`, the last goal is
+`(Equiv.ofBijective (pileF … (glueBlocks …) hReal) hBij) x = (e i x)`, whose
+`.val` reduces via `pileF` to `(glueBlocks …) x.val`, which `glueBlocks_apply_member`
+makes `(e i ⟨x.val, x.property⟩).val`, equal to `(e i x).val` by
+`Subtype.ext` (`⟨x.val, x.property⟩ = x`).  The only friction is unfolding
+`Equiv.ofBijective`'s `toFun` (add `Equiv.ofBijective_toFun` / `Equiv.apply` to
+the `simp` set).  Once both round-trips are in, `Equiv.ofBijective
+multiPileToEquivs` yields the fiber equiv `MultiFiber N k P C ≃ Π i, Equiv
+(↥(P i)) (↥(C i))`, and (via `Fintype.Pi` + `Fintype.card_perm`) the count
+`Fintype.card (MultiFiber N k P C) = ∏ i, (|C i|)!`, the general-`k` lift of
+`twoPile_card`. Then `G5capstone` (the multi-pile exchange kernel-equality).
 
 **Elaboration notes for the round-trips:** keep the gluing family / deck *inlined*
 (bare `glueBlocks …`, not a named def) so `glueBlocks_apply_member` applies without

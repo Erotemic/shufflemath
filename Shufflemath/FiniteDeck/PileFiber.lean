@@ -46,6 +46,7 @@ section
 variable (N k : Nat) (P C : Fin k → Finset (Fin N))
 variable (hP : IsPartition P) (hC : IsPartition C)
 variable (e : (i : Fin k) → Equiv {x : Fin N // x ∈ P i} {x : Fin N // x ∈ C i})
+variable (d : MultiFiber N k P C)
 
 /-- Forward: a realizing deck gives, per pile, the restriction equiv
     `↥(P i) ≃ ↥(C i)`. -/
@@ -74,6 +75,19 @@ theorem gluedRealizes : realizesAllocation N k P C (glueBlocks P C hP hC e) := b
     deck, packaged with `gluedRealizes`. -/
 noncomputable def equivsToMultiPile : MultiFiber N k P C :=
   ⟨glueBlocks P C hP hC e, gluedRealizes N k P C hP hC e⟩
+
+/-- Deck round-trip: gluing a deck's own per-pile equivs recovers the deck.
+    (The other round-trip, `roundTripEquivs` — taking the per-pile equivs of a
+    glued deck recovers the family — is the remaining next step; both reduce to
+    `glueBlocks_apply_member` + `pileF` + `Subtype.ext`/`Equiv.ofBijective`.) -/
+theorem roundTripDecks : (equivsToMultiPile N k P C hP hC (multiPileToEquivs N k P C d)).1 = d.1 := by
+  apply Equiv.ext
+  intro x
+  obtain ⟨j, hxj⟩ := hP.1 x
+  dsimp only [equivsToMultiPile]
+  rw [glueBlocks_apply_member P C hP hC (multiPileToEquivs N k P C d) j x hxj]
+  dsimp only [multiPileToEquivs]
+  simp [pileF, pileEquiv, Equiv.ofBijective]
 
 end
 
