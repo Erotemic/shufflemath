@@ -53,6 +53,7 @@ lake build \
   Shufflemath.FiniteDeck.ActionConvolution \
   Shufflemath.K1Wall \
   Shufflemath.Gate6K1Capstone
+  Shufflemath.FiniteDeck.Gate6ThreeRound
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace
