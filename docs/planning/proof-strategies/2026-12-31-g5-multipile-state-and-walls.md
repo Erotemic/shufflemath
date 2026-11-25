@@ -414,3 +414,58 @@ instances fall back to classical `propDecidable`, and `Disjoint`'s `intro`-ed
 hypotheses are Set-memberships, not Finset-memberships) — hence the constructive
 `IsPartition` proof and the `disjoint_iff_inter_eq_empty` route.
 
+
+---
+
+## Follow-up 8 (post-compaction resync): the T5 two-pile transition is stochastic
+
+**Landed:** `MultiPileExchange.twoPileExchangeTotal` and
+`twoPileTransitionStochastic` (module now imports `Histograms` +
+`Mathlib.Data.Rat.Defs`; gate green, 37 tests).
+
+* `twoPileExchangeTotal (X Y : List Nat) (k) :
+    histAllocSum X k * histAllocSum Y k = choose (∑ X) k * choose (∑ Y) k` —
+  the two-pile multi-category T5 transition's *total* (sum of the
+  multivariate-hypergeometric numerator over every valid pair of category
+  selections) is the **universal** denominator, independent of the category
+  counts.  It is the two landed per-pile Vandermondes
+  (`Histograms.histAllocSum_choose`) composed: one `rw`.
+* `twoPileTransitionStochastic (X Y) (k) (hX : k ≤ ∑ X) (hY : k ≤ ∑ Y) :
+    ((histAllocSum X k * histAllocSum Y k) : Rat) /
+      ((choose (∑ X) k * choose (∑ Y) k) : Rat) = 1` — the normalized two-pile
+  T5 transition kernel has **row-sum 1** (a valid Markov transition; the
+  nonzeriness is `Nat.choose_pos` + `Nat.ne_of_gt` + `Nat.mul_ne_zero`, closed
+  by `field_simp`).
+
+**Why this is the right next step (T2/T5, roadmap lines 105, 176, 235):** the
+multivariate-hypergeometric stationary law is the headline T5 result; its
+*prerequisite* is that the two-pile transition is a well-defined stochastic
+kernel — the row-sum is universal (Vandermonde: it depends only on the pile
+sizes `∑ X`, `∑ Y`, not the category counts), so the normalized row-sum is
+`1` for every histogram `X`.  That is exactly what these two state.  The
+2-pile/2-*color* special case is the already-proven `blStationary` (G4); this
+is the multi-*category* generalization at the transition level.
+
+**The sigma-type lumping route is the known Fintype wall (documented, not
+re-tried).** Probing "derive the kernel by lumping the allocation chain" via the
+disjoint-union-of-categories type `Σ (j : Fin c), Fin (X j)` hits:
+`Fintype (Σ j, Fin (X j))` does not synthesize (`Sigma.instFintype` needs
+`∀ j, Fintype (Fin (X j))`, a Pi-instance that does not resolve for the
+free-`Nat`-family), and `Finset.sigma` / `Finset.card_sigma` are not in the
+imported modules.  This is the same `letI`-on-`∀`-subtype Fintype wall recorded
+in `g5-multipile-twoPile-reduction.md`.  The clean route is the `List`-based
+`histAllocSum_choose` Vandermonde (already landed), which this increment uses
+directly — same identity, no Fintype friction.
+
+**Remaining T5 (the genuine, non-Fintype wall):** the *column-sum / symmetry*
+(`#exchanges(X→X') = #exchanges(X'→X)` via the allocation-level swap involution
+→ the kernel is symmetric/doubly-stochastic) and the *multivariate-hypergeometric
+stationary law* (`π K = π`).  The column-sum needs the allocation-level fiber
+sets (`Fib(X)`, the exchange map), which are the `∀`-subtype Fintype wall; the
+stationary law then needs the lumped detailed balance, which does **not** reduce
+to the trivial swap (the lumped measure `π` is not uniform, and `#e(X→X') =
+#e(X'→X)` alone gives symmetry of `K`, not `π`-stationarity — the latter is a
+genuine combinatorial identity, see roadmap line 176 caveat).  Next increment:
+either crack the allocation-level symmetry (transport the Fintype through the
+explicit `Equiv`, per `g5-multipile-twoPile-reduction.md` option 1) or state and
+probe the detailed balance directly.

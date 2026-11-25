@@ -1,6 +1,7 @@
 module
 
 public import Shufflemath.FiniteDeck.TwoPile
+public import Shufflemath.FiniteDeck.Histograms
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Finset.Card
@@ -9,6 +10,7 @@ public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Data.Nat.Choose.Vandermonde
 public import Mathlib.Data.Finset.NatAntidiagonal
 public import Mathlib.Logic.Equiv.Basic
+public import Mathlib.Data.Rat.Defs
 public import Mathlib.Tactic
 
 @[expose]
@@ -324,6 +326,46 @@ theorem exchangeTargets_symmetric (N : Nat) (A B A' B' : Finset (Fin N)) (k : Na
   have h1 : S.card = (S.image f).card := (Finset.card_image_of_injOn hInj).symm
   have h2 : (S.image f).card = S'.card := by rw [hImg]
   exact h1.trans h2
+
+/-!
+# T5: the two-pile multi-category transition is stochastic
+
+A pile with per-category card counts `X : List Nat` exchanges `k` cards with a
+second pile `Y`: the transition is counted by the product of the two piles'
+per-category Vandermonde totals (`histAllocSum`), and the sum of the numerator
+over every valid pair of category selections is the *universal* denominator
+`choose (∑ X) k * choose (∑ Y) k` (independent of the category counts).  Hence
+the normalized two-pile T5 transition kernel has row-sum `1` for every
+histogram — it is a valid Markov transition and a stationary-law candidate.  The
+column-sum (symmetry) and the multivariate-hypergeometric stationary law are the
+remaining T5 steps (allocation-level fiber symmetry, Fintype-walled).
+-/
+
+/-- **T5 two-pile transition stochasticity (numerator form).**  The total
+    number of category-counted `k`-exchanges between two piles whose per-category
+    counts are `X`, `Y` equals the universal denominator `choose (∑ X) k ·
+    choose (∑ Y) k`: summing the multivariate-hypergeometric numerator over every
+    valid category selection from each pile recovers the total number of ways to
+    choose `k` cards from each pile. -/
+theorem twoPileExchangeTotal (X Y : List Nat) (k : Nat) :
+    histAllocSum X k * histAllocSum Y k =
+      Nat.choose (X.sum) k * Nat.choose (Y.sum) k := by
+  rw [histAllocSum_choose X k, histAllocSum_choose Y k]
+
+/-- **T5 two-pile transition stochasticity (normalized form).**  For legal `k`
+    (`k ≤` each pile size), the normalized two-pile T5 transition kernel has
+    row-sum `1`: the transition mass out of any histogram is exactly the
+    denominator, so the normalized row-sum is `1` (universal, independent of the
+    category counts). -/
+theorem twoPileTransitionStochastic (X Y : List Nat) (k : Nat)
+    (hX : k ≤ X.sum) (hY : k ≤ Y.sum) :
+    ((histAllocSum X k * histAllocSum Y k : Nat) : Rat) /
+      ((Nat.choose (X.sum) k * Nat.choose (Y.sum) k : Nat) : Rat) = 1 := by
+  have hnz : (Nat.choose (X.sum) k * Nat.choose (Y.sum) k : Nat) ≠ 0 := by
+    exact Nat.mul_ne_zero (Nat.ne_of_gt (Nat.choose_pos hX))
+      (Nat.ne_of_gt (Nat.choose_pos hY))
+  rw [twoPileExchangeTotal X Y k]
+  field_simp [hnz]
 
 end FiniteDeck
 end Shufflemath
