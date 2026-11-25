@@ -218,3 +218,39 @@ of the A1 program.
 Full `lake build` (9021 jobs) and `./dev/verify_next_phase.sh` (37 tests OK)
 both pass with the new module; it is warning-clean except the two cosmetic
 `haveILetI` notes above.
+
+## Addendum (2027-01-02, G5/A1 continuation) — `_ProbeA14`: the `prefixCap` block partition
+
+A second A1.1 thread in `Shufflemath/_ProbeA14.lean` builds a **block
+partition of `Fin N`** indexed by `Fin p` with capacities `n : Fin p → Nat`,
+`hsum : ∑ i, n i = N`, using the prefix-sum `prefixCap p n i :=
+∑ k ∈ range (i.val+1), n (⟨k⟩ : Fin p)` as the cumulative offset of block
+`i`'s value interval `[prefixCap i, prefixCap i + n i)`.
+
+**Landed & proven this session (commits `a95d67a`, `ed6ba53`):**
+- `blockCap N p n i = univ.filter (fun x => prefixCap i ≤ x.val < prefixCap i + n i)`.
+- `himg` / `blockCap_card`: `(blockCap i).card = n i` — proved by showing
+  `image (·.val) (blockCap i) = range N.filter (fun v => a ≤ v < b)` (the
+  `·.val` bijection `Fin N ≃ range N` transports the filtered universe to the
+  filtered range) + `card_range`.
+- `memBlockCap_iff`: `x ∈ blockCap i ↔ prefixCap i ≤ x.val < prefixCap i + n i`
+  (trivial after `dsimp [blockCap]` + `simp [mem_filter, mem_univ]`, since
+  `blockCap` is a `filter`, **not** an `image`).
+- `blockCardinal`, `blockCap_inj`, `nonemptyOfS` (unchanged, still build).
+
+**Remaining (single root blocker → 3 sorries):**
+- `prefixCap_mono (p n) (i j) (h : i.val ≤ j.val) : prefixCap i ≤ prefixCap j`
+  — **SOLY (documented)**. Proof strategy: `dsimp [prefixCap]`; the two sides
+  are `∑ k ∈ range (i.val+1), n (Fin.mk k hk_i)` and `... hk_j`; the summands
+  are pointwise equal (`Fin.mk k hk_i = Fin.mk k hk_j` by `Fin.ext`, both val
+  `k`), so `Finset.sum_congr` merges them to one function `f`, then
+  `Finset.sum_le_sum_of_subset` on `range (i.val+1) ⊆ range (j.val+1)`
+  (nonnegative `n`). The only friction is making `f` a single named function —
+  the `Fin.mk` proof terms differ, so a `conv`/`change` step (or an
+  intermediate `Ico`-sum over a canonical `cast`) is needed.
+- `blockUnique` / `blockCover` (sored) build directly on `prefixCap_mono` +
+  `memBlockCap_iff` once it lands (see their strategy comments).
+
+**Next session:** crack `prefixCap_mono` (sum-merge + sum-subset), then
+`blockUnique` and `blockCover` follow by the documented `by_contra` /
+max-index arguments. File builds clean at 3 sorries (3192 jobs).
