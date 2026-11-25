@@ -179,7 +179,7 @@ The central symmetry theorem should quantify over the category-preserving permut
 
 **Mixing caveat:** symmetry and stationarity do not establish convergence. A schedule that never connects some piles cannot mix globally. An eventual finite-time TV theorem must state connectivity/irreducibility or give a concrete supported schedule and quantitative contraction/spectral/coupling bound.
 
-**G5 progress (2026-11-25, commit `67a36c5`):** the foundational two-pile/two-color reduction is **proven** in `Shufflemath/FiniteDeck/Piles.lean` (new leaf module, builds clean): the `k`-pile type machinery (`realizesAllocation`/`MultiFiber`) plus the 2-pile specialization, and the headline **`twoPile_equivFiber`** — the two-pile `MultiFiber` over the allocation `(A, univ\A)` is **in bijection** with the G2 `FibType` over `A` (`Equiv.ofBijective`, no `N!` enumeration). This is the "two-pile/two-color reduction matches G2-G4" half of the G5 gate: it makes every G2-G4 counting/disintegration/TV result transfer to the 2-pile setting. The `Finset.image_sdiff` + `univImage_eq_univ` reduction (`twoPile_pred_iff`) is the key lemma (it sidesteps the `Finset.mem_image` wall). **Remaining G5:** the general-`k` product-factorial fiber count `∏_i (|C i|)!` (the `multiFiber_prodCard` theorem was never proven; `PileCard`/`PilePos`/`multiFiber_prodCard` in earlier notes were aspirational — see `g5-multipile-twoPile-reduction.md` for the `letI`-on-`∀`-subtype `Fintype` wall and the product-`Equiv` route that sidesteps it), the 2-pile numeric `Fintype.card` corollary, and the `k ≥ 3` / histogram-level T5 kernel (the "3-pile, 2-category example" half of the gate). The B3 histogram core (`lump` + `lump_pileTotal` + `lump_categoryTotal`) is now landed in `FiniteDeck/Histograms.lean` (2026-12-31).
+**G5 progress (2026-11-25, commit `67a36c5`):** the foundational two-pile/two-color reduction is **proven** in `Shufflemath/FiniteDeck/Piles.lean` (new leaf module, builds clean): the `k`-pile type machinery (`realizesAllocation`/`MultiFiber`) plus the 2-pile specialization, and the headline **`twoPile_equivFiber`** — the two-pile `MultiFiber` over the allocation `(A, univ\A)` is **in bijection** with the G2 `FibType` over `A` (`Equiv.ofBijective`, no `N!` enumeration). This is the "two-pile/two-color reduction matches G2-G4" half of the G5 gate: it makes every G2-G4 counting/disintegration/TV result transfer to the 2-pile setting. The `Finset.image_sdiff` + `univImage_eq_univ` reduction (`twoPile_pred_iff`) is the key lemma (it sidesteps the `Finset.mem_image` wall). **G5 status (2026-12-31 update):** the general-`k` product-factorial fiber count is **LANDED and green** — the bijection `multiPile_equivFiber` and the count formula `multiPile_card : Fintype.card (MultiFiber N k P C) = ∏_i (|C i|)!` are proved in `Shufflemath/FiniteDeck/MultiPileFiber.lean` via `Equiv.ofBijective` on the two round-trips + `Fintype.card_congr` + `Fintype.card_pi` + `Fintype.card_perm`, exactly the route the `g5-multipile-twoPile-reduction.md` strategy doc recommended (sidestepping the `letI`-on-`∀`-subtype `Fintype` wall). The 2-pile numeric corollary `twoPile_card` is in `Piles.lean`; the 3-pile/2-category example (`ThreePileTwoColor.lean`) and the B3 histogram core (`Histograms.lean`) are landed. **Remaining G5:** the `G5capstone` multi-pile exchange kernel-equality (the B4 kernel lumping + stationary law + the final headline).
 
 **A1 complete (2027-01-05, commit `ef4a3a6`):** the allocation-carrier program G5 depends on
 (`Shufflemath/FiniteDeck/MultiExchange.lean` + `UniformExchange.lean`) is now fully done, including
@@ -187,11 +187,12 @@ the last open item — the **A1.5 concrete `N=2` sanity witness** in a new modul
 `Shufflemath/FiniteDeck/A1Witness.lean`: `A0`/`A1` (the two one-card-per-pile owners of a two-card,
 two-pile deck, `A1 := swapPiles A0 0 1`), `A0_ne_A1`, `swapPiles_A0_eq_A1`/`swapPiles_A1_eq_A0`
 (the exchange and its involution), and `swapKernel_equivariant_at2` (the A1.4 relabel-invariance
-headline at `N=2`). **So the next G5 items are:** (1) `multiFiber_prodCard` (general-`k`
-product-factorial fiber count `∏_i (|C i|)!`, via the product-`Equiv` route that sidesteps the
-`letI`-on-`∀`-subtype `Fintype` wall — see `g5-multipile-twoPile-reduction.md`), (2) the 2-pile
-numeric `Fintype.card` corollary, and (3) the `k ≥ 3` / histogram-level T5 kernel (the 3-pile,
-2-category example). The on-mission `TV < 1/1000` headline is already met independently by
+headline at `N=2`). **So the next G5 item is:** the `G5capstone` multi-pile exchange kernel-equality
+(the B4 kernel lumping + stationary law), which builds on the now-landed general-`k`
+fiber bijection (`multiPile_equivFiber`), the general-`k` product-factorial fiber count
+(`multiPile_card : Fintype.card (MultiFiber N k P C) = ∏_i (|C i|)!` in
+`MultiPileFiber.lean`), the 2-pile numeric corollary `twoPile_card` (`Piles.lean`), and the
+3-pile, 2-category example (`ThreePileTwoColor.lean`). The on-mission `TV < 1/1000` headline is already met independently by
 `DobrushinDecay99` (41 perfect exchanges), so the G5/G6 work is toward the general multi-pile
 campaign, not the already-met TV target.
 
