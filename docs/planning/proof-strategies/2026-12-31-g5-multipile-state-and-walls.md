@@ -509,6 +509,16 @@ mass = numerator / choose(ΣX, k) — the multivariate-hypergeometric conditiona
 `lumpedTransition_factors` proving the two-pile kernel is the product of the two per-pile conditional
 masses. All verified (lake build + full 37-test gate green).
 
+**Landed (this session, commit `db28f32`):** the single-term **Vandermonde bound** on the lumped numerator —
+`lumpedNumList_le_choose` (the List-form bound: each per-pile numerator term `∏ C(X_c,a_c)` is at most the universal
+denominator `choose (ΣX) k`, by induction on the category list, each cons-step a
+`Nat.add_choose_eq` + `Finset.single_le_sum` application against the antidiagonal total); `list_zip_ofFn_map_choose`
+(the `List.ofFn` bridge, by induction on `c`); `lumpedNum_le_choose` (the `Fin c → ℕ`-indexed form, bridging via
+`List.prod_ofFn` / `List.sum_ofFn`); and the **conditional-mass bound** `lumpedConditionalMass_le_one`
+(`lumpedConditionalMass c X a k ≤ 1` — the normalized per-pile conditional mass of any valid allocation is at most
+one, with a zero-denominator case). Verified (lake build + full 37-test gate green). These bound the T5 kernel's
+per-(a) numerator against its universal denominator — the per-(a) half of the kernel's well-definedness.
+
 **Landed (this session, commit `cbbe214`):** the Fin`c` ↔ List bridge — `fin_lumped_rowSum`
 states `histAllocSum (List.ofFn X) k = choose (Finset.univ.sum X) k`, so the `Fin c → ℕ` kernels in
 `Histograms.lean` (`lumpedConditionalMass` / `lumpedTransition`, normalized by `choose (univ.sum X) k`) inherit
