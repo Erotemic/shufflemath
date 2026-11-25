@@ -4,6 +4,7 @@ public import Shufflemath.FiniteDeck.TwoPile
 public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Data.Nat.Choose.Vandermonde
 public import Mathlib.Data.Finset.NatAntidiagonal
@@ -56,10 +57,20 @@ sets `(oj, oi)` (the cards each pile *borrowed*), recovers the original pair:
 pairwise-exchange kernel is a **reversible symmetric kernel** — the T5 "unique
 `(out_i, out_j)` argument" at the allocation level (roadmap T5 line 167).
 
+That statement is made precise by `exchangeTargets_symmetric` (the kernel-symmetry
+section at the end of this file): the swap `(oi, oj) ↦ (oj, oi)` is a bijection
+from the set of `k`-exchanges `(A,B) → (A',B')` to the set `(A',B') → (A,B)`, so
+the two **counts are equal** — the kernel is symmetric, and on a finite allocation
+space the uniform distribution is stationary under a single exchange move.  The
+proof reuses the involutivity above plus the disjoint-pile membership bookkeeping
+(no `native_decide`, no deck enumeration).
+
 ## Remaining next step (documented, not yet proven here)
 - **Histogram lumping:** lump the allocation chain over colors to obtain the
-  multivariate-hypergeometric T5 transition and prove its stationarity; then
-  the `G5capstone` multi-pile exchange kernel-equality (the full headline).
+  multivariate-hypergeometric T5 transition and prove its stationarity (note the
+  color-level kernel's reversibility is *not* a formal consequence of the
+  allocation-level symmetry above — lumping can break it); then the `G5capstone`
+  multi-pile exchange kernel-equality (the full headline).
 -/
 
 /-- The exchanged pair: `oi` cards leave `A` (entering `B`), `oj` cards leave
@@ -217,6 +228,102 @@ theorem histAllocSum_choose (xs : List Nat) :
       rw [histAllocSum, List.sum_cons, Nat.add_choose_eq]
       refine Finset.sum_congr rfl fun ij _ ↦ ?_
       rw [ih (ij.2)]
+
+/-!
+## Kernel symmetry: the exchange is a reversible symmetric kernel (allocation level)
+
+`exchangeTargets N A B A' B' k` is the set of `(oi, oj)` `k`-exchanges — `oi` a
+`k`-subset of `A`, `oj` a `k`-subset of `B` — that land exactly on the target
+`(A', B')`.  `exchangeTargets_symmetric` shows that swapping the two leaving
+sets is a **bijection** from the exchanges `(A,B) → (A',B')` to the exchanges
+`(A',B') → (A,B)`, so the two counts are equal: the allocation-level pairwise
+exchange is a reversible symmetric kernel (the T5 "unique `(out_i, out_j)`
+argument").  On a finite allocation space this is the foundation for the
+uniform distribution being stationary under a single exchange move.  The proof
+is purely combinatorial — it reuses the involutivity (`exchangePair_involution`)
+and the injectivity structure of the exchange map; there is no `native_decide`
+and no enumeration of the full deck.
+-/
+
+/-- The set of `(oi, oj)` `k`-exchanges from allocation `(A, B)` that reach the
+    target `(A', B')`: `oi` a `k`-subset of `A`, `oj` a `k`-subset of `B`, and
+    `exchangePair A B oi oj = (A', B')`. -/
+def exchangeTargets (N : Nat) (A B A' B' : Finset (Fin N)) (k : Nat) :
+    Finset (Finset (Fin N) × Finset (Fin N)) :=
+  (Finset.powersetCard k A ×ˢ Finset.powersetCard k B).filter
+    (fun p => exchangePair N A B p.1 p.2 = (A', B'))
+
+private def swapP (N : Nat) (p : Finset (Fin N) × Finset (Fin N)) : Finset (Fin N) × Finset (Fin N) :=
+  (p.2, p.1)
+
+/- A `k`-exchange landing on `(X', Y')` from `(X, Y)`, read backwards with the
+   leaving sets swapped, lands back on `(X, Y)`: the swap maps the forward
+   target-set into the backward one. -/
+private theorem swapLands (N : Nat) (X Y X' Y' : Finset (Fin N)) (k : Nat) (hXY : Disjoint X Y)
+    (p : Finset (Fin N) × Finset (Fin N))
+    (hp : p ∈ (Finset.powersetCard k X ×ˢ Finset.powersetCard k Y).filter
+        (fun q => exchangePair N X Y q.1 q.2 = (X', Y'))) :
+    swapP N p ∈ (Finset.powersetCard k X' ×ˢ Finset.powersetCard k Y').filter
+      (fun q => exchangePair N X' Y' q.1 q.2 = (X, Y)) := by
+  have hDom : p ∈ Finset.powersetCard k X ×ˢ Finset.powersetCard k Y := Finset.mem_filter.mp hp |>.1
+  have hoiX : p.1 ⊆ X := (Finset.mem_powersetCard.mp (Finset.mem_product.mp hDom).1).1
+  have hojY : p.2 ⊆ Y := (Finset.mem_powersetCard.mp (Finset.mem_product.mp hDom).2).1
+  have hoiK : p.1.card = k := (Finset.mem_powersetCard.mp (Finset.mem_product.mp hDom).1).2
+  have hojK : p.2.card = k := (Finset.mem_powersetCard.mp (Finset.mem_product.mp hDom).2).2
+  have hEq : exchangePair N X Y p.1 p.2 = (X', Y') := Finset.mem_filter.mp hp |>.2
+  have hX' : X' = (X \ p.1) ∪ p.2 := by
+    simpa [exchangePair, Prod.fst] using (congrArg Prod.fst hEq).symm
+  have hY' : Y' = (Y \ p.2) ∪ p.1 := by
+    simpa [exchangePair, Prod.snd] using (congrArg Prod.snd hEq).symm
+  have hp2in : p.2 ∈ Finset.powersetCard k X' := by
+    rw [hX']
+    refine Finset.mem_powersetCard.mpr ⟨?_, hojK⟩
+    intro y hy
+    exact Finset.mem_union.mpr (Or.inr hy)
+  have hp1in : p.1 ∈ Finset.powersetCard k Y' := by
+    rw [hY']
+    refine Finset.mem_powersetCard.mpr ⟨?_, hoiK⟩
+    intro y hy
+    exact Finset.mem_union.mpr (Or.inr hy)
+  have hDom' : swapP N p ∈ Finset.powersetCard k X' ×ˢ Finset.powersetCard k Y' := by
+    simp only [swapP]
+    exact Finset.mem_product.mpr ⟨hp2in, hp1in⟩
+  have hLands : exchangePair N X' Y' (swapP N p).1 (swapP N p).2 = (X, Y) := by
+    simp only [swapP]
+    simpa only [hX', hY'] using exchangePair_involution N X Y p.1 p.2 hoiX hojY hXY
+  exact Finset.mem_filter.mpr ⟨hDom', hLands⟩
+
+/- The kernel is symmetric: swapping the leaving sets is a bijection from the
+   set of `k`-exchanges `(A,B) → (A',B')` to the set `(A',B') → (A,B)`, so the
+   two counts are equal. -/
+theorem exchangeTargets_symmetric (N : Nat) (A B A' B' : Finset (Fin N)) (k : Nat)
+    (hDis : Disjoint A B) (hDis' : Disjoint A' B') :
+    (exchangeTargets N A B A' B' k).card = (exchangeTargets N A' B' A B k).card := by
+  let S  := exchangeTargets N A B A' B' k
+  let S' := exchangeTargets N A' B' A B k
+  let f (p : Finset (Fin N) × Finset (Fin N)) := swapP N p
+  have hFwd (p : Finset (Fin N) × Finset (Fin N)) (hp : p ∈ S) : f p ∈ S' :=
+    swapLands N A B A' B' k hDis p hp
+  have hFwd' (p : Finset (Fin N) × Finset (Fin N)) (hp : p ∈ S') : f p ∈ S :=
+    swapLands N A' B' A B k hDis' p hp
+  have hInv (p : Finset (Fin N) × Finset (Fin N)) : f (f p) = p := by simp [f, swapP]
+  have hInj : Set.InjOn f (S : Set _) := by
+    intro p _ q _ heq
+    have h1 : p.1 = q.1 := by simpa [f, swapP] using congrArg Prod.snd heq
+    have h2 : p.2 = q.2 := by simpa [f, swapP] using congrArg Prod.fst heq
+    exact Prod.ext h1 h2
+  have hImg : S.image f = S' := by
+    ext p
+    constructor
+    · intro hp
+      rcases Finset.mem_image.mp hp with ⟨m, hm, rfl⟩
+      exact hFwd m hm
+    · intro hp'
+      have hmid : f p ∈ S := hFwd' p hp'
+      exact Finset.mem_image.mpr ⟨f p, hmid, hInv p⟩
+  have h1 : S.card = (S.image f).card := (Finset.card_image_of_injOn hInj).symm
+  have h2 : (S.image f).card = S'.card := by rw [hImg]
+  exact h1.trans h2
 
 end FiniteDeck
 end Shufflemath

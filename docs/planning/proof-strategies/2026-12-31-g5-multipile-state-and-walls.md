@@ -10,7 +10,11 @@ Mathlib's API, builds green, and is integrated into the aggregator + verify scri
 `Fintype` instance, the real capstone blocker. The build is green (37 tests OK,
 EXIT 0); everything committed. **Both B3 histogram lemmas are now proven**:
 `lump_pileTotal` (row-total = pile size) and `lump_categoryTotal` (column-total =
-category-`j` count of the piles' union, from a disjoint-piles hypothesis).
+category-`j` count of the piles' union, from a disjoint-piles hypothesis).  **And
+the B4 kernel symmetry is now proven** (follow-up 7): the allocation-level exchange
+is a **reversible symmetric kernel** — `exchangeTargets_symmetric` shows the swap of
+the two leaving sets is a bijection between the forward and backward exchange
+target-sets, so their counts are equal.
 
 **2026-12-31 follow-up (2-category example):** the reusable G5 machinery now
 compiles for `k >= 3` and `c >= 2` in a worked concrete instance —
@@ -235,6 +239,28 @@ New imports: `Mathlib.Data.Finset.Prod` (for `Finset.pi`) and
 `Mathlib.Data.Fintype.BigOperators` (for `Finset.card_pi`).
 **Next B4:** the stationary law (multivariate-hypergeometric `π` invariant under
 the exchange kernel) and the `G5capstone` multi-pile kernel-equality headline.
+
+**2026-12-31 follow-up 7 (B4 kernel symmetry — the reversible symmetric kernel,
+allocation level):** the exchange kernel's **symmetry** is now proven in
+`MultiPileExchange.lean`.  `exchangeTargets N A B A' B' k` is the set of
+`(oi, oj)` `k`-exchanges (`oi ⊆ A`, `oj ⊆ B`, each of size `k`) that land exactly
+on the target `(A', B')`.  `exchangeTargets_symmetric` proves
+`#(exchanges (A,B) → (A',B')) = #(exchanges (A',B') → (A,B))`: the swap
+`(oi, oj) ↦ (oj, oi)` is a **bijection** between the two target-sets — the forward
+image lands by the involutivity `exchangePair_involution` (each pile's borrowed
+set sits inside the exchanged pile, so the swap is back in the domain), and the
+backward image by the same with the piles swapped; injectivity is immediate (a pair
+determines its swap).  The count-equality follows by `Finset.card_image_of_injOn`
++ the image-set equality.  This is the precise allocation-level statement of the T5
+"reversible symmetric kernel" (roadmap T5 line 167): the kernel is symmetric, so on
+a finite allocation space the uniform distribution is stationary under a single
+exchange move.  The proof is purely combinatorial (reuses
+`exchangePair_involution` + the disjoint-pile membership bookkeeping); no
+`native_decide`, no deck enumeration.  **Caveat recorded:** the *lumped*
+(color-level) kernel's reversibility is **not** a formal consequence of this —
+lumping a reversible full-allocation chain can break reversibility — so the
+stationary law at the color level remains a separate, subtler target, as does the
+`G5capstone` kernel-equality.
 
 The build gate stays green (37 tests) through all of it.
 
