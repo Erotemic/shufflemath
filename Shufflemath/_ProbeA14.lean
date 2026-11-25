@@ -129,6 +129,32 @@ theorem prefixCap_mono (p : Nat) (n : Fin p → Nat) (i j : Fin p) (h : i.val �
     simp [hklt, hkj]
   · simp [hklt]
 
+/- The end of block `i` lies at or before the start of block `j` when `i` is
+    strictly before `j` in pile order: `prefixCap i + n i ≤ prefixCap j`.  This is
+    what makes two blocks with a shared card force `i = j`.  Same 3-case
+    pointwise pattern as `prefixCap_le_total`, with the target the smaller ite. -/
+theorem prefixCap_add_n_le (p : Nat) (n : Fin p → Nat) (i j : Fin p) (h : i.val < j.val) :
+    prefixCap p n i + n i ≤ prefixCap p n j := by
+  have h1 : prefixCap p n i + n i =
+      (Finset.univ : Finset (Fin p)).sum
+        (fun k => (if k.val < i.val then n k else 0) + (if k = i then n k else 0)) := by
+    dsimp only [prefixCap]
+    rw [← iteSingleSum p n i, Finset.sum_add_distrib]
+  rw [h1, show prefixCap p n j =
+      (Finset.univ : Finset (Fin p)).sum (fun k => if k.val < j.val then n k else 0)
+    from by dsimp only [prefixCap]]
+  refine Finset.sum_le_sum fun k _ => ?_
+  by_cases hklt : k.val < i.val
+  · -- k.val < i.val < j.val: LHS = n k (+ 0, k ≠ i), RHS = n k
+    have hne : k ≠ i := by intro hki; subst hki; exact Nat.lt_irrefl _ hklt
+    have hkj : k.val < j.val := Nat.lt_of_lt_of_le hklt (Nat.le_of_lt h)
+    simp [hklt, hne, hkj]
+  · by_cases heq : k = i
+    · -- k = i: LHS = n i; k.val = i.val < j.val, so RHS = n i
+      simp [heq, h]
+    · -- k.val ≥ i.val and k ≠ i: LHS = 0, RHS ≥ 0
+      simp [hklt, heq]
+
 /-- Unique ownership: a card lies in at most one block.
     Strategy: each block holds values in `[a_k, a_k + n_k)` with `a_{k+1} = a_k + n_k`
     (telescope); two blocks sharing `x.val` force `i = j` via `prefixCap_mono`. -/
@@ -139,11 +165,23 @@ theorem blockUnique (N p : Nat) (n : Fin p → Nat) (hsum : (∑ i, n i) = N) (i
     (memBlockCap_iff N p n i x).mp hi
   have hjI : prefixCap p n j ≤ x.val ∧ x.val < prefixCap p n j + n j :=
     (memBlockCap_iff N p n j x).mp hj
-  -- i ≤ j: else j < i, so a_{j+1} = a_j + n_j ≤ a_i (prefixCap_mono) and
-  -- x.val < a_{j+1} ≤ a_i ≤ x.val, contradiction. (Needs prefixCap_mono.)
-  -- j ≤ i: symmetric.
-  -- Then Fin.le_antisymm.
-  sorry
+  by_cases hlt : i.val < j.val
+  · -- i before j: x.val < a_i + n_i ≤ a_j, but a_j ≤ x.val → a_j < a_j
+    have hcontra : x.val < prefixCap p n j := by
+      calc x.val < prefixCap p n i + n i := hiI.2
+        _ ≤ prefixCap p n j := prefixCap_add_n_le p n i j hlt
+    exact False.elim (Nat.lt_irrefl _ (Nat.lt_of_le_of_lt hjI.1 hcontra))
+  · by_cases hlt2 : j.val < i.val
+    · -- j before i: symmetric
+      have hcontra : x.val < prefixCap p n i := by
+        calc x.val < prefixCap p n j + n j := hjI.2
+          _ ≤ prefixCap p n i := prefixCap_add_n_le p n j i hlt2
+      exact False.elim (Nat.lt_irrefl _ (Nat.lt_of_le_of_lt hiI.1 hcontra))
+    · -- ¬ i.val < j.val and ¬ j.val < i.val → i.val = j.val → i = j
+      have heq : i.val = j.val :=
+        Nat.le_antisymm (Nat.le_of_not_gt hlt2) (Nat.le_of_not_gt hlt)
+      exact Fin.ext heq
+  
 
 /-- Coverage: every card lies in some block. -/
 -- NEXT (A1.1 closeout): the blocks tile [0, N): take i* = max {i | prefixCap i ≤ x.val}
