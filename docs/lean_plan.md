@@ -228,6 +228,18 @@ they do not establish the separate, still-open F1-F5 theorems.
 
 ## Current entry point
 
+> **Status (session 83, 2026-12-30 build):** **Gate 6 is complete** — the three-round
+> *physical* headline `g6_threeRound_headline` (`TV(finiteRound³ start, uniform) < 1/1000`)
+> is proved in `Shufflemath/_ProbeG6ThreeRoundCapstone.lean` (sub-lemmas A + B + the
+> ideal-kernel bridge + the n-step telescope + `gate6_headline_lt_thousandth`; the
+> `Eq.subst`/`hL ▸ t` trick avoids the `exchangeThenLocalReset` elaboration recursion).
+> **Next real item:** the batch-5b within-pile headline `rhoRoundIdeal 99 50 … =
+> localLift segMembership` (`GSRSegHeadline`) — remaining piece is the support equivalence
+> `d ∈ image (roundEmbedMap 99 50) ↔ membership d = segMembership`, a known elaboration-level
+> wall (never put the `(fiberOrbit_equiv …).val` deck in a goal; route via
+> `Finset.image_ofInjective` + `map_mass_eq_univ_fiber` + `localLift_mass`). Full detail in
+> [`agent_handoff.md`](agent_handoff.md).
+
 **F1–F5 and G1–G4 are complete** (no sorries in the A3/F5/G4 modules). The
 G4 arbitrary-finite-deck generalization (the 2026-11-15 pivot) is done:
 `Shufflemath/FiniteDeck/*` (G1 `TwoPile`, G2 `Fiber`, G3 `SubsetExchange`,

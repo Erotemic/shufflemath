@@ -1,3 +1,40 @@
+> **✅ (session 83, 2026-12-30 build) — the Gate-6 *three-round physical* headline is PROVEN and committed: the last Gate-6 deep-work item is closed.**
+> `Shufflemath/_ProbeG6ThreeRoundCapstone.g6_threeRound_headline`: the 99-card physical
+> three-round finite shuffler — three iterations of the correct-order full round
+> `comp (PAK swapLaw) (PAK rho99Finite)` (swap, then the A3 perfect-shuffle round) — driven
+> from the fiber-uniform 49-segregated start lands within **TV `< 1/1000`** of the uniform
+> `99!` deck. Assembled purely from already-proven pieces: sub-lemma A
+> (`_ProbeG6ThreeRoundKernelDelta`, per-round `kernelDiscrepancy ≤ δ1`), sub-lemma B
+> (`_ProbeG6ThreeRoundHeadline`, 3-round `≤ q3`), the ideal-kernel bridge
+> (`_ProbeG6ThreeRound.g6_3round_idealKernel_eq_fullRound`), the n-step telescope
+> (`TelescopeF5.compList_telescope_nstep_le_n_times_d`), `Dist.tv_triangle`, and
+> `gate6_headline_lt_thousandth` (`q3 + 3·δ1 < 1/1000`). The elaboration recursion that
+> killed the combined file (rewriting `g6ThreeRoundFiniteKernel = exchangeThenLocalReset …`
+> in the telescope's `hΔle`) is sidestepped by transporting sub-lemma A's bound across the
+> bridge with **`Eq.subst` (`hL ▸ t`)** instead of `rw [hL]` (no unfolding of the big def).
+> All five `_ProbeG6ThreeRound*` modules build (0 `sorry`); the canonical
+> `./dev/verify_next_phase.sh` passes (rc=0). **Follow-up (not blocking):** promote
+> `_ProbeG6ThreeRound*` (sub-lemma A/B/bridge/capstone) to canonical names + the aggregator.
+>
+> **Status corrections (the handoff was stale):** the K1 `permImage_uniform` headline
+> (`_ProbeK1comb`) and its support (`_ProbeK1uniform`: `fiberCardPartition`,
+> `map_equalFiber_uniform`) are **already complete** (0 `sorry`, build) — the older
+> "next session: prove fiberCardPartition / permImage_uniform" note is superseded.
+> `CommanderFiberCount` is clean (its only "sorry" match is a doc comment).
+>
+> **Next real item — the batch-5b within-pile headline** in `Shufflemath/GSRSegHeadline`:
+> `rhoRoundIdeal 99 50 … = localLift segMembership`. Its three supporting pieces are landed
+> (`roundEmbedMap_eq_fiberOrbit_val`, `roundEmbedMap_99_50_injective`,
+> `fiberSet_segMembership_card = 50!·49!`); the remaining piece is the **support
+> equivalence** `d ∈ image (roundEmbedMap 99 50) ↔ membership d = segMembership`.
+> **Known elaboration-level wall (not a math gap):** the proof must *never* put the
+> `(fiberOrbit_equiv …).val` deck in a goal (elaborator recursion, re-confirmed at a deeper
+> level). Route: characterise the support via `Finset.ext` / a `Finset.image_ofInjective`
+> support statement, then close the headline by `map_mass_eq_univ_fiber` + `localLift_mass`
+> + `fiberSet_segMembership_card`. This is a within-pile *side-result*; the on-mission
+> `TV < 1/1000` certificate is already met independently (this session's 3-round headline
+> + the 41-exchange `DobrushinDecay99`).
+>
 > **✅ (session 80) — Gate-6 K1 is now fully closed on the correct-order side: both the finite round and its TV bound are in production.**
 > **`Shufflemath/Gate6K1Capstone.lean`** now carries the full correct-order (swap-then-local)
 > headline in addition to the ideal capstone `k1_capstone_correct`:
