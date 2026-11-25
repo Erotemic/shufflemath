@@ -254,3 +254,37 @@ partition of `Fin N`** indexed by `Fin p` with capacities `n : Fin p → Nat`,
 **Next session:** crack `prefixCap_mono` (sum-merge + sum-subset), then
 `blockUnique` and `blockCover` follow by the documented `by_contra` /
 max-index arguments. File builds clean at 3 sorries (3192 jobs).
+
+---
+
+## Addendum (2027-01-03, A1.4 completion attempt) — the commutation elaboration wall
+
+Progress this session (all committed): **A1.1 consolidated** + the **A1 headline
+`swapKernel_uniformStationary`** (commit `96328fd`); **`conjugate_transposition`**
+(commit `bf4e6d7`); the **`relabel` action + `relabel_symm_relabel`** (relabeling is a
+bijection of the allocation carrier, commit `989983e`) — all in
+`FiniteDeck/MultiExchange.lean`, no `sorry`/`admit`, library builds.
+
+**Where it is stuck — `relabel_swapPiles_commute` / `swapKernel_equivariant`:**
+- The *full-Allocation* statement
+  `relabel σ (swapPiles A a b) = swapPiles (relabel σ A) (σ a) (σ b)` (both
+  `noncomputable def`s with implicit `N p n` in one expression) **fails to elaborate
+  in the local module** (`swapPiles A a b` → `?m.1`, "Function expected"), though the
+  identical term elaborates fine in a probe that *imports* `MultiExchange`.
+- The **owner-level** reformulation
+  `swapOwner (relabel σ A) (σ a) (σ b) x = A.val (cardTransposition a b (σ.symm x))`
+  (only one `noncomputable` def) **also fails**, but reveals the shape: after
+  `rw [swapOwner_eq_cardTransposition, relabel]` the goal comes back with the `A.val`
+  wrappers *stripped and reversed* — `(Equiv.symm σ) (cardTransposition (σ a) (σ b) x)
+  = cardTransposition a b ((Equiv.symm σ) x)` — so the final step needs the conjugation
+  with the **sides in the order `cardTransposition a b (σ.symm x) = σ.symm
+  (cardTransposition (σ a) (σ b) x)`** (i.e. `congrArg (σ.symm) (conjugate_transposition
+  σ a b x)` directly, no `symm`/flip).
+
+**Next increment (for the Qwen build / next session):** land
+`relabel_commute_owner` (owner-level, one noncomputable def; proof =
+`rw [swapOwner_eq_cardTransposition, relabel]` + `congrArg (σ.symm)
+(conjugate_transposition σ a b x)` matching the reversed order above), then the full
+`swapKernel_equivariant` in `FiniteDeck/UniformExchange.lean` via
+`Dist.mass_map` + `Finset.sum_congr` using the injectivity of `relabel σ` (no sum
+reindexing — the same `ab` pairs, indicators equal term-by-term).
