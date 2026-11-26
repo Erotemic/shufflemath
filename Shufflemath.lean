@@ -41,6 +41,7 @@ public import Shufflemath.CommanderPerDeckKernel
 public import Shufflemath.FiniteDeck.A3KernelLaw
 public import Shufflemath.FiniteDeck.Piles
 public import Shufflemath.FiniteDeck.Histograms
+public import Shufflemath.FiniteDeck.HistogramFiber
 public import Shufflemath.FiniteDeck.PileEquiv
 public import Shufflemath.FiniteDeck.PileFiber
 public import Shufflemath.FiniteDeck.MultiPileFiber

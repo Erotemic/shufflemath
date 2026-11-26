@@ -75,3 +75,31 @@ intermediate step; it is the missing "derive Pr(a,b|X) from the allocation chain
 
 This document scopes the work. It claims no theorems. The Sigma-lumping route stays
 walled; Route B (list-based) is the candidate, and step 1 is the honest first landing.
+
+## Landed (2026-12-31, this session) — the allocation-level fiber count
+
+**`Shufflemath/FiniteDeck/HistogramFiber.lean`** (new module, wired into the
+aggregator + verify gate; gate green, 37 tests):
+
+- `histFiber N color X` — the pile-0 sets consistent with per-category pile-0
+  counts `X` (a filtered-powerset fiber, mirroring `powersetCard_markedSplit`).
+- **`twoHist_fiber_card`** — the T2 allocation-level fiber count for the
+  two-pile/two-color case, via the `Finset.card_bij'` product bijection
+  (per-category powersetCards) mirroring the landed `powersetCard_markedSplit`
+  idiom:
+
+  `(histFiber N color X).card = choose r_0 (X 0) * choose r_1 (X 1)`
+
+  where `r_c = #category-c cards`.  The product `∏_c choose (r_c, x_{0,c})` is
+  the numerator of the two-pile T2 histogram law at the allocation level; the
+  deck-level identity (`× ∏_p n_p!`) is genuinely the Sigma-lumping wall
+  (documented above) — the fiber-over-`X` type needs the pile-index-dependent
+  dependent-subtype rewrite, which is blocked, and the doc's "Scoped next
+  theorems" step 1 names exactly this composition.
+- **`allocFiberCount`** — the total two-pile allocation count: the number of
+  pile-0 sets of size `n_0` is `choose N n_0` (landed `Finset.card_powersetCard`).
+
+**Honest remaining gap (unchanged):** the ordered-deck fiber count
+`#decks realizing X = [∏_c binom(r_c, x_{0,c})] · ∏_p n_p!` — the deck-level
+composition — and the `πK = π` stationary law.  Both are the documented
+Sigma-lumping/stationary-law work, not tactics.
