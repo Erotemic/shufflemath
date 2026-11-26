@@ -262,6 +262,18 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `Finset.image_ofInjective` + `map_mass_eq_univ_fiber` + `localLift_mass`). Full detail in
 > [`agent_handoff.md`](agent_handoff.md).
 
+> **Status (session 87, 2026-11-26, canonical module):** **Gate 6 arbitrary-start extension LANDED** —
+> `Shufflemath/FiniteDeck/Gate6Deterministic.lean` (in the verified build) upgrades the three-round
+> headline from the *reference* fiber-uniform start to an **arbitrary deterministic deck**:
+> `g6Deterministic_headline` (from the reference segregated deck `segDeck`) and `g6Deterministic_headline_anyDeck`
+> (from any deterministic start, via deck-relabeling equivariance), both proving TV < 1/1000.
+> The documented four-step bridge is carried out end-to-end: same-fiber exchange-law identity
+> (`rawExchangeMembership_eq_fiberUniform`) → equal-weight mixture argument
+> (`apply_fiberUniformStart_rawExchangeMembership`) → one-step bridge + the unchanged telescope
+> (`apply_segDeck_idealKernel_eq`) → relabeling transport (`pak_relabel_equivariant`,
+> `finite_kernel_relabel_equivariant`, `run_map_relabel`). The four bridge steps are the recorded
+> doc's exact architecture.
+
 **F1–F5 and G1–G4 are complete** (no sorries in the A3/F5/G4 modules). The
 G4 arbitrary-finite-deck generalization (the 2026-11-15 pivot) is done:
 `Shufflemath/FiniteDeck/*` (G1 `TwoPile`, G2 `Fiber`, G3 `SubsetExchange`,

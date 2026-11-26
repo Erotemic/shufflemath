@@ -63,7 +63,8 @@ lake build \
   Shufflemath.Gate6K1Capstone \
   Shufflemath.Gate6K1Bridges \
   Shufflemath.FiniteDeck.Partition \
-  Shufflemath.FiniteDeck.Gate6ThreeRound
+  Shufflemath.FiniteDeck.Gate6ThreeRound \
+  Shufflemath.FiniteDeck.Gate6Deterministic
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace

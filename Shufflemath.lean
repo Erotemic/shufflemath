@@ -62,3 +62,4 @@ public import Shufflemath.K1Wall
 public import Shufflemath.Gate6K1Capstone
 public import Shufflemath.Gate6K1Bridges
 public import Shufflemath.FiniteDeck.Gate6ThreeRound
+public import Shufflemath.FiniteDeck.Gate6Deterministic
