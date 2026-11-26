@@ -895,6 +895,237 @@ theorem choose_rewrite_zero_cat (r0 X a b : Nat)
     rw [hL, hR]
   exact mul_right_cancel₀ hDpos hstep
 
+theorem stationary_inner (N m r0 r1 k : Nat)
+    (hm : m ≤ N) (hr : r0 + r1 = N)
+    (hk1 : k ≤ m) (hk2 : k ≤ N - m)
+    (Y : Hist2 N) (hY : Y ∈ validHistSet N m r0 r1)
+    (a b : Nat × Nat) (ha : a ∈ Finset.antidiagonal k) (hb : b ∈ Finset.antidiagonal k) :
+    (∑ X ∈ validHistSet N m r0 r1,
+       if (Y 0).val = (X 0).val - a.1 + b.1 ∧
+          (Y 1).val = (X 1).val - a.2 + b.2
+       then validHistPi N m r0 r1 X *
+         (((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+             Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+           ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat))
+       else 0) =
+    validHistPi N m r0 r1 Y *
+      (((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+             Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat) /
+         ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)) := by
+  rcases Finset.mem_filter.mp hY with ⟨_, hmem⟩
+  have ht0 : (Y 0).val + (Y 1).val = m := hmem.1
+  have hY0le : (Y 0).val ≤ r0 := hmem.2.1
+  have hY1le : (Y 1).val ≤ r1 := hmem.2.2
+  have haa := Finset.mem_antidiagonal.mp ha
+  have hbb := Finset.mem_antidiagonal.mp hb
+  have hYtot : ∀ X' ∈ validHistSet N m r0 r1, (X' 0).val + (X' 1).val = m := by
+    intro X' hX'
+    rcases Finset.mem_filter.mp hX' with ⟨_, hmX⟩
+    exact hmX.1
+  by_cases hb1 : b.1 ≤ (Y 0).val
+  · by_cases hb2 : b.2 ≤ (Y 1).val
+    · by_cases hHv : (Y 0).val - b.1 + a.1 ≤ r0 ∧ (Y 1).val - b.2 + a.2 ≤ r1
+      · have shiftvalid : ∃ H ∈ validHistSet N m r0 r1,
+            (H 0).val = (Y 0).val - b.1 + a.1 ∧
+            (H 1).val = (Y 1).val - b.2 + a.2 := by
+          refine ⟨![⟨(Y 0).val - b.1 + a.1, by omega⟩, ⟨(Y 1).val - b.2 + a.2, by omega⟩], ?_, rfl, rfl⟩
+          simp only [validHistSet, Finset.mem_filter, Finset.mem_univ, true_and]
+          refine ⟨?_, ?_, ?_⟩
+          · simp; omega
+          · simp; omega
+          · simp; omega
+        obtain ⟨H, hHmem, hHval0, hHval1⟩ := shiftvalid
+        have hh : (Y 0).val = (H 0).val - a.1 + b.1 ∧ (Y 1).val = (H 1).val - a.2 + b.2 := by
+          constructor
+          · rw [hHval0]; omega
+          · rw [hHval1]; omega
+        have hHtot : (H 0).val + (H 1).val = m := by omega
+        have hone : ∀ X' ∈ validHistSet N m r0 r1,
+            (Y 0).val = (X' 0).val - a.1 + b.1 ∧ (Y 1).val = (X' 1).val - a.2 + b.2 → X' = H := by
+          intro X' hX' hmatch
+          have hXtot := hYtot X' hX'
+          have h0val : (X' 0).val = (H 0).val := by omega
+          have h1val : (X' 1).val = (H 1).val := by omega
+          funext c
+          fin_cases c
+          · exact Fin.ext h0val
+          · exact Fin.ext h1val
+        rw [Finset.sum_eq_single H (fun X' hX' hdiff => by
+              rw [ite_eq_right (fun hmatch => by
+                have h := hone X' hX' hmatch
+                exact hdiff h)])
+            (fun h => absurd hHmem h)]
+        rw [ite_eq_left hh]
+        by_cases hw : Nat.choose (H 0).val a.1 * Nat.choose (H 1).val a.2 *
+            Nat.choose (r0 - (H 0).val) b.1 * Nat.choose (r1 - (H 1).val) b.2 = 0
+        · have hH0ge : a.1 ≤ (H 0).val := by omega
+          have hH1ge : a.2 ≤ (H 1).val := by omega
+          by_cases hg1 : Nat.choose (H 0).val a.1 = 0
+          · exfalso
+            exact (not_lt.mpr hH0ge) (Nat.choose_eq_zero_iff.mp hg1)
+          · by_cases hg2 : Nat.choose (H 1).val a.2 = 0
+            · exfalso
+              exact (not_lt.mpr hH1ge) (Nat.choose_eq_zero_iff.mp hg2)
+            · by_cases hg3 : Nat.choose (r0 - (H 0).val) b.1 = 0
+              · have ha1 : r0 - (Y 0).val < a.1 := by
+                  have hb1' : b.1 > r0 - (H 0).val := Nat.choose_eq_zero_iff.mp hg3
+                  omega
+                have hz : Nat.choose (r0 - (Y 0).val) a.1 = 0 := Nat.choose_eq_zero_iff.mpr ha1
+                rw [hw, hz]
+                simp
+              · by_cases hg4 : Nat.choose (r1 - (H 1).val) b.2 = 0
+                · have ha2 : r1 - (Y 1).val < a.2 := by
+                    have hb2' : b.2 > r1 - (H 1).val := Nat.choose_eq_zero_iff.mp hg4
+                    omega
+                  have hz : Nat.choose (r1 - (Y 1).val) a.2 = 0 := Nat.choose_eq_zero_iff.mpr ha2
+                  rw [hw, hz]
+                  simp
+                · exact absurd hw
+                    (mul_ne_zero (mul_ne_zero (mul_ne_zero hg1 hg2) hg3) hg4)
+        · have W' := hw
+          have no_f1 : Nat.choose (H 0).val a.1 ≠ 0 := by
+            intro h
+            exact W' (by simp [h])
+          have no_f2 : Nat.choose (H 1).val a.2 ≠ 0 := by
+            intro h
+            exact W' (by simp [h])
+          have no_f3 : Nat.choose (r0 - (H 0).val) b.1 ≠ 0 := by
+            intro h
+            exact W' (by simp [h])
+          have no_f4 : Nat.choose (r1 - (H 1).val) b.2 ≠ 0 := by
+            intro h
+            exact W' (by simp [h])
+          have hAa1 : a.1 ≤ (H 0).val := by
+            by_contra h
+            have hzero : Nat.choose (H 0).val a.1 = 0 := Nat.choose_eq_zero_of_lt (by omega)
+            exact no_f1 hzero
+          have hAa2 : a.2 ≤ (H 1).val := by
+            by_contra h
+            have hzero : Nat.choose (H 1).val a.2 = 0 := Nat.choose_eq_zero_of_lt (by omega)
+            exact no_f2 hzero
+          have hBb1 : b.1 ≤ r0 - (H 0).val := by
+            by_contra h
+            have hzero : Nat.choose (r0 - (H 0).val) b.1 = 0 := Nat.choose_eq_zero_of_lt (by omega)
+            exact no_f3 hzero
+          have hBb2 : b.2 ≤ r1 - (H 1).val := by
+            by_contra h
+            have hzero : Nat.choose (r1 - (H 1).val) b.2 = 0 := Nat.choose_eq_zero_of_lt (by omega)
+            exact no_f4 hzero
+          have hH0le : (H 0).val ≤ r0 := by rw [hHval0]; exact hHv.1
+          have hH1le : (H 1).val ≤ r1 := by rw [hHval1]; exact hHv.2
+          have e0 := choose_rewrite_zero_cat r0 (H 0).val a.1 b.1 hAa1 hBb1 hH0le
+          have e1 := choose_rewrite_zero_cat r1 (H 1).val a.2 b.2 hAa2 hBb2 hH1le
+          simp only [hh.1.symm] at e0
+          simp only [hh.2.symm] at e1
+          have hnum : (Nat.choose r0 (H 0).val * Nat.choose r1 (H 1).val) *
+                  (Nat.choose (H 0).val a.1 * Nat.choose (H 1).val a.2 *
+                    Nat.choose (r0 - (H 0).val) b.1 * Nat.choose (r1 - (H 1).val) b.2) =
+              (Nat.choose r0 (Y 0).val * Nat.choose r1 (Y 1).val) *
+                (Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+                  Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2) := by
+            rw [show (Nat.choose r0 (H 0).val * Nat.choose r1 (H 1).val) *
+                  (Nat.choose (H 0).val a.1 * Nat.choose (H 1).val a.2 *
+                    Nat.choose (r0 - (H 0).val) b.1 * Nat.choose (r1 - (H 1).val) b.2) =
+                (Nat.choose r0 (H 0).val * Nat.choose (H 0).val a.1 *
+                  Nat.choose (r0 - (H 0).val) b.1) *
+                (Nat.choose r1 (H 1).val * Nat.choose (H 1).val a.2 *
+                  Nat.choose (r1 - (H 1).val) b.2) from by ring]
+            rw [e0, e1]
+            ring
+          have hnumRat :
+              ((Nat.choose r0 (H 0).val * Nat.choose r1 (H 1).val : Nat) : Rat) *
+                ((Nat.choose (H 0).val a.1 * Nat.choose (H 1).val a.2 *
+                  Nat.choose (r0 - (H 0).val) b.1 * Nat.choose (r1 - (H 1).val) b.2 : Nat) : Rat) =
+              ((Nat.choose r0 (Y 0).val * Nat.choose r1 (Y 1).val : Nat) : Rat) *
+                ((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+                  Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat) := by
+            exact_mod_cast hnum
+          simp only [validHistPi]
+          have hD : ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat) ≠ 0 := by
+            exact Nat.cast_ne_zero.mpr (Nat.mul_ne_zero (Nat.ne_of_gt (Nat.choose_pos hk1))
+              (Nat.ne_of_gt (Nat.choose_pos hk2)))
+          have hN : (Nat.choose N m : Rat) ≠ 0 := by
+            exact Nat.cast_ne_zero.mpr (Nat.ne_of_gt (Nat.choose_pos hm))
+          field_simp
+          ring_nf
+          exact hnumRat
+
+      · rcases not_and_or.mp hHv with hg0 | hg1
+        · have hsum : (∑ X ∈ validHistSet N m r0 r1,
+              if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+              then validHistPi N m r0 r1 X *
+                ((↑(Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+                    Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2) /
+                  ↑(Nat.choose m k * Nat.choose (N - m) k)) : Rat)
+              else 0) = 0 := by
+            apply Finset.sum_eq_zero
+            intro X hX
+            apply ite_eq_right
+            rcases Finset.mem_filter.mp hX with ⟨_, hXm⟩
+            exact fun ⟨hX0, hX1⟩ => by
+              have hb : (X 0).val ≤ r0 := hXm.2.1
+              omega
+          rw [hsum]
+          have ha1 : r0 - (Y 0).val < a.1 := by omega
+          have hz : Nat.choose (r0 - (Y 0).val) a.1 = 0 := Nat.choose_eq_zero_iff.mpr ha1
+          rw [hz]
+          simp
+        · have hsum : (∑ X ∈ validHistSet N m r0 r1,
+              if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+              then validHistPi N m r0 r1 X *
+                ((↑(Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+                    Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2) /
+                  ↑(Nat.choose m k * Nat.choose (N - m) k)) : Rat)
+              else 0) = 0 := by
+            apply Finset.sum_eq_zero
+            intro X hX
+            apply ite_eq_right
+            rcases Finset.mem_filter.mp hX with ⟨_, hXm⟩
+            exact fun ⟨hX0, hX1⟩ => by
+              have hb : (X 1).val ≤ r1 := hXm.2.2
+              omega
+          rw [hsum]
+          have ha2 : r1 - (Y 1).val < a.2 := by omega
+          have hz : Nat.choose (r1 - (Y 1).val) a.2 = 0 := Nat.choose_eq_zero_iff.mpr ha2
+          rw [hz]
+          simp
+    · have hsum : (∑ X ∈ validHistSet N m r0 r1,
+          if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+          then validHistPi N m r0 r1 X *
+            ((↑(Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+                Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2) /
+              ↑(Nat.choose m k * Nat.choose (N - m) k)) : Rat)
+          else 0) = 0 := by
+        apply Finset.sum_eq_zero
+        intro X _
+        apply ite_eq_right
+        exact fun ⟨hX0, hX1⟩ => by
+          have hgt : (Y 1).val < b.2 := by omega
+          have hlt : (Y 1).val = (X 1).val - a.2 + b.2 := hX1
+          omega
+      rw [hsum]
+      have hz : Nat.choose (Y 1).val b.2 = 0 := Nat.choose_eq_zero_iff.mpr (by omega)
+      rw [hz]
+      simp
+  · have hsum : (∑ X ∈ validHistSet N m r0 r1,
+          if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+          then validHistPi N m r0 r1 X *
+            ((↑(Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+                Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2) /
+              ↑(Nat.choose m k * Nat.choose (N - m) k)) : Rat)
+          else 0) = 0 := by
+        apply Finset.sum_eq_zero
+        intro X _
+        apply ite_eq_right
+        exact fun ⟨hX0, hX1⟩ => by
+          have hgt : (Y 0).val < b.1 := by omega
+          have hlt : (Y 0).val = (X 0).val - a.1 + b.1 := hX0
+          omega
+    rw [hsum]
+    have hz : Nat.choose (Y 0).val b.1 = 0 := Nat.choose_eq_zero_iff.mpr (by omega)
+    rw [hz]
+    simp
+
 /-! ## The histogram-level row-sum identity
 
 **Result (landed):** for a valid `X`, `∑_{X'} histogramTransition N m r0 r1 k X X' = 1` — the
@@ -1125,6 +1356,206 @@ theorem histogramTransition_rowSum (N m r0 r1 k : Nat)
   have hD' : ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat) ≠ 0 := Nat.cast_ne_zero.mpr hD
   exact div_self hD'
 
+/-! ## The πK = π stationary-law identity (T5 line 176)
+
+**Result (landed):** the histogram-level two-pile exchange kernel is stationary under the π law:
+for every valid `Y`, `∑_X π(X)·K(X→Y) = π(Y)`.  Proof: Fubini over `(X, a, b)`, collapse the
+`(a, b)`-inner sum via `stationary_inner` (one-term collapse to `π(Y)·sw(Y)/D`), the two
+Vandermonde splits of `∑_{a,b} sw(Y) = choose(m, k)·choose(N - m, k)`, and the universal
+normalisation `D = choose(m,k)·choose(N - m, k)`. -/
+
+/-- **The πK = π stationary-law identity** over the valid two-pile/two-color histogram state
+space: the uniform-deck π law is stationary for the histogram-level exchange kernel. -/
+theorem histogramTransition_stationary (N m r0 r1 k : Nat)
+    (hm : m ≤ N) (hr : r0 + r1 = N)
+    (hk1 : k ≤ m) (hk2 : k ≤ N - m)
+    (Y : Hist2 N) (hY : Y ∈ validHistSet N m r0 r1) :
+    ∑ X ∈ validHistSet N m r0 r1,
+      validHistPi N m r0 r1 X * histogramTransition N m r0 r1 k X Y =
+      validHistPi N m r0 r1 Y := by
+  rcases Finset.mem_filter.mp hY with ⟨_, hmem⟩
+  have hsum : (Y 0).val + (Y 1).val = m := hmem.1
+  have hY0le : (Y 0).val ≤ r0 := hmem.2.1
+  have hY1le : (Y 1).val ≤ r1 := hmem.2.2
+  have hD : (Nat.choose m k * Nat.choose (N - m) k : Nat) ≠ 0 := by
+    refine Nat.mul_ne_zero ?_ ?_
+    exact Nat.ne_of_gt (Nat.choose_pos hk1)
+    exact Nat.ne_of_gt (Nat.choose_pos hk2)
+  have hD' : ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat) ≠ 0 := Nat.cast_ne_zero.mpr hD
+  have hinj_a : Set.InjOn (fun i : Nat => (i, k - i)) ((Finset.range (k + 1)) : Set Nat) := by
+    intro i _ j _ hij
+    exact congrArg Prod.fst hij
+  have hc_nat : ∑ b ∈ Finset.antidiagonal k, (Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 : Nat) =
+      Nat.choose m k := by
+    rw [Finset.Nat.antidiagonal_eq_image, Finset.sum_image hinj_a]
+    have hv := Nat.add_choose_eq (Y 0).val (Y 1).val k
+    rw [Finset.Nat.antidiagonal_eq_image, Finset.sum_image hinj_a] at hv
+    rw [hsum] at hv
+    exact hv.symm
+  have hd_nat : ∑ a ∈ Finset.antidiagonal k, (Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) =
+      Nat.choose (N - m) k := by
+    rw [Finset.Nat.antidiagonal_eq_image, Finset.sum_image hinj_a]
+    have hv := Nat.add_choose_eq (r0 - (Y 0).val) (r1 - (Y 1).val) k
+    rw [Finset.Nat.antidiagonal_eq_image, Finset.sum_image hinj_a] at hv
+    rw [show (r0 - (Y 0).val) + (r1 - (Y 1).val) = N - m from by omega] at hv
+    exact hv.symm
+  have hc_rat : (∑ b ∈ Finset.antidiagonal k, ((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 : Nat) : Rat)) =
+      (Nat.choose m k : Rat) := by
+    rw [← Nat.cast_sum, hc_nat]
+  have hd_rat : (∑ a ∈ Finset.antidiagonal k, ((Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat)) =
+      (Nat.choose (N - m) k : Rat) := by
+    rw [← Nat.cast_sum, hd_nat]
+  have hinner : ∀ a ∈ Finset.antidiagonal k, ∀ b ∈ Finset.antidiagonal k,
+      (∑ X ∈ validHistSet N m r0 r1, validHistPi N m r0 r1 X *
+        (if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+        then ((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+            Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+            ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)
+        else 0)) =
+      validHistPi N m r0 r1 Y *
+        (((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+          Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat) /
+          ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)) := by
+    intro a ha b hb
+    have hstep : ∀ X ∈ validHistSet N m r0 r1, validHistPi N m r0 r1 X *
+        (if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+        then ((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+            Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+            ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)
+        else 0) =
+        (if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+        then validHistPi N m r0 r1 X *
+            (((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+              Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+              ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat))
+        else 0) := by
+      intro X _
+      by_cases hcond : (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+      · rw [if_pos hcond, if_pos hcond]
+      · rw [if_neg hcond, if_neg hcond]
+        ring
+    have step2 : (∑ X ∈ validHistSet N m r0 r1, validHistPi N m r0 r1 X *
+        (if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+        then ((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+            Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+            ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)
+        else 0)) =
+        ∑ X ∈ validHistSet N m r0 r1,
+          (if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+          then validHistPi N m r0 r1 X *
+              (((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+                Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+                ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat))
+          else 0) :=
+      Finset.sum_congr rfl hstep
+    rw [step2]
+    exact stationary_inner N m r0 r1 k hm hr hk1 hk2 Y hY a b ha hb
+  simp only [histogramTransition]
+  have hFubini : (∑ X ∈ validHistSet N m r0 r1, validHistPi N m r0 r1 X *
+        ∑ a ∈ Finset.antidiagonal k, ∑ b ∈ Finset.antidiagonal k,
+          if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+          then ((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+              Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+              ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)
+          else 0) =
+      ∑ a ∈ Finset.antidiagonal k, ∑ b ∈ Finset.antidiagonal k,
+        ∑ X ∈ validHistSet N m r0 r1, validHistPi N m r0 r1 X *
+          (if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+           then ((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+               Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+               ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)
+           else 0) := by
+    simp only [Finset.mul_sum]
+    rw [Finset.sum_comm (s := validHistSet N m r0 r1) (t := Finset.antidiagonal k)
+        (f := fun X a => ∑ b ∈ Finset.antidiagonal k, validHistPi N m r0 r1 X *
+          (if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+           then ((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+               Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+               ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)
+           else 0))]
+    apply Finset.sum_congr rfl
+    intro a _
+    rw [Finset.sum_comm (s := validHistSet N m r0 r1) (t := Finset.antidiagonal k)
+        (f := fun X b => validHistPi N m r0 r1 X *
+          (if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+           then ((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+               Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+               ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)
+           else 0))]
+  rw [hFubini]
+  have hsums : (∑ a ∈ Finset.antidiagonal k, ∑ b ∈ Finset.antidiagonal k,
+        (∑ X ∈ validHistSet N m r0 r1, validHistPi N m r0 r1 X *
+          (if (Y 0).val = (X 0).val - a.1 + b.1 ∧ (Y 1).val = (X 1).val - a.2 + b.2
+           then ((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+               Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+               ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)
+           else 0))) =
+      ∑ a ∈ Finset.antidiagonal k, ∑ b ∈ Finset.antidiagonal k,
+        validHistPi N m r0 r1 Y *
+          (((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+            Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat) /
+            ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)) := by
+    apply Finset.sum_congr rfl
+    intro a ha
+    apply Finset.sum_congr rfl
+    intro b hb
+    exact hinner a ha b hb
+  rw [hsums]
+  have hstep_a : ∀ a ∈ Finset.antidiagonal k, (∑ b ∈ Finset.antidiagonal k,
+        validHistPi N m r0 r1 Y *
+          (((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+            Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat) /
+            ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat))) =
+      validHistPi N m r0 r1 Y / ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat) *
+        ∑ b ∈ Finset.antidiagonal k,
+          ((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+            Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat) := by
+    intro a _
+    have h2 : ∀ b ∈ Finset.antidiagonal k, validHistPi N m r0 r1 Y *
+        (((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+          Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat) /
+          ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)) =
+        (validHistPi N m r0 r1 Y / ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)) *
+          ((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+            Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat) := by
+      intro b _
+      field_simp
+    have h3 : (∑ b ∈ Finset.antidiagonal k, validHistPi N m r0 r1 Y *
+        (((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+          Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat) /
+          ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat))) =
+        ∑ b ∈ Finset.antidiagonal k, (validHistPi N m r0 r1 Y / ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)) *
+          ((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+            Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat) :=
+      Finset.sum_congr rfl h2
+    rw [h3, ← Finset.mul_sum]
+  rw [Finset.sum_congr rfl (fun a ha => hstep_a a ha)]
+  rw [← Finset.mul_sum]
+  have hsw : (∑ a ∈ Finset.antidiagonal k, ∑ b ∈ Finset.antidiagonal k,
+        ((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+          Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat)) =
+      (∑ a ∈ Finset.antidiagonal k, ((Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat)) *
+        (∑ b ∈ Finset.antidiagonal k, ((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 : Nat) : Rat)) := by
+    have key : ∀ a ∈ Finset.antidiagonal k, (∑ b ∈ Finset.antidiagonal k,
+        ((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 *
+          Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat)) =
+        ((Nat.choose (r0 - (Y 0).val) a.1 * Nat.choose (r1 - (Y 1).val) a.2 : Nat) : Rat) *
+          (∑ b ∈ Finset.antidiagonal k, ((Nat.choose (Y 0).val b.1 * Nat.choose (Y 1).val b.2 : Nat) : Rat)) := by
+      intro a _
+      rw [Finset.mul_sum]
+      apply Finset.sum_congr rfl
+      intro b _
+      push_cast
+      ring
+    rw [Finset.sum_congr rfl (fun a ha => key a ha), Finset.sum_mul]
+  rw [hsw, hd_rat, hc_rat]
+  have hD'nat : ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat) =
+      (Nat.choose m k : Rat) * (Nat.choose (N - m) k : Rat) := by
+    push_cast
+    ring
+  field_simp
+  rw [hD'nat]
+  ring
+
 end FiniteDeck
 end Shufflemath
-
