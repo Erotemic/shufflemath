@@ -671,6 +671,16 @@ consequence of the landed `exchangeTargets_symmetric` (symmetry of K ≠
 π-stationarity, since π is non-uniform).  Not claimed as done; documented here as
 the honest next increment.
 
+**Mass-1 identity for the π law (honestly scoped next leg):** the `∑ π(X) = 1`
+identity over `validHistSet` follows from the Chu–Vandermonde identity
+`Nat.add_choose_eq` (available in Mathlib: `(m + n).choose k = ∑ ij ∈ antidiagonal k,
+m.choose ij.1 * n.choose ij.2`).  The remaining technical step is the honest
+bijection between valid histograms and valid first-components `i` (X 1 = `m - i`
+forced; `i` ranges over `Icc (m - r1).max 0 (min r0 m)`-ish bounds — invalid `i`
+terms vanish by `Nat.choose_eq_zero` on `choose(r0, i)`/`choose(r1, m - i)`).
+This is the honest next increment, not landed; the state space + nonempty are
+landed (`2a5e4a4`).
+
 **Numeric verification (post-landing, this session):** an independent
 Python brute-force check over all 24 (N=4) / 120 (N=5) / 720 (N=6) ordered
 decks confirms the landed `deckFiber_prob` formula — every `(x0,x1)` fiber
