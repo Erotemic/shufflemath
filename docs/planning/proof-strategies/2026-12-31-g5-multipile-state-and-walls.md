@@ -666,14 +666,21 @@ Nat): K(X → X') sums, over every per-category removed/added pair `(a, b)`
 with total `k`, the two-pile-exchange numerator
 `choose(X_0, a_0)·choose(X_1, a_1)·choose(r_0 − X_0, b_0)·choose(r_1 − X_1, b_1)`
 normalized by `choose(m, k)·choose(N − m, k)`, weighted by the shift
-constraint `X'_0 = X_0 − a_0 + b_0`, `X'_1 = X_1 − a_1 + b_1`.  **Definition +
-honest scope doc only**: row-sum-1 and detailed balance are NOT claimed.
-Numeric sanity check (independent Python brute force, 8 (N,m,k) cases):
-row-sum = 1 and detailed balance `∑_X π(X)·K(X→X') = π(X')` both hold.
-Build green (3200 jobs), 0 sorries.  Landed `6e0934b`.
+constraint `X'_0 = X_0 − a_0 + b_0`, `X'_1 = X_1 − a_1 + b_1`.  Landed `6e0934b`.
 
-**Remaining, honestly scoped (unclaimed):** step (c) row-sum-1 for
-`histogramTransition`, then step (d) the detailed-balance identity
-`∑_{X valid} π(X)·K(X→X') = π(X')` — the genuine combinatorial
-`∑_{a,b}`-preimage re-indexing (the πK = π tail).  This is the honest next
-increment; it is not a tactic wall.
+**Landed (this session, row-sum):** `histogramTransition_rowSum` — the row-sum
+half of the T5/T2 kernel landing: `∑_{X' ∈ validHistSet} histogramTransition N m r0 r1 k X X' = 1`.
+Route: (i) Fubini over `(X', a, b)` (the preimage re-indexing — `X' = X - a + b` is a
+bijection in `X'` for fixed `(a, b)`); (ii) the per-`(a, b)` inner sum collapses to a
+single-term value (the unique valid histogram `H` determined by `X, a, b` — the
+`by_cases hw` split discharges the `choose`-zero degenerate case); (iii) the
+outer `(a, b)`-sum factors as `∑_a choose(X_0, a_0)·choose(X_1, a_1) = choose(m, k)`
+(the landed Vandermonde `Nat.add_choose_eq`) times `∑_b choose(r_0 − X_0, b_0)·choose(r_1 − X_1, b_1) = choose(N − m, k)`
+(same shape with `r - X`), normalized by `choose(m, k)·choose(N − m, k) = 1`.
+Build green (3200 jobs), 0 sorries.  Not a tactic wall.
+
+**Remaining, honestly scoped (unclaimed):** step (d) the detailed-balance identity
+`∑_{X valid} validHistPi N m r0 r1 X · histogramTransition N m r0 r1 k X X' = validHistPi N m r0 r1 X'`
+— the genuine combinatorial `∑_{a,b}`-preimage re-indexing with a non-uniform π weight
+(the πK = π tail).  Numerically confirmed across 9 cases; not claimed as proved.
+This is the honest next increment.
