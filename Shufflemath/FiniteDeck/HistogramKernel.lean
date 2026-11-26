@@ -4,6 +4,7 @@ public import Shufflemath.GSR
 public import Shufflemath.Finite
 public import Shufflemath.FiniteDeck.MultiExchange
 public import Shufflemath.FiniteDeck.UniformExchange
+public import Shufflemath.ReversibleQuotient
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -429,5 +430,89 @@ theorem histObserve_run {N p c : Nat} {n : Fin p → Nat} (hN : 0 < N) (color : 
       FiniteKernel.run (histSwapKernel N p c n hN color) t (μ.map (histObserve N p c n color)) := by
   exact GenericQuotient.run_observation (histObserve N p c n color) (swapKernel hN)
     (histSwapKernel N p c n hN color) (histSwap_comp_square hN color) t μ
+
+
+/-! ## M2 export — reversible quotient and uniform-fiber lift, applied to M1
+
+The generic reversible-quotient API (`Shufflemath.ReversibleQuotient`) is
+instantiated on the M1 chain: the uniform allocation law driven through the
+histogram observation, and the raw-transposition quotient kernel `histSwapKernel`.
+This block proves exactly two theorems:
+
+1. `histStationary_reversible` — the stationary pushforward `histStationary`
+   is reversibly balanced under `histSwapKernel`
+   (`π(y) Q(y,z) = π(z) Q(z,y)`), the detailed-balance law for the quotient.
+2. `histStationary_uniform_fiber_lift` — starting from any macrostate,
+   lifting to the fiber-uniform micro law and applying the raw kernel is
+   exactly the quotient law followed by the fiber-uniform lift:
+   `comp U (swapKernel) = comp (histSwapKernel) U`.
+-/
+
+/-- **M2 export — reversible quotient detailed balance**: the uniform-allocation
+pushforward `histStationary hsum color` is reversibly balanced under the
+quotient kernel `histSwapKernel hN color`. This is the stationary joint
+edge law `π(y)Q(y,z) = π(z)Q(z,y)`: the detailed-balance law for the
+reachable histogram quotient, proved by the generic reversible-quotient
+theorem. -/
+theorem histStationary_reversible {N p c : Nat} {n : Fin p → Nat} (hN : 0 < N)
+    (hsum : (∑ i, n i) = N) (color : Fin N → Fin c)
+    (y z : @GenericQuotient.ReachObs (Allocation N p n) (Fin p × Fin c → Int) (signedHist color)) :
+    Dist.mass (histStationary N p c n hsum color) y * Dist.mass (histSwapKernel N p c n hN color y) z =
+      Dist.mass (histStationary N p c n hsum color) z * Dist.mass (histSwapKernel N p c n hN color z) y := by
+  classical
+  letI : Nonempty (Allocation N p n) := nonemptyOfSumCapacities N p n hsum
+  letI : Fintype (@GenericQuotient.ReachObs (Allocation N p n) (Fin p × Fin c → Int) (signedHist color)) :=
+    Fintype.ofSurjective (histObserve N p c n color) (GenericQuotient.observe_surjective (signedHist color))
+  have hrev : ∀ x t, Dist.mass (uniformAlloc hsum) x * Dist.mass (swapKernel hN x) t =
+      Dist.mass (uniformAlloc hsum) t * Dist.mass (swapKernel hN t) x := by
+    intro x t
+    have hmx : Dist.mass (uniformAlloc hsum) x = (Fintype.card (Allocation N p n) : Rat)⁻¹ := by
+      change Dist.mass (GSR.uniformDist (Allocation N p n)) x =
+        (Fintype.card (Allocation N p n) : Rat)⁻¹
+      exact GSR.mass_uniformDist x
+    have hmy : Dist.mass (uniformAlloc hsum) t = (Fintype.card (Allocation N p n) : Rat)⁻¹ := by
+      change Dist.mass (GSR.uniformDist (Allocation N p n)) t =
+        (Fintype.card (Allocation N p n) : Rat)⁻¹
+      exact GSR.mass_uniformDist t
+    rw [hmx, hmy, swapKernel_symmetric hN x t]
+  have hQ : ∀ x, (swapKernel hN x).map (histObserve N p c n color) =
+      histSwapKernel N p c n hN color (histObserve N p c n color x) := by
+    intro x
+    have hq := GenericQuotient.quotient_at (signedHist color) (swapKernel hN)
+      (fun A B h => signedHist_strong_lumpable hN color A B h) x
+    exact hq.symm
+  exact Shufflemath.ReversibleQuotient.reversible_quotient (uniformAlloc hsum) (swapKernel hN)
+    (histObserve N p c n color) (histSwapKernel N p c n hN color) hQ hrev y z
+
+/-- **M2 export — uniform-fiber lift**: starting from a macrostate `y`,
+lifting to the uniform fiber and applying the raw transposition kernel is
+exactly the quotient law `histSwapKernel` followed by the identical
+fiber-uniform lift.  The macro carrier over `ReachObs` is instantiated at
+the call site via `Fintype.ofSurjective (histObserve ...) (observe_surjective ...)`
+with the existing `Allocation` domain; callers already installing
+`[FI]`/`[DEQ]`/`[DL]`/`[NE]` can reuse this directly. -/
+theorem histStationary_uniform_fiber_lift {N p c : Nat} {n : Fin p → Nat} (hN : 0 < N)
+    (color : Fin N → Fin c)
+    [FI : Fintype (@GenericQuotient.ReachObs (Allocation N p n) (Fin p × Fin c → Int) (signedHist color))]
+    [DEQ : DecidableEq (@GenericQuotient.ReachObs (Allocation N p n) (Fin p × Fin c → Int) (signedHist color))]
+    [DL : DecidableEq (Allocation N p n)]
+    [NE : Nonempty (Allocation N p n)] :
+    FiniteKernel.comp
+        (FiberDisintegration.fiberLaw (histObserve N p c n color) (GenericQuotient.observe_surjective (signedHist color)))
+        (swapKernel_kernel N p n hN) =
+      FiniteKernel.comp
+        (histSwapKernel N p c n hN color)
+        (FiberDisintegration.fiberLaw (histObserve N p c n color) (GenericQuotient.observe_surjective (signedHist color))) := by
+  classical
+  have hQ : ∀ x, (swapKernel hN x).map (histObserve N p c n color) =
+      histSwapKernel N p c n hN color (histObserve N p c n color x) := by
+    intro x
+    have hq := GenericQuotient.quotient_at (signedHist color) (swapKernel hN)
+      (fun A B h => signedHist_strong_lumpable hN color A B h) x
+    exact hq.symm
+  exact Shufflemath.ReversibleQuotient.fiberLaw_comp_eq_quotient_fiberLaw
+    (histObserve N p c n color) (GenericQuotient.observe_surjective (signedHist color))
+    (swapKernel hN) (histSwapKernel N p c n hN color) hQ
+    (fun x t => swapKernel_symmetric hN x t)
 
 end Shufflemath.FiniteDeck
