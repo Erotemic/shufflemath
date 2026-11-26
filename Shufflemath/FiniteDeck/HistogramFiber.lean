@@ -841,6 +841,60 @@ noncomputable def histogramTransition (N m r0 r1 k : Nat) (X X' : Hist2 N) : Rat
           ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)
     else 0
 
+/-- **0-cat factorial identity.** For the two-pile two-color exchange bookkeeping,
+the per-category reweighting step: if `a ≤ X` and `b ≤ r0 - X`, then
+`choose r0 X * choose X a * choose (r0 - X) b =
+  choose r0 (X - a + b) * choose (X - a + b) b * choose (r0 - (X - a + b)) a`.
+Proof: multiply both sides by the common denominator
+`a! * (X - a)! * b! * (r0 - X - b)!`; both reach `r0!` by the factorial-cancellation
+`choose n k * k! * (n - k)! = n!`; cancel by `mul_right_cancel₀`. -/
+theorem choose_rewrite_zero_cat (r0 X a b : Nat)
+    (ha : a ≤ X) (hb : b ≤ r0 - X) (hXr0 : X ≤ r0) :
+    Nat.choose r0 X * Nat.choose X a * Nat.choose (r0 - X) b =
+    Nat.choose r0 (X - a + b) * Nat.choose (X - a + b) b * Nat.choose (r0 - (X - a + b)) a := by
+  have hYle : X - a + b ≤ r0 := by omega
+  have hYA : b ≤ X - a + b := by omega
+  have hRYa : a ≤ r0 - (X - a + b) := by omega
+  have hDpos : a.factorial * (X - a).factorial * b.factorial * (r0 - X - b).factorial ≠ 0 := by
+    exact Nat.mul_ne_zero (Nat.mul_ne_zero (Nat.mul_ne_zero
+      (Nat.factorial_ne_zero a) (Nat.factorial_ne_zero (X - a)))
+      (Nat.factorial_ne_zero b)) (Nat.factorial_ne_zero (r0 - X - b))
+  have hL : (Nat.choose r0 X * Nat.choose X a * Nat.choose (r0 - X) b) *
+      (a.factorial * (X - a).factorial * b.factorial * (r0 - X - b).factorial) = r0.factorial := by
+    have hassoc : (Nat.choose r0 X * Nat.choose X a * Nat.choose (r0 - X) b) *
+        (a.factorial * (X - a).factorial * b.factorial * (r0 - X - b).factorial) =
+        Nat.choose r0 X * (Nat.choose X a * a.factorial * (X - a).factorial) *
+          (Nat.choose (r0 - X) b * b.factorial * (r0 - X - b).factorial) := by ring
+    rw [hassoc, Nat.choose_mul_factorial_mul_factorial ha, Nat.choose_mul_factorial_mul_factorial hb]
+    exact Nat.choose_mul_factorial_mul_factorial hXr0
+  have hR : (Nat.choose r0 (X - a + b) * Nat.choose (X - a + b) b *
+        Nat.choose (r0 - (X - a + b)) a) *
+      (a.factorial * (X - a).factorial * b.factorial * (r0 - X - b).factorial) = r0.factorial := by
+    have h4 : Nat.choose (X - a + b) b * b.factorial * ((X - a + b) - b).factorial = (X - a + b).factorial :=
+      Nat.choose_mul_factorial_mul_factorial hYA
+    have h5 : Nat.choose (r0 - (X - a + b)) a * a.factorial * ((r0 - (X - a + b)) - a).factorial = (r0 - (X - a + b)).factorial :=
+      Nat.choose_mul_factorial_mul_factorial hRYa
+    have h6 : Nat.choose r0 (X - a + b) * (X - a + b).factorial * (r0 - (X - a + b)).factorial = r0.factorial :=
+      Nat.choose_mul_factorial_mul_factorial hYle
+    have e1' : X - a = (X - a + b) - b := by omega
+    have e2' : r0 - X - b = r0 - (X - a + b) - a := by omega
+    have hassoc : (Nat.choose r0 (X - a + b) * Nat.choose (X - a + b) b *
+        Nat.choose (r0 - (X - a + b)) a) *
+        (a.factorial * (X - a).factorial * b.factorial * (r0 - X - b).factorial) =
+        Nat.choose r0 (X - a + b) * (Nat.choose (X - a + b) b * b.factorial * ((X - a + b) - b).factorial) *
+          (Nat.choose (r0 - (X - a + b)) a * a.factorial * ((r0 - (X - a + b)) - a).factorial) := by
+      rw [show (X - a).factorial = ((X - a + b) - b).factorial from congrArg Nat.factorial e1',
+          show (r0 - X - b).factorial = (r0 - (X - a + b) - a).factorial from congrArg Nat.factorial e2']
+      ring
+    rw [hassoc, h4, h5]
+    exact h6
+  have hstep : (Nat.choose r0 X * Nat.choose X a * Nat.choose (r0 - X) b) *
+      (a.factorial * (X - a).factorial * b.factorial * (r0 - X - b).factorial) =
+      (Nat.choose r0 (X - a + b) * Nat.choose (X - a + b) b * Nat.choose (r0 - (X - a + b)) a) *
+      (a.factorial * (X - a).factorial * b.factorial * (r0 - X - b).factorial) := by
+    rw [hL, hR]
+  exact mul_right_cancel₀ hDpos hstep
+
 /-! ## The histogram-level row-sum identity
 
 **Result (landed):** for a valid `X`, `∑_{X'} histogramTransition N m r0 r1 k X X' = 1` — the
