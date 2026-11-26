@@ -151,14 +151,18 @@ theorem allocFiberCount (N n_0 : Nat) :
     simp only [Finset.mem_filter, Finset.mem_powerset, Finset.mem_powersetCard]
   rw [hEq, Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
 
-/-- **Allocation-level marginal numerator** (the T2 numerator identity at the
-    allocation level): the number of allocations consistent with the histogram
-    `X` is the per-category binomial product for that pile. -/
+/-- **Allocation-level marginal law** (the T2 marginal-numerator shape at the
+    allocation level): the relative mass of the histogram `X` at the allocation
+    level is the fiber count divided by the number of all two-pile allocations
+    of that size.  Composes `twoHist_fiber_card` with `allocFiberCount`; the
+    deck-level marginal law (multiplying by the `∏_p n_p!` fiber size) is the
+    documented Sigma-lumping wall. -/
 theorem histMarginalNum (N : Nat) (color : Fin N → Fin 2) (X : Fin 2 → Nat) :
-    (histFiber N color X).card =
-      Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 0)).card) (X 0) *
-        Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 1)).card) (X 1) :=
-  twoHist_fiber_card N color X
+    (Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 0)).card) (X 0) *
+        Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 1)).card) (X 1) : Rat) /
+      (Nat.choose N (X 0 + X 1) : Rat) =
+        (histFiber N color X).card / (Nat.choose N (X 0 + X 1) : Rat) := by
+  rw [twoHist_fiber_card N color X, Nat.cast_mul]
 
 end FiniteDeck
 end Shufflemath
