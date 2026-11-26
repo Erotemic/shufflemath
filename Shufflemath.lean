@@ -50,6 +50,7 @@ public import Shufflemath.FiniteDeck.MultiPileExchange
 public import Shufflemath.FiniteDeck.MultiExchange
 public import Shufflemath.FiniteDeck.BlockPartition
 public import Shufflemath.FiniteDeck.UniformExchange
+public import Shufflemath.FiniteDeck.HistogramKernel
 public import Shufflemath.FiniteDeck.A1Witness
 public import Shufflemath.FiniteDeck.Partition
 public import Shufflemath.FiniteDeck.BLDisintegration

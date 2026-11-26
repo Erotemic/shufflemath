@@ -42,7 +42,7 @@ theorem retract_val {X Y : Type*} (f : X → Y) (d z : ReachObs f) :
     retract f d z.val = z := by
   classical
   unfold retract
-  rw [dif_pos z.property]
+  exact dite_eq_left z.property
 
 /-- Equality of pushforwards can be cancelled using a left inverse, without
 point masses or a Fintype instance. -/
@@ -51,7 +51,7 @@ theorem cancel_map_leftInverse {X Y : Type*} (g : X → Y) (r : Y → X)
     (h : μ.map g = ν.map g) : μ = ν := by
   have hm := congrArg (fun w : Dist Y => w.map r) h
   rw [Convexity.StdSimplex.map_map, Convexity.StdSimplex.map_map] at hm
-  have hi : r ∘ g = id := funext hr
+  have hi : (fun x => r (g x)) = id := funext hr
   rw [hi, Convexity.StdSimplex.map_id, Convexity.StdSimplex.map_id] at hm
   exact hm
 
@@ -121,7 +121,7 @@ theorem run_observation {X Y : Type*} (f : X → Y)
   induction t generalizing μ with
   | zero => rfl
   | succ t ih =>
-    rw [Nat.succ_eq_add_one, FiniteKernel.run_rec_eq, FiniteKernel.run_rec_eq,
+    rw [FiniteKernel.run_rec_eq, FiniteKernel.run_rec_eq,
       ih, apply_observation f K Q h]
 
 end Shufflemath.InklingNov26
