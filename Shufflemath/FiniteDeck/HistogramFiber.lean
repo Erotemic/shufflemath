@@ -690,5 +690,31 @@ theorem deckFiber_prob_eq_blStationary {N m r : Nat} (hm : m ≤ N) (hr : r ≤ 
   push_cast
   rfl
 
+/-! ## The valid two-pile/two-color histogram state space (the πK = π
+formalization design — honest first leg)
+
+The πK = π stationary-law identity (roadmap T5 line 176) quantifies over the
+space of valid histograms: total size `m` with per-category counts bounded by
+the total category counts `r0` (category 0) and `r1` (category 1).  The honest
+`Finset`-carrier abbrev route (the `sizeNAllocSpace`-style abbrev — a `def`
+wrapper would block `Fintype` instance synthesis), Fintype-wall-free. -/
+
+/-- The valid two-pile/two-color histogram state space as a `Finset` carrier:
+the histograms with total size `m` and per-category bounds `r0`, `r1`. -/
+def validHistSet (N m r0 r1 : Nat) : Finset (Hist2 N) :=
+  (Finset.univ : Finset (Hist2 N)).filter
+    (fun X => (X 0).val + (X 1).val = m ∧ (X 0).val ≤ r0 ∧ (X 1).val ≤ r1)
+
+/-- The valid two-pile histogram state space is nonempty whenever the totals
+are legal (`m ≤ N` and `r0 + r1 = N`): any admissible total `m` admits a
+histogram — `x0 = min m r0`, `x1 = m - x0` — so the filter set is inhabited. -/
+theorem validHistSet_nonempty (N m r0 r1 : Nat) (hm : m ≤ N) (hr : r0 + r1 = N) :
+    ∃ X : Hist2 N, (X 0).val + (X 1).val = m ∧ (X 0).val ≤ r0 ∧ (X 1).val ≤ r1 := by
+  rcases Nat.lt_or_ge m r0 with h | h
+  · -- m < r0: x0 = m, x1 = 0
+    exact ⟨![⟨m, by omega⟩, ⟨0, by omega⟩], by simp, by simp; omega, by simp⟩
+  · -- r0 ≤ m: x0 = r0, x1 = m - r0 (m - r0 ≤ r1 ⟺ m ≤ r0 + r1 = N)
+    exact ⟨![⟨r0, by omega⟩, ⟨m - r0, by omega⟩], by simp; omega, by simp, by simp; omega⟩
+
 end FiniteDeck
 end Shufflemath
