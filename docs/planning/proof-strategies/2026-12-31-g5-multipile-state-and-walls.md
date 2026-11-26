@@ -638,6 +638,19 @@ roadmap T2 exit criterion ("Its two-pile/two-color specialization is exactly
 since landed too (`sizeNMarginalLaw` / `sizeNFiberLaw` + mass identities), so the
 remaining T2-line item is the πK = π stationary law only.
 
+**Numeric verification of πK = π (this session, post-landing):** an independent
+brute-force walk over the histogram-state space (the lumped-kernel semantics of
+`lumpedTransition`: numerator = `∏_c choose(X_c, a_c)·choose(Y_c, b_c)`,
+denominator = universal `choose(m,k)·choose(N-m,k)`) confirms, across 9 cases —
+N=4/m=2 (r=2+2, k=1,2), N=5/m=3 (r=3+2, k=1,2), N=6/m=3 (r=2+4, k=1,2,3),
+N=5/m=2 (r=5+0, k=1), N=6/m=4 (r=3+3, k=2) — that (i) the lumped kernel row-sums
+to 1 and (ii) the multivariate-hypergeometric π (the landed deck-level π law,
+`∏_c choose(r_c, X_c)/choose(N, m)`) is invariant under the two-pile histogram
+exchange kernel: `∑_X π(X)·K(X→X') = π(X')`.  This is honest evidence that the
+πK = π stationary-law claim (roadmap T5 line 176) is **true** at the
+histogram level; the formal Lean proof remains the documented next step
+(state-space formalization + the lumped detailed balance), not a tactic wall.
+
 **Numeric verification (post-landing, this session):** an independent
 Python brute-force check over all 24 (N=4) / 120 (N=5) / 720 (N=6) ordered
 decks confirms the landed `deckFiber_prob` formula — every `(x0,x1)` fiber
