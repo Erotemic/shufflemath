@@ -404,5 +404,43 @@ theorem deckFiber_card (N m : Nat) (hm : m ≤ N) (color : Fin N → Fin 2) (X :
         exact absurd hg (by simp)
     rw [hempty, Finset.card_empty]
 
+
+/-- **Roadmap T2 π law (two-pile / two-color).** The uniform-deck probability
+    of histogram `X` — the deck-level fiber count `#deckFiber(X) / N!` — equals
+    the multivariate-hypergeometric numerator `∏_c choose (r_c, X c)` over
+    `choose N m` (the size-`m` pile-0 allocation count).  This is the T2
+    `π(X)` in its two-pile specialization, composed honestly from the landed
+    `deckFiber_card` (the deck-level identity) and the `N! = choose N m * m! *
+    (N - m)!` total-deck split. -/
+theorem deckFiber_prob (N m : Nat) (hm : m ≤ N) (color : Fin N → Fin 2) (X : Fin 2 → Nat) :
+    ((deckFiber N m hm color X).card : Rat) / (Nat.factorial N : Rat) =
+      if X 0 + X 1 = m then
+        (Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 0)).card) (X 0) *
+          Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 1)).card) (X 1) : Rat) /
+          (Nat.choose N m : Rat)
+      else 0 := by
+  by_cases h : X 0 + X 1 = m
+  · -- Nat-level identity first: deckFiber.card * choose N m = (c0 * c1) * N!
+    have hId : (deckFiber N m hm color X).card * (Nat.choose N m) =
+        (Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 0)).card) (X 0) *
+          Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 1)).card) (X 1)) *
+          Nat.factorial N := by
+      rw [deckFiber_card, if_pos h, twoHist_fiber_card,
+        ← Nat.choose_mul_factorial_mul_factorial hm]
+      ring
+    have hRat : ((deckFiber N m hm color X).card : Rat) * (Nat.choose N m : Rat) =
+        (Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 0)).card) (X 0) *
+          Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 1)).card) (X 1) : Rat) *
+          (Nat.factorial N : Rat) := by
+      have h := hId
+      exact_mod_cast h
+    have hposF : (Nat.factorial N : Rat) ≠ 0 := Nat.cast_ne_zero.mpr (ne_of_gt (Nat.factorial_pos N))
+    have hposC : (Nat.choose N m : Rat) ≠ 0 := Nat.cast_ne_zero.mpr (ne_of_gt (Nat.choose_pos hm))
+    rw [if_pos h, div_eq_div_iff hposF hposC]
+    exact hRat
+  · rw [deckFiber_card, if_neg h]
+    simp only [Nat.cast_zero, zero_div, if_neg h]
+
 end FiniteDeck
 end Shufflemath
+
