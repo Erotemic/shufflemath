@@ -509,6 +509,13 @@ mass = numerator / choose(ΣX, k) — the multivariate-hypergeometric conditiona
 `lumpedTransition_factors` proving the two-pile kernel is the product of the two per-pile conditional
 masses. All verified (lake build + full 37-test gate green).
 
+**Landed (this session, commit `3709b4d`):** the exact-support **iff** for the two-pile kernel —
+`prod_choose_eq_zero_iff` (a lumped numerator is zero exactly when some per-category allocation exceeds the
+category bound) and `lumpedTransition_eq_zero_iff` (the joint kernel is zero exactly on the invalid
+allocations — a per-category violation in either pile, or `k` beyond a pile's total).  Together with the
+positivity pair, the two-pile kernel is zero exactly outside the valid rectangle with a legal `k` and is in
+`(0, 1]` on the valid interior.  Verified (lake build + full 37-test gate green).
+
 **Landed (this session, commit `ac6347b`):** the **two-pile exact support** —
 `lumpedTransition_eq_zero_of_exceed_left`/`_right` (any per-category violation in either pile forces the
 joint numerator to vanish, hence the ratio is zero) and `lumpedTransition_pos_of_valid` (any pair of fully
