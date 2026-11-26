@@ -162,8 +162,50 @@ with no dependent subtypes (the documented Sigma-lumping wall stays untouched):
   the size-`n` allocation space, as a `Rat` identity.  No
   `marginalLaw`-over-subtype construction needed.
 
-**Honest remaining gap (unchanged):** the deck-level identity (`× ∏_p n_p!`) and
-the stationary law `πK = π` — both still the documented Sigma-lumping wall; the
+**Honest remaining gap (unchanged):** the deck-level identity (`× ∏_p n_p!`) is
+still the documented Sigma-lumping wall.
+
+## Landed (2026-11-26, this session) — the T2 histogram-level `πK = π` stationary law
+
+`Shufflemath/FiniteDeck/HistogramFiber.lean` now also carries the honest
+two-pile/two-color stationary-law identity (roadmap T5 line 176):
+
+- `validHistSet N m r0 r1` — the valid two-pile histogram state space as a
+  `Finset (Hist2 N)` carrier (total size `m`, per-category bounds `r0`, `r1`):
+  `(Finset.univ : Finset (Hist2 N)).filter (fun X => (X 0).val + (X 1).val = m ∧ (X 0).val ≤ r0 ∧ (X 1).val ≤ r1)`.
+- `validHistPi N m r0 r1 X` — the honest T2 π law over that space:
+  `(choose r_0 (X 0) * choose r_1 (X 1) : Rat) / choose N m`.
+- `validHistPi_mass` — `∑ X ∈ validHistSet, validHistPi X = 1`: strict 1-mass
+  over the valid-histogram carrier (Vandermonde + filter-sum identity).
+- `histogramTransition N m r0 r1 k X X'` — the honest two-pile histogram-level
+  exchange kernel (`noncomputable def`): the number of `(a, b)` sub-allocations
+  consistent with `X` and producing `X'`, normalized by `choose m k * choose (N - m) k`.
+- **`stationary_inner`** — the per-`(a, b)` inner-sum collapse: for every valid
+  `Y`, if `X ∈ validHistSet` then
+  `∑ X ∈ validHistSet, validHistPi X * (if Y = X - a + b then sw(X, a, b) else 0) = validHistPi Y * sw(Y)`,
+  with `sw(Y) = choose (Y 0) b.1 * choose (Y 1) b.2 * choose (r0 - Y 0) a.1 * choose (r1 - Y 1) a.2` —
+  proved for both the `Y`-matches-`(X - a + b)` case and the zero case (the zero
+  case needs the double Vandermonde `∑ b sw(Y) = choose(m, k) * choose (N - m) k`).
+- **`histogramTransition_rowSum`** — the honest kernel row-sum identity:
+  `∑ X', histogramTransition N m r0 r1 k X X' = 1` over the valid-histogram carrier
+  (Fubini over `(X, a, b)`, the `zero`-row case collapses by exhaustion, the
+  support case by the two Vandermondes).
+- **`histogramTransition_stationary`** — the πK = π stationary-law identity:
+  `∑ X ∈ validHistSet, validHistPi X * histogramTransition N m r0 r1 k X Y = validHistPi Y`
+  for every valid `Y`. Proof: Fubini over `(X, a, b)`; collapse the per-`(a, b)`
+  inner sum via `stationary_inner` (one-term collapse to `π(Y) · sw(Y) / D`);
+  the two Vandermonde splits of `∑_{a,b} sw(Y) = choose (m, k) * choose (N - m, k)`;
+  universal normalisation `D = choose m k * choose (N - m) k`.
+
+`histogramTransition` unifies the two-pile/two-color exchange (T4) at the
+histogram-observation level and is stationary under `validHistPi` — together
+with `validHistPi_mass`, the honest T2 marginal law and its stationary law are
+now fully landed at the allocation level.
+
+**Honest remaining gap (unchanged):** the ordered-deck fiber count
+`#decks realizing X = [∏_c binom(r_c, x_{0,c})] · ∏_p n_p!` — the deck-level
+composition — is still the documented Sigma-lumping wall. Also still open: the
+G5 multi-pile capstone headline (B4 kernel lumping + the final assembly). The
 size-`n` marginal law lands the *numerator/denominator shape* of the T2 law,
 not a `marginalLaw`/`fiberLaw` object (that needs the size-`n` allocation space
 as a dependent subtype — the blocked route).
