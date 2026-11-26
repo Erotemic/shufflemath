@@ -810,5 +810,39 @@ theorem validHistPi_mass (N m r0 r1 : Nat) (hm : m ≤ N) (hr : r0 + r1 = N) :
     rw [div_self hpos]
   exact hfinal
 
+/-! ## The histogram-level kernel (πK = π design, step c)
+
+The `∑_{a,b}`-over-preimages reduction of the landed `lumpedTransition`
+(T5 two-pile transition) to the valid two-pile/two-color histogram state space:
+a histogram `X'` is reached from `X` via a `k`-swap exactly when the removed
+(`a`) and added (`b`) per-category counts (`a .1 + a .2 = b .1 + b .2 = k`)
+satisfy `X'_0 = X_0 - a_0 + b_0` and `X'_1 = X_1 - a_1 + b_1` — each `(a, b)`
+pair contributes the two-pile-exchange numerator
+`choose(X_0, a_0)·choose(X_1, a_1)·choose(r_0 - X_0, b_0)·choose(r_1 - X_1, b_1)`
+normalized by the universal denominator `choose(m, k)·choose(N - m, k)`.
+
+**Honest scope (this session):** this is the **definition**, landed with its
+documentation only.  The row-sum-1 identity `∑_{X'} K(X→X') = 1` and the
+detailed-balance identity `∑_{X} π(X)·K(X→X') = π(X')` (the T5-line-176
+πK = π claim) are the remaining T2-line items — the genuine combinatorial
+`∑_{a,b}`-preimage re-indexing (not a formal consequence of the landed
+`exchangeTargets_symmetric`, since π is non-uniform).  Numerically confirmed
+across 9 cases (see the strategy note); not claimed as proved. -/
+
+/-- The histogram-level two-pile exchange kernel over the valid histogram
+state space: for a valid `X` (total `m`, per-category bounds `r0`/`r1`), the
+transition mass from `X` to `X'` via a `k`-swap, summed over every per-category
+removed/added pair `(a, b)` with total `k` — values as `Nat`, no subtypes in
+the sum.  The `Finset.antidiagonal k` carrier enumerates exactly the pairs
+`(i, j)` with `i + j = k`. -/
+noncomputable def histogramTransition (N m r0 r1 k : Nat) (X X' : Hist2 N) : Rat :=
+  ∑ a ∈ Finset.antidiagonal k, ∑ b ∈ Finset.antidiagonal k,
+    if (X' 0).val = (X 0).val - a.1 + b.1 ∧ (X' 1).val = (X 1).val - a.2 + b.2
+    then ((Nat.choose (X 0).val a.1 * Nat.choose (X 1).val a.2 *
+            Nat.choose (r0 - (X 0).val) b.1 * Nat.choose (r1 - (X 1).val) b.2 : Nat) : Rat) /
+          ((Nat.choose m k * Nat.choose (N - m) k : Nat) : Rat)
+    else 0
+
 end FiniteDeck
 end Shufflemath
+
