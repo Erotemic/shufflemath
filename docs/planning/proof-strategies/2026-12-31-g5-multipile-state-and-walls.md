@@ -637,3 +637,11 @@ roadmap T2 exit criterion ("Its two-pile/two-color specialization is exactly
 (`filter_card_twoColor`).  The size-`n` marginal/fiber law `Dist`-objects have
 since landed too (`sizeNMarginalLaw` / `sizeNFiberLaw` + mass identities), so the
 remaining T2-line item is the πK = π stationary law only.
+
+**Numeric verification (post-landing, this session):** an independent
+Python brute-force check over all 24 (N=4) / 120 (N=5) / 720 (N=6) ordered
+decks confirms the landed `deckFiber_prob` formula — every `(x0,x1)` fiber
+count matches `∏_c choose(r_c, X_c) · m! · (N-m)!` (0 when `Σx ≠ m`) — and the
+deck-level π law equals the BL stationary mass for every admissible
+histogram, independently of the Lean proof.  Cases: N=4/m=2 (r=2+2, r=1+3),
+N=5/m=3 (r=3+2), N=6/m=3 (r=2+4).  All pass.
