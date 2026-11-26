@@ -3,6 +3,7 @@ module
 public import Shufflemath.FiniteDeck.Histograms
 public import Shufflemath.FiniteDeck.Piles
 public import Shufflemath.FiberDisintegration
+public import Shufflemath.BernoulliLaplaceGeneral
 
 @[expose] public section
 
@@ -617,6 +618,77 @@ theorem sizeNFiberLaw_mass (N : Nat) (color : Fin N → Fin 2) (n : Nat) (hn : n
       exact Subtype.ext_iff.mpr h
   simp only [hsub]
 
+
+/-! ## T2: the two-pile/two-color π law is exactly the BL stationary law
+
+Roadmap T2: "Its two-pile/two-color specialization is exactly `blStationary N m r`
+and the associated fiber count."  With category 0 = the `r` special cards, the
+deck-level π law (`deckFiber_prob`) at the special-count macrostate is the BL
+stationary mass — composed from the landed `deckFiber_prob` and
+`BernoulliLaplaceGeneral.blStationary`, with the two-color bookkeeping
+(`filter_card_twoColor`) discharged inline.  This is the T2 ↔ BL-law bridge: the
+two two-pile/two-color laws now provably coincide, not merely resemble. -/
+
+/-- Two-color bookkeeping: with two categories, the category-1 card count is the
+    complement of the category-0 count. -/
+theorem filter_card_twoColor (N : Nat) (color : Fin N → Fin 2) :
+    (Finset.univ.filter (fun x : Fin N => color x = 1)).card =
+      N - (Finset.univ.filter (fun x : Fin N => color x = 0)).card := by
+  have hunion :
+      (Finset.univ.filter (fun x : Fin N => color x = 0)) ∪
+        (Finset.univ.filter (fun x : Fin N => color x = 1)) = Finset.univ := by
+    ext x
+    simp only [Finset.mem_union, Finset.mem_filter, Finset.mem_univ, true_and]
+    constructor
+    · intro _; trivial
+    · intro _
+      rcases finTwo_cases (color x) with h0 | h1
+      · exact Or.inl h0
+      · exact Or.inr h1
+  have hdisj : Disjoint
+      (Finset.univ.filter (fun x : Fin N => color x = 0))
+      (Finset.univ.filter (fun x : Fin N => color x = 1)) := by
+    rw [Finset.disjoint_left]
+    intro x hx0 hx1
+    have ⟨_, hc0⟩ := Finset.mem_filter.mp hx0
+    have ⟨_, hc1⟩ := Finset.mem_filter.mp hx1
+    rw [hc0] at hc1
+    exact absurd hc1 (by decide)
+  have hcard : (Finset.univ.filter (fun x : Fin N => color x = 0)).card +
+      (Finset.univ.filter (fun x : Fin N => color x = 1)).card = N := by
+    have h := congrArg Finset.card hunion
+    rw [Finset.card_union_eq_card_add_card.mpr hdisj, Finset.card_univ,
+      Fintype.card_fin] at h
+    exact h
+  omega
+
+/-- **T2 two-pile/two-color π law = the BL stationary law.**  For a two-color
+    deck whose category-0 card count is `r`, the deck-level π law (uniform-deck
+    probability of the histogram `X`) at the admissible special-count macrostate
+    is exactly the BL stationary mass — composed from `deckFiber_prob` and
+    `blStationary`.  The admissibility preconditions (`X 0 ≤ r`,
+    `X 1 ≤ N - r`) are what put the state in the BL state space
+    (`blLo ≤ X 0 ≤ blHi`). -/
+theorem deckFiber_prob_eq_blStationary {N m r : Nat} (hm : m ≤ N) (hr : r ≤ N)
+    (color : Fin N → Fin 2)
+    (hr0 : (Finset.univ.filter (fun x : Fin N => color x = 0)).card = r)
+    (X : Fin 2 → Nat) (hX : X 0 + X 1 = m)
+    (hXr : X 0 ≤ r) (hXl : X 1 ≤ N - r) :
+    ((deckFiber N m hm color X).card : Rat) / (Nat.factorial N : Rat) =
+      BernoulliLaplaceGeneral.blStationary N m r ⟨X 0, by
+        constructor
+        · rw [BernoulliLaplaceGeneral.blLo_eq_tsub]
+          have h1 : m - X 0 ≤ N - r := by omega
+          omega
+        · rw [BernoulliLaplaceGeneral.blHi_def]
+          omega⟩ := by
+  have hrest : (Finset.univ.filter (fun x : Fin N => color x = 1)).card = N - r := by
+    rw [filter_card_twoColor N color, hr0]
+  have hX1 : X 1 = m - X 0 := by omega
+  rw [deckFiber_prob N m hm color X, if_pos hX, hr0, hrest, hX1]
+  unfold BernoulliLaplaceGeneral.blStationary
+  push_cast
+  rfl
+
 end FiniteDeck
 end Shufflemath
-
