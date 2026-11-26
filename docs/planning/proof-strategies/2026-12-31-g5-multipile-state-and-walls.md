@@ -679,8 +679,17 @@ outer `(a, b)`-sum factors as `∑_a choose(X_0, a_0)·choose(X_1, a_1) = choose
 (same shape with `r - X`), normalized by `choose(m, k)·choose(N − m, k) = 1`.
 Build green (3200 jobs), 0 sorries.  Not a tactic wall.
 
-**Remaining, honestly scoped (unclaimed):** step (d) the detailed-balance identity
+**Landed (this session, commit `8749def`):** step (d) the detailed-balance identity
 `∑_{X valid} validHistPi N m r0 r1 X · histogramTransition N m r0 r1 k X X' = validHistPi N m r0 r1 X'`
 — the genuine combinatorial `∑_{a,b}`-preimage re-indexing with a non-uniform π weight
-(the πK = π tail).  Numerically confirmed across 9 cases; not claimed as proved.
-This is the honest next increment.
+(the πK = π tail).  Proved as `histogramTransition_stationary` in
+`Shufflemath/FiniteDeck/HistogramFiber.lean`: Fubini over `(X, a, b)`; the per-`(a, b)`
+inner sum collapses via `stationary_inner` (one-term collapse to `π(X') · sw(X') / D`);
+the two Vandermonde splits of `∑_{a,b} sw(X') = choose (m, k) * choose (N - m) k`;
+universal normalisation `D = choose m k * choose (N - m) k`.  Build green, 0 sorries.
+The πK = π stationary-law tail of the T2 histogram-level kernel is now **proved**.
+
+**Remaining, honestly scoped:** the deck-level fiber count (`× ∏_p n_p!`, Sigma-lumping
+wall — do not re-litigate) and the G5 capstone headline (B4 kernel lumping + the final
+assembly) remain open; both are genuinely-open combinatorial identities, not gaps in
+the histogram-level T2 landing.
