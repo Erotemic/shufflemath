@@ -509,6 +509,13 @@ mass = numerator / choose(ΣX, k) — the multivariate-hypergeometric conditiona
 `lumpedTransition_factors` proving the two-pile kernel is the product of the two per-pile conditional
 masses. All verified (lake build + full 37-test gate green).
 
+**Landed (this session, commit `2c4d61a`):** the **two-pile kernel well-definedness** —
+`lumpedTransition_kernel_well_defined`: on the valid interior (fully valid allocations, `Σa = Σb = k`,
+`k ≤ ΣX`, `k ≤ ΣY`) the joint kernel is strictly positive (the per-pile numerators and the joint
+denominator are positive) and bounded by `1` (each per-pile conditional mass is in `[0, 1]`).  This is
+the probability-like-object statement for the T5 kernel at the allocation-level — the composition of
+the exact support, the positivity and the bound.  Verified (lake build + full 37-test gate green).
+
 **Landed (this session, commit `3709b4d`):** the exact-support **iff** for the two-pile kernel —
 `prod_choose_eq_zero_iff` (a lumped numerator is zero exactly when some per-category allocation exceeds the
 category bound) and `lumpedTransition_eq_zero_iff` (the joint kernel is zero exactly on the invalid
