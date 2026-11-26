@@ -131,3 +131,39 @@ space**.  The size-constrained variant (the T2 **size-`n`** law, denominator
 wall documented above — the size-`n` fiber is an indexed dependent subtype whose
 card computation is the blocked pile-index-dependent rewrite.  The `πK = π`
 stationary law (T2/G5capstone) remains unlanded, as before.
+
+## Landed (2026-12-31, this session) — the T2 size-`n` marginal law
+
+`Shufflemath/FiniteDeck/HistogramFiber.lean` now also carries the **size-`n`**
+marginal law — the T2-true law — as a **plain Finset-card / Rat identity**,
+with no dependent subtypes (the documented Sigma-lumping wall stays untouched):
+
+- `sizeNHistFiber N color n X` — pile-0 sets of size `n` consistent with per-category
+  counts `X` (a size-filtered histFiber).
+- **`card_split`** — the size of a pile-0 set is the sum of its per-category
+  filtered card counts (two color classes; `Disjoint` split via
+  `card_union_eq_card_add_card.mpr`).
+- **`sizeN_histFiber_card`** — the T2 size-`n` fiber count:
+
+  `#size-n fiber = if X 0 + X 1 = n then choose r_0 (X 0) * choose r_1 (X 1) else 0`
+
+  (when `X 0 + X 1 = n` the fiber is exactly the landed `histFiber`, so the
+  landed `twoHist_fiber_card` applies; otherwise the size constraint forces
+  every per-category-consistent set to have size `X 0 + X 1 ≠ n`, so the fiber
+  is empty).
+- **`sizeN_marginal_law_mass`** — the honestly-scoped T2 marginal law at the
+  allocation level:
+
+  `#fiber(X) / #allocations(n) = [choose r_0 (X 0) * choose r_1 (X 1)] / (choose N n)`
+
+  when `X 0 + X 1 = n`, else `0`.  This is the actual T2 shape: per-category
+  binomial product over `choose N n` (the size-`n` allocation count, landed as
+  `allocFiberCount`) — the multivariate-hypergeometric law **numerator** over
+  the size-`n` allocation space, as a `Rat` identity.  No
+  `marginalLaw`-over-subtype construction needed.
+
+**Honest remaining gap (unchanged):** the deck-level identity (`× ∏_p n_p!`) and
+the stationary law `πK = π` — both still the documented Sigma-lumping wall; the
+size-`n` marginal law lands the *numerator/denominator shape* of the T2 law,
+not a `marginalLaw`/`fiberLaw` object (that needs the size-`n` allocation space
+as a dependent subtype — the blocked route).

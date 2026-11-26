@@ -211,5 +211,88 @@ theorem histMarginalLaw_mass (N : Nat) (color : Fin N → Fin 2) (X : Hist2 N) :
     Fintype.card_finset, Fintype.card_fin, Nat.cast_mul, Nat.cast_pow]
   rfl
 
+/-- The size-`n` histogram fiber: pile-0 sets of size `n` consistent with the
+    per-category counts `X` (two categories). -/
+def sizeNHistFiber (N : Nat) (color : Fin N → Fin 2) (n : Nat) (X : Fin 2 → Nat) :
+    Finset (Finset (Fin N)) :=
+  (Finset.univ : Finset (Fin N)).powerset.filter
+    (fun S => S.card = n ∧ ∀ c, (S.filter (fun x => color x = c)).card = X c)
+
+/-- Card-split identity: the size of a pile-0 set is the sum of its
+    per-category filtered card counts (two color classes). -/
+theorem card_split (N : Nat) (color : Fin N → Fin 2) (S : Finset (Fin N)) :
+    S.card = (S.filter (fun x : Fin N => color x = 0)).card +
+      (S.filter (fun x : Fin N => color x = 1)).card := by
+  have h : S.filter (fun x => color x = 0) ∪ S.filter (fun x => color x = 1) = S := by
+    ext x
+    simp only [Finset.mem_union, Finset.mem_filter, Finset.mem_univ, true_and]
+    constructor
+    · rintro (hx | hx)
+      · exact hx.1
+      · exact hx.1
+    · intro hx
+      rcases finTwo_cases (color x) with h0 | h1
+      · exact Or.inl ⟨hx, h0⟩
+      · exact Or.inr ⟨hx, h1⟩
+  have hdisjoint : Disjoint (S.filter (fun x => color x = 0)) (S.filter (fun x => color x = 1)) := by
+    rw [Finset.disjoint_left]
+    intro x hx0 hx1
+    have ⟨_, hc0⟩ := Finset.mem_filter.mp hx0
+    have ⟨_, hc1⟩ := Finset.mem_filter.mp hx1
+    rw [hc0] at hc1
+    exact absurd hc1 (by decide)
+  have hcard := congrArg Finset.card h
+  rw [Finset.card_union_eq_card_add_card.mpr hdisjoint] at hcard
+  exact hcard.symm
+
+/-- **The size-`n` histogram-fiber count** (T2 at the size-`n` allocation level):
+    the number of size-`n` pile-0 sets consistent with the per-category counts
+    `X` is the per-category binomial product when `X 0 + X 1 = n`, and `0`
+    otherwise (the size constraint is forced to be consistent). -/
+theorem sizeN_histFiber_card (N : Nat) (color : Fin N → Fin 2) (n : Nat) (X : Fin 2 → Nat) :
+    (sizeNHistFiber N color n X).card =
+      if X 0 + X 1 = n then
+        Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 0)).card) (X 0) *
+          Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 1)).card) (X 1)
+      else 0 := by
+  by_cases h : X 0 + X 1 = n
+  · simp only [if_pos h]
+    have hEq : sizeNHistFiber N color n X = histFiber N color X := by
+      ext S
+      simp only [sizeNHistFiber, Finset.mem_filter, Finset.mem_powerset, histFiber,
+        Finset.mem_filter, Finset.mem_powerset]
+      constructor
+      · rintro ⟨hsub, hcard, hhist⟩
+        exact ⟨hsub, hhist⟩
+      · rintro ⟨hsub, hhist⟩
+        have hsum : S.card = X 0 + X 1 := by
+          rw [card_split N color S, hhist 0, hhist 1]
+        exact ⟨hsub, hsum.trans h, hhist⟩
+    rw [hEq, twoHist_fiber_card]
+  · simp only [if_neg h]
+    have hempty : sizeNHistFiber N color n X = ∅ := by
+      simp only [sizeNHistFiber, Finset.filter_eq_empty_iff]
+      intro S _hS hp
+      have hsum : S.card = X 0 + X 1 := by
+        rw [card_split N color S, hp.2 0, hp.2 1]
+      rw [hp.1] at hsum
+      exact h (hsum.symm)
+    rw [hempty, Finset.card_empty]
+
+/-- **The T2 size-`n` marginal law** (allocation level): the conditional mass of
+    histogram `X` over the size-`n` allocation space, as a `Rat` identity
+    `#fiber(X) / #allocations(n)`.  This is the T2 law shape — the per-category
+    binomial product over `choose N n` (the number of size-`n` pile-0 sets,
+    landed as `allocFiberCount`). -/
+theorem sizeN_marginal_law_mass (N : Nat) (color : Fin N → Fin 2) (n : Nat) (X : Fin 2 → Nat) :
+    ((sizeNHistFiber N color n X).card : Rat) / (Nat.choose N n : Rat) =
+      if X 0 + X 1 = n then
+        (Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 0)).card) (X 0) *
+          Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 1)).card) (X 1) : Rat) /
+          (Nat.choose N n : Rat)
+      else 0 := by
+  rw [sizeN_histFiber_card]
+  simp only [Nat.cast_ite, Nat.cast_mul, Nat.cast_zero, ite_div, div_zero, zero_div]
+
 end FiniteDeck
 end Shufflemath
