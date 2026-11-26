@@ -716,5 +716,99 @@ theorem validHistSet_nonempty (N m r0 r1 : Nat) (hm : m ≤ N) (hr : r0 + r1 = N
   · -- r0 ≤ m: x0 = r0, x1 = m - r0 (m - r0 ≤ r1 ⟺ m ≤ r0 + r1 = N)
     exact ⟨![⟨r0, by omega⟩, ⟨m - r0, by omega⟩], by simp; omega, by simp, by simp; omega⟩
 
+noncomputable def validHistPi (N m r0 r1 : Nat) (X : Hist2 N) : Rat :=
+  ((Nat.choose r0 (X 0).val * Nat.choose r1 (X 1).val : Nat) : Rat) / (Nat.choose N m : Rat)
+
+theorem validHistPi_mass (N m r0 r1 : Nat) (hm : m ≤ N) (hr : r0 + r1 = N) :
+    ∑ X ∈ validHistSet N m r0 r1, validHistPi N m r0 r1 X = 1 := by
+  simp only [validHistSet] at *
+  have hinj : Set.InjOn (fun X : Hist2 N => (X 0).val) (validHistSet N m r0 r1 : Set (Hist2 N)) := by
+    intro X hX Y hY heq
+    have heq' : (X 0).val = (Y 0).val := heq
+    clear heq
+    have hmemX := Finset.mem_filter.mp hX
+    have hmemY := Finset.mem_filter.mp hY
+    have hsumX : (X 0).val + (X 1).val = m := hmemX.2.1
+    have hsumY : (Y 0).val + (Y 1).val = m := hmemY.2.1
+    have hX1 : (X 1).val = m - (X 0).val := by omega
+    have hY1 : (Y 1).val = m - (Y 0).val := by omega
+    have h1 : (X 1).val = (Y 1).val := by rw [hX1, hY1]; omega
+    have hX01 : X 1 = Y 1 := Fin.ext h1
+    have hX0 : X 0 = Y 0 := Fin.ext heq'
+    funext c
+    fin_cases c
+    · simp [hX0]
+    · simp [hX01]
+  have hrewrite : ∑ X ∈ validHistSet N m r0 r1, validHistPi N m r0 r1 X =
+      ∑ X ∈ validHistSet N m r0 r1, ((Nat.choose r0 (X 0).val * Nat.choose r1 (m - (X 0).val) : Nat) : Rat) / (Nat.choose N m : Rat) := by
+    apply Finset.sum_congr rfl
+    intro X hX
+    have hmemX := Finset.mem_filter.mp hX
+    have hsumX : (X 0).val + (X 1).val = m := hmemX.2.1
+    have hX1 : (X 1).val = m - (X 0).val := by omega
+    unfold validHistPi
+    rw [hX1]
+  have hbiject : ∑ X ∈ validHistSet N m r0 r1, ((Nat.choose r0 (X 0).val * Nat.choose r1 (m - (X 0).val) : Nat) : Rat) / (Nat.choose N m : Rat) =
+      ∑ i ∈ (validHistSet N m r0 r1).image (fun X : Hist2 N => (X 0).val), ((Nat.choose r0 i * Nat.choose r1 (m - i) : Nat) : Rat) / (Nat.choose N m : Rat) := by
+    rw [Finset.sum_image hinj]
+  have himg : (validHistSet N m r0 r1).image (fun X : Hist2 N => (X 0).val) =
+      (Finset.range (m + 1)).filter (fun i => i ≤ r0 ∧ m - i ≤ r1) := by
+    ext i
+    simp only [Finset.mem_image, Finset.mem_filter, Finset.mem_range, Finset.mem_univ, true_and]
+    constructor
+    · rintro ⟨X, hX, hxi⟩
+      subst hxi
+      have hmemX := Finset.mem_filter.mp hX
+      have hsumX : (X 0).val + (X 1).val = m := hmemX.2.1
+      have hlt : (X 0).val < m + 1 := by omega
+      refine ⟨hlt, hmemX.2.2.1, ?_⟩
+      have hX1 : (X 1).val = m - (X 0).val := by omega
+      have hX1' := hmemX.2.2.2
+      rw [hX1] at hX1'
+      exact hX1'
+    · rintro ⟨hi, hr0_i, hr1_i⟩
+      refine ⟨![⟨i, by omega⟩, ⟨m - i, by omega⟩], ?_, rfl⟩
+      simp only [validHistSet, Finset.mem_filter, Finset.mem_univ, true_and]
+      refine ⟨?_, ?_, ?_⟩
+      · simp; omega
+      · simp; exact hr0_i
+      · simp; omega
+  have hvanish : ∀ i ∈ Finset.range (m + 1), ¬(i ≤ r0 ∧ m - i ≤ r1) →
+      (Nat.choose r0 i * Nat.choose r1 (m - i) : Nat) = 0 := by
+    intro i hi hneg
+    rcases not_and_or.mp hneg with h0 | h0
+    · have hlt : r0 < i := not_le.mp h0
+      rw [Nat.choose_eq_zero_of_lt hlt]; simp
+    · have hlt : r1 < m - i := not_le.mp h0
+      rw [Nat.choose_eq_zero_of_lt hlt]; simp
+  have hrange : ∑ i ∈ (Finset.range (m + 1)).filter (fun i => i ≤ r0 ∧ m - i ≤ r1),
+      ((Nat.choose r0 i * Nat.choose r1 (m - i) : Nat) : Rat) =
+      ((∑ i ∈ Finset.range (m + 1), (Nat.choose r0 i * Nat.choose r1 (m - i) : Nat)) : Rat) := by
+    rw [Finset.sum_filter]
+    apply Finset.sum_congr rfl
+    intro i hi
+    by_cases hP : i ≤ r0 ∧ m - i ≤ r1
+    · rw [if_pos hP]
+    · rw [if_neg hP]
+      have hv := hvanish i hi hP
+      simp [hv]
+  have H : ∑ i ∈ Finset.range (m + 1), (Nat.choose r0 i * Nat.choose r1 (m - i) : Nat) = Nat.choose N m := by
+    have key := Nat.add_choose_eq r0 r1 m
+    rw [hr] at key
+    rw [Finset.Nat.antidiagonal_eq_image] at key
+    have inj : Set.InjOn (fun i : Nat => (i, m - i)) ((Finset.range (m + 1)) : Set Nat) := by
+      intro i _ j _ hij
+      exact (Prod.mk.inj hij).1
+    rw [Finset.sum_image inj] at key
+    exact key.symm
+  have hfinal : ∑ X ∈ validHistSet N m r0 r1, validHistPi N m r0 r1 X = 1 := by
+    rw [hrewrite, hbiject, himg]
+    rw [(Finset.sum_div _ _ _).symm]
+    rw [hrange]
+    rw [← Nat.cast_sum, H]
+    have hpos : (Nat.choose N m : Rat) ≠ 0 := Nat.cast_ne_zero.mpr (ne_of_gt (Nat.choose_pos hm))
+    rw [div_self hpos]
+  exact hfinal
+
 end FiniteDeck
 end Shufflemath
