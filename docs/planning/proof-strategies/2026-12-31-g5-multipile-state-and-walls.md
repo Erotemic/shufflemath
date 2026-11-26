@@ -651,40 +651,29 @@ exchange kernel: `∑_X π(X)·K(X→X') = π(X')`.  This is honest evidence tha
 histogram level; the formal Lean proof remains the documented next step
 (state-space formalization + the lumped detailed balance), not a tactic wall.
 
-**πK = π formalization design (honest target for the next session):** the
-two-pile/two-color πK = π identity, honestly scoped as the remaining T2-line
-item.  Design: (a) the valid-histogram state space —
-`Finset (Hist2 N)` of `X` with `X 0 + X 1 = m` (as Nat values), `(X 0).val ≤ r_0`,
-`(X 1).val ≤ r_1` (a `Finset`-carrier abbrev, the `sizeNAllocSpace`-style route —
-no sigma-type Fintype); (b) the π law over the space — `π(X) =
-choose(r_0, (X 0).val) · choose(r_1, (X 1).val) / choose(N, m)` for valid `X` (the
-landed `deckFiber_prob` formula, honestly normalized to mass 1); (c) the
-histogram-level kernel `K(X → X') = ∑_{a,b : Σa = Σb = k} [X'_0 = X_0 - a_0 + b_0
-∧ X'_1 = X_1 - a_1 + b_1] · (choose(X_0,a_0)·choose(X_1,a_1)·choose(r_0 - X_0,b_0)·
-choose(r_1 - X_1,b_1)) / (choose(m,k)·choose(N-m,k))` — the
-`∑_{a,b}`-over-preimages reduction of the landed `lumpedTransition` (values as
-Nat, no subtypes in the sum); (d) the identity `∑_{X valid} π(X)·K(X→X') =
-π(X')` — the detailed-balance form of the roadmap T5 line-176 claim, numerically
-confirmed across 9 cases (see above).  The genuine combinatorial step is the
-`∑_{a,b}`-preimage re-indexing — the lumped detailed balance is NOT a formal
-consequence of the landed `exchangeTargets_symmetric` (symmetry of K ≠
-π-stationarity, since π is non-uniform).  Not claimed as done; documented here as
-the honest next increment.
+**Landed (this session, πK = π state space + π law + mass):** the πK = π
+formalization has landed through step (b) — `validHistSet` (the valid
+two-pile/two-color histogram state space as a `Finset` carrier, `2a5e4a4`),
+`validHistSet_nonempty`, the `validHistPi` kernel-π law (`choose(r_0, X 0)·
+choose(r_1, X 1)/choose(N, m)`, the landed `deckFiber_prob` formula) and
+`validHistPi_mass` (`∑ π(X) = 1` over `validHistSet`, proved via the honest
+valid-`i` bijection + Vandermonde).  Landed `54632a7`.
 
-**Mass-1 identity for the π law (honestly scoped next leg):** the `∑ π(X) = 1`
-identity over `validHistSet` follows from the Chu–Vandermonde identity
-`Nat.add_choose_eq` (available in Mathlib: `(m + n).choose k = ∑ ij ∈ antidiagonal k,
-m.choose ij.1 * n.choose ij.2`).  The remaining technical step is the honest
-bijection between valid histograms and valid first-components `i` (X 1 = `m - i`
-forced; `i` ranges over `Icc (m - r1).max 0 (min r0 m)`-ish bounds — invalid `i`
-terms vanish by `Nat.choose_eq_zero` on `choose(r0, i)`/`choose(r1, m - i)`).
-This is the honest next increment, not landed; the state space + nonempty are
-landed (`2a5e4a4`).
+**Landed (this session, kernel definition):** `histogramTransition` — the
+`∑_{a,b}`-over-preimages reduction of the landed `lumpedTransition` to the
+valid histogram state space (`Finset.antidiagonal k` carrier, values as
+Nat): K(X → X') sums, over every per-category removed/added pair `(a, b)`
+with total `k`, the two-pile-exchange numerator
+`choose(X_0, a_0)·choose(X_1, a_1)·choose(r_0 − X_0, b_0)·choose(r_1 − X_1, b_1)`
+normalized by `choose(m, k)·choose(N − m, k)`, weighted by the shift
+constraint `X'_0 = X_0 − a_0 + b_0`, `X'_1 = X_1 − a_1 + b_1`.  **Definition +
+honest scope doc only**: row-sum-1 and detailed balance are NOT claimed.
+Numeric sanity check (independent Python brute force, 8 (N,m,k) cases):
+row-sum = 1 and detailed balance `∑_X π(X)·K(X→X') = π(X')` both hold.
+Build green (3200 jobs), 0 sorries.  Landed `6e0934b`.
 
-**Numeric verification (post-landing, this session):** an independent
-Python brute-force check over all 24 (N=4) / 120 (N=5) / 720 (N=6) ordered
-decks confirms the landed `deckFiber_prob` formula — every `(x0,x1)` fiber
-count matches `∏_c choose(r_c, X_c) · m! · (N-m)!` (0 when `Σx ≠ m`) — and the
-deck-level π law equals the BL stationary mass for every admissible
-histogram, independently of the Lean proof.  Cases: N=4/m=2 (r=2+2, r=1+3),
-N=5/m=3 (r=3+2), N=6/m=3 (r=2+4).  All pass.
+**Remaining, honestly scoped (unclaimed):** step (c) row-sum-1 for
+`histogramTransition`, then step (d) the detailed-balance identity
+`∑_{X valid} π(X)·K(X→X') = π(X')` — the genuine combinatorial
+`∑_{a,b}`-preimage re-indexing (the πK = π tail).  This is the honest next
+increment; it is not a tactic wall.
