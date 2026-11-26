@@ -441,6 +441,102 @@ theorem deckFiber_prob (N m : Nat) (hm : m ≤ N) (color : Fin N → Fin 2) (X :
   · rw [deckFiber_card, if_neg h]
     simp only [Nat.cast_zero, zero_div, if_neg h]
 
+
+/-! ## Size-`n` allocation-space marginal law (the T2 size-`n` marginal-law
+object over the subtype-space) -/
+
+/-- The size-`n` allocation space (reducible abbrev — a `def` wrapper would
+    block `Fintype` instance synthesis on the subtype). -/
+abbrev sizeNAllocSpace (N n : Nat) : Type :=
+  {S : Finset (Fin N) // S.card = n}
+
+/-- The size-`n` allocation space is inhabited when `n ≤ N`. -/
+theorem sizeNAllocSpace_nonempty (N n : Nat) (hn : n ≤ N) :
+    Nonempty (sizeNAllocSpace N n) := by
+  classical
+  have hc : (Finset.univ : Finset (Fin N)).powersetCard n ≠ ∅ := by
+    have hpos : 0 < ((Finset.univ : Finset (Fin N)).powersetCard n).card := by
+      rw [Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
+      exact Nat.choose_pos hn
+    intro h
+    rw [h, Finset.card_empty] at hpos
+    exact Nat.lt_irrefl 0 hpos
+  obtain ⟨S, hS⟩ := Finset.nonempty_of_ne_empty hc
+  exact ⟨⟨S, (Finset.mem_powersetCard.mp hS).2⟩⟩
+
+/-- The size-`n` allocation-space histogram observation: project the pile-0
+    set, then observe the per-category counts. -/
+noncomputable def sizeNObs (N : Nat) (color : Fin N → Fin 2) (n : Nat) :
+    sizeNAllocSpace N n → Hist2 N :=
+  fun S => histObs N color S.1
+
+/-- The size-`n` marginal law: the uniform-over-size-`n`-allocations histogram
+    law, as a genuine `Dist` object. -/
+noncomputable def sizeNMarginalLaw (N : Nat) (color : Fin N → Fin 2) (n : Nat)
+    (hn : n ≤ N) : Dist (Hist2 N) :=
+  letI := sizeNAllocSpace_nonempty N n hn
+  FiberDisintegration.marginalLaw (sizeNObs N color n)
+
+/-- histObs equality unfolds to per-category counts (two categories). -/
+theorem histObs_eq_iff (N : Nat) (color : Fin N → Fin 2) (S : Finset (Fin N)) (X : Hist2 N) :
+    histObs N color S = X ↔ ∀ c, (S.filter (fun x : Fin N => color x = c)).card = (X c).val := by
+  constructor
+  · intro h
+    intro c
+    exact congrArg Fin.val (congrFun h c)
+  · intro h
+    funext c
+    exact Fin.ext (h c)
+
+/-- sizeNHistFiber membership unfolds to size-`n` + per-category counts. -/
+theorem sizeNHistFiber_mem_iff (N : Nat) (color : Fin N → Fin 2) (n : Nat) (X : Fin 2 → Nat)
+    (S : Finset (Fin N)) :
+    S ∈ sizeNHistFiber N color n X ↔
+      S.card = n ∧ ∀ c, (S.filter (fun x : Fin N => color x = c)).card = X c := by
+  simp only [sizeNHistFiber, Finset.mem_filter, Finset.mem_powerset]
+  constructor
+  · intro h
+    exact ⟨h.2.1, h.2.2⟩
+  · intro h
+    exact ⟨Finset.subset_univ S, h.1, h.2⟩
+
+/-- The size-`n` marginal law's mass: the honestly-scoped T2 size-`n` identity —
+    `#fiber(X) / #allocations(n) = #sizeNHistFiber(X) / choose N n`. -/
+theorem sizeNMarginalLaw_mass (N : Nat) (color : Fin N → Fin 2) (n : Nat)
+    (hn : n ≤ N) (X : Hist2 N) :
+    Dist.mass (sizeNMarginalLaw N color n hn) X =
+      ((sizeNHistFiber N color n fun c => (X c).val).card : Rat) / (Nat.choose N n : Rat) := by
+  classical
+  haveI : Nonempty (sizeNAllocSpace N n) := sizeNAllocSpace_nonempty N n hn
+  have hm := FiberDisintegration.marginalLaw_mass (sizeNObs N color n) X
+  haveI : Fintype ↥(FiberDisintegration.fiberSet (sizeNObs N color n) X) := inferInstance
+  haveI : Fintype ↥(sizeNHistFiber N color n fun c => (X c).val) := inferInstance
+  have equiv : ↥(FiberDisintegration.fiberSet (sizeNObs N color n) X) ≃
+      ↥(sizeNHistFiber N color n fun c => (X c).val) :=
+    { toFun := fun ⟨⟨S, hS⟩, hmem⟩ =>
+        ⟨S, by
+          have hX : ∀ c, (S.filter (fun x : Fin N => color x = c)).card = (X c).val := by
+            have hh : histObs N color S = X := by
+              have h := (Finset.mem_filter.mp hmem).2
+              exact h
+            exact (histObs_eq_iff N color S X).mp hh
+          rw [sizeNHistFiber_mem_iff]
+          exact ⟨hS, hX⟩⟩
+      invFun := fun ⟨S, hS⟩ =>
+        ⟨⟨S, (sizeNHistFiber_mem_iff N color n (fun c => (X c).val) S).mp hS |>.1⟩,
+          Finset.mem_filter.mpr ⟨Finset.mem_univ _,
+            (histObs_eq_iff N color S X).mpr ((sizeNHistFiber_mem_iff N color n (fun c => (X c).val) S).mp hS |>.2)⟩⟩
+      left_inv := fun ⟨⟨S, hS⟩, hmem⟩ => Subtype.ext (Subtype.ext rfl)
+      right_inv := fun ⟨S, hS⟩ => Subtype.ext rfl }
+  have hcard := Fintype.card_congr equiv
+  rw [Fintype.card_coe, Fintype.card_coe] at hcard
+  have hsub : Fintype.card (sizeNAllocSpace N n) = Nat.choose N n :=
+    membershipCount N n hn
+  have hm' : Dist.mass (sizeNMarginalLaw N color n hn) X =
+      ((FiberDisintegration.fiberSet (sizeNObs N color n) X).card : Rat) /
+        (Fintype.card (sizeNAllocSpace N n) : Rat) := hm
+  rw [hm', hcard, hsub]
+
 end FiniteDeck
 end Shufflemath
 
