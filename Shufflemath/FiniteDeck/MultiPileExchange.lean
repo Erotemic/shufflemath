@@ -736,5 +736,63 @@ theorem lumpedTransition_pos_of_valid (c : Nat) (X Y : Fin c → Nat) (k : Nat) 
   exact div_pos (mul_pos (Nat.cast_pos.mpr hnumA) (Nat.cast_pos.mpr hnumB))
     (mul_pos (Nat.cast_pos.mpr hdenA) (Nat.cast_pos.mpr hdenB))
 
+/-! ## The exact support, as a single iff
+
+Composing the two zero-support lemmas (numerator vanishes when either pile's
+allocation exceeds a per-category bound) with the universal denominator's zero
+set (the universal denominator vanishes exactly when `k` exceeds the pile's
+total), the two-pile lumped kernel is exactly supported on the valid
+allocation rectangle with a legal `k` — a single iff. -/
+
+/-- The lumped numerator of a per-pile allocation is zero exactly when that
+    allocation exceeds some per-category bound: the product of per-category
+    `choose` factors vanishes exactly when some factor is zero (`X j < a j`). -/
+theorem prod_choose_eq_zero_iff (c : Nat) (X a : Fin c → ℕ) :
+    lumpedNum c X a = 0 ↔ ∃ j, X j < a j := by
+  rw [lumpedNum, Finset.prod_eq_zero_iff]
+  simp only [Nat.choose_eq_zero_iff]
+  constructor
+  · rintro ⟨a_1, _, h⟩
+    exact ⟨a_1, h⟩
+  · rintro ⟨j, h⟩
+    exact ⟨j, Finset.mem_univ j, h⟩
+
+/-- The two-pile lumped kernel is zero exactly on the invalid allocations:
+    either pile's allocation exceeds a per-category bound, or `k` exceeds a
+    pile's total. The kernel is supported exactly on the valid rectangle with
+    a legal `k`. -/
+theorem lumpedTransition_eq_zero_iff (c : Nat) (X Y : Fin c → ℕ) (k : Nat) (a b : Fin c → ℕ) :
+    lumpedTransition c X Y k a b = 0 ↔
+      (∃ j, X j < a j) ∨ (∃ j, Y j < b j) ∨ (k > Finset.univ.sum X) ∨ (k > Finset.univ.sum Y) := by
+  rw [lumpedTransition, div_eq_zero_iff]
+  simp only [Nat.cast_mul]
+  constructor
+  · intro h
+    rcases h with hnum | hden
+    · rcases (mul_eq_zero.mp hnum) with h1 | h2
+      · exact Or.inl ((prod_choose_eq_zero_iff c X a).mp (Nat.cast_eq_zero.mp h1))
+      · exact Or.inr (Or.inl ((prod_choose_eq_zero_iff c Y b).mp (Nat.cast_eq_zero.mp h2)))
+    · rcases (mul_eq_zero.mp hden) with h1 | h2
+      · exact Or.inr (Or.inr (Or.inl (Nat.choose_eq_zero_iff.mp (Nat.cast_eq_zero.mp h1))))
+      · exact Or.inr (Or.inr (Or.inr (Nat.choose_eq_zero_iff.mp (Nat.cast_eq_zero.mp h2))))
+  · intro h
+    rcases h with h | h | h | h
+    · left
+      have h0 : lumpedNum c X a = 0 := (prod_choose_eq_zero_iff c X a).mpr h
+      rw [h0]
+      simp
+    · left
+      have h0 : lumpedNum c Y b = 0 := (prod_choose_eq_zero_iff c Y b).mpr h
+      rw [h0]
+      simp
+    · right
+      have h0 : Nat.choose (Finset.univ.sum X) k = 0 := Nat.choose_eq_zero_iff.mpr h
+      rw [h0]
+      simp
+    · right
+      have h0 : Nat.choose (Finset.univ.sum Y) k = 0 := Nat.choose_eq_zero_iff.mpr h
+      rw [h0]
+      simp
+
 end FiniteDeck
 end Shufflemath
