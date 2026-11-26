@@ -1,0 +1,43 @@
+# Overnight proof-campaign review: Inkling2, 2026-11-26
+
+**Reviewed source:** `183eb5ee69b36248bbbf3020f9fc1a901f7fe92a`, reconstructed with the patch's required SHA-256-verified base `91284abc9ec2`. Comparison point: `3d25fc8e4114` (November 25 evening). The last commit is at 05:05:55 EST; the archive was made at 09:31. No claim is made about work after that last commit or unrecorded runtime. The reconstructed working tree is clean. All 37 Python tests pass. Lean 4.34.0/Lake and the Mathlib cache are not available to the reviewer, so Lean compilation claims below are source/commit-report evidence, not an independent build.
+
+## Recommendation: keep Inkling for one focused milestone
+
+Do not infer stronger mathematical reasoning from throughput. The overnight ledger associates 1,086 calls and 21,373.2 seconds (~5.94 hours) of recorded model-call time with the work after the evening comparison, including the `b64d84f` pre-rewrite attribution record for the signed update. These are ledger aggregates, not measured Lean CPU time, wall-clock utilization, or controlled model comparisons. All corresponding model IDs are `litellm-namek/inkling-2-mini-maya-long`. No comparison under matched tasks/compute exists. The previous recommendation to prefer Inkling was provisional.
+
+Inkling has demonstrated that it can implement supplied nontrivial mathematics: the signed-cell factorization is useful and general. Its faster tokens/s are a reason to keep using it if we provide the mathematical architecture. It has not demonstrated that it is better at discovering the architecture independently. Give it the short acceptance ladder in the companion guide, not another unrestricted invitation to add proofs. Evaluate whether it promotes the signed-lumpability result and exports an actual general quotient kernel with a commuting square and stationarity. If it repeatedly returns to two-color scalar arithmetic, switch to Qwen with the SAME concrete task and source state; do not start over. A useful comparison is elapsed active work, build time, and exact acceptance gates closed on matched obligations. A faster model generating a longer detour is not a win.
+
+## What landed since the last handoff
+
+| Commit | Evidence and scope |
+|---|---|
+| `90f4f7c` | Previous evening handoff installed, including `PairFactorSeeds.lean` and `PairedMixtureSeeds.lean`. |
+| `44de7cb` | Implements `signedHist_swap_update` and proves `signedHist_lumpable` in `dev/inkling-hints/2026-11-25-evening/PairFactorSeeds.lean`. Arbitrary N, p, c and capacities; uniform ordered card-pair transposition with replacement. This is the strongest new structural result. The equal-card, same-pile and same-category cases are covered in signed arithmetic. It is not yet a canonical library theorem. |
+| `962274c` | `histogramTransition_rowSum` over `validHistSet`; actual destination-state row sum for two piles/two colors with legal k. |
+| `c08f9bd` | `choose_rewrite_zero_cat`: reversible factorial/choose reweighting identity for a single category. Useful arithmetic lemma. |
+| `8749def` | `stationary_inner` and `histogramTransition_stationary`: a two-color/two-pile scalar stationarity proof using the same fixed-k transition formula. |
+| `f94f0d7` | `histogramTransition_eq_sum_lumpedTransition`: equality with an explicit sum of profile weights. It is an equality between rational-valued formulas, NOT a commuting square with `Allocation`, and not a proof for arbitrary p and c. |
+
+The production diff is confined to `FiniteDeck/HistogramFiber.lean` (+769 lines in the overnight diff). The general signed-lumpability result is in the dev candidate file, not an import of `Shufflemath.lean` or `dev/verify_next_phase.sh`. The prior `UniformExchange.swapKernel_uniformStationary` already gives microscopic uniform stationarity. The very next step is to use these two results together. No further two-color stationary-law calculations are required for this.
+
+## Proof quality and scope
+
+* Good: signed coordinates avoid natural subtraction underflow; deleting the two changed cards isolates the unaffected sum; pushforward equality uses cell counts, not an orbit enumeration. This is exactly the kind of generalization the campaign needs. Preserve it.
+* Good: the two-color transition really is normalized and stationary over a finite valid-state carrier, not merely a sum over outgoing profiles. Retain the proofs and give them accurate names/scope. They are useful independent regression mathematics.
+* Concern: `HistogramFiber.lean` has grown from 848 to more than 1,600 lines. The direct two-color stationarity path repeats combinatorics already captured by Bernoulli–Laplace and misses the generic quotient route. Do not delete the existing proofs now; stop expanding that branch and later make the specialized formulas corollaries of general kernels.
+* The current bridge `histogramTransition_eq_sum_lumpedTransition` identifies two formulas. It does not show that an actual multi-pile allocation transition, pushed through the histogram observation, has that formula. The latter is G5's substantive capstone.
+* The `2026-12-31-histogram-observation-specialization.md` status still says the ordered-deck fiber count and size-constrained `fiberLaw` are blocked. For the TWO-PILE/TWO-COLOR case, source declarations `deckFiber_card`, `deckFiber_prob`, `sizeNFiberLaw`, `sizeNFiberLaw_mass` already exist. The general multi-pile/category variants remain open. Correct status in the active manifest rather than redo completed proofs. Several historical notes have dates later than this snapshot; use commit IDs/declarations as evidence, not the apparent dates or stale prose.
+* `Gate6ThreeRound.g6_threeRound_headline` is already in the aggregator and verification. Its start is `g6ThreeRoundStart` (fiber-uniform); the all-deterministic-start target is not proved. `GSRDeckRound.rhoRoundFinite` still uses `gsrPermutationLaw` (rank, old-to-new) directly with the deck pullback action. The actual stable sort uses rank inverse (`GSRPermutationLaw.idealShuffle_canonical_eq_permLaw`). Correct this in a new named theorem/law, without pretending the existing result was false as a statement about its own kernel.
+* The active `.pi-glla/goals/20261120183004-9jlt8s.md` still explicitly refers to November 20. The operator must replace its live objective. Do not edit live loop state in this overlay. The active queue in `docs/lean_plan.md` and `docs/agent_handoff.md` also contains stale historical instructions; update the current resume pointer with the new acceptance checklist while preserving history.
+* Do not infer compilation performance from line counts. The known expensive permutation normalization remains a risk; use small abstract lemmas and measured focused compilation. No independent Lean verification here.
+
+## What must be finished (not a new research expansion)
+
+1. G5a: promote signed-lumpability and construct normalized reachable histogram quotient, actual kernel equality, exact simulation and stationary pushforward. This is an immediate payoff from the overnight proof. Add reversible quotient theorem and fiber uniform lift.
+2. G5b: general legal fixed-pair k-subset exchange on allocation carrier, exact histogram profile law, general histogram count via labeled slots and existing `multiPile_card`; demonstrate 3+ piles, 2+ categories and recover the two-pile model. Do not confuse uniform transpositions (choose any two identities with replacement) with a fixed exchange of k cards from each of two piles.
+3. G6: finish the real 99-card three-round, 23 binary inverse-GSR-riffles-per-pile certificate from any deterministic deck. Preserve the existing weaker certificate. Generalize the reset/position-permutation and error-budget arguments to arbitrary fixed pile capacities and legal schedules. A longer fallback protocol is a useful separate result, not fulfillment of the three-round goal.
+4. G7: transfers/dealing between capacity-indexed allocation spaces, uniform transport, exact assumptions, and a 3+ pile example. Use a biregular incidence relation, not a new giant factorial proof.
+5. G8: at least one meaningful symbolic finite-N convergence bound, finite physical local-shuffle comparison, concrete epsilon certificate, and certified bounded cost frontier. Distinguish optimizing a sufficient error budget from actual global optimality. G9 sharper spectral research is optional.
+
+For the immediate task, see `docs/planning/proof-strategies/2026-11-26-finite-deck-finish-line-handoff.md`. It includes exact small generic proof candidates and a deliberately bounded execution order. Earlier handoffs are reference material; do not treat each suggestion or historical WIP as an independent deliverable.
