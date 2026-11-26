@@ -262,6 +262,24 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `Finset.image_ofInjective` + `map_mass_eq_univ_fiber` + `localLift_mass`). Full detail in
 > [`agent_handoff.md`](agent_handoff.md).
 
+> **Status (session 89, 2026-11-26, canonical module):** **Gate 6 orientation-corrected stable-sort round (M5c/M5d) LANDED** —
+> `Shufflemath/FiniteDeck/Gate6Corrected.lean` (in the verified build) corrects the finite law that the
+> Gate-6 certificate used: `gsrPermutationLaw` maps each label vector to `rank` (old position -> new
+> position), so the stable-sort pullback is `rank.symm`. New primitives: `embed_m_symm` /
+> `roundEmbedMap_symm` (the deck-level inverse is the product of the per-pile inverses); the corrected
+> laws `rhoRoundFiniteCorrected` / `rhoRoundIdealCorrected`; the **ideal-law invariance**
+> `rhoRoundIdealCorrected_eq_rhoRoundIdeal` (the ideal side is untouched — the embedded uniform product
+> law is invariant under the inversion, via `distProduct_uniform_is_uniformProd` +
+> `GSR.map_bijective_uniformDist` under `permInverseEquiv`); the concrete `correctedFiniteLaw99` /
+> `correctedIdealLaw99` + `correctedIdealLaw99_eq_rho99Ideal`; `correctedFiniteLaw99_tv_eq_rho99Finite`
+> (TV is unchanged under the common bijection); `correctedFiniteRound` / `correctedIdealRound`;
+> `corrected_kernelDiscrepancy_le_delta1` (sub-lemma A for the corrected round); `corrected_threeRound_headline`
+> (TV < 1/1000 from the reference segregated deck, same assemble as `g6Deterministic_headline`); and
+> `corrected_threeRound_headline_anyDeck` (**M5d**, the any-deterministic-deck transport through
+> equivariance + `corrected_run_map_relabel` + `uniformDeck_relabel_invariant` +
+> `tv_bijective_invariance`). 0 `sorry`/`admit`; added to the aggregator and `dev/verify_next_phase.sh`;
+> full build green (9000 jobs), 37/37 tests pass.
+>
 > **Status (session 87, 2026-11-26, canonical module):** **Gate 6 arbitrary-start extension LANDED** —
 > `Shufflemath/FiniteDeck/Gate6Deterministic.lean` (in the verified build) upgrades the three-round
 > headline from the *reference* fiber-uniform start to an **arbitrary deterministic deck**:
