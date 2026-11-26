@@ -294,5 +294,115 @@ theorem sizeN_marginal_law_mass (N : Nat) (color : Fin N → Fin 2) (n : Nat) (X
   rw [sizeN_histFiber_card]
   simp only [Nat.cast_ite, Nat.cast_mul, Nat.cast_zero, ite_div, div_zero, zero_div]
 
+
+/-- The deck-level histogram fiber: decks whose induced left-pile allocation
+    has per-category counts `X`.  This is the honestly-scoped deck-level T2
+    object — every deck whose left pile carries pile-0 categories with counts
+    `X`, which is the honestly-scoped deck-level T2 object. -/
+def deckFiber (N m : Nat) (hm : m ≤ N) (color : Fin N → Fin 2) (X : Fin 2 → Nat) :
+    Finset (Equiv.Perm (Fin N)) :=
+  (Finset.univ : Finset (Equiv.Perm (Fin N))).filter
+    (fun g => ∀ c,
+      (((leftPositions N m hm).image (fun p => g p)).filter (fun x => color x = c)).card = X c)
+
+/-- The deck-level histogram fiber equals the disjoint biUnion of the per-`C`
+    fibers over the histogram fiber. -/
+theorem deckFiber_eq_biUnion (N m : Nat) (hm : m ≤ N) (color : Fin N → Fin 2) (X : Fin 2 → Nat) :
+    deckFiber N m hm color X =
+      (histFiber N color X).biUnion (fun C => fiberSetPile N m hm C) := by
+  ext g
+  constructor
+  · intro h
+    simp only [deckFiber, Finset.mem_filter, Finset.mem_univ, true_and] at h
+    simp only [Finset.mem_biUnion]
+    refine ⟨(leftPositions N m hm).image (fun p => g p), ?_, ?_⟩
+    · simp only [histFiber, Finset.mem_filter, Finset.mem_powerset, Finset.mem_univ, true_and]
+      exact ⟨Finset.subset_univ _, h⟩
+    · dsimp only [fiberSetPile]
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+  · simp only [Finset.mem_biUnion]
+    rintro ⟨C, hCmem, hgC⟩
+    simp only [histFiber, Finset.mem_filter, Finset.mem_powerset, Finset.mem_univ, true_and] at hCmem
+    have hloc : (leftPositions N m hm).image (fun p => g p) = C := by
+      dsimp only [fiberSetPile] at hgC
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hgC
+      exact hgC
+    simp only [deckFiber, Finset.mem_filter, Finset.mem_univ, true_and]
+    intro c
+    rw [hloc]
+    exact hCmem.2 c
+
+/-- The per-`C` fiber count (two-pile / G2 form): the number of decks realizing
+    a fixed allocation `C` (card `m`) is `m! * (N - m)!` — the landed `fiberCount`,
+    via `fiberSetPile`/`fiberSet`/`fiberCount`. -/
+theorem fiberSetPile_card (N m : Nat) (hm : m ≤ N) (C : Finset (Fin N)) (hC : C.card = m) :
+    (fiberSetPile N m hm C).card = Nat.factorial m * Nat.factorial (N - m) := by
+  have h1 : fiberSetPile N m hm C = fiberSet N m hm ⟨C, hC⟩ :=
+    (fiberSet_eq_pile N m hm ⟨C, hC⟩).symm
+  rw [h1, fiberSet_card]
+  exact fiberCount N m hm ⟨C, hC⟩
+
+/-- **T2 deck-level identity.** The number of decks whose induced left-pile
+    allocation has per-category counts `X` is the allocation-fiber count
+    `∏_c choose (r_c, X c)` times the per-allocation deck count
+    `m! * (N - m)!` — the T2 deck-level composition.  The `if X 0 + X 1 = m`
+    guard is honest: a deck's left pile has exactly `m` cards, so every
+    histogram consistent with a left-pile allocation has total `m`. -/
+theorem deckFiber_card (N m : Nat) (hm : m ≤ N) (color : Fin N → Fin 2) (X : Fin 2 → Nat) :
+    (deckFiber N m hm color X).card =
+      if X 0 + X 1 = m then
+        (histFiber N color X).card * Nat.factorial m * Nat.factorial (N - m)
+      else 0 := by
+  by_cases h : X 0 + X 1 = m
+  · have hhistCard : ∀ C ∈ histFiber N color X, C.card = m := by
+      intro C hmem
+      have hC' : ∀ c, (C.filter (fun x => color x = c)).card = X c := by
+        have h := hmem
+        simp only [histFiber, Finset.mem_filter, Finset.mem_powerset] at h
+        exact h.2
+      have hsplit := card_split N color C
+      rw [hsplit, hC' 0, hC' 1]
+      exact h
+    have hdisj : ((histFiber N color X) : Set (Finset (Fin N))).PairwiseDisjoint
+        (fun C => fiberSetPile N m hm C) := by
+      intro C1 _ C2 _ hne
+      change Disjoint (fiberSetPile N m hm C1) (fiberSetPile N m hm C2)
+      rw [Finset.disjoint_iff_ne]
+      intro a ha b hb heq
+      dsimp only [fiberSetPile] at ha hb
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha hb
+      have hIm : (leftPositions N m hm).image (fun p => a p) =
+          (leftPositions N m hm).image (fun p => b p) :=
+        congrArg (fun x : Equiv.Perm (Fin N) => (leftPositions N m hm).image (fun p => x p)) heq
+      exact hne (by rw [← ha, ← hb]; exact hIm)
+    rw [deckFiber_eq_biUnion, Finset.card_biUnion hdisj]
+    simp only [if_pos h]
+    have hsum : (histFiber N color X).sum (fun C => (fiberSetPile N m hm C).card) =
+        (histFiber N color X).card * (Nat.factorial m * Nat.factorial (N - m)) := by
+      rw [Finset.sum_congr rfl (fun C hC => fiberSetPile_card N m hm C (hhistCard C hC)),
+        Finset.sum_const]
+      ring
+    rw [hsum]
+    ring
+  · simp only [if_neg h]
+    have hempty : deckFiber N m hm color X = ∅ := by
+      ext g
+      constructor
+      · intro hg
+        simp only [deckFiber, Finset.mem_filter, Finset.mem_univ, true_and] at hg
+        have hcard : ((leftPositions N m hm).image (fun p => g p)).card = m :=
+          leftImageIsMembership N m hm g
+        have hsum : ((leftPositions N m hm).image (fun p => g p)).card = X 0 + X 1 := by
+          have hsplit := card_split N color ((leftPositions N m hm).image (fun p => g p))
+          rw [hsplit]
+          have h0 : (((leftPositions N m hm).image (fun p => g p)).filter (fun x => color x = 0)).card = X 0 := hg 0
+          have h1 : (((leftPositions N m hm).image (fun p => g p)).filter (fun x => color x = 1)).card = X 1 := hg 1
+          rw [h0, h1]
+        rw [hcard] at hsum
+        exact absurd hsum.symm h
+      · intro hg
+        exact absurd hg (by simp)
+    rw [hempty, Finset.card_empty]
+
 end FiniteDeck
 end Shufflemath

@@ -590,3 +590,29 @@ dependent-subtype-rewrite wall documented in `g5-multipile-twoPile-reduction.md`
 (`rw`/`simp`/`conv` fail on the pile-index-dependent `⟨q, ⋯⟩` subtype-proof term);
 it was deleted rather than committed — the landed `multiPile_equivFiber` route
 (`glueBlocks`) is the correct one and needs no new work.
+
+**Landed (this session, T2 deck-level identity — `Shufflemath/FiniteDeck/HistogramFiber.lean`):**
+`deckFiber` (the finset of decks whose induced left-pile allocation has per-category
+counts `X`), `deckFiber_eq_biUnion` (the fiber equals the disjoint biUnion of the
+per-`C` fibers `fiberSetPile` over the histogram fiber `histFiber`), `fiberSetPile_card`
+(a fixed-`C` per-allocation fiber has `m!·(N-m)!` decks — the landed `fiberCount`
+through `fiberSet`/`fiberSet_eq_pile`), and **`deckFiber_card`**, the T2 deck-level
+identity:
+
+```
+#deckFiber(X) = if X 0 + X 1 = m
+    then (histFiber N color X).card * m! * (N - m)!
+    else 0
+```
+
+— i.e. the number of ordered decks realizing histogram `X` is the allocation-fiber
+count `∏_c choose (r_c, X c)` (the landed `twoHist_fiber_card`) times `∏_p n_p!`
+(two-pile: `m!·(N-m)!`), composed with disjointness of the per-`C` fibers
+(`Finset.card_biUnion` + `fiberSetPile_card`).  The `if` guard is honest: a deck's
+left pile has exactly `m` cards, so any histogram consistent with a left-pile
+allocation must sum to `m`.  Verified (lake build green; full 37-test gate OK;
+independent numeric check N=4,m=2,color 2+2: all nine `(x_0,x_1)` counts match).
+The remaining T2 items are unchanged and remain genuinely blocked (see above): the
+`marginalLaw`/`fiberLaw` objects over the size-`n` allocation space (dependent
+`⟨q, ⋯⟩` subtype-proof rewrite wall), and the `πK = π` multivariate-hypergeometric
+stationary law.
