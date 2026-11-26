@@ -103,3 +103,31 @@ aggregator + verify gate; gate green, 37 tests):
 `#decks realizing X = [∏_c binom(r_c, x_{0,c})] · ∏_p n_p!` — the deck-level
 composition — and the `πK = π` stationary law.  Both are the documented
 Sigma-lumping/stationary-law work, not tactics.
+
+## Landed (2026-12-31, this session) — marginal-law specialization
+
+`Shufflemath/FiniteDeck/HistogramFiber.lean` now also carries the **histogram
+specialization of the landed `FiberDisintegration` machinery** (the T2 marginal
+law at the allocation level, over the full allocation space):
+
+- `Hist2 N` — bounded two-pile histogram values `Fin 2 → Fin (N+1)` (finite
+  codomain; per-category pile-0 counts, each ≤ N).
+- `histObs` — the histogram observation over the full allocation space
+  `Finset (Fin N)` (the pile-0 sets, all sizes): per-category pile-0 counts.
+- `fiberSet_histObs` — the fiber of the observation is exactly the landed
+  `histFiber` (equality of `Finset`s; `Finset.card_bij'`-independent identity).
+- **`histMarginalLaw_mass`** — the T2 marginal-mass identity over the full
+  allocation space:
+
+  `Dist.mass (marginalLaw histObs) X = (choose r_0 (X 0).val * choose r_1 (X 1).val : Rat) / (2 ^ N)`
+
+  — the per-category binomial product divided by the total-allocation count
+  (`2 ^ N`, via landed `Fintype.card_finset`).  Composition of three landed
+  pieces: `marginalLaw_mass` + `fiberSet_histObs` + `twoHist_fiber_card`.
+
+This lands the T2 marginal-law piece at the **allocation level over the full
+space**.  The size-constrained variant (the T2 **size-`n`** law, denominator
+`choose N n`) and the deck-level identity (`× ∏_p n_p!`) remain the Sigma-lumping
+wall documented above — the size-`n` fiber is an indexed dependent subtype whose
+card computation is the blocked pile-index-dependent rewrite.  The `πK = π`
+stationary law (T2/G5capstone) remains unlanded, as before.

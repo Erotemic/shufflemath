@@ -2,6 +2,7 @@ module
 
 public import Shufflemath.FiniteDeck.Histograms
 public import Shufflemath.FiniteDeck.Piles
+public import Shufflemath.FiberDisintegration
 
 @[expose] public section
 
@@ -163,6 +164,52 @@ theorem histMarginalNum (N : Nat) (color : Fin N → Fin 2) (X : Fin 2 → Nat) 
       (Nat.choose N (X 0 + X 1) : Rat) =
         (histFiber N color X).card / (Nat.choose N (X 0 + X 1) : Rat) := by
   rw [twoHist_fiber_card N color X, Nat.cast_mul]
+
+/-- Bounded two-pile histogram value: per-category pile-0 counts, each in `Fin (N+1)`. -/
+abbrev Hist2 (N : Nat) := Fin 2 → Fin (N + 1)
+
+/-- The histogram observation over the full two-pile allocation space:
+    for a pile-0 set `S`, its per-category pile-0 counts as `Fin (N+1)` values. -/
+noncomputable def histObs (N : Nat) (color : Fin N → Fin 2) :
+    Finset (Fin N) → Hist2 N :=
+  fun S => fun c =>
+    ⟨(S.filter (fun x : Fin N => color x = c)).card, by
+      have h1 := Finset.card_filter_le S (fun x : Fin N => color x = c)
+      have h2 := Finset.card_le_univ S
+      rw [Fintype.card_fin] at h2
+      exact Nat.lt_succ_of_le (h1.trans h2)⟩
+
+/-- Fiber identity: the fiber of the histogram observation over `X` is exactly
+    the histogram fiber of pile-0 sets with per-category counts `(X 0).val, (X 1).val`. -/
+theorem fiberSet_histObs (N : Nat) (color : Fin N → Fin 2) (X : Hist2 N) :
+    FiberDisintegration.fiberSet (histObs N color) X =
+      histFiber N color fun c => (X c).val := by
+  classical
+  ext S
+  simp only [FiberDisintegration.fiberSet, Finset.mem_filter, Finset.mem_univ, true_and,
+    histFiber, Finset.mem_filter, Finset.mem_powerset]
+  constructor
+  · intro h
+    refine ⟨Finset.subset_univ _, ?_⟩
+    intro c
+    have heq := congrFun h c
+    exact congrArg Fin.val heq
+  · intro h
+    funext c
+    exact Fin.ext (h.2 c)
+
+/-- **The allocation-level T2 marginal-mass identity**: over the full
+    allocation space (uniform over all pile-0 sets, all sizes), the histogram
+    `X` carries mass equal to the per-category binomial product divided by the
+    total-allocation count `2 ^ N`. -/
+theorem histMarginalLaw_mass (N : Nat) (color : Fin N → Fin 2) (X : Hist2 N) :
+    Dist.mass (FiberDisintegration.marginalLaw (histObs N color)) X =
+      (Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 0)).card) (X 0).val *
+        Nat.choose ((Finset.univ.filter (fun x : Fin N => color x = 1)).card) (X 1).val : Rat) /
+        (2 ^ N : Rat) := by
+  rw [FiberDisintegration.marginalLaw_mass, fiberSet_histObs, twoHist_fiber_card,
+    Fintype.card_finset, Fintype.card_fin, Nat.cast_mul, Nat.cast_pow]
+  rfl
 
 end FiniteDeck
 end Shufflemath
