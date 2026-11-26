@@ -65,3 +65,4 @@ public import Shufflemath.FiniteDeck.Gate6ThreeRound
 public import Shufflemath.FiniteDeck.Gate6Deterministic
 public import Shufflemath.FiniteDeck.Gate6Row
 public import Shufflemath.FiniteDeck.Gate6Corrected
+public import Shufflemath.FiniteDeck.ChangingPiles
