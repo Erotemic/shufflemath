@@ -625,3 +625,15 @@ stationary law.
 `div_eq_div_iff`.  Verified (lake build green, full 37-test gate OK, 0 sorries,
 numeric sanity check N=4/m=2 matches brute force).  The `πK = π` stationary law and
 the marginalLaw/fiberLaw subtype-space objects remain blocked (see above).
+
+**Update (this session, deck-level π ↔ BL law):** the deck-level π law is
+now bridged to the BL stationary law — `deckFiber_prob_eq_blStationary` in
+`HistogramFiber.lean`: for a two-color deck with category-0 card count `r`, the
+deck-level π law (`deckFiber_prob`) at the admissible special-count macrostate
+`⟨X 0, …⟩` is **exactly** `BernoulliLaplaceGeneral.blStationary N m r` — the
+roadmap T2 exit criterion ("Its two-pile/two-color specialization is exactly
+`blStationary N m r`").  Composed from the landed `deckFiber_prob` +
+`blStationary`, with the two-color bookkeeping discharged inline
+(`filter_card_twoColor`).  The size-`n` marginal/fiber law `Dist`-objects have
+since landed too (`sizeNMarginalLaw` / `sizeNFiberLaw` + mass identities), so the
+remaining T2-line item is the πK = π stationary law only.
