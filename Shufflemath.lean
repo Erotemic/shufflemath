@@ -68,3 +68,4 @@ public import Shufflemath.FiniteDeck.Gate6Corrected
 public import Shufflemath.FiniteDeck.ChangingPiles
 public import Shufflemath.FiniteDeck.DealDraw
 public import Shufflemath.FiniteDeck.DealBatch
+public import Shufflemath.FiniteDeck.TwoPositionLaw
