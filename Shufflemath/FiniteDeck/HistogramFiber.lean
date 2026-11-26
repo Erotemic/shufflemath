@@ -537,6 +537,86 @@ theorem sizeNMarginalLaw_mass (N : Nat) (color : Fin N → Fin 2) (n : Nat)
         (Fintype.card (sizeNAllocSpace N n) : Rat) := hm
   rw [hm', hcard, hsub]
 
+
+/-! ## Size-`n` fiber law (the T2 size-`n` conditional law over the reachable
+histogram subtype) -/
+
+/-- The reachable histogram subtype over the size-`n` allocation space:
+    histogram values realized by at least one size-`n` pile-0 set. -/
+abbrev sizeNReachableHist (N : Nat) (color : Fin N → Fin 2) (n : Nat) : Type :=
+  {X : Hist2 N // ∃ S : sizeNAllocSpace N n, histObs N color S = X}
+
+/-- The observation over the reachable subtype: project to the histogram,
+    bundle the witnessing allocation. -/
+noncomputable def sizeNObsReachable (N : Nat) (color : Fin N → Fin 2) (n : Nat) :
+    sizeNAllocSpace N n → sizeNReachableHist N color n :=
+  fun S => ⟨histObs N color S, ⟨S, rfl⟩⟩
+
+/-- The observation over the reachable subtype is surjective. -/
+theorem sizeNObs_surjective_reachable (N : Nat) (color : Fin N → Fin 2) (n : Nat)
+    (hn : n ≤ N) :
+    Function.Surjective (sizeNObsReachable N color n) := by
+  rintro ⟨X, ⟨S, hS⟩⟩
+  subst hS
+  exact ⟨S, rfl⟩
+
+/-- The reachable-histogram fiberSet card: the fiber of the reachable
+    observation is in bijection (via `S ↦ S.1`) with the size-`n` histogram
+    fiber of the observed histogram's underlying value. -/
+theorem fiberSet_reachable_card (N : Nat) (color : Fin N → Fin 2) (n : Nat)
+    (hn : n ≤ N) (X : sizeNReachableHist N color n) :
+    (FiberDisintegration.fiberSet (sizeNObsReachable N color n) X).card =
+      (sizeNHistFiber N color n fun c => (X.1 c).val).card := by
+  classical
+  haveI : Fintype ↥(FiberDisintegration.fiberSet (sizeNObsReachable N color n) X) := inferInstance
+  haveI : Fintype ↥(sizeNHistFiber N color n fun c => (X.1 c).val) := inferInstance
+  have equiv : ↥(FiberDisintegration.fiberSet (sizeNObsReachable N color n) X) ≃
+      ↥(sizeNHistFiber N color n fun c => (X.1 c).val) :=
+    { toFun := fun ⟨⟨S, hS⟩, hmem⟩ =>
+        ⟨S, by
+          have hX : ∀ c, (S.filter (fun x : Fin N => color x = c)).card = (X.1 c).val := by
+            have hh : histObs N color S = X.1 := by
+              have h := (Finset.mem_filter.mp hmem).2
+              exact Subtype.ext_iff.mp h
+            exact (histObs_eq_iff N color S X.1).mp hh
+          rw [sizeNHistFiber_mem_iff]
+          exact ⟨hS, hX⟩⟩
+      invFun := fun ⟨S, hS⟩ =>
+        let hh := (sizeNHistFiber_mem_iff N color n (fun c => (X.1 c).val) S).mp hS
+        ⟨⟨S, hh.1⟩,
+          Finset.mem_filter.mpr ⟨Finset.mem_univ _,
+            Subtype.ext_iff.mpr ((histObs_eq_iff N color S X.1).mpr hh.2)⟩⟩
+      left_inv := fun ⟨⟨S, hS⟩, hmem⟩ => Subtype.ext (Subtype.ext rfl)
+      right_inv := fun ⟨S, hS⟩ => Subtype.ext rfl }
+  have hcard := Fintype.card_congr equiv
+  rw [Fintype.card_coe, Fintype.card_coe] at hcard
+  exact hcard
+
+/-- The size-`n` fiber law: the uniform conditional law over the fiber of the
+    observed reachable histogram — the size-`n` companion to the marginal law. -/
+noncomputable def sizeNFiberLaw (N : Nat) (color : Fin N → Fin 2) (n : Nat) (hn : n ≤ N) :
+    FiniteKernel (sizeNReachableHist N color n) (sizeNAllocSpace N n) :=
+  letI := sizeNAllocSpace_nonempty N n hn
+  FiberDisintegration.fiberLaw (sizeNObsReachable N color n) (sizeNObs_surjective_reachable N color n hn)
+
+/-- Mass of the size-`n` fiber law: uniform over the size-`n` fiber. -/
+theorem sizeNFiberLaw_mass (N : Nat) (color : Fin N → Fin 2) (n : Nat) (hn : n ≤ N)
+    (X : sizeNReachableHist N color n) (b : sizeNAllocSpace N n) :
+    Dist.mass (sizeNFiberLaw N color n hn X) b =
+      (if (histObs N color b.1 = X.1) then
+        ((sizeNHistFiber N color n fun c => (X.1 c).val).card : Rat)⁻¹ else 0) := by
+  haveI : Nonempty (sizeNAllocSpace N n) := sizeNAllocSpace_nonempty N n hn
+  rw [sizeNFiberLaw, FiberDisintegration.fiberLaw_mass]
+  rw [fiberSet_reachable_card N color n hn X]
+  -- the observation equality reduces to the projection equality
+  have hsub : (sizeNObsReachable N color n b = X) ↔ histObs N color b.1 = X.1 := by
+    constructor
+    · intro h
+      exact Subtype.ext_iff.mp h
+    · intro h
+      exact Subtype.ext_iff.mpr h
+  simp only [hsub]
+
 end FiniteDeck
 end Shufflemath
 
