@@ -68,7 +68,8 @@ lake build \
   Shufflemath.FiniteDeck.Gate6Row \
   Shufflemath.FiniteDeck.Gate6Corrected \
   Shufflemath.FiniteDeck.ChangingPiles \
-  Shufflemath.FiniteDeck.DealDraw
+  Shufflemath.FiniteDeck.DealDraw \
+  Shufflemath.FiniteDeck.DealBatch
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace
