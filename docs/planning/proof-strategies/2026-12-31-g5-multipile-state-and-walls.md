@@ -616,3 +616,12 @@ The remaining T2 items are unchanged and remain genuinely blocked (see above): t
 `marginalLaw`/`fiberLaw` objects over the size-`n` allocation space (dependent
 `⟨q, ⋯⟩` subtype-proof rewrite wall), and the `πK = π` multivariate-hypergeometric
 stationary law.
+
+**Landed (this session, deck-level π law):** `deckFiber_prob` — the roadmap T2
+π(X) in the two-pile/two-color specialization: `#deckFiber(X) / N! = [∏_c choose
+(r_c, X c)] / choose N m` when `X 0 + X 1 = m`, else 0.  Composed from the landed
+`deckFiber_card` via the Nat-level identity `#deckFiber(X) · choose N m =
+∏_c choose (r_c, X c) · N!` (`Nat.choose_mul_factorial_mul_factorial hm`), then
+`div_eq_div_iff`.  Verified (lake build green, full 37-test gate OK, 0 sorries,
+numeric sanity check N=4/m=2 matches brute force).  The `πK = π` stationary law and
+the marginalLaw/fiberLaw subtype-space objects remain blocked (see above).
