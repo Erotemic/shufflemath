@@ -19,16 +19,16 @@
     "non_committing_work": "requires_reconcile",
     "compaction_usage": "measured_signals_only_when_runtime_omits_usage"
   },
-  "through": "2026-11-26T18:38:09.925258+00:00",
-  "ledger_rows": 679,
-  "commits_accounted": 675,
-  "turns": 32490,
+  "through": "2026-11-26T19:29:53.082653+00:00",
+  "ledger_rows": 682,
+  "commits_accounted": 678,
+  "turns": 32715,
   "tokens": {
-    "input": 116517781,
+    "input": 116891106,
     "cache_write": 0,
-    "cache_read": 3120456751,
-    "output": 42338892,
-    "billable_input": 3236974532
+    "cache_read": 3151670423,
+    "output": 42566645,
+    "billable_input": 3268561529
   },
   "by_model": {
     "litellm/qwen3.8-27b-dbirks-hyperqwen-long": {
@@ -50,26 +50,26 @@
       "output": 28947667
     },
     "litellm-namek/inkling-2-mini-maya-long": {
-      "input": 17018300,
+      "input": 17391625,
       "cache_write": 0,
-      "cache_read": 597698799,
-      "output": 4619222
+      "cache_read": 628912471,
+      "output": 4846975
     }
   },
   "by_activity": {
     "unlabeled": {
-      "input": 116517781,
+      "input": 116891106,
       "cache_write": 0,
-      "cache_read": 3120456751,
-      "output": 42338892
+      "cache_read": 3151670423,
+      "output": 42566645
     }
   },
   "by_agent": {
     "pi": {
-      "input": 116517781,
+      "input": 116891106,
       "cache_write": 0,
-      "cache_read": 3120456751,
-      "output": 42338892
+      "cache_read": 3151670423,
+      "output": 42566645
     }
   },
   "server_tool_calls": {
@@ -77,7 +77,7 @@
     "web_fetch": 0
   },
   "time": {
-    "wall_clock_s": 2092049.8
+    "wall_clock_s": 2095122.7
   },
   "compaction_signals": {
     "events": 0,
