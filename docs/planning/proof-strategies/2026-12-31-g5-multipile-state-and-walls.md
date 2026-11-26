@@ -509,6 +509,12 @@ mass = numerator / choose(ΣX, k) — the multivariate-hypergeometric conditiona
 `lumpedTransition_factors` proving the two-pile kernel is the product of the two per-pile conditional
 masses. All verified (lake build + full 37-test gate green).
 
+**Landed (this session, commit `3bd7409`):** the **two-pile kernel swap symmetry** —
+`lumpedTransition_swap`: swapping the two piles (with their allocations) leaves the kernel invariant —
+both the numerator and the denominator are products symmetric in the two piles.  This is the kernel-side
+mirror of `exchangeTargets_symmetric` (the fiber-count symmetry) — the exchange is reversible at both
+levels.  Verified (lake build + full 37-test gate green).
+
 **Landed (this session, commit `2c4d61a`):** the **two-pile kernel well-definedness** —
 `lumpedTransition_kernel_well_defined`: on the valid interior (fully valid allocations, `Σa = Σb = k`,
 `k ≤ ΣX`, `k ≤ ΣY`) the joint kernel is strictly positive (the per-pile numerators and the joint
