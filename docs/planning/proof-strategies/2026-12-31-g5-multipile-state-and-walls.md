@@ -689,6 +689,15 @@ the two Vandermonde splits of `∑_{a,b} sw(X') = choose (m, k) * choose (N - m)
 universal normalisation `D = choose m k * choose (N - m) k`.  Build green, 0 sorries.
 The πK = π stationary-law tail of the T2 histogram-level kernel is now **proved**.
 
+**Landed (this session, commit after `8749def`):** the honest bridge —
+`histogramTransition_eq_sum_lumpedTransition` in `HistogramFiber.lean`: the finite
+`Finset`-carrier kernel `histogramTransition` is exactly the per-(a, b) sum of the
+explicit two-pile product kernel `lumpedTransition` (the T5 kernel shape) over the
+shift-consistent preimages, with the denominator collapse discharged by the per-category
+bounds.  The honest kernel and the explicit lumped kernel are now literally equal as
+Rat-valued functions on the valid interior — the "derive the kernel by lumping the
+allocation chain" claim, as a Lean identity.
+
 **Remaining, honestly scoped:** the deck-level fiber count (`× ∏_p n_p!`, Sigma-lumping
 wall — do not re-litigate) and the G5 capstone headline (B4 kernel lumping + the final
 assembly) remain open; both are genuinely-open combinatorial identities, not gaps in

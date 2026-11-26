@@ -1557,5 +1557,45 @@ theorem histogramTransition_stationary (N m r0 r1 k : Nat)
   rw [hD'nat]
   ring
 
+/-- **Bridge: the honest histogram-level kernel is the sum of the per-(a,b) lumped
+    kernel.**  The landed `lumpedTransition` (the explicit two-pile product numerator /
+    universal denominator — the T5 kernel shape) sums, over every per-category
+    removed/added pair `(a, b)` with total `k`, over exactly the valid histograms that
+    the shift `X' = X - a + b` produces: this is the honest identity connecting the
+    honest histogram-level kernel (`histogramTransition`, the finite `Finset`-carrier
+    definition used for the πK = π stationary law) to the landed
+    `lumpedTransition` API (`Histograms.lean`, the explicit product form).
+
+    The statement is a definition-level identity once the per-pile numerators are
+    written as products over the two pile-category components — the same per-(a,b)
+    reuse the two-pile lumping was designed around. -/
+theorem histogramTransition_eq_sum_lumpedTransition (N m r0 r1 k : Nat)
+    (hr : r0 + r1 = N)
+    (X X' : Hist2 N) (hXm : (X 0).val + (X 1).val = m)
+    (hX0 : (X 0).val ≤ r0) (hX1 : (X 1).val ≤ r1) :
+    histogramTransition N m r0 r1 k X X' =
+      ∑ a ∈ Finset.antidiagonal k, ∑ b ∈ Finset.antidiagonal k,
+        if (X' 0).val = (X 0).val - a.1 + b.1 ∧ (X' 1).val = (X 1).val - a.2 + b.2
+        then lumpedTransition 2 (fun c => (X c).val) (fun c => ![r0, r1] c - (X c).val) k
+          ![a.1, a.2] ![b.1, b.2]
+        else 0 := by
+  have hsumL : (Finset.univ : Finset (Fin 2)).sum (fun c => (X c).val) = m := by
+    rw [Fin.sum_univ_two]; omega
+  have hsumR : (Finset.univ : Finset (Fin 2)).sum
+      (fun c => ![r0, r1] c - (X c).val) = N - m := by
+    rw [Fin.sum_univ_two]
+    show (r0 - (X 0).val) + (r1 - (X 1).val) = N - m
+    omega
+  unfold histogramTransition lumpedTransition lumpedNum
+  apply Finset.sum_congr rfl
+  intro a _
+  apply Finset.sum_congr rfl
+  intro b _
+  by_cases h : (X' 0).val = (X 0).val - a.1 + b.1 ∧ (X' 1).val = (X 1).val - a.2 + b.2
+  · rw [ite_eq_left h, ite_eq_left h]
+    simp [hsumL, hsumR, Fin.prod_univ_two]
+    ring
+  · rw [ite_eq_right h, ite_eq_right h]
+
 end FiniteDeck
 end Shufflemath

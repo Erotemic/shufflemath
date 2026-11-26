@@ -202,6 +202,16 @@ histogram-observation level and is stationary under `validHistPi` — together
 with `validHistPi_mass`, the honest T2 marginal law and its stationary law are
 now fully landed at the allocation level.
 
+- **`histogramTransition_eq_sum_lumpedTransition`** — the honest bridge:
+  `histogramTransition` (the finite `Finset`-carrier kernel used for the πK = π
+  landing) is exactly the per-(a, b) sum of `lumpedTransition` (the explicit
+  two-pile product kernel, the T5 kernel shape) over the shift-consistent
+  preimages, with the per-category bounds discharging the denominator collapse
+  (`univ.sum (left) = m`, `univ.sum (right) = N - m`).  This is the honest
+  identity that the histogram-level kernel *is* the lumped kernel summed over
+  the valid preimages — the "derive the kernel by lumping the allocation chain"
+  claim, made as a Lean identity over the landed API.
+
 **Honest remaining gap (unchanged):** the ordered-deck fiber count
 `#decks realizing X = [∏_c binom(r_c, x_{0,c})] · ∏_p n_p!` — the deck-level
 composition — is still the documented Sigma-lumping wall. Also still open: the
