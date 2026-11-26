@@ -794,5 +794,35 @@ theorem lumpedTransition_eq_zero_iff (c : Nat) (X Y : Fin c → ℕ) (k : Nat) (
       rw [h0]
       simp
 
+/-! ## The two-pile kernel is well-defined on the valid interior
+
+Composing the exact support, the positivity, and the bound, the two-pile
+kernel is a proper probability-like object on the valid allocation rectangle
+with a legal `k`: it is strictly positive (the allocations fit the piles) and
+bounded by `1` (each factor is in `[0, 1]`). -/
+
+/-- On the valid interior (fully valid allocations with `Σa = Σb = k`, `k ≤ ΣX`,
+    `k ≤ ΣY`), the two-pile kernel is a probability-like kernel: strictly
+    positive (every per-category `choose` factor is positive) and at most `1`
+    (the per-pile conditional masses are in `[0, 1]`, so their product is too). -/
+theorem lumpedTransition_kernel_well_defined (c : Nat) (X Y : Fin c → ℕ) (k : Nat)
+    (a b : Fin c → ℕ)
+    (hsumA : Finset.univ.sum a = k) (hsumB : Finset.univ.sum b = k)
+    (hA : ∀ j, a j ≤ X j) (hB : ∀ j, b j ≤ Y j) :
+    0 < lumpedTransition c X Y k a b ∧ lumpedTransition c X Y k a b ≤ 1 := by
+  have hleA : k ≤ Finset.univ.sum X := by
+    rw [← hsumA]
+    exact Finset.sum_le_sum (fun i _ => hA i)
+  have hleB : k ≤ Finset.univ.sum Y := by
+    rw [← hsumB]
+    exact Finset.sum_le_sum (fun i _ => hB i)
+  have hpos : 0 < lumpedTransition c X Y k a b :=
+    lumpedTransition_pos_of_valid c X Y k a b hsumA hsumB hA hB
+  have hle : lumpedTransition c X Y k a b ≤ 1 :=
+    lumpedTransition_le_one c X Y k a b hsumA hsumB
+      (Nat.cast_ne_zero.mpr (Nat.ne_of_gt (Nat.choose_pos hleA)))
+      (Nat.cast_ne_zero.mpr (Nat.ne_of_gt (Nat.choose_pos hleB)))
+  exact ⟨hpos, hle⟩
+
 end FiniteDeck
 end Shufflemath
