@@ -824,5 +824,20 @@ theorem lumpedTransition_kernel_well_defined (c : Nat) (X Y : Fin c → ℕ) (k 
       (Nat.cast_ne_zero.mpr (Nat.ne_of_gt (Nat.choose_pos hleB)))
   exact ⟨hpos, hle⟩
 
+/-! ## The two-pile kernel is symmetric under the pile swap
+
+The two-pile lumped kernel is symmetric under swapping the two piles together
+with their allocations: the product of the two numerator factors and the
+product of the two denominator factors are each symmetric in the two piles.
+This is the kernel-side mirror of `exchangeTargets_symmetric` (the
+fiber-count symmetry) — the exchange is reversible at both levels. -/
+
+/-- Swapping the two piles (and their allocations) leaves the two-pile kernel
+    invariant: both the numerator and the denominator are products symmetric
+    in the two piles. -/
+theorem lumpedTransition_swap (c : Nat) (X Y : Fin c → ℕ) (k : Nat) (a b : Fin c → ℕ) :
+    lumpedTransition c X Y k a b = lumpedTransition c Y X k b a := by
+  simp only [lumpedTransition, mul_comm]
+
 end FiniteDeck
 end Shufflemath
