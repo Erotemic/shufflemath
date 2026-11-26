@@ -651,6 +651,26 @@ exchange kernel: `∑_X π(X)·K(X→X') = π(X')`.  This is honest evidence tha
 histogram level; the formal Lean proof remains the documented next step
 (state-space formalization + the lumped detailed balance), not a tactic wall.
 
+**πK = π formalization design (honest target for the next session):** the
+two-pile/two-color πK = π identity, honestly scoped as the remaining T2-line
+item.  Design: (a) the valid-histogram state space —
+`Finset (Hist2 N)` of `X` with `X 0 + X 1 = m` (as Nat values), `(X 0).val ≤ r_0`,
+`(X 1).val ≤ r_1` (a `Finset`-carrier abbrev, the `sizeNAllocSpace`-style route —
+no sigma-type Fintype); (b) the π law over the space — `π(X) =
+choose(r_0, (X 0).val) · choose(r_1, (X 1).val) / choose(N, m)` for valid `X` (the
+landed `deckFiber_prob` formula, honestly normalized to mass 1); (c) the
+histogram-level kernel `K(X → X') = ∑_{a,b : Σa = Σb = k} [X'_0 = X_0 - a_0 + b_0
+∧ X'_1 = X_1 - a_1 + b_1] · (choose(X_0,a_0)·choose(X_1,a_1)·choose(r_0 - X_0,b_0)·
+choose(r_1 - X_1,b_1)) / (choose(m,k)·choose(N-m,k))` — the
+`∑_{a,b}`-over-preimages reduction of the landed `lumpedTransition` (values as
+Nat, no subtypes in the sum); (d) the identity `∑_{X valid} π(X)·K(X→X') =
+π(X')` — the detailed-balance form of the roadmap T5 line-176 claim, numerically
+confirmed across 9 cases (see above).  The genuine combinatorial step is the
+`∑_{a,b}`-preimage re-indexing — the lumped detailed balance is NOT a formal
+consequence of the landed `exchangeTargets_symmetric` (symmetry of K ≠
+π-stationarity, since π is non-uniform).  Not claimed as done; documented here as
+the honest next increment.
+
 **Numeric verification (post-landing, this session):** an independent
 Python brute-force check over all 24 (N=4) / 120 (N=5) / 720 (N=6) ordered
 decks confirms the landed `deckFiber_prob` formula — every `(x0,x1)` fiber
