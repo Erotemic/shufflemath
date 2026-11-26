@@ -37,9 +37,9 @@ theorem choiceImage_mem_reachable (d : Deck) (c : exchangeChoice) :
   have hL : (membership d).1.card = 50 := (membership d).property
   have hR : (choiceImage d c).1.card = 50 := (choiceImage d c).property
   have h1 : ((membership d).1 \ (choiceImage d c).1).card = 25 := by
-    rw [Finset.card_sdiff, hL, hO]
+    rw [Finset.card_sdiff, hL, Finset.inter_comm, hO]
   have h2 : ((choiceImage d c).1 \ (membership d).1).card = 25 := by
-    rw [Finset.card_sdiff, Finset.inter_comm, hR, hO]
+    rw [Finset.card_sdiff, hR, hO]
   unfold reachable25 FiniteDeck.ReachSet
   simp only [Finset.mem_filter, Finset.mem_univ, true_and]
   exact ⟨h1,h2⟩

@@ -159,6 +159,42 @@ theorem perm_inverse_tv {X : Type*} [Fintype X] [DecidableEq X]
   rw [perm_inverse_uniform] at h
   exact h
 
+-- A row that depends only on an observation factors through the observation.
+-- The representative depends on the choice; the law does not (by h).
+noncomputable def rowFactor {X Y Z : Type*} (f : X → Y)
+    (hf : Function.Surjective f) (E : FiniteKernel X Z) : FiniteKernel Y Z :=
+  fun y => E (Classical.choose (hf y))
+
+theorem rowFactor_at {X Y Z : Type*} (f : X → Y)
+    (hf : Function.Surjective f) (E : FiniteKernel X Z)
+    (h : ∀ x x', f x = f x' → E x = E x') (x : X) :
+    E x = rowFactor f hf E (f x) := by
+  change E x = E (Classical.choose (hf (f x)))
+  exact h _ _ (Classical.choose_spec (hf (f x))).symm
+
+theorem rowFactor_comp {X Y Z : Type*} (f : X → Y)
+    (hf : Function.Surjective f) (E : FiniteKernel X Z)
+    (h : ∀ x x', f x = f x' → E x = E x') :
+    E = FiniteKernel.comp (FiniteKernel.deterministic f) (rowFactor f hf E) := by
+  rw [GSR.comp_deterministic_left]
+  exact funext (rowFactor_at f hf E h)
+
+-- Runs through L from the local reset of x equal runs from pointMass x (the
+-- reset absorbs into an arbitrary-length L run). This is the pure kernel-algebra
+-- form of the ideal-reset smoothing (M5b).
+theorem run_from_reset_eq_point {X : Type*} (H L : FiniteKernel X X)
+    (hHL : FiniteKernel.comp H L = L) (x : X) (t : Nat) :
+    FiniteKernel.run L (t+1) (H x) =
+      FiniteKernel.run L (t+1) (Dist.pointMass x) := by
+  apply equal_after_first_run
+  calc
+    FiniteKernel.apply (H x) L =
+        FiniteKernel.apply (FiniteKernel.apply (Dist.pointMass x) H) L := by
+          rw [FiniteKernel.apply_pointMass]
+    _ = FiniteKernel.apply (Dist.pointMass x) (FiniteKernel.comp H L) :=
+          FiniteKernel.apply_comp _ _ _
+    _ = _ := by rw [hHL]
+
 -- Batch 5b without a new support equality. Isolate the generic identity-map
 -- lemma if `simpa` on this concrete specialization is expensive.
 theorem ideal_batch5b :
