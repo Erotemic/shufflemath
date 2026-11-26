@@ -1,6 +1,7 @@
 module
 
 public import Shufflemath.FiniteDeck.ChangingPiles
+public import Shufflemath.FiniteDeck.TwoPositionLaw
 public import Mathlib.Tactic
 
 @[expose] public section
@@ -180,6 +181,22 @@ theorem deal_first_remaining_uniform_law (N : Nat) (hN : 0 < N) [Nonempty (Equiv
     (c : Fin N) (k : Nat) (hk : k < N) :
     Dist.mass ((GSR.uniformDist (Equiv.Perm (Fin N))).map (fun d => d ⟨k, hk⟩)) c = (1 : Rat) / N :=
   topCard_uniform_law N hN ⟨k, hk⟩ c
+
+/-- **The first two cards remaining in the draw pile after the batch deal
+(deck positions `k` and `k + 1`) are jointly uniform under the uniform deck
+law.**  The ordered pair `(d ⟨k, hk⟩, d ⟨k + 1, hk2⟩)` of the first two cards
+remaining in the draw pile after the deal is uniform over the ordered distinct
+pairs — every `(c, c')` with `c ≠ c'` carries mass `1 / (N * (N - 1))` — the
+two-position strengthening of `deal_first_remaining_uniform_law` (the
+top-card two-position joint law specialized to the remaining draw pile).  The
+sound conditional-uniform hypothesis is preserved: the deck must be **uniform**. -/
+theorem deal_first_two_remaining_uniform_law (N : Nat) (hN : 0 < N)
+    [Nonempty (Equiv.Perm (Fin N))] (c c' : Fin N) (hne : c ≠ c')
+    (k : Nat) (hk : k < N) (hk2 : k + 1 < N) :
+    Dist.mass ((GSR.uniformDist (Equiv.Perm (Fin N))).map
+        (fun d => (d ⟨k, hk⟩, d ⟨k + 1, hk2⟩))) (c, c') =
+      (1 : Rat) / ((N : Rat) * ((N : Rat) - 1)) :=
+  twoPositions_uniform_law N hN ⟨k, hk⟩ ⟨k + 1, hk2⟩ (by simp) c c' hne
 
 end FiniteDeck
 end Shufflemath
