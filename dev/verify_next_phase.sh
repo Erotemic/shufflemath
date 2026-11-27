@@ -70,7 +70,8 @@ lake build \
   Shufflemath.FiniteDeck.ChangingPiles \
   Shufflemath.FiniteDeck.DealDraw \
   Shufflemath.FiniteDeck.DealBatch \
-  Shufflemath.FiniteDeck.TwoPositionLaw
+  Shufflemath.FiniteDeck.TwoPositionLaw \
+  Shufflemath.FiniteDeck.UniformTransport
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace
