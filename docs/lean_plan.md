@@ -279,6 +279,9 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `GSR.map_injective_uniform_mass` + injectivity), `fixedPairKernel_rowSum` (total mass exactly `1`).
 > Wired into the `Shufflemath.lean` aggregator and `dev/verify_next_phase.sh`. Full build green
 > (9044 jobs), 37/37 tests pass, 0 sorry/admit.
+> **Session 112 (2026-11-27, final + binomial mass):** `fixedPairKernel_mass_choose` landed —
+the denominator of the fixed-pair kernel is the product of the two per-pile binomials (`Nat.choose (n i) k * Nat.choose (n j) k`), the two-pile analog of the T5 denominator. Pick.card + Fintype.card_prod + Nat.cast_mul; 0 sorries, build green (3194 jobs), 37/37 tests.
+
 > **Session 112 (2026-11-27, final + in-situ consumption):** `fixedPairAlloc_injective` now consumes
 the two-sided transport in-situ — the last step uses `mapPick_injective` (a corollary of
 `mapPick_eq_of_card_eq`) directly for both piles, eliminating the duplicated finset-level
