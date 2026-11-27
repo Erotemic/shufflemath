@@ -71,7 +71,8 @@ lake build \
   Shufflemath.FiniteDeck.DealDraw \
   Shufflemath.FiniteDeck.DealBatch \
   Shufflemath.FiniteDeck.TwoPositionLaw \
-  Shufflemath.FiniteDeck.UniformTransport
+  Shufflemath.FiniteDeck.UniformTransport \
+  Shufflemath.FiniteDeck.HandSecrecy
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace

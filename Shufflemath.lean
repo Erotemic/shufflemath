@@ -70,3 +70,4 @@ public import Shufflemath.FiniteDeck.DealDraw
 public import Shufflemath.FiniteDeck.DealBatch
 public import Shufflemath.FiniteDeck.TwoPositionLaw
 public import Shufflemath.FiniteDeck.UniformTransport
+public import Shufflemath.FiniteDeck.HandSecrecy
