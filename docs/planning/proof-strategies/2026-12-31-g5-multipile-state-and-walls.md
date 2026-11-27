@@ -591,6 +591,11 @@ dependent-subtype-rewrite wall documented in `g5-multipile-twoPile-reduction.md`
 it was deleted rather than committed — the landed `multiPile_equivFiber` route
 (`glueBlocks`) is the correct one and needs no new work.
 
+**2026-11-27 session 112 continuation (the two-sided transport consumed in-situ, deeper):**
+`fixedPairAlloc_injective` now consumes the two-sided transport directly — the last step uses
+`mapPick_injective` (a corollary of `mapPick_eq_of_card_eq`) for both piles, eliminating the
+duplicated finset-level `Finset.image_inj` route.
+
 **2026-11-27 session 112 continuation (the two-sided transport consumed in-situ):**
 `mapPick_injective` is now a first-class corollary of `mapPick_eq_of_card_eq` — the card set
 determines the pick. The two-sided transport is consumed by the allocation machinery, not just
