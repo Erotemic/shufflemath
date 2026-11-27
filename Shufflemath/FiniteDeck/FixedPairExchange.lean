@@ -654,6 +654,48 @@ theorem fixedPairKernel_range_rowSum (A : Allocation N p n) (i j : Fin p) (k : N
   field_simp [hnz]
   exact div_self hnz
 
+/-- **The uniform law over the range, mapped into the allocation space.**  The kernel's
+    support is exactly the range of the exchanged-allocation map; the uniform law over
+    that range (pushed forward through the subtype's coercion) is the semantic
+    "uniform distribution over the range" that `fixedPairKernel` is exactly equal to. -/
+noncomputable def uniformOverRange (A : Allocation N p n) (i j : Fin p) (k : Nat)
+    (hij : i ≠ j) (hki : k ≤ n i) (hkj : k ≤ n j) :
+    Dist (Allocation N p n) := by
+  haveI : Nonempty {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B} := by
+    obtain ⟨⟨x, y⟩⟩ := fixedPair_nonempty A i j k hij hki hkj
+    exact ⟨⟨fixedPairAlloc A i j k hij ⟨x, y⟩, ⟨⟨x, y⟩, rfl⟩⟩⟩
+  exact (GSR.uniformDist {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B}).map
+    (fun B => B.1)
+
+/-- **The fixed-pair kernel IS the uniform law over its range.**  Extending the landed
+    mass-level statements (uniform mass over the range, total row-sum 1) to the
+    distribution level: the kernel is literally the uniform law over its range, pushed
+    forward through the subtype's coercion. -/
+theorem fixedPairKernel_eq_uniformOverRange (A : Allocation N p n) (i j : Fin p) (k : Nat)
+    (hij : i ≠ j) (hki : k ≤ n i) (hkj : k ≤ n j) :
+    fixedPairKernel A i j k hij hki hkj =
+      uniformOverRange A i j k hij hki hkj := by
+  haveI : Nonempty {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B} := by
+    obtain ⟨⟨x, y⟩⟩ := fixedPair_nonempty A i j k hij hki hkj
+    exact ⟨⟨fixedPairAlloc A i j k hij ⟨x, y⟩, ⟨⟨x, y⟩, rfl⟩⟩⟩
+  ext B
+  change Dist.mass (fixedPairKernel A i j k hij hki hkj) B =
+    Dist.mass (uniformOverRange A i j k hij hki hkj) B
+  rw [fixedPairKernel_mass_choose A i j k hij hki hkj B]
+  unfold uniformOverRange
+  rw [GSR.map_injective_uniform_mass (fun b => b.1) (fun x y h => Subtype.ext h) B]
+  have hcond : (∃ a : {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B}, a.1 = B) ↔
+      ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B := by
+    constructor
+    · intro ⟨a, ha⟩
+      obtain ⟨z, hz⟩ := a.2
+      exact ⟨z, hz.trans ha⟩
+    · intro ⟨z, hz⟩
+      exact ⟨⟨B, ⟨z, hz⟩⟩, rfl⟩
+  simp only [hcond]
+  rw [fixedPairAlloc_range_card A i j k hij]
+  simp only [Nat.cast_mul]
+
 /-- **The kernel is a genuine probability law** — total mass `1` (the row-sum
     over the whole allocation carrier is exactly `1`). -/
 theorem fixedPairKernel_rowSum (A : Allocation N p n) (i j : Fin p) (k : Nat)
