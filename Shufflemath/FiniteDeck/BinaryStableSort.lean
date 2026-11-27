@@ -9,6 +9,7 @@ public import Shufflemath.GSRPermutationLaw
 public import Shufflemath.FiniteDeck.PositionAction
 public import Shufflemath.FiniteDeck.ActionConvolution
 public import Shufflemath.FiniteDeck.HistogramKernel
+public import Shufflemath.GSRDeckRound
 public import Mathlib.Data.List.OfFn
 
 @[expose] public section
@@ -316,6 +317,108 @@ theorem compPow_pullLaw (n : Nat) (hn : 0 < n) (t : Nat) :
     rw [FiniteKernel.compPow_succ, ih]
     rw [comp_pullLaw]
     congr 1
+
+
+/-! ## The two-pile embedding homomorphism -/
+
+/-- **The two-pile embedding is multiplicative** (componentwise multiplication on
+    within-pile permutations becomes deck multiplication; the `*`-flip convention of
+    `perm_mul_eq_trans_flip` is honored — left factor applied first).
+    Proved pointwise: on a left position `leftPosition i` both sides reduce to
+    `leftPosition (pl₂ (pl₁ i))` (and dually on right positions) via
+    `embed_m_left`/`embed_m_right`. -/
+theorem embed_m_mul (N m : Nat) (hm : m ≤ N)
+    (pl₁ pl₂ : Equiv.Perm (Fin m)) (pr₁ pr₂ : Equiv.Perm (Fin (N - m))) :
+    embed_m N m hm (pl₁ * pl₂) (pr₁ * pr₂) =
+      embed_m N m hm pl₁ pr₁ * embed_m N m hm pl₂ pr₂ := by
+  apply Equiv.ext
+  intro x
+  by_cases hx : x.val < m
+  · have key : x = leftPosition N m hm ⟨x.val, hx⟩ := by
+      apply Fin.ext
+      rw [leftPosition_val]
+    rw [key]
+    rw [embed_m_left]
+    have hmul : (pl₁ * pl₂) ⟨x.val, hx⟩ = pl₁ (pl₂ ⟨x.val, hx⟩) := by
+      rw [perm_mul_eq_trans_flip, Equiv.trans_apply]
+    rw [hmul]
+    rw [perm_mul_eq_trans_flip, Equiv.trans_apply, embed_m_left, embed_m_left]
+  · have hx2 : x.val - m < N - m := by omega
+    have key : x = rightPosition N m hm ⟨x.val - m, hx2⟩ := by
+      apply Fin.ext
+      rw [rightPosition_val]
+      have hsub : (⟨x.val - m, hx2⟩ : Fin (N - m)).val = x.val - m := rfl
+      rw [hsub]
+      omega
+    rw [key]
+    rw [embed_m_right]
+    have hmul : (pr₁ * pr₂) ⟨x.val - m, hx2⟩ = pr₁ (pr₂ ⟨x.val - m, hx2⟩) := by
+      rw [perm_mul_eq_trans_flip, Equiv.trans_apply]
+    rw [hmul]
+    rw [perm_mul_eq_trans_flip, Equiv.trans_apply, embed_m_right, embed_m_right]
+
+/-- The map version: `roundEmbedMap` sends componentwise pair-multiplication to
+    full-deck multiplication — `roundEmbedMap (p.1 * p'.1, p.2 * p'.2) = roundEmbedMap p * roundEmbedMap p'`.
+    The homomorphism every two-pile composition of within-pile laws uses. -/
+theorem roundEmbedMap_mul (N m : Nat) (hm : m ≤ N)
+    (pl₁ pl₂ : Equiv.Perm (Fin m)) (pr₁ pr₂ : Equiv.Perm (Fin (N - m))) :
+    roundEmbedMap N m hm (pl₁ * pl₂, pr₁ * pr₂) =
+      roundEmbedMap N m hm (pl₁, pr₁) * roundEmbedMap N m hm (pl₂, pr₂) :=
+  embed_m_mul N m hm pl₁ pl₂ pr₁ pr₂
+
+/-- **The two-pile embedding commutes with the `t`-fold power.**  The `t`-fold
+    componentwise within-pile power embedded is the `t`-fold full-deck power. -/
+theorem embed_m_pow (N m : Nat) (hm : m ≤ N)
+    (pl : Equiv.Perm (Fin m)) (pr : Equiv.Perm (Fin (N - m))) (t : Nat) :
+    embed_m N m hm (pl ^ t) (pr ^ t) = (embed_m N m hm pl pr) ^ t := by
+  induction t with
+  | zero =>
+    simp only [pow_zero]
+    ext x
+    by_cases hx : x.val < m
+    · have key : x = leftPosition N m hm ⟨x.val, hx⟩ := by
+        apply Fin.ext
+        rw [leftPosition_val]
+      rw [key]
+      rw [embed_m_left]
+      simp
+    · have hm1 : (x.val - m) < N - m := by omega
+      have key : x = rightPosition N m hm ⟨x.val - m, hm1⟩ := by
+        apply Fin.ext
+        rw [rightPosition_val]
+        have hsub : (⟨x.val - m, hm1⟩ : Fin (N - m)).val = x.val - m := rfl
+        rw [hsub]
+        omega
+      rw [key]
+      rw [embed_m_right]
+      simp
+  | succ t ih =>
+    simp only [pow_succ]
+    rw [embed_m_mul, ih]
+
+/-! ## The law-level bridge at a fixed deck -/
+
+/-- **The per-deck binary-riffle bridge.**  Starting from a deterministic deck
+    `d`, the `t`-fold binary stable-sort (as a kernel) applied to `d` is exactly
+    the `2^t`-label stable-sort kernel applied to `d`.  This is `compPow_pullLaw`
+    read as a law at a fixed deck — the content of the binary-riffle bridge once
+    the noise-to-law pushforward is unfolded. -/
+theorem compPow_pullLaw_apply_pointMass (n : Nat) (hn : 0 < n) (t : Nat)
+    (d : Deck n) :
+    FiniteKernel.apply (Dist.pointMass d)
+        (FiniteKernel.compPow (permutationActionKernel (pullLaw n 2 (by norm_num) hn)) t) =
+      FiniteKernel.apply (Dist.pointMass d)
+        (permutationActionKernel (pullLaw n (2 ^ t) (by positivity) hn)) := by
+  rw [compPow_pullLaw]
+
+/-- **The concrete 23-riffle specialization.**  At `t = 23`, the `2^23`-label pullback
+    law on a single pile is exactly the `23`-fold composition of the binary pullback
+    kernel — the binary-riffle reading of the `2^23`-label laws used by the 99-card
+    certificates (23 binary riffles per pile, one corrected call per pile). -/
+theorem binary23_eq_compPow_pullLaw_23 (n : Nat) (hn : 0 < n) :
+    permutationActionKernel (pullLaw n (2 ^ 23) (by norm_num) hn) =
+      FiniteKernel.compPow (permutationActionKernel (pullLaw n 2 (by norm_num) hn)) 23 :=
+  (compPow_pullLaw n hn 23).symm
 
 end BinaryStableSort
 end Shufflemath
