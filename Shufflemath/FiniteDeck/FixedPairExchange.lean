@@ -99,6 +99,69 @@ noncomputable def pickOfCardSet {N p : Nat} {n : Fin p → Nat} (A : Allocation 
     (fun p : {x : Fin N // x ∈ W} => (pileEquivOf A i).symm ⟨p.1, hsub p.1 p.2⟩),
     Finset.mem_powersetCard.mpr ⟨Finset.subset_univ _, hcard'⟩⟩
 
+/-- **pickOfCardSet'** — the reverse direction with the card hypothesis instead of the card suffix:
+     same underlying construction as `pickOfCardSet`, but the resulting pick is annotated with
+     the known card `k` (via `hcard : W.card = k`) rather than `W.card`.  This restatement is what
+     lets the full reverse identity `pickOfCardSet' A i (mapPick A i u) hsub (mapPick_card A i u) = u`
+     land without the dependent-subtype cast friction (the `Equiv.cast` projection does not reduce
+     definitionally — verified across several routes). -/
+noncomputable def pickOfCardSet' {N p : Nat} {n : Fin p → Nat} (A : Allocation N p n)
+    (i : Fin p) (W : Finset (Fin N)) (hsub : ∀ x ∈ W, x ∈ pileCard A i)
+    (hcard : W.card = k) : Pick (n i) k := by
+  classical
+  have hinj : Set.InjOn (fun p : {x : Fin N // x ∈ W} =>
+      (pileEquivOf A i).symm ⟨p.1, hsub p.1 p.2⟩)
+      ↑(Finset.univ : Finset {x : Fin N // x ∈ W}) := by
+    intro a ha b hb heq
+    have hval : (pileEquivOf A i).symm ⟨a.1, hsub a.1 a.2⟩ =
+      (pileEquivOf A i).symm ⟨b.1, hsub b.1 b.2⟩ := heq
+    have hvals := (pileEquivOf A i).symm.injective hval
+    exact Subtype.ext (congrArg (fun y : ↥(pileCard A i) => y.val) hvals)
+  have hcard' : ((Finset.univ : Finset {x : Fin N // x ∈ W}).image
+      (fun p : {x : Fin N // x ∈ W} => (pileEquivOf A i).symm ⟨p.1, hsub p.1 p.2⟩)).card
+      = W.card := by
+    rw [Finset.card_image_of_injOn hinj, Finset.card_univ, Fintype.card_coe]
+  exact ⟨(Finset.univ : Finset {x : Fin N // x ∈ W}).image
+    (fun p : {x : Fin N // x ∈ W} => (pileEquivOf A i).symm ⟨p.1, hsub p.1 p.2⟩),
+    Finset.mem_powersetCard.mpr ⟨Finset.subset_univ _, hcard'.trans hcard⟩⟩
+
+/-- **Full reverse identity (card-hypothesis form).**  Building the pick from the mapped card set
+     recovers the original pick.  The underlying construction is the same as `pickOfCardSet`, but
+     the card annotation comes from the card equation `hcard`, so the two sides are picks of the
+     same type — no subtype cast is needed.  Proved via `ext` + the same image-image membership
+     chain as the finset-level identity. -/
+theorem pickOfCardSet'_mapPick {N p : Nat} {n : Fin p → Nat}
+    (A : Allocation N p n) (i : Fin p) (k : Nat) (u : Pick (n i) k) :
+    pickOfCardSet' A i (mapPick A i u) (fun x hx => mapPick_subset A i u hx)
+      (mapPick_card A i u) = u := by
+  apply Subtype.ext
+  ext x
+  simp only [pickOfCardSet', mapPick, Finset.mem_image, Finset.mem_univ, true_and]
+  constructor
+  · intro hy
+    obtain ⟨p, hp, hyx⟩ := hy
+    have hsymm : (pileEquivOf A i) ((pileEquivOf A i).symm ⟨p.1, mapPick_subset A i u p.2⟩)
+        = (pileEquivOf A i) x := congrArg (pileEquivOf A i) hyx
+    rw [Equiv.apply_symm_apply] at hsymm
+    have hval : p.1 = ((pileEquivOf A i) x).val := by
+      have h := congrArg (fun y : ↥(pileCard A i) => y.val) hsymm
+      exact h
+    have hmem : p.1 ∈ mapPick A i u := p.2
+    simp only [mapPick, Finset.mem_image] at hmem
+    obtain ⟨y, hyu, hyval⟩ := hmem
+    have hvv : ((pileEquivOf A i) x).val = ((pileEquivOf A i) y).val := by
+      rw [← hval]; exact hyval.symm
+    have hxy : (pileEquivOf A i) x = (pileEquivOf A i) y := Subtype.ext hvv
+    exact (pileEquivOf A i).injective hxy ▸ hyu
+  · intro hx
+    have hmem : (pileEquivOf A i x).val ∈ mapPick A i u :=
+      Finset.mem_image.mpr ⟨x, hx, rfl⟩
+    refine ⟨⟨(pileEquivOf A i x).val, hmem⟩, Finset.mem_univ _, ?_⟩
+    have h2 : (⟨(pileEquivOf A i x).val, mapPick_subset A i u hmem⟩ : ↥(pileCard A i))
+        = pileEquivOf A i x := Subtype.ext rfl
+    rw [h2]
+    exact Equiv.symm_apply_apply _ _
+
 /-- **Round trip** — the card set of a pick built from `W` is `W`. -/
 theorem mapPick_pickOfCardSet {N p : Nat} {n : Fin p → Nat} (A : Allocation N p n)
     (i : Fin p) (W : Finset (Fin N)) (hsub : ∀ x ∈ W, x ∈ pileCard A i) :
