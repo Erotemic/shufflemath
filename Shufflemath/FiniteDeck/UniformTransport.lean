@@ -866,4 +866,30 @@ theorem uniform_transport_transferKernel_comp3
   exact uniform_transport_transferKernel i₃ j₃ t₃ hij3 ht3
     (transferCap_sum (transferCap_sum hsum ht1 hij1) ht2 hij2)
 
+
+/-!
+## TODO (general run — parked at a wall)
+
+The general heterogeneous changing-capacities run — a `k`-step chain of transfer
+kernels along arbitrary pile pairs — is documented as the remaining G7 arc item
+(docs/agent_handoff.md, session 96), but it cannot be stated with the file's
+section-variable elaboration without dedicated API.  Two routes were considered:
+
+1. an indexed inductive `LegalChain : (Fin p → Nat) → Type` with a recursive
+   composed kernel — the recursive occurrence (`transferCap n i j t`) is not an
+   allowed occurrence for an explicit-parameter inductive, and the index-style
+   family does not elaborate against the file's section-variable implicit
+   arguments (the index `n` is ambiguous at every downstream use);
+2. an `Equiv`-of-subtypes route (the MultiPileFiber-style witness) — the same
+   class of dependent-subtype wall recorded in
+   `docs/planning/proof-strategies/2026-12-31-g5-multipile-state-and-walls.md`.
+
+The two-step (`uniform_transport_transferKernel_comp`) and three-step
+(`uniform_transport_transferKernel_comp3`) compositions are landed; a chain of
+those is the workable stand-in.  The general run is left parked with this note;
+do not re-attempt by hand — revisit via a dedicated scoped block (own
+`LegalChain` in a namespace with explicit binders) or the G5capstone-style
+explicit-witness route.
+-/
+
 end Shufflemath.FiniteDeck
