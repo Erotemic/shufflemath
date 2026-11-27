@@ -591,6 +591,21 @@ dependent-subtype-rewrite wall documented in `g5-multipile-twoPile-reduction.md`
 it was deleted rather than committed — the landed `multiPile_equivFiber` route
 (`glueBlocks`) is the correct one and needs no new work.
 
+**2026-11-27 session 112 continuation (two-sided mapPick bijection, landed):** the
+card-set direction of the two-pile fixed-pair transport is now two-sided at the
+card-set level: `pickOfCardSet` (the reverse of `mapPick` — the pick whose card set is
+exactly `W`, via the size-bijection applied backwards through `pileEquivOf`, card count
+via `card_image_of_injOn` + `Fintype.card_coe`), `mapPick_pickOfCardSet` (the round trip —
+the card set of the built pick is exactly `W`, via `Finset.image_image` + `Finset.image_congr`
++ image-image membership), and `mapPick_injective` (two picks with the same card set are
+equal — via `Finset.image_inj` on `pileEquivOf.val`). The remaining reverse identity
+`pickOfCardSet A i (mapPick A i u) hsub = u` is recorded as an honestly-parked item —
+the card annotation `(mapPick A i u).card` of the constructed pick is not rewritable into
+the target `Pick (n i) k` type (the dependent-subtype friction documented above; the
+`Eq.mpr`/cast route is the recorded durable fix, mirroring the scoped-block route of the
+`tupleExtensionEquiv` two-sided bijection). No statement weakened. Verified: full build
+green, 37/37 tests, 0 sorries.
+
 **Landed (this session, T2 deck-level identity — `Shufflemath/FiniteDeck/HistogramFiber.lean`):**
 `deckFiber` (the finset of decks whose induced left-pile allocation has per-category
 counts `X`), `deckFiber_eq_biUnion` (the fiber equals the disjoint biUnion of the
