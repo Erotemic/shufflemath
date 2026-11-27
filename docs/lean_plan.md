@@ -263,6 +263,22 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `Shufflemath/FiniteDeck/MultiPileFiber.lean`, via `Equiv.ofBijective` + `Fintype.card_congr`
 > + `Fintype.card_pi` + `Fintype.card_perm` — the route the `letI`-on-`∀`-subtype wall
 > strategy doc prescribed. The 3-pile, 2-category example (`ThreePileTwoColor.lean`) is green.
+> **Session 112 (2026-11-27):** the two-pile `fixed-pair` exchange kernel landed in a new canonical
+> module `Shufflemath/FiniteDeck/FixedPairExchange.lean` — the allocation-independent `Pick s k` choice type
+> (k-subsets of `Fin s`), the pile-specific card-set bijection `mapPick A i k`, the raw exchanged-owner
+> `fixedPairOwner` (picked `U` → pile `j`, picked `V` → pile `i`, other cards unchanged), the three pile-set
+> identities (`fixedPairOwner_filter_i/j/other` — old pile minus picked cards plus the incoming picked set),
+> per-pile capacity preservation (`fixedPairOwner_card_i/j/other`, `fixedPairOwner_card`), the well-defined
+> exchanged allocation `fixedPairAlloc`, and the **crux** `fixedPairAlloc_injective` — the exchanged allocation
+> determines both picked card sets (via the pile-`i` equality with the `sdiff`-intersection trick: the incoming
+> picked sets are disjoint from the exchanged pile (`pileCard_disjoint` + `Finset.disjoint_right.mp`), so the
+> sdiff-intersection cancels the incoming set and recovers the outgoing set; then the `mapPick` image-injection
+> recovers the index finsets via `Finset.image_inj`). On top: `fixedPairKernel` — the normalized two-pile `k`-subset
+> swap as a pushforward of the uniform law over the (allocation-independent) noise `Pick (n i) k × Pick (n j) k` —
+> and `fixedPairKernel_mass` (`1 / card Noise` at the points in the range, `0` elsewhere, via
+> `GSR.map_injective_uniform_mass` + injectivity), `fixedPairKernel_rowSum` (total mass exactly `1`).
+> Wired into the `Shufflemath.lean` aggregator and `dev/verify_next_phase.sh`. Full build green
+> (9044 jobs), 37/37 tests pass, 0 sorry/admit.
 > **Next on the G5 thread:** the `G5capstone` multi-pile exchange kernel-equality (the B4
 > histogram lumping + stationary law + final kernel-equality headline). Precise diagnosis + steps:
 > `docs/planning/proof-strategies/2026-12-31-g5-multipile-state-and-walls.md`.
