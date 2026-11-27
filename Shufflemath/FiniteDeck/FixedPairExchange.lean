@@ -588,6 +588,18 @@ theorem fixedPairKernel_mass (A : Allocation N p n) (i j : Fin p) (k : Nat)
     (fun z => fixedPairAlloc A i j k hij z)) B = _
   exact GSR.map_injective_uniform_mass _ (fixedPairAlloc_injective A i j k hij) B
 
+/-- **The fixed-pair kernel's mass in binomial form.**  The denominator is the product of the two
+    per-pile binomials — `Nat.choose (n i) k * Nat.choose (n j) k` — the two-pile analog of the T5
+    denominator (`choose m k * choose n k`). -/
+theorem fixedPairKernel_mass_choose (A : Allocation N p n) (i j : Fin p) (k : Nat)
+    (hij : i ≠ j) (hki : k ≤ n i) (hkj : k ≤ n j) (B : Allocation N p n) :
+    Dist.mass (fixedPairKernel A i j k hij hki hkj) B =
+      if ∃ z, fixedPairAlloc A i j k hij z = B then
+        (Nat.choose (n i) k * Nat.choose (n j) k : Rat)⁻¹
+      else 0 := by
+  rw [fixedPairKernel_mass A i j k hij hki hkj B, Fintype.card_prod, Pick.card, Pick.card,
+    Nat.cast_mul]
+
 /-- **The kernel is a genuine probability law** — total mass `1` (the row-sum
     over the whole allocation carrier is exactly `1`). -/
 theorem fixedPairKernel_rowSum (A : Allocation N p n) (i j : Fin p) (k : Nat)
