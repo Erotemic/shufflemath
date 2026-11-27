@@ -279,6 +279,12 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `GSR.map_injective_uniform_mass` + injectivity), `fixedPairKernel_rowSum` (total mass exactly `1`).
 > Wired into the `Shufflemath.lean` aggregator and `dev/verify_next_phase.sh`. Full build green
 > (9044 jobs), 37/37 tests pass, 0 sorry/admit.
+> **Session 112 (2026-11-27, final + range row-sum):** `fixedPairKernel_range_rowSum` landed — the
+row-sum over the range of the injective fixed-pair exchange map is exactly `1`: the mass at each range
+point is `1/M` (`fixedPairKernel_mass_choose`) and the range has exactly `M` points (`fixedPairAlloc_range_card`),
+so `M * (1/M) = 1`. This ties the Pick-level bijection (two-sided transport) to the kernel's
+uniform-range structure. 0 sorries, build green (3194 jobs), 37/37 tests.
+
 > **Session 112 (2026-11-27, final + range count):** `fixedPairAlloc_range_card` landed — the
 distinct exchanged allocations are exactly the image of the injective fixed-pair exchange map, so the
 range has exactly `Nat.choose (n i) k * Nat.choose (n j) k` points — the same denominator as the kernel

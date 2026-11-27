@@ -591,6 +591,13 @@ dependent-subtype-rewrite wall documented in `g5-multipile-twoPile-reduction.md`
 it was deleted rather than committed — the landed `multiPile_equivFiber` route
 (`glueBlocks`) is the correct one and needs no new work.
 
+**2026-11-27 session 112 continuation (range row-sum):**
+`fixedPairKernel_range_rowSum` — the row-sum over the range of the injective fixed-pair exchange map is
+exactly `1`: the mass at each range point is `1/M` (`fixedPairKernel_mass_choose`) and the range has exactly
+`M` points (`fixedPairAlloc_range_card`), so `M * (1/M) = 1`. The kernel is uniform over the range, and
+the total mass over the range is exactly `1` — tying the Pick-level bijection to the kernel's
+uniform-range structure.
+
 **2026-11-27 session 112 continuation (range count):**
 `fixedPairAlloc_range_card` — the distinct exchanged allocations are exactly the image of the injective
 fixed-pair exchange map, so the range has exactly `choose (n i) k * choose (n j) k` points — the same
