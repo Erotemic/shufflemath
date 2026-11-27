@@ -620,6 +620,40 @@ theorem fixedPairAlloc_range_card (A : Allocation N p n) (i j : Fin p) (k : Nat)
     Fintype.card_congr (Equiv.ofBijective f ⟨hInj, hSurj⟩)
   rw [← hc, Fintype.card_prod, Pick.card, Pick.card]
 
+/-- **The kernel is uniform over the range — the row-sum over the range is exactly `1`.**  The mass
+    at each range point is `1 / M` (`fixedPairKernel_mass_choose`, `M = choose (n i) k * choose (n j) k`)
+    and the range has exactly `M` points (`fixedPairAlloc_range_card`), so the total mass over the range
+    is `M / M = 1`.  This ties the Pick-level bijection (two-sided transport) to the kernel's
+    uniform-range structure. -/
+theorem fixedPairKernel_range_rowSum (A : Allocation N p n) (i j : Fin p) (k : Nat) (hij : i ≠ j)
+    (hki : k ≤ n i) (hkj : k ≤ n j) :
+    ∑ B : {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B},
+      Dist.mass (fixedPairKernel A i j k hij hki hkj) B.1 = 1 := by
+  have hmass : ∀ B : {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B},
+      Dist.mass (fixedPairKernel A i j k hij hki hkj) B.1 =
+        (Nat.choose (n i) k * Nat.choose (n j) k : Rat)⁻¹ := by
+    intro B
+    rw [fixedPairKernel_mass_choose A i j k hij hki hkj B.1]
+    simp only [if_pos B.2]
+  have hsum : ∑ B : {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B},
+      Dist.mass (fixedPairKernel A i j k hij hki hkj) B.1 =
+      (Fintype.card {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B} : Rat) * (Nat.choose (n i) k * Nat.choose (n j) k : Rat)⁻¹ := by
+    have step : ∑ B : {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B},
+        Dist.mass (fixedPairKernel A i j k hij hki hkj) B.1 =
+        ∑ B : {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B},
+          (Nat.choose (n i) k * Nat.choose (n j) k : Rat)⁻¹ :=
+      Finset.sum_congr rfl (fun B _ => hmass B)
+    rw [step, Finset.sum_const, Finset.card_univ]
+    simp only [nsmul_eq_mul]
+  rw [fixedPairAlloc_range_card A i j k hij] at hsum
+  rw [hsum]
+  simp only [Nat.cast_mul]
+  have hnz : (↑((n i).choose k) * ↑((n j).choose k) : Rat) ≠ 0 :=
+    mul_ne_zero (Nat.cast_ne_zero.mpr (Nat.ne_of_gt (Nat.choose_pos hki)))
+      (Nat.cast_ne_zero.mpr (Nat.ne_of_gt (Nat.choose_pos hkj)))
+  field_simp [hnz]
+  exact div_self hnz
+
 /-- **The kernel is a genuine probability law** — total mass `1` (the row-sum
     over the whole allocation carrier is exactly `1`). -/
 theorem fixedPairKernel_rowSum (A : Allocation N p n) (i j : Fin p) (k : Nat)
