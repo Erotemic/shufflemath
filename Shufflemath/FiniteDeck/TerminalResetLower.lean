@@ -3,6 +3,7 @@ module
 public import Shufflemath.FiniteDeck.TerminalReset
 public import Shufflemath.CommanderFullDeckDisintegration
 public import Shufflemath.FiniteDeck.GeneralSchedule
+public import Shufflemath.FiniteDeck.HandSecrecy
 
 @[expose] public section
 
@@ -58,13 +59,30 @@ chain (`uniform_stationary_H`, `general_schedule_tv_ge_ideal`,
 3. for `t = 2` (exactly `q2`) and `t = 1` (≥ `q2`), the ideal-run TV is at
    least `q2 > 1/1000`, so the schedule output fails the target.
 
-What is **not** landed here: the zero-exchange case (`countExchanges = 0`) —
-the positive-length identity is not claimed there (the guide: when there are
-no exchanges, use the desired terminal reset target directly), and the
-general zero-exchange statement (arbitrary membership-preserving `J`s with no
-exchanges) needs a separate membership-law observation argument not present
-in the repo. The 0-intersperse case — the terminal-only schedule used
-throughout A2 — is fully covered above.
+What is **landed** here, too (the full A4 assembly for the zero-exchange
+case): the *zero-exchange general-schedule* lower bound — **any schedule
+whose only steps are membership-preserving shuffles, with at most two
+exchanges and none in fact, from any deterministic start, fails the
+worst-case `1/1000` target** (`zero_exchange_schedule_tv_gt_thousandth`).
+The chain (`uniform_membership_mass`, `tv_pointMass`, `tv_map_contraction`):
+
+1. the membership read-back of the schedule output is the initial membership
+   read-back (`membership_readback_schedule` with `countExchanges = 0`
+   reduces to the identity — the same `compPow idealMembershipKernel 0`
+   identity used elsewhere);
+2. uniform decks are uniform over the valid memberships (`uniform_membership_mass` —
+   the fixed `Nat.choose 99 50` fiber count, bridged through the
+   `leftCards`/`handSet` identity and `handSet_uniform_law`);
+3. the membership pushforward is a TV non-expansion (`tv_map_contraction`),
+   so the output's TV to the uniform deck is at least the membership-level TV;
+4. the membership-level TV of the start point mass to the uniform membership
+   law is `1 - 1/choose 99 50 > 1/1000` (`tv_pointMass` + `uniform_membership_mass`
+   + `Nat.choose 99 50 ≥ 2`).
+
+Together with the positive-exchange cases this is the **complete** A4
+statement: any schedule using at most two uniform 25-position exchanges
+between the same fixed piles, with any intervening membership-preserving
+shuffles, fails the worst-case `1/1000` target.
 -/
 
 open FiniteDeck CommanderPermutation TerminalReset
@@ -260,6 +278,114 @@ theorem general_schedule_tv_gt_thousandth (d : Deck) (sch : List GeneralSchedule
   calc (1 : Rat) / 1000 < q2 := q2_gt_thousandth
     _ ≤ Dist.tv (FiniteKernel.run L (GeneralSchedule.ScheduleStep.countExchanges sch) (Dist.pointMass d)) (GSR.uniformDist Deck) := hq2
     _ ≤ Dist.tv (FiniteKernel.apply (Dist.pointMass d) (GeneralSchedule.buildSchedule sch)) (GSR.uniformDist Deck) := hle
+
+
+/-! ## The zero-exchange general-schedule lower bound
+
+The zero-exchange case of the A4 general-schedule bound — an arbitrary
+schedule of membership-preserving shuffles with **no exchanges**. The
+membership read-back of the output is exactly the initial membership
+read-back (the positive-length identity is not claimed there; instead the
+identity is the trivial `compPow idealMembershipKernel 0 = identity`), and
+the uniform deck's membership law is uniform over the `Nat.choose 99 50`
+valid memberships. TV contraction under the membership pushforward then
+gives the bound `1 - 1/choose 99 50 > 1/1000`.
+-/
+
+/-- The uniform left-pile law: under the uniform deck law, the left-card set
+(`leftCards`) is uniform over the 50-card subsets. -/
+theorem uniform_leftCards_law (S : Finset (Fin 99)) (hS : S.card = 50) :
+    Dist.mass ((GSR.uniformDist CommanderPermutation.Deck).map
+      (fun d => CommanderPermutation.leftCards d)) S =
+      (1 : Rat) / (Nat.choose 99 50 : Rat) := by
+  have brid : (fun d => CommanderPermutation.leftCards d) =
+      (fun d => FiniteDeck.handSet 99 50 (by decide) d) := by
+    funext d
+    ext x
+    simp [CommanderPermutation.leftCards, CommanderPermutation.leftPosition,
+      FiniteDeck.handSet, FiniteDeck.handPositions, Fin.castLE]
+  rw [brid]
+  exact FiniteDeck.handSet_uniform_law 99 50 (by decide) S hS
+
+/-- The uniform membership law: under the uniform deck law, every valid
+membership (50-card left-pile set) carries mass `1 / choose 99 50`. The
+fiber count of a membership is the fiber count of its left-card set (the
+membership is determined by the left-card set — `Subtype.ext`), so the
+identity reduces to `uniform_leftCards_law`. -/
+theorem uniform_membership_mass (m : CommanderMembershipKernels.Membership) :
+    Dist.mass ((GSR.uniformDist CommanderPermutation.Deck).map
+      CommanderMembershipKernels.membership) m =
+      (1 : Rat) / (Nat.choose 99 50 : Rat) := by
+  rw [Shufflemath.GenericPairObservation.uniformMap_mass_card]
+  have hcount : ((Finset.univ : Finset CommanderPermutation.Deck).filter
+      (fun d => CommanderMembershipKernels.membership d = m)).card =
+      ((Finset.univ : Finset CommanderPermutation.Deck).filter
+        (fun d => CommanderPermutation.leftCards d = m.1)).card := by
+    apply congrArg Finset.card
+    apply Finset.filter_congr
+    intro d _
+    constructor
+    · intro h
+      exact congrArg Subtype.val h
+    · intro h
+      exact Subtype.ext h
+  rw [hcount]
+  have hleft := uniform_leftCards_law m.1 m.2
+  rw [Shufflemath.GenericPairObservation.uniformMap_mass_card] at hleft
+  exact hleft
+
+/-- The **zero-exchange general-schedule lower bound.** Any schedule whose
+only steps are membership-preserving shuffles (no exchanges at all),
+applied from any deterministic start, still fails the worst-case `1/1000`
+target: the output's TV to the uniform deck is at least `1 - 1/choose 99 50`,
+which exceeds `1/1000`.
+
+The argument: the membership read-back of the output is the initial
+membership read-back (`membership_readback_schedule` with `countExchanges = 0`
+reduces to the identity — the same `compPow idealMembershipKernel 0` identity
+as elsewhere), so the output's membership law is a point mass at the start
+deck's membership. The membership pushforward is a TV non-expansion
+(`tv_map_contraction`), so the output's TV to the uniform deck is at least the
+TV of the two membership laws. The start membership law is a point mass whose
+TV to the uniform membership law is `1 - 1/choose 99 50` by `tv_pointMass` and
+`uniform_membership_mass`. -/
+theorem zero_exchange_schedule_tv_gt_thousandth (d : CommanderPermutation.Deck)
+    (sch : List GeneralSchedule.ScheduleStep)
+    (h0 : GeneralSchedule.ScheduleStep.countExchanges sch = 0) :
+    (1 : Rat) / 1000 < Dist.tv
+      (FiniteKernel.apply (Dist.pointMass d) (GeneralSchedule.buildSchedule sch))
+      (GSR.uniformDist CommanderPermutation.Deck) := by
+  -- The membership read-back of the schedule output is the initial one.
+  have hmb := GeneralSchedule.membership_readback_schedule (Dist.pointMass d) sch
+  rw [h0, FiniteKernel.compPow_zero, FiniteKernel.apply_id_left] at hmb
+  -- TV contraction under the membership pushforward.
+  have hcontract := Dist.tv_map_contraction
+    (FiniteKernel.apply (Dist.pointMass d) (GeneralSchedule.buildSchedule sch))
+    (GSR.uniformDist CommanderPermutation.Deck)
+    CommanderMembershipKernels.membership
+  rw [← FiniteKernel.apply_deterministic_eq_map (FiniteKernel.apply (Dist.pointMass d)
+      (GeneralSchedule.buildSchedule sch)) CommanderMembershipKernels.membership] at hcontract
+  rw [hmb] at hcontract
+  rw [FiniteKernel.deterministic_apply_pointMass] at hcontract
+  -- The start membership law is a point mass; its TV to the uniform
+  -- membership law is `1 - 1/choose 99 50`.
+  have htv : Dist.tv (Dist.pointMass (CommanderMembershipKernels.membership d))
+      ((GSR.uniformDist CommanderPermutation.Deck).map CommanderMembershipKernels.membership) =
+      1 - 1 / (Nat.choose 99 50 : Rat) := by
+    rw [Dist.tv_pointMass, uniform_membership_mass]
+  -- Numeric close.
+  have hc : (2 : Nat) ≤ Nat.choose 99 50 := by decide
+  have hc2 : (2 : Rat) ≤ (Nat.choose 99 50 : Rat) := by exact_mod_cast hc
+  have h1 : (1 : Rat) - 1 / (Nat.choose 99 50 : Rat) > 1 / 1000 := by
+    have hle : (1 : Rat) / (Nat.choose 99 50 : Rat) ≤ 1 / 2 :=
+      one_div_le_one_div_of_le (by norm_num) hc2
+    nlinarith [hle]
+  calc (1 : Rat) / 1000 < 1 - 1 / (Nat.choose 99 50 : Rat) := h1
+    _ = Dist.tv (Dist.pointMass (CommanderMembershipKernels.membership d))
+        ((GSR.uniformDist CommanderPermutation.Deck).map CommanderMembershipKernels.membership) := htv.symm
+    _ ≤ Dist.tv
+        (FiniteKernel.apply (Dist.pointMass d) (GeneralSchedule.buildSchedule sch))
+        (GSR.uniformDist CommanderPermutation.Deck) := hcontract
 
 end TerminalResetLower
 end Shufflemath

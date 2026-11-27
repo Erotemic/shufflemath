@@ -535,6 +535,23 @@ theorem tv_eq_one_sub_overlap {α : Type*} [Fintype α] (P Q : Dist α) :
   have hhalf : (1 / 2 : Rat) * Sabs = 1 - Smin := by linarith
   exact hhalf
 
+/-- TV of a point mass against a law is one minus the law's mass at the point. -/
+theorem tv_pointMass {alpha : Type*} [Fintype alpha] [DecidableEq alpha]
+    (x : alpha) (nu : Dist alpha) :
+    tv (Dist.pointMass x) nu = 1 - mass nu x := by
+  rw [tv_eq_one_sub_overlap]
+  rw [Finset.sum_eq_single x]
+  · simp only [mass_pointMass, ite_true]
+    have hle : mass nu x ≤ 1 :=
+      (Finset.single_le_sum (s := Finset.univ) (fun m _ => mass_nonneg nu m) (Finset.mem_univ x)).trans_eq
+        (sum_mass nu)
+    rw [min_eq_right hle]
+  · intro y _ hy
+    simp only [mass_pointMass]
+    rw [ite_eq_right hy, min_eq_left (mass_nonneg nu y)]
+  · intro hmem
+    exact absurd (Finset.mem_univ _) hmem
+
 end Dist
 
 section PositiveSet
