@@ -78,3 +78,4 @@ public import Shufflemath.FiniteDeck.IndexedTransfer
 public import Shufflemath.FiniteDeck.PositionTupleLaw
 public import Shufflemath.FiniteDeck.TerminalReset
 public import Shufflemath.FiniteDeck.TerminalResetLower
+public import Shufflemath.FiniteDeck.GeneralSchedule

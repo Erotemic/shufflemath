@@ -2,6 +2,7 @@ module
 
 public import Shufflemath.FiniteDeck.TerminalReset
 public import Shufflemath.CommanderFullDeckDisintegration
+public import Shufflemath.FiniteDeck.GeneralSchedule
 
 @[expose] public section
 
@@ -37,18 +38,33 @@ Shufflemath.FiniteDeck.TerminalResetLower`):
   (`Dist.kernel_contraction`): the 1-exchange and 0-exchange protocols have TV
   *at least* `q2`.
 
-What is **not** landed here, and why: the *general-schedule* statement — any
-protocol with arbitrary membership-preserving intermediate kernels (more than
-the zero-intersperse terminal-only schedule used above) — needs the
-observation-level deletion at the deck level, i.e. that applying the terminal
-reset `H` to the output of `J_1, S_1, ..., J_t, S_t` erases only within-pile
-order and leaves `run L t mu`. The abstract deletion identity `lastReset_run`
-(`S^t ; H = L^t`) is landed and covers the zero-intersperse case; the
-intermediate-`J` form is documented as the remaining A4 piece (see
-`docs/lean_plan.md`), blocked on the concrete `Q` instantiation and the
-H-erasure law for interspersed `J`s, both of which the repo does not yet
-record as landed kernels. The 0-intersperse case — the terminal-only schedule
-used throughout A2 — is fully covered above.
+What is **landed** here (the full A4 assembly for the positive-exchange
+cases): the *general-schedule* lower bound — **any schedule using at most two
+uniform 25-position exchanges between the same fixed piles, with any
+intervening membership-preserving shuffles and at least one exchange, fails
+the worst-case `1/1000` target** (`general_schedule_tv_gt_thousandth`). The
+chain (`uniform_stationary_H`, `general_schedule_tv_ge_ideal`,
+`general_schedule_tv_gt_thousandth`):
+
+1. the deck-level H-erasure law for an arbitrary interspersed schedule —
+   applying `H` to the output of `J_1, S_1, ..., J_t, S_t` erases only the
+   within-pile order and leaves `run L t mu` — is proved in
+   `Shufflemath.FiniteDeck.GeneralSchedule` (`membership_readback_schedule`,
+   `schedule_then_H`, `run_L_succ`, composed into
+   `general_schedule_H_erased`);
+2. uniform decks are stationary under `H` (`uniform_stationary_pak` at
+   `rho99Ideal`), so kernel contraction under `H` gives
+   `TV(run L t mu, uniform) ≤ TV(apply mu (buildSchedule sch), uniform)`;
+3. for `t = 2` (exactly `q2`) and `t = 1` (≥ `q2`), the ideal-run TV is at
+   least `q2 > 1/1000`, so the schedule output fails the target.
+
+What is **not** landed here: the zero-exchange case (`countExchanges = 0`) —
+the positive-length identity is not claimed there (the guide: when there are
+no exchanges, use the desired terminal reset target directly), and the
+general zero-exchange statement (arbitrary membership-preserving `J`s with no
+exchanges) needs a separate membership-law observation argument not present
+in the repo. The 0-intersperse case — the terminal-only schedule used
+throughout A2 — is fully covered above.
 -/
 
 open FiniteDeck CommanderPermutation TerminalReset
@@ -194,6 +210,56 @@ theorem ideal0_anyDeck_tv_ge_q2 (d : Deck) :
   -- hmono : TV(run L 1 mu, uniform) ≤ TV(mu)
   have hq := ideal1_anyDeck_tv_ge_q2 d
   exact hq.trans hmono
+
+/-- **Uniform decks are stationary under the terminal reset `H`** (the second
+factor of the full-round kernel `L`). -/
+theorem uniform_stationary_H :
+    FiniteKernel.apply (GSR.uniformDist Deck) H = GSR.uniformDist Deck := by
+  show FiniteKernel.apply (GSR.uniformDist Deck)
+    (FiniteDeck.permutationActionKernel Gate6Crux.rho99Ideal) = GSR.uniformDist Deck
+  exact uniform_stationary_pak Gate6Crux.rho99Ideal
+
+/-- **The deck-level H-erasure contraction step** (the guide's A4 chain). For
+a schedule with at least one exchange, the schedule output's TV to the uniform
+deck is at least the ideal run's TV: kernel contraction under `H` (with
+uniform stationarity) applied to the schedule output, composed with the
+deck-level deletion identity `GeneralSchedule.general_schedule_H_erased`
+(applying `H` to the schedule output leaves `run L t mu`). -/
+theorem general_schedule_tv_ge_ideal (d : Deck) (sch : List GeneralSchedule.ScheduleStep)
+    (ht1 : 1 ≤ GeneralSchedule.ScheduleStep.countExchanges sch) :
+    Dist.tv (FiniteKernel.run L (GeneralSchedule.ScheduleStep.countExchanges sch) (Dist.pointMass d)) (GSR.uniformDist Deck) ≤
+      Dist.tv (FiniteKernel.apply (Dist.pointMass d) (GeneralSchedule.buildSchedule sch)) (GSR.uniformDist Deck) := by
+  have herased := GeneralSchedule.general_schedule_H_erased (Dist.pointMass d) sch ht1
+  have hmono := Dist.kernel_contraction H
+    (FiniteKernel.apply (Dist.pointMass d) (GeneralSchedule.buildSchedule sch)) (GSR.uniformDist Deck)
+  rw [uniform_stationary_H] at hmono
+  rw [herased] at hmono
+  exact hmono
+
+/-- **The general-schedule A4 lower bound.** Any schedule using **at most two**
+uniform 25-position exchanges between the same fixed piles, with any
+intervening membership-preserving shuffles and at least one exchange, fails
+the worst-case `1/1000` target: the schedule output is at TV at least `q2 > 1/1000`
+from the uniform deck. The zero-exchange case is not covered by this theorem
+(the positive-length identity is not claimed there — see the module docstring). -/
+theorem general_schedule_tv_gt_thousandth (d : Deck) (sch : List GeneralSchedule.ScheduleStep)
+    (ht1 : 1 ≤ GeneralSchedule.ScheduleStep.countExchanges sch)
+    (ht2 : GeneralSchedule.ScheduleStep.countExchanges sch ≤ 2) :
+    (1 : Rat) / 1000 < Dist.tv
+      (FiniteKernel.apply (Dist.pointMass d) (GeneralSchedule.buildSchedule sch)) (GSR.uniformDist Deck) := by
+  have hle := general_schedule_tv_ge_ideal d sch ht1
+  have hcount : GeneralSchedule.ScheduleStep.countExchanges sch = 1 ∨
+      GeneralSchedule.ScheduleStep.countExchanges sch = 2 := by omega
+  have hq2 : q2 ≤ Dist.tv (FiniteKernel.run L
+      (GeneralSchedule.ScheduleStep.countExchanges sch) (Dist.pointMass d)) (GSR.uniformDist Deck) := by
+    rcases hcount with h | h
+    · rw [h]
+      exact ideal1_anyDeck_tv_ge_q2 d
+    · rw [h]
+      rw [ideal2_anyDeck_tv_eq_q2]
+  calc (1 : Rat) / 1000 < q2 := q2_gt_thousandth
+    _ ≤ Dist.tv (FiniteKernel.run L (GeneralSchedule.ScheduleStep.countExchanges sch) (Dist.pointMass d)) (GSR.uniformDist Deck) := hq2
+    _ ≤ Dist.tv (FiniteKernel.apply (Dist.pointMass d) (GeneralSchedule.buildSchedule sch)) (GSR.uniformDist Deck) := hle
 
 end TerminalResetLower
 end Shufflemath
