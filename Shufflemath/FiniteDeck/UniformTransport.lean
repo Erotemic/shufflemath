@@ -823,4 +823,26 @@ theorem uniform_transport_transferKernel (i j : Fin p) (t : Nat) (hij : i ≠ j)
     ring
   exact uniform_transport_of_colsum _ hcolsum
 
+
+/-- The changing-capacities run: a composition of two transfer kernels along
+different pile pairs transports the uniform law from the source carrier to the
+final carrier.  Each step is a capacity-changing uniform-law transformer, so the
+sequential run is the uniform-law transformer of the combined capacity change
+(pile `i₁` loses `t₁`, pile `j₁` gains it, then pile `i₂` loses `t₂`, pile `j₂`
+gains it — the final carrier is `transferCap (transferCap n i₁ j₁ t₁) i₂ j₂ t₂`).
+The second source must admit the second transfer (`t₂ ≤ (transferCap n i₁ j₁
+t₁) i₂`); the middle carrier's total is preserved by `transferCap_sum`. -/
+theorem uniform_transport_transferKernel_comp
+    {i₁ j₁ i₂ j₂ : Fin p} {t₁ t₂ : Nat}
+    (hij1 : i₁ ≠ j₁) (ht1 : t₁ ≤ n i₁)
+    (hij2 : i₂ ≠ j₂) (ht2 : t₂ ≤ (transferCap n i₁ j₁ t₁) i₂)
+    (hsum : (∑ k, n k) = N) :
+    FiniteKernel.apply (uniformAlloc hsum)
+        ((transferKernel i₁ j₁ t₁ hij1 ht1).comp
+          (transferKernel i₂ j₂ t₂ hij2 ht2)) =
+      uniformTransferAlloc i₂ j₂ t₂ hij2 (transferCap_sum hsum ht1 hij1) ht2 := by
+  rw [← FiniteKernel.apply_comp]
+  rw [uniform_transport_transferKernel i₁ j₁ t₁ hij1 ht1 hsum]
+  exact uniform_transport_transferKernel i₂ j₂ t₂ hij2 ht2 (transferCap_sum hsum ht1 hij1)
+
 end Shufflemath.FiniteDeck
