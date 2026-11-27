@@ -2,6 +2,8 @@ module
 
 public import Shufflemath.FiniteDeck.MultiExchange
 public import Shufflemath.FiniteDeck.UniformTransport
+public import Shufflemath.FiniteDeck.Partition
+public import Shufflemath.FiniteDeck.HistogramKernel
 public import Shufflemath.GSR
 public import Shufflemath.Markov
 public import Mathlib.Data.Fintype.Card
@@ -16,7 +18,7 @@ namespace FiniteDeck
 
 open Classical
 
-variable {N p : Nat} {n : Fin p → Nat}
+variable {N p c : Nat} {n : Fin p → Nat}
 
 /-!
 # Fixed-pair k-subset exchange kernel (G5capstone foundation — D1/D2)
@@ -758,6 +760,296 @@ theorem fixedPairKernel_rowSum (A : Allocation N p n) (i j : Fin p) (k : Nat)
     (hij : i ≠ j) (hki : k ≤ n i) (hkj : k ≤ n j) :
     ∑ B : Allocation N p n, Dist.mass (fixedPairKernel A i j k hij hki hkj) B = 1 :=
   Dist.sum_mass _
+
+
+
+def cellSet (color : Fin N → Fin c) (A : Allocation N p n) (z : Fin p × Fin c) : Finset (Fin N) :=
+  Finset.univ.filter (fun x => (A.val x, color x) = z)
+
+theorem cellSet_partition (color : Fin N → Fin c) (A : Allocation N p n) :
+    IsPartition (cellSet color A) := by
+  constructor
+  · intro x
+    exact ⟨(A.val x, color x), by
+      simp only [cellSet]
+      exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, rfl⟩⟩
+  · intro i j x hi hj
+    have h1 : (A.val x, color x) = i := (Finset.mem_filter.mp hi).2
+    have h2 : (A.val x, color x) = j := (Finset.mem_filter.mp hj).2
+    rw [h1] at h2
+    exact h2
+
+noncomputable def cellEquiv (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (z : Fin p × Fin c) :
+    ↥(cellSet color A z) ≃ ↥(cellSet color B z) :=
+  Fintype.equivOfCardEq (by
+    have h1 : Fintype.card ↥(cellSet color A z) = (cellSet color A z).card := Fintype.card_coe _
+    have h2 : Fintype.card ↥(cellSet color B z) = (cellSet color B z).card := Fintype.card_coe _
+    rw [h1, h2]
+    exact Int.ofNat.inj (congrFun h z))
+
+noncomputable def sigmaEquiv (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) : Fin N ≃ Fin N :=
+  glueBlocks (cellSet color A) (cellSet color B) (cellSet_partition color A)
+    (cellSet_partition color B) (fun z => cellEquiv color A B h z)
+
+theorem ownerCell_sigmaEquiv (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (x : Fin N) :
+    ownerCell color B (sigmaEquiv color A B h x) = ownerCell color A x := by
+  classical
+  unfold sigmaEquiv
+  set z := ownerCell color A x with hz
+  have hx : x ∈ cellSet color A z := by
+    simp only [cellSet, hz]
+    exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, rfl⟩
+  have hrw := glueBlocks_apply_member (cellSet color A) (cellSet color B)
+    (cellSet_partition color A) (cellSet_partition color B)
+    (fun z => cellEquiv color A B h z) z x hx
+  rw [hrw]
+  have hprop := Subtype.property (cellEquiv color A B h z ⟨x, hx⟩)
+  exact (Finset.mem_filter.mp hprop).2
+
+theorem color_sigmaEquiv (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (x : Fin N) :
+    color (sigmaEquiv color A B h x) = color x := by
+  have h1 := ownerCell_sigmaEquiv color A B h x
+  simp only [ownerCell] at h1
+  exact congrArg Prod.snd h1
+
+theorem image_sigmaEquiv_mem_iff' (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (i : Fin p) (k : Nat)
+    (u : Pick (n i) k) (x : Fin N) :
+    x ∈ (mapPick A i u).image ⇑(sigmaEquiv color A B h) ↔
+      (sigmaEquiv color A B h).symm x ∈ mapPick A i u := by
+  constructor
+  · intro hx
+    simp only [Finset.mem_image] at hx
+    obtain ⟨a, ha, haa⟩ := hx
+    have hsymm : (sigmaEquiv color A B h).symm x = a := by
+      rw [← haa]
+      exact Equiv.symm_apply_apply _ _
+    rw [hsymm]
+    exact ha
+  · intro hx
+    simp only [Finset.mem_image]
+    exact ⟨(sigmaEquiv color A B h).symm x, hx, Equiv.apply_symm_apply _ _⟩
+
+theorem cardEquiv_forward_subset (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (i : Fin p) (k : Nat)
+    (W : pileCardSet A i k) (x : Fin N) (hx : x ∈ (W.1).image ⇑(sigmaEquiv color A B h)) :
+    x ∈ pileCard B i := by
+  simp only [Finset.mem_image] at hx
+  obtain ⟨y, hy, hxy⟩ := hx
+  subst hxy
+  have hfst := congrArg Prod.fst (ownerCell_sigmaEquiv color A B h y)
+  have hVal : A.val y = i := (Finset.mem_filter.mp (W.2.1 hy)).2
+  simp only [pileCard, Finset.mem_filter, Finset.mem_univ, true_and]
+  exact hfst.trans hVal
+
+theorem cardEquiv_forward_card (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (i : Fin p) (k : Nat)
+    (W : pileCardSet A i k) :
+    ((W.1).image ⇑(sigmaEquiv color A B h)).card = k := by
+  rw [Finset.card_image_of_injective W.1 (sigmaEquiv color A B h).injective]
+  exact W.2.2
+
+theorem cardEquiv_inverse_subset (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (i : Fin p) (k : Nat)
+    (W : pileCardSet B i k) (x : Fin N) (hx : x ∈ (W.1).image ⇑(sigmaEquiv color A B h).symm) :
+    x ∈ pileCard A i := by
+  simp only [Finset.mem_image] at hx
+  obtain ⟨y, hy, hxy⟩ := hx
+  subst hxy
+  have hcell := ownerCell_sigmaEquiv color A B h ((sigmaEquiv color A B h).symm y)
+  rw [Equiv.apply_symm_apply] at hcell
+  have hfst := congrArg Prod.fst hcell
+  have hValB : B.val y = i := (Finset.mem_filter.mp (W.2.1 hy)).2
+  simp only [pileCard, Finset.mem_filter, Finset.mem_univ, true_and]
+  exact hfst.symm.trans hValB
+
+theorem cardEquiv_inverse_card (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (i : Fin p) (k : Nat)
+    (W : pileCardSet B i k) :
+    ((W.1).image ⇑(sigmaEquiv color A B h).symm).card = k := by
+  rw [Finset.card_image_of_injective W.1 (sigmaEquiv color A B h).symm.injective]
+  exact W.2.2
+
+noncomputable def cardSetEquiv (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (i : Fin p) (k : Nat) :
+    Equiv (pileCardSet A i k) (pileCardSet B i k) :=
+  Equiv.mk
+    (fun W => (⟨(W.1).image ⇑(sigmaEquiv color A B h),
+      ⟨cardEquiv_forward_subset color A B h i k W, cardEquiv_forward_card color A B h i k W⟩⟩
+        : pileCardSet B i k))
+    (fun W => (⟨(W.1).image ⇑(sigmaEquiv color A B h).symm,
+      ⟨cardEquiv_inverse_subset color A B h i k W, cardEquiv_inverse_card color A B h i k W⟩⟩
+        : pileCardSet A i k))
+    (fun W => by
+      apply Subtype.ext
+      dsimp only
+      rw [Finset.image_image]
+      have hcomp : (⇑(sigmaEquiv color A B h).symm ∘ ⇑(sigmaEquiv color A B h)) = id := by
+        funext a
+        exact Equiv.symm_apply_apply _ _
+      rw [hcomp, Finset.image_id])
+    (fun W => by
+      apply Subtype.ext
+      dsimp only
+      rw [Finset.image_image]
+      have hcomp : (⇑(sigmaEquiv color A B h) ∘ ⇑(sigmaEquiv color A B h).symm) = id := by
+        funext a
+        exact Equiv.apply_symm_apply _ _
+      rw [hcomp, Finset.image_id])
+
+noncomputable def pilePickEquiv (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (i : Fin p) (k : Nat) :
+    Equiv (Pick (n i) k) (Pick (n i) k) :=
+  ((mapPickEquiv A i k).trans (cardSetEquiv color A B h i k)).trans (mapPickEquiv B i k).symm
+
+theorem mapPick_pilePickEquiv (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (i : Fin p) (k : Nat)
+    (u : Pick (n i) k) :
+    mapPick B i (pilePickEquiv color A B h i k u) = (mapPick A i u).image ⇑(sigmaEquiv color A B h) := by
+  have h1 : mapPickEquiv B i k (pilePickEquiv color A B h i k u) =
+      cardSetEquiv color A B h i k (mapPickEquiv A i k u) := by
+    show (mapPickEquiv B i k) (((mapPickEquiv A i k).trans (cardSetEquiv color A B h i k)).trans (mapPickEquiv B i k).symm u) =
+      cardSetEquiv color A B h i k (mapPickEquiv A i k u)
+    simp only [Equiv.trans_apply, Equiv.apply_symm_apply]
+  exact congrArg Subtype.val h1
+
+/-- The transported pair's owner equals the σ-image of the A-side owner. -/
+theorem fixedPairOwner_sigmaEquiv (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (i j : Fin p) (k : Nat)
+    (hij : i ≠ j) (z : Pick (n i) k × Pick (n j) k) (x : Fin N) :
+    fixedPairOwner B i j k
+        ⟨pilePickEquiv color A B h i k z.1, pilePickEquiv color A B h j k z.2⟩ x =
+      fixedPairOwner A i j k z ((sigmaEquiv color A B h).symm x) := by
+  simp only [fixedPairOwner]
+  rw [mapPick_pilePickEquiv color A B h i k z.1]
+  rw [mapPick_pilePickEquiv color A B h j k z.2]
+  by_cases h1 : x ∈ (mapPick A i z.1).image ⇑(sigmaEquiv color A B h)
+  · have key1 := image_sigmaEquiv_mem_iff' color A B h i k z.1 x
+    have h1' : (sigmaEquiv color A B h).symm x ∈ mapPick A i z.1 := key1.mp h1
+    simp only [h1, h1', ite_true, ite_false]
+  · rw [ite_eq_right h1]
+    by_cases h2 : x ∈ (mapPick A j z.2).image ⇑(sigmaEquiv color A B h)
+    · have key2 := image_sigmaEquiv_mem_iff' color A B h j k z.2 x
+      have key1 := image_sigmaEquiv_mem_iff' color A B h i k z.1 x
+      have h2' : (sigmaEquiv color A B h).symm x ∈ mapPick A j z.2 := key2.mp h2
+      have hnot1 : ¬((sigmaEquiv color A B h).symm x ∈ mapPick A i z.1) := by
+        intro ht
+        exact h1 (key1.mpr ht)
+      simp only [h2, h2', hnot1, ite_true, ite_false]
+    · rw [ite_eq_right h2]
+      have key1 := image_sigmaEquiv_mem_iff' color A B h i k z.1 x
+      have key2 := image_sigmaEquiv_mem_iff' color A B h j k z.2 x
+      have hnot1 : ¬((sigmaEquiv color A B h).symm x ∈ mapPick A i z.1) := by
+        intro ht
+        exact h1 (key1.mpr ht)
+      have hnot2 : ¬((sigmaEquiv color A B h).symm x ∈ mapPick A j z.2) := by
+        intro ht
+        exact h2 (key2.mpr ht)
+      simp only [hnot1, hnot2, ite_true, ite_false]
+      have hA : A.val ((sigmaEquiv color A B h).symm x) = B.val x := by
+        have hcell := ownerCell_sigmaEquiv color A B h ((sigmaEquiv color A B h).symm x)
+        rw [Equiv.apply_symm_apply] at hcell
+        have hfst := congrArg Prod.fst hcell
+        exact hfst.symm
+      rw [hA]
+
+/-- The transported pair's signed-hist equals the A-side signed-hist — the
+    cell-bijection preserves the histogram. -/
+theorem signedHist_transport (color : Fin N → Fin c) (A B : Allocation N p n)
+    (h : signedHist color A = signedHist color B) (i j : Fin p) (k : Nat)
+    (hij : i ≠ j) (z : Pick (n i) k × Pick (n j) k) :
+    signedHist color (fixedPairAlloc B i j k hij
+        ⟨pilePickEquiv color A B h i k z.1, pilePickEquiv color A B h j k z.2⟩) =
+      signedHist color (fixedPairAlloc A i j k hij z) := by
+  classical
+  have howner := fixedPairOwner_sigmaEquiv color A B h i j k hij z
+  have hcolor : ∀ x : Fin N, color ((sigmaEquiv color A B h).symm x) = color x := by
+    intro x
+    have h2 := color_sigmaEquiv color A B h ((sigmaEquiv color A B h).symm x)
+    rw [Equiv.apply_symm_apply] at h2
+    exact h2.symm
+  have hcell : ∀ x : Fin N,
+      ownerCell color (fixedPairAlloc B i j k hij
+          ⟨pilePickEquiv color A B h i k z.1, pilePickEquiv color A B h j k z.2⟩) x =
+        ownerCell color (fixedPairAlloc A i j k hij z) ((sigmaEquiv color A B h).symm x) := by
+    intro x
+    show (⟨fixedPairOwner B i j k ⟨pilePickEquiv color A B h i k z.1, pilePickEquiv color A B h j k z.2⟩ x, color x⟩ : Fin p × Fin c) =
+      ⟨fixedPairOwner A i j k z ((sigmaEquiv color A B h).symm x), color ((sigmaEquiv color A B h).symm x)⟩
+    rw [howner x]
+    rw [hcolor x]
+  funext z'
+  have hbij : (Finset.univ.filter (fun x : Fin N =>
+      ownerCell color (fixedPairAlloc B i j k hij
+        ⟨pilePickEquiv color A B h i k z.1, pilePickEquiv color A B h j k z.2⟩) x = z')) =
+    (Finset.univ.filter (fun y : Fin N =>
+      ownerCell color (fixedPairAlloc A i j k hij z) y = z')).image ⇑(sigmaEquiv color A B h) := by
+    ext x
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_image]
+    constructor
+    · intro hx
+      have hcellx := hcell x
+      have h' : ownerCell color (fixedPairAlloc A i j k hij z)
+          ((sigmaEquiv color A B h).symm x) = z' := by
+        rw [← hcellx]
+        exact hx
+      exact ⟨(sigmaEquiv color A B h).symm x, h', Equiv.apply_symm_apply _ _⟩
+    · intro hx
+      obtain ⟨y, hy, hxy⟩ := hx
+      have hsymmx : (sigmaEquiv color A B h).symm x = y := by
+        rw [← hxy]
+        exact Equiv.symm_apply_apply _ _
+      rw [hcell x]
+      rw [hsymmx]
+      exact hy
+  rw [signedHist, ownerHist, signedHist, ownerHist, hbij,
+    Finset.card_image_of_injective _ (sigmaEquiv color A B h).injective]
+
+theorem fixedPairKernel_strong_lumpable (color : Fin N → Fin c)
+    (A B : Allocation N p n) (h : signedHist color A = signedHist color B)
+    (i j : Fin p) (k : Nat) (hij : i ≠ j) (hki : k ≤ n i) (hkj : k ≤ n j) :
+    (fixedPairKernel A i j k hij hki hkj).map (signedHist color) =
+      (fixedPairKernel B i j k hij hki hkj).map (signedHist color) := by
+  classical
+  haveI : Nonempty (Pick (n i) k × Pick (n j) k) :=
+    fixedPair_nonempty A i j k hij hki hkj
+  change ((GSR.uniformDist (Pick (n i) k × Pick (n j) k)).map
+    (fun z => fixedPairAlloc A i j k hij z)).map (signedHist color) =
+    ((GSR.uniformDist (Pick (n i) k × Pick (n j) k)).map
+      (fun z => fixedPairAlloc B i j k hij z)).map (signedHist color)
+  simp only [Convexity.StdSimplex.map_map]
+  have hgeo : (fun z => signedHist color (fixedPairAlloc B i j k hij z)) =
+      fun z => signedHist color (fixedPairAlloc A i j k hij
+        (((pilePickEquiv color A B h i k).prodCongr (pilePickEquiv color A B h j k)).symm z)) := by
+    funext w
+    have h2 := signedHist_transport color A B h i j k hij
+      (((pilePickEquiv color A B h i k).prodCongr (pilePickEquiv color A B h j k)).symm w)
+    simp only [Equiv.prodCongr_symm, Equiv.prodCongr_apply] at h2 ⊢
+    -- h2 now: signedHist color (fixedPairAlloc B ... ⟨pilePickEquiv B i k ((e₁.symm w.1)), pilePickEquiv B j k ((e₂.symm w.2))⟩) = ...
+    -- the outer apply: pilePickEquiv B i k ((pilePickEquiv B i k).symm w.1) = w.1
+    have hpair : (⟨(pilePickEquiv color A B h i k)
+                      (Prod.map (⇑(pilePickEquiv color A B h i k).symm)
+                        (⇑(pilePickEquiv color A B h j k).symm) w).1,
+                  (pilePickEquiv color A B h j k)
+                      (Prod.map (⇑(pilePickEquiv color A B h i k).symm)
+                        (⇑(pilePickEquiv color A B h j k).symm) w).2⟩ : Pick (n i) k × Pick (n j) k) = w := by
+      apply Prod.ext
+      · simp only [Prod.map_apply]
+        exact Equiv.apply_symm_apply _ _
+      · simp only [Prod.map_apply]
+        exact Equiv.apply_symm_apply _ _
+    rw [hpair] at h2
+    exact h2
+  rw [hgeo]
+  rw [← Convexity.StdSimplex.map_map
+    (GSR.uniformDist (Pick (n i) k × Pick (n j) k))
+    (((pilePickEquiv color A B h i k).prodCongr (pilePickEquiv color A B h j k)).symm)
+    (fun y => signedHist color (fixedPairAlloc A i j k hij y))]
+  rw [GSR.map_bijective_uniformDist
+    ((pilePickEquiv color A B h i k).prodCongr (pilePickEquiv color A B h j k)).symm]
 
 end FiniteDeck
 

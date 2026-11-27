@@ -4514,5 +4514,42 @@ the k-subset type:
 lake build Shufflemath._ProbeK1comb Shufflemath._ProbeK1uniform
 ```
 
+> **✅ (session 113, 2026-11-27) — the fixed-pair transport arc LANDED** in
+> `Shufflemath/FiniteDeck/FixedPairExchange.lean` (full build green — `lake build Shufflemath`
+> 9045 jobs — 37/37 tests pass, 0 sorry/admit). The cell-bijection transport of the exchanged
+> allocation — the histogram-level glue between two signed-hist-equal allocations — lands the
+> two-sided transport all the way to the allocation level: (1) `cellSet` (the per-cell
+> fiber `{x : Fin N | (A.val x, color x) = z}`), `cellSet_partition` (the per-(pile, color)
+> cells partition), `cellEquiv` (the per-cell bijection from equal cell-set cardinalities —
+> `Fintype.equivOfCardEq` + `Int.ofNat.inj` on the signed-hist equality), and `sigmaEquiv`
+> (the global cell-glued bijection — `glueBlocks` over the two cell-set partitions — with
+> `ownerCell_sigmaEquiv` (the cell-bijection preserves the owner cell) and
+> `color_sigmaEquiv`); (2) `image_sigmaEquiv_mem_iff'` (membership transport through the
+> σ-image — the pile-membership iff), `cardEquiv_forward_subset`/`cardEquiv_forward_card`/
+> `cardEquiv_inverse_subset`/`cardEquiv_inverse_card` (the σ-image of the card set stays in
+> the target pile with the same cardinality, and the inverse direction), `cardSetEquiv`
+> (the σ-image bijection of the `k`-card subsets — `Equiv (pileCardSet A i k) (pileCardSet B i k)`),
+> `pilePickEquiv` (the transported pick equiv — an `Equiv (Pick (n i) k) (Pick (n i) k)` via the
+> mapPick transport chain), and `mapPick_pilePickEquiv` (the transported pick's card set is
+> the σ-image of the original card set); (3) `fixedPairOwner_sigmaEquiv` (the transported
+> pair's owner equals the σ-image of the A-side owner — by case analysis on the image
+> membership of the two piles, using `image_sigmaEquiv_mem_iff'` to transport the membership
+> into the σ-symm side) and `signedHist_transport` (the cell-histogram identity: the σ-image
+> of the A-side cell set equals the B-side cell set — `ext` + `Finset.mem_image`/`Finset.mem_filter`,
+> `hbij`, then `card_image_of_injective`, closing the histogram equality by `Int.ofNat.inj`);
+> (4) **`fixedPairKernel_strong_lumpable`** — the kernel-level corollary: for two
+> signed-hist-equal allocations, the `signedHist` pushforward of the fixed-pair kernel is the
+> same on both sides (`(fixedPairKernel A ...).map (signedHist color) = (fixedPairKernel B ...).map (signedHist color)`) —
+> the fixed-pair analog of the exchangeTargets/lumpedTransition symmetry — via `change` +
+> `simp only [Convexity.StdSimplex.map_map]` + the `hgeo` function equation from
+> `signedHist_transport` (the `prodCongr.symm` reparametrization — the pair-collapse via
+> `Equiv.prodCongr_symm`/`Prod.map_apply`/`Equiv.apply_symm_apply` + `rw [hpair] at h2`) +
+> `rw [← Convexity.StdSimplex.map_map e (fun y => ...), GSR.map_bijective_uniformDist e]`
+> (the `uniformMap_reparam` route — the explicit-argument `← map_map` idiom, not the bare form).
+> The remaining G5capstone headline (many-pile `∏_c Sym` orbit-class / kernel-equality)
+> remains parked (documented as the open extension — Next on the G5 thread: the `B4`
+> multi-pile exchange kernel-equality).
+
+
 ## Do NOT stop (the standing directive)
 Compaction is not a stopping signal.  Continue from here.

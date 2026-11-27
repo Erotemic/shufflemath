@@ -356,6 +356,34 @@ aggregator and verify script (unchanged); build green, 37/37 tests. The full sub
 remains **recorded as a parked item** — the cast projection does not reduce definitionally and no
 subtype-cast simp lemma exists in this Mathlib (the dependent-subtype friction documented in the G5
 strategy note) — not faked; the finset-level content is the honest, landed half.
+> **Session 113 (2026-11-27, continuation):** the fixed-pair transport arc landed — the
+> cell-bijection transport of the exchanged allocation. On top of the landed two-sided
+> transport (`pileCardSet` / `mapPickEquiv`) and the `fixedPairAlloc` machinery, the
+> histogram-level cell-bijection `sigmaEquiv` is built and the `signedHist_transport`
+> identity lands the two-sided transport all the way to the allocation level: for any two
+> allocations `A`, `B` with `signedHist color A = signedHist color B`, the transported
+> fixed-pair allocation of the transport pair `⟨pilePickEquiv B i k z.1, pilePickEquiv B j k z.2⟩`
+> has the same signed histogram as the A-side allocation at `z` (via the cell-bijection
+> `sigmaEquiv` — glued per-cell bijections over `cellSet color A z` — with `ownerCell`
+> equivariance `ownerCell_sigmaEquiv`/`color_sigmaEquiv` and the pile-level membership
+> transport `image_sigmaEquiv_mem_iff'`/`cardEquiv_forward_subset`/`cardEquiv_forward_card`/
+> `cardEquiv_inverse_subset`/`cardEquiv_inverse_card`, and the card-set transport
+> `cardSetEquiv` (an `Equiv (pileCardSet A i k) (pileCardSet B i k)` — the σ-image of the
+> card set, via the injective cell-bijection and the two card-count equalities), giving
+> `pilePickEquiv` (an `Equiv (Pick (n i) k) (Pick (n i) k)` via the mapPick transport chain)
+> and `mapPick_pilePickEquiv`). On top: `fixedPairOwner_sigmaEquiv` (the transported pair's
+> owner equals the σ-image of the A-side owner — case analysis on the image membership of
+> the two piles, using `image_sigmaEquiv_mem_iff'` to transport the membership into the
+> σ-symm side) and `signedHist_transport` (the cell-histogram identity — the σ-image of
+> the target cell set equals the cell set of the transported pair, via `ext` +
+> `Finset.mem_image`/`Finset.mem_filter` — `hbij`, then `card_image_of_injective`), and
+> finally **`fixedPairKernel_strong_lumpable`** — the kernel-level corollary: for two
+> signed-hist-equal allocations, the fixed-pair kernel is `signedHist`-lumpable — the
+> pushforward `(fixedPairKernel A ...).map (signedHist color)` equals the pushforward of
+> the B-side kernel (via `uniformMap_reparam`-style: `change`, `simp only [map_map]`,
+> the `hgeo` function equation from `signedHist_transport`, `rw [← map_map, map_bijective_uniformDist]`).
+> 0 sorries, full build green (9045 jobs), 37/37 tests.
+
 > **Next on the G5 thread:** the `G5capstone` multi-pile exchange kernel-equality (the B4
 > histogram lumping + stationary law + final kernel-equality headline). Precise diagnosis + steps:
 > `docs/planning/proof-strategies/2026-12-31-g5-multipile-state-and-walls.md`.
