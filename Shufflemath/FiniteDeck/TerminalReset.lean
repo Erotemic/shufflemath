@@ -278,41 +278,15 @@ exchange rounds and one final corrected finite kernel, driven from **any**
 deterministic deck, land within total variation `< 1/1000` of the uniform 99! deck.
 No intermediate local riffles are needed (the terminal-reset deletion identity);
 the last kernel is a single perturbation of the ideal leg (`q3` from the
-ideal protocol, `δ1` for the final kernel), not a three-step `3·δ1` budget. -/
+ideal protocol, `δ1` for the final kernel), not a three-step `3·δ1` budget.
+
+This is the `23`-per-pile specialization of `terminal_anyDeck_of_row_bound`
+(the general A2 interface) at `F = correctedFiniteLaw99` with the row bound
+`rowTV_le_delta1` and the budget `q3 + δ1 < 1/1000`. -/
 theorem terminal23_anyDeck (d : Deck) :
     Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) F)
-      (GSR.uniformDist Deck) < (1 : Rat) / 1000 := by
-  -- 1. The deletion identity collapses the final `H` after the run to the ideal run.
-  have hrun3 : FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) H =
-      FiniteKernel.run L 3 (Dist.pointMass d) :=
-    apply_run_S_succ_H_eq_run_L (Dist.pointMass d) 2
-  -- 2. The row bound `F` vs `H` costs at most `δ1`.
-  have hrows : ∀ x : Deck, Dist.tv (F x) (H x) ≤ δ1 := by
-    intro x
-    exact rowTV_le_delta1 x
-  have hfirst : Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) F)
-      (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) H) ≤ δ1 :=
-    apply_tv_of_row_bound F H _ δ1 hrows
-  rw [hrun3] at hfirst
-  -- 3. The ideal leg is `≤ q3` (any deterministic start).
-  have hq3 : Dist.tv (FiniteKernel.run L 3 (Dist.pointMass d)) (GSR.uniformDist Deck) ≤ q3 :=
-    ideal3_anyDeck_tv_le_q3 d
-  -- 4. Triangle inequality against the ideal leg, then the single `δ1` + `q3` budget.
-  have htotal : Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) F)
-      (GSR.uniformDist Deck) ≤
-      Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) F)
-        (FiniteKernel.run L 3 (Dist.pointMass d)) +
-      Dist.tv (FiniteKernel.run L 3 (Dist.pointMass d)) (GSR.uniformDist Deck) :=
-    Dist.tv_triangle _ _ _
-  have hle : Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) F)
-      (GSR.uniformDist Deck) ≤ δ1 + q3 :=
-    le_trans htotal (add_le_add hfirst hq3)
-  have hclose : q3 + δ1 < (1 : Rat) / 1000 := by
-    norm_num [q3, δ1, Nat.choose_two_right]
-  have hlt : δ1 + q3 < (1 : Rat) / 1000 := by
-    rw [add_comm]
-    exact hclose
-  exact lt_of_le_of_lt hle hlt
+      (GSR.uniformDist Deck) < (1 : Rat) / 1000 :=
+  terminal_anyDeck_of_row_bound F δ1 rowTV_le_delta1 (by norm_num [q3, δ1, Nat.choose_two_right]) d
 
 end TerminalReset
 end Shufflemath
