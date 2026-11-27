@@ -279,6 +279,14 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `GSR.map_injective_uniform_mass` + injectivity), `fixedPairKernel_rowSum` (total mass exactly `1`).
 > Wired into the `Shufflemath.lean` aggregator and `dev/verify_next_phase.sh`. Full build green
 > (9044 jobs), 37/37 tests pass, 0 sorry/admit.
+> **Session 112 (2026-11-27, final + transport):** the two-sided transport is now a first-class
+object — `pileCardSet` (the `k`-subsets of pile `i`'s cards) and `mapPickEquiv` — the two-sided
+`Equiv (Pick (n i) k) (pileCardSet A i k)` with `mapPick` as the forward map and `pickOfCardSet'` as
+the inverse. Both round trips are the landed two-sided identities: left_inv is
+`pickOfCardSet'_mapPick` (the full reverse identity) and right_inv is the card-hypothesis round trip
+`mapPick_pickOfCardSet'` (the card set of the built pick is `W` — proved by the same
+`ext` + image-image chain as `mapPick_pickOfCardSet`). 0 sorries, full build green, 37/37 tests.
+
 > **Session 112 (2026-11-27, final):** the reverse identity is now fully landed — `pickOfCardSet'`
 (the card-hypothesis restatement: the pick whose card set is exactly `W`, annotated with the known
 `k` via `hcard : W.card = k` instead of the suffix `W.card`) and `pickOfCardSet'_mapPick`

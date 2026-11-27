@@ -591,6 +591,15 @@ dependent-subtype-rewrite wall documented in `g5-multipile-twoPile-reduction.md`
 it was deleted rather than committed — the landed `multiPile_equivFiber` route
 (`glueBlocks`) is the correct one and needs no new work.
 
+**2026-11-27 session 112 continuation (the two-sided transport landed, first-class):**
+`mapPickEquiv` — the two-sided `Equiv (Pick (n i) k) (pileCardSet A i k)`, the G5capstone two-sided
+transport envelope. The forward map is `mapPick` (pick → card set); the inverse is `pickOfCardSet'`
+(card set → pick). Both round trips are the landed identities: left_inv is `pickOfCardSet'_mapPick`
+(the full reverse identity, picks-of-the-same-type) and right_inv is the card-hypothesis round trip
+`mapPick_pickOfCardSet'` (the card set of the built pick is `W` — `ext` + image-image chain).
+`pileCardSet` is the `k`-subsets of pile `i`'s cards. This makes the two-sided mapPick bijection a
+first-class object the two-pile fixed-pair transport can consume.
+
 **2026-11-27 session 112 continuation (the FULL reverse identity landed):**
 `pickOfCardSet'_mapPick` — `pickOfCardSet' A i (mapPick A i u) hsub (mapPick_card A i u) = u`. The
 card-hypothesis restatement (`pickOfCardSet'`) avoids the dependent-subtype cast wall entirely: the
