@@ -155,6 +155,124 @@ theorem rowTV_le_delta1 (x : Deck) :
     simpa only [Gate6Crux.rho99Finite, Gate6Crux.rho99Ideal] using oneRoundDeckTV_le_delta1
   exact h1.trans h2
 
+/-- **The row bound for the 22-per-pile corrected law.**  Every row of the
+    `2^22`-label corrected finite kernel is within `2401 / 2^22` of the same row
+    of the ideal reset.  This is the `22+22` specialization of the generic
+    per-pile transport bound: the corrected law's TV equals the uncorrected
+    `rhoRoundFinite` TV (the `permInverseEquiv` bijection), then
+    `rhoRoundTransport_le_twoPile` at `a = 2^22`, evaluated by `choose_two_right`. -/
+theorem rowTV_22_22 (x : Deck) :
+    Dist.tv (FiniteDeck.permutationActionKernel (rhoRoundFiniteCorrected 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num)) x)
+      (FiniteDeck.permutationActionKernel Gate6Crux.rho99Ideal x) ≤
+      2401 / 2 ^ 22 := by
+  have hideal : Gate6Crux.rho99Ideal =
+      rhoRoundIdeal 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num) := rfl
+  have h1 : Dist.tv (FiniteDeck.permutationActionKernel (rhoRoundFiniteCorrected 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num)) x)
+      (FiniteDeck.permutationActionKernel Gate6Crux.rho99Ideal x) ≤
+      Dist.tv (rhoRoundFiniteCorrected 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num)) Gate6Crux.rho99Ideal := by
+    simpa only [FiniteDeck.permutationActionKernel_eq_map] using
+      Dist.tv_map_contraction (rhoRoundFiniteCorrected 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num)) Gate6Crux.rho99Ideal (·.trans x)
+  rw [hideal] at h1
+  have hIdealEq := rhoRoundFiniteCorrected_tv_eq_rhoRoundFiniteIdeal 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num)
+  rw [hIdealEq] at h1
+  have h3 := rhoRoundTransport_le_twoPile 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num)
+  exact h1.trans (le_trans h3 (by norm_num [Nat.choose_two_right]))
+
+/-- **The row bound for the unequal-alphabets 22+21 corrected law.**  Every row of the
+    `(2^22)`-left / `(2^21)`-right corrected finite kernel is within
+    `1225 / 2^22 + 1176 / 2^21` of the same row of the ideal reset — the A3
+    `22+21` specialization (the left pile of size 50 carries `2^22` labels, the
+    right pile of size 49 carries `2^21` labels).  Proved from the generic
+    unequal-alphabets transport `rhoRoundFiniteCorrectedU_tv_le`. -/
+theorem rowTV_22_21 (x : Deck) :
+    Dist.tv (FiniteDeck.permutationActionKernel (rhoRoundFiniteCorrectedU 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num) (2 ^ 21) (by norm_num)) x)
+      (FiniteDeck.permutationActionKernel Gate6Crux.rho99Ideal x) ≤
+      1225 / 2 ^ 22 + 1176 / 2 ^ 21 := by
+  have hideal : Gate6Crux.rho99Ideal =
+      rhoRoundIdeal 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num) := rfl
+  have h1 : Dist.tv (FiniteDeck.permutationActionKernel (rhoRoundFiniteCorrectedU 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num) (2 ^ 21) (by norm_num)) x)
+      (FiniteDeck.permutationActionKernel Gate6Crux.rho99Ideal x) ≤
+      Dist.tv (rhoRoundFiniteCorrectedU 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num) (2 ^ 21) (by norm_num)) Gate6Crux.rho99Ideal := by
+    simpa only [FiniteDeck.permutationActionKernel_eq_map] using
+      Dist.tv_map_contraction (rhoRoundFiniteCorrectedU 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num) (2 ^ 21) (by norm_num)) Gate6Crux.rho99Ideal (·.trans x)
+  rw [hideal] at h1
+  have h3 := rhoRoundFiniteCorrectedU_tv_le 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (2 ^ 21) (by norm_num) (by norm_num)
+  exact h1.trans (le_trans h3 (by norm_num [Nat.choose_two_right]))
+
+/-- **The general interface — any local law + its known error bound.**  The A2 terminal-only
+    protocol driven by an arbitrary final kernel `F` whose rows are within `δ` of the ideal
+    reset is within total variation `< 1/1000` of the uniform 99! deck, provided the
+    arithmetic budget `q3 + δ < 1/1000`.  This is the single reusable assembly behind the
+    23-per-pile (`terminal23_anyDeck`), 22+22, and 22+21 certificates — the mechanism the
+    guide asks for as "the same proof from A2 now takes any local law". -/
+theorem terminal_anyDeck_of_row_bound (F : FiniteKernel Deck Deck) (δ : Rat)
+    (hrows : ∀ x : Deck, Dist.tv (F x) (H x) ≤ δ)
+    (hbudget : q3 + δ < (1 : Rat) / 1000) (d : Deck) :
+    Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) F)
+      (GSR.uniformDist Deck) < (1 : Rat) / 1000 := by
+  -- 1. The deletion identity collapses the final `H` after the run to the ideal run.
+  have hrun3 : FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) H =
+      FiniteKernel.run L 3 (Dist.pointMass d) :=
+    apply_run_S_succ_H_eq_run_L (Dist.pointMass d) 2
+  -- 2. The row bound `F` vs `H` costs at most `δ`.
+  have hfirst : Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) F)
+      (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) H) ≤ δ :=
+    apply_tv_of_row_bound F H _ δ hrows
+  rw [hrun3] at hfirst
+  -- 3. The ideal leg is `≤ q3` (any deterministic start).
+  have hq3 : Dist.tv (FiniteKernel.run L 3 (Dist.pointMass d)) (GSR.uniformDist Deck) ≤ q3 :=
+    ideal3_anyDeck_tv_le_q3 d
+  -- 4. Triangle inequality against the ideal leg, then `q3 + δ` closes the budget.
+  have htotal : Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) F)
+      (GSR.uniformDist Deck) ≤
+      Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) F)
+        (FiniteKernel.run L 3 (Dist.pointMass d)) +
+      Dist.tv (FiniteKernel.run L 3 (Dist.pointMass d)) (GSR.uniformDist Deck) :=
+    Dist.tv_triangle _ _ _
+  have hle : Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d)) F)
+      (GSR.uniformDist Deck) ≤ δ + q3 :=
+    le_trans htotal (add_le_add hfirst hq3)
+  have hclose : δ + q3 < (1 : Rat) / 1000 := by
+    rw [add_comm]
+    exact hbudget
+  exact lt_of_le_of_lt hle hclose
+
+/-- **A3 certificate — 22+22 binary riffles.** Three literal exchanges and one final
+    corrected finite kernel at the `2^22`-label alphabet (22 binary riffles per pile,
+    44 total), driven from **any** deterministic deck, land within total variation
+    `< 1/1000` of the uniform 99! deck.  This is `terminal_anyDeck_of_row_bound` with
+    the row bound `rowTV_22_22` and the budget `q3 + 2401/2^22 < 1/1000`. -/
+theorem terminal_22_22_anyDeck (d : Deck) :
+    Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d))
+        (FiniteDeck.permutationActionKernel (rhoRoundFiniteCorrected 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num))))
+      (GSR.uniformDist Deck) < (1 : Rat) / 1000 := by
+  apply terminal_anyDeck_of_row_bound
+    (FiniteDeck.permutationActionKernel (rhoRoundFiniteCorrected 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num)))
+    (2401 / 2 ^ 22)
+    (fun x => rowTV_22_22 x)
+  have hbudget : q3 + 2401 / 2 ^ 22 < (1 : Rat) / 1000 := by
+    norm_num [q3]
+  exact hbudget
+
+/-- **A3 certificate — 22+21 binary riffles (unequal alphabets).** Three literal
+    exchanges and one final corrected finite kernel with `2^22` labels on the left
+    pile (size 50) and `2^21` labels on the right pile (size 49) — 22+21 = 43
+    binary riffles — driven from **any** deterministic deck, land within total
+    variation `< 1/1000` of the uniform 99! deck.  This is
+    `terminal_anyDeck_of_row_bound` with the row bound `rowTV_22_21` and the budget
+    `q3 + 1225/2^22 + 1176/2^21 < 1/1000`. -/
+theorem terminal_22_21_anyDeck (d : Deck) :
+    Dist.tv (FiniteKernel.apply (FiniteKernel.run S 3 (Dist.pointMass d))
+        (FiniteDeck.permutationActionKernel (rhoRoundFiniteCorrectedU 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num) (2 ^ 21) (by norm_num))))
+      (GSR.uniformDist Deck) < (1 : Rat) / 1000 := by
+  apply terminal_anyDeck_of_row_bound
+    (FiniteDeck.permutationActionKernel (rhoRoundFiniteCorrectedU 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 22) (by norm_num) (2 ^ 21) (by norm_num)))
+    (1225 / 2 ^ 22 + 1176 / 2 ^ 21)
+    (fun x => rowTV_22_21 x)
+  have hbudget : q3 + (1225 / 2 ^ 22 + 1176 / 2 ^ 21) < (1 : Rat) / 1000 := by
+    norm_num [q3]
+  exact hbudget
+
 /-- **A2 headline — the terminal-only 99-card protocol.** Three literal
 exchange rounds and one final corrected finite kernel, driven from **any**
 deterministic deck, land within total variation `< 1/1000` of the uniform 99! deck.

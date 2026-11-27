@@ -199,6 +199,119 @@ theorem correctedFiniteLaw99_tv_eq_rho99Finite :
   rw [hmap]
   exact tv_bijective_invariance (permInverseEquiv (Fin 99)) _ _
 
+/-- **The ideal law is independent of the GSR alphabet `a`.**  The body of
+    `rhoRoundIdeal` never mentions `a` (it is the product of the two within-pile
+    uniform laws pushed through the embedding), so any two alphabets give the
+    same ideal law — `rfl`. -/
+theorem rhoRoundIdeal_a_independent (N m : Nat) (hm : m ≤ N) (hLpos : 0 < m)
+    (hRpos : 0 < N - m) (a b : Nat) (ha : 0 < a) (hb : 0 < b) :
+    rhoRoundIdeal N m hm hLpos hRpos a ha = rhoRoundIdeal N m hm hLpos hRpos b hb :=
+  rfl
+
+/-- **The corrected finite law is TV-equal to the uncorrected one** (the generic
+    version of `correctedFiniteLaw99_tv_eq_rho99Finite` for any alphabet `a`). -/
+theorem rhoRoundFiniteCorrected_tv_eq_rhoRoundFinite (N m : Nat) (hm : m ≤ N)
+    (hLpos : 0 < m) (hRpos : 0 < N - m) (a : Nat) (ha : 0 < a) :
+    Dist.tv (rhoRoundFiniteCorrected N m hm hLpos hRpos a ha)
+        (rhoRoundIdealCorrected N m hm hLpos hRpos a ha) =
+      Dist.tv (rhoRoundFinite N m hm hLpos hRpos a ha)
+        (rhoRoundIdeal N m hm hLpos hRpos a ha) := by
+  classical
+  have hmap : (fun p : Equiv.Perm (Fin N) => p.symm) = (permInverseEquiv (Fin N)).toFun := rfl
+  simp only [rhoRoundFiniteCorrected, rhoRoundIdealCorrected]
+  rw [hmap]
+  exact tv_bijective_invariance (permInverseEquiv (Fin N)) _ _
+
+/-- **The corrected finite law is TV-equal to the uncorrected one against the
+    plain ideal law** — the direct comparison the A3 cheaper certificates stand on. -/
+theorem rhoRoundFiniteCorrected_tv_eq_rhoRoundFiniteIdeal (N m : Nat) (hm : m ≤ N)
+    (hLpos : 0 < m) (hRpos : 0 < N - m) (a : Nat) (ha : 0 < a) :
+    Dist.tv (rhoRoundFiniteCorrected N m hm hLpos hRpos a ha)
+        (rhoRoundIdeal N m hm hLpos hRpos a ha) =
+      Dist.tv (rhoRoundFinite N m hm hLpos hRpos a ha)
+        (rhoRoundIdeal N m hm hLpos hRpos a ha) := by
+  have h := rhoRoundFiniteCorrected_tv_eq_rhoRoundFinite N m hm hLpos hRpos a ha
+  rw [rhoRoundIdealCorrected_eq_rhoRoundIdeal] at h
+  exact h
+
+/-- **The unequal-alphabets orientation-corrected finite law.**  The product of the two
+    within-pile pullback laws pushed through the two-pile deck embedding:
+    `a_L` labels on the left pile, `a_R` labels on the right pile.  For
+    `a_L = a_R = a` this is exactly `rhoRoundFiniteCorrected` (see
+    `rhoRoundFiniteCorrectedU_eq_rhoRoundFiniteCorrected`).  This is the definition the
+    A3 cheaper certificates (22+22 / 22+21 binary riffles) stand on. -/
+noncomputable def rhoRoundFiniteCorrectedU (N m : Nat) (hm : m ≤ N) (hLpos : 0 < m)
+    (hRpos : 0 < N - m) (aL : Nat) (haL : 0 < aL) (aR : Nat) (haR : 0 < aR) :
+    Dist (Equiv.Perm (Fin N)) :=
+  (distProduct (BinaryStableSort.pullLaw m aL haL hLpos)
+               (BinaryStableSort.pullLaw (N - m) aR haR hRpos)).map (roundEmbedMap N m hm)
+
+/-- Equal alphabets: the unequal-alphabets law specializes to the corrected law. -/
+theorem rhoRoundFiniteCorrectedU_eq_rhoRoundFiniteCorrected (N m : Nat) (hm : m ≤ N)
+    (hLpos : 0 < m) (hRpos : 0 < N - m) (a : Nat) (ha : 0 < a) :
+    rhoRoundFiniteCorrectedU N m hm hLpos hRpos a ha a ha =
+      rhoRoundFiniteCorrected N m hm hLpos hRpos a ha :=
+  (rhoRoundFiniteCorrected_eq_productPullLaw N m hm hLpos hRpos a ha).symm
+
+/-- **The unequal-alphabets transport bound:** the corrected unequal-alphabet law is within
+    `choose(m,2)/aL + choose(N-m,2)/aR` of the ideal round law.  The chain:
+    the map-contraction through `roundEmbedMap`, the common `(symm, symm)` pushforward on
+    the product (TV invariance), and the per-pile `twoPilePermutationTV_bound`. -/
+theorem rhoRoundFiniteCorrectedU_tv_le (N m : Nat) (hm : m ≤ N) (hLpos : 0 < m)
+    (hRpos : 0 < N - m) (aL aR : Nat) (haL : 0 < aL) (haR : 0 < aR) :
+    Dist.tv (rhoRoundFiniteCorrectedU N m hm hLpos hRpos aL haL aR haR)
+        (rhoRoundIdeal N m hm hLpos hRpos aL haL) ≤
+      (m.choose 2 : Rat) / aL + ((N - m).choose 2 : Rat) / aR := by
+  haveI : DecidableEq (Equiv.Perm (Fin N)) := inferInstance
+  have h1 : Dist.tv (rhoRoundFiniteCorrectedU N m hm hLpos hRpos aL haL aR haR)
+        (rhoRoundIdeal N m hm hLpos hRpos aL haL) ≤
+      Dist.tv (distProduct (BinaryStableSort.pullLaw m aL haL hLpos)
+                           (BinaryStableSort.pullLaw (N - m) aR haR hRpos))
+        (distProduct (GSR.uniformDist (Equiv.Perm (Fin m)))
+                    (GSR.uniformDist (Equiv.Perm (Fin (N - m))))) :=
+    Dist.tv_map_contraction _ _ (roundEmbedMap N m hm)
+  have h2 : distProduct (BinaryStableSort.pullLaw m aL haL hLpos)
+                         (BinaryStableSort.pullLaw (N - m) aR haR hRpos) =
+      (distProduct (PermutationLaw.gsrPermutationLaw m aL haL hLpos)
+                   (PermutationLaw.gsrPermutationLaw (N - m) aR haR hRpos)).map
+        (fun z => (z.1.symm, z.2.symm)) :=
+    (distProduct_map_comp _ _ _ _).symm
+  have h3 : distProduct (GSR.uniformDist (Equiv.Perm (Fin m)))
+                    (GSR.uniformDist (Equiv.Perm (Fin (N - m)))) =
+      (distProduct (GSR.uniformDist (Equiv.Perm (Fin m)))
+                    (GSR.uniformDist (Equiv.Perm (Fin (N - m))))).map
+        (fun z => (z.1.symm, z.2.symm)) := by
+    rw [distProduct_map_comp, perm_inverse_uniform, perm_inverse_uniform]
+  have hmap : (fun z => (z.1.symm, z.2.symm)) =
+      ⇑(Equiv.prodCongr (permInverseEquiv (Fin m)) (permInverseEquiv (Fin (N - m)))) := by
+    funext z
+    rfl
+  have h4 : Dist.tv (distProduct (BinaryStableSort.pullLaw m aL haL hLpos)
+                                 (BinaryStableSort.pullLaw (N - m) aR haR hRpos))
+        (distProduct (GSR.uniformDist (Equiv.Perm (Fin m)))
+                    (GSR.uniformDist (Equiv.Perm (Fin (N - m))))) =
+      Dist.tv (distProduct (PermutationLaw.gsrPermutationLaw m aL haL hLpos)
+                           (PermutationLaw.gsrPermutationLaw (N - m) aR haR hRpos))
+        (distProduct (GSR.uniformDist (Equiv.Perm (Fin m)))
+                    (GSR.uniformDist (Equiv.Perm (Fin (N - m))))) := by
+    rw [h2]
+    conv_lhs => rw [h3]
+    rw [hmap]
+    exact tv_bijective_invariance (Equiv.prodCongr (permInverseEquiv (Fin m))
+                                                (permInverseEquiv (Fin (N - m)))) _ _
+  calc Dist.tv (rhoRoundFiniteCorrectedU N m hm hLpos hRpos aL haL aR haR)
+            (rhoRoundIdeal N m hm hLpos hRpos aL haL)
+      ≤ Dist.tv (distProduct (BinaryStableSort.pullLaw m aL haL hLpos)
+                            (BinaryStableSort.pullLaw (N - m) aR haR hRpos))
+                (distProduct (GSR.uniformDist (Equiv.Perm (Fin m)))
+                            (GSR.uniformDist (Equiv.Perm (Fin (N - m))))) := h1
+    _ = Dist.tv (distProduct (PermutationLaw.gsrPermutationLaw m aL haL hLpos)
+                             (PermutationLaw.gsrPermutationLaw (N - m) aR haR hRpos))
+                 (distProduct (GSR.uniformDist (Equiv.Perm (Fin m)))
+                             (GSR.uniformDist (Equiv.Perm (Fin (N - m))))) := h4
+    _ ≤ (m.choose 2 : Rat) / aL + ((N - m).choose 2 : Rat) / aR :=
+        twoPilePermutationTV_bound N m aL aR (Nat.lt_of_lt_of_le hLpos hm) hm hLpos hRpos haL haR
+
 /-- The corrected finite-GSR round kernel: swap first (left shuffle), then the
     orientation-corrected finite law. -/
 noncomputable def correctedFiniteRound : FiniteKernel Deck Deck :=
