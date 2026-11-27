@@ -591,6 +591,15 @@ dependent-subtype-rewrite wall documented in `g5-multipile-twoPile-reduction.md`
 it was deleted rather than committed — the landed `multiPile_equivFiber` route
 (`glueBlocks`) is the correct one and needs no new work.
 
+**2026-11-27 session 112 continuation v2 (the finset-level reverse identity landed):**
+`pickOfCardSet_mapPick_underlying` proves the underlying index finset of the pick built from
+`mapPick A i u` is the original index finset `u.1` — the load-bearing content of the reverse identity,
+proved via ext + image membership (forward: recover `x` from the image-source `y` via the equiv
+injectivity after `apply_symm_apply` + congrArg-on-`val`; reverse: exhibit the image witness as
+`⟨(pileEquivOf A i x).val, _⟩` and close via `symm_apply_apply`). The full subtype identity stays parked —
+the `Equiv.cast` projection does not reduce definitionally (the cast is Eq.mpr on a subtype with no
+clean subtype-cast simp lemma in this Mathlib), the same dependent-subtype wall class as the G5capstone.
+
 **2026-11-27 session 112 continuation (two-sided mapPick bijection, landed):** the
 card-set direction of the two-pile fixed-pair transport is now two-sided at the
 card-set level: `pickOfCardSet` (the reverse of `mapPick` — the pick whose card set is

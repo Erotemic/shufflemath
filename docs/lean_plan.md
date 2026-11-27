@@ -283,11 +283,15 @@ they do not establish the separate, still-open F1-F5 theorems.
 direction: `pickOfCardSet` (the reverse of `mapPick`: the pick whose card set is exactly `W`, via the
 size-bijection applied backwards through `pileEquivOf`, with the card count via `card_image_of_injOn`
 and `Fintype.card_coe`), `mapPick_pickOfCardSet` (the round trip: the card set of the built pick is
-`W`), and `mapPick_injective` (two picks with the same card set are equal). Wired into the aggregator
-and verify script (unchanged); build green, 37/37 tests. The remaining reverse identity
-`pickOfCardSet A i (mapPick A i u) hsub = u` is **recorded as a parked item** — the card
-annotation `(mapPick A i u).card` of the constructed pick cannot be rewritten into the target
-`Pick (n i) k` type (the dependent-subtype friction documented in the G5 strategy note) — not faked.
+`W`), `mapPick_injective` (two picks with the same card set are equal), and
+`pickOfCardSet_mapPick_underlying` (the underlying index finset of the pick built from
+`mapPick A i u` is the original index finset `u.1` — the finset-level content of the reverse identity,
+proved via ext + image-image membership + equiv injectivity + symm_apply_apply). Wired into the
+aggregator and verify script (unchanged); build green, 37/37 tests. The full subtype identity
+`Equiv.cast (congrArg (fun c => Pick (n i) c) (mapPick_card A i u)) (pickOfCardSet ...) = u`
+remains **recorded as a parked item** — the cast projection does not reduce definitionally and no
+subtype-cast simp lemma exists in this Mathlib (the dependent-subtype friction documented in the G5
+strategy note) — not faked; the finset-level content is the honest, landed half.
 > **Next on the G5 thread:** the `G5capstone` multi-pile exchange kernel-equality (the B4
 > histogram lumping + stationary law + final kernel-equality headline). Precise diagnosis + steps:
 > `docs/planning/proof-strategies/2026-12-31-g5-multipile-state-and-walls.md`.
