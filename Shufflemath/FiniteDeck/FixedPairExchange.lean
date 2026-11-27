@@ -132,6 +132,43 @@ theorem mapPick_injective {N p : Nat} {n : Fin p → Nat} (A : Allocation N p n)
     exact (pileEquivOf A i).injective hval
   exact (Finset.image_inj hinj').mp huhv
 
+/-- **Reverse of the round trip (finset level).**  The underlying index finset of the pick
+    built from `mapPick A i u` is the original index finset `u.1`.  This is the
+    finset-level content of the reverse identity `pickOfCardSet A i (mapPick A i u) hsub = u`
+    (the full subtype-identity as stated stays parked — the card annotation
+    `(mapPick A i u).card` of the constructed pick cannot be rewritten into the target
+    `Pick (n i) k` type — the documented dependent-subtype friction); the underlying
+    finset equality is the load-bearing half and is fully landed. -/
+theorem pickOfCardSet_mapPick_underlying {N p : Nat} {n : Fin p → Nat}
+    (A : Allocation N p n) (i : Fin p) (k : Nat) (u : Pick (n i) k) :
+    (pickOfCardSet A i (mapPick A i u) (fun x hx => mapPick_subset A i u hx)).1 = u.1 := by
+  ext x
+  simp only [pickOfCardSet, mapPick, Finset.mem_image, Finset.mem_univ, true_and]
+  constructor
+  · intro hy
+    obtain ⟨p, hp, hyx⟩ := hy
+    have hsymm : (pileEquivOf A i) ((pileEquivOf A i).symm ⟨p.1, mapPick_subset A i u p.2⟩)
+        = (pileEquivOf A i) x := congrArg (pileEquivOf A i) hyx
+    rw [Equiv.apply_symm_apply] at hsymm
+    have hval : p.1 = ((pileEquivOf A i) x).val := by
+      have h := congrArg (fun y : ↥(pileCard A i) => y.val) hsymm
+      exact h
+    have hmem : p.1 ∈ mapPick A i u := p.2
+    simp only [mapPick, Finset.mem_image] at hmem
+    obtain ⟨y, hyu, hyval⟩ := hmem
+    have hvv : ((pileEquivOf A i) x).val = ((pileEquivOf A i) y).val := by
+      rw [← hval]; exact hyval.symm
+    have hxy : (pileEquivOf A i) x = (pileEquivOf A i) y := Subtype.ext hvv
+    exact (pileEquivOf A i).injective hxy ▸ hyu
+  · intro hx
+    have hmem : (pileEquivOf A i x).val ∈ mapPick A i u :=
+      Finset.mem_image.mpr ⟨x, hx, rfl⟩
+    refine ⟨⟨(pileEquivOf A i x).val, hmem⟩, Finset.mem_univ _, ?_⟩
+    have h2 : (⟨(pileEquivOf A i x).val, mapPick_subset A i u hmem⟩ : ↥(pileCard A i))
+        = pileEquivOf A i x := Subtype.ext rfl
+    rw [h2]
+    exact Equiv.symm_apply_apply _ _
+
 /-- The raw owner function of the fixed-pair exchange: `U` (picked from pile `i`,
     mapped to cards) moves to pile `j`; `V` (picked from pile `j`) moves to pile
     `i`; every other card keeps its pile. -/
