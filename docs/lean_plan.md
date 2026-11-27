@@ -272,12 +272,10 @@ they do not establish the separate, still-open F1-F5 theorems.
 > is proved in `Shufflemath/FiniteDeck/Gate6ThreeRound.lean` (sub-lemmas A + B + the
 > ideal-kernel bridge + the n-step telescope + `gate6_headline_lt_thousandth`; the
 > `Eq.subst`/`hL ▸ t` trick avoids the `exchangeThenLocalReset` elaboration recursion).
-> **Next real item:** the batch-5b within-pile headline `rhoRoundIdeal 99 50 … =
-> localLift segMembership` (`GSRSegHeadline`) — remaining piece is the support equivalence
-> `d ∈ image (roundEmbedMap 99 50) ↔ membership d = segMembership`, a known elaboration-level
-> wall (never put the `(fiberOrbit_equiv …).val` deck in a goal; route via
-> `Finset.image_ofInjective` + `map_mass_eq_univ_fiber` + `localLift_mass`). Full detail in
-> [`agent_handoff.md`](agent_handoff.md).
+> **Next real item (session 111, 2026-11-27 — LANDED):** the batch-5b within-pile headline `rhoRoundIdeal 99 50 … =
+> localLift segMembership` (`GSRSegHeadline`) — landed. The support equivalence
+> `∃ p, roundEmbedMap 99 50 hm p = d ↔ CommanderMembershipKernels.membership d = segMembership`
+> is proved (`roundImage_iff_segMembership`, in `GSRSegHeadline.lean`): forward via `embed_m_imageLeft` + the `finiteDeck_leftCards_99_50_eq_commander` bridge (never put the `(fiberOrbit_equiv …).val` deck in a goal), reverse via `fiberOrbit_surjective` + the `act_d`/`Equiv.trans` decomposition (the `Equiv.ext` + `congrArg` idiom, avoiding `(fiberOrbit_equiv …).val` in the goal state). The headline `rhoRoundIdeal_eq_localLift_segMembership` (any `a` with `0 < a`) is then a mass computation on top of the landed pieces: `rhoRoundIdeal` unfolds to `distProduct` pushforward, `distProduct_uniform_is_uniformProd` + `map_injective_uniform_mass` (the whnf-safe injective-map workhorse) give the mass at `d` as `(card (Perm 50 × Perm (99-50)))⁻¹ = (50! · 49!)⁻¹` inside the fiber and `0` outside, `localLift_mass` + `fiberSet_segMembership_card` give the matching RHS, and `Dist.ext` closes it (the `if`-normalization via the support equivalence's `.mpr`/`.mp`, `if_pos`/`if_neg` per repo idiom). Full build green — 9044 jobs — 37/37 tests pass, 0 sorry/admit.
 
 > **Status (session 89, 2026-11-26, canonical module):** **Gate 6 orientation-corrected stable-sort round (M5c/M5d) LANDED** —
 > `Shufflemath/FiniteDeck/Gate6Corrected.lean` (in the verified build) corrects the finite law that the

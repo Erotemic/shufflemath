@@ -158,4 +158,89 @@ theorem fiberSet_segMembership_card :
     rw [← Fintype.card_subtype]
   simpa [hcard] using fiberSegMembership_card
 
+/-! **Gate 6 batch-5b — the support equivalence and the headline.**
+  The within-pile ideal round law `rhoRoundIdeal 99 50` is supported exactly on
+  the segregated-membership fiber, and it is uniform there — the perfect-local
+  law `localLift segMembership`. -/
+
+/-- The support equivalence: a deck is in the image of `roundEmbedMap 99 50` —
+  the carrier of the ideal round law — exactly when its membership is the
+  segregated membership.  Forward: the image deck `d = embed_m pl pr` has left-pile
+  contents equal to the segregated left positions (`embed_m_imageLeft`), so its
+  membership is the segregated membership.  Reverse: a deck with the segregated
+  membership shares the start deck's left-pile contents, so the fiber-orbit
+  surjectivity witnesses a within-pile pair mapping the identity start onto `d`. -/
+theorem roundImage_iff_segMembership (d : CommanderPermutation.Deck) :
+    (∃ p : Equiv.Perm (Fin 50) × Equiv.Perm (Fin 49),
+       roundEmbedMap 99 50 hm5099 p = d) ↔
+      CommanderMembershipKernels.membership d = segMembership := by
+  constructor
+  · -- forward: a within-pile relabeling keeps the segregated left card set.
+    rintro ⟨p, hp⟩
+    have hleftFin : FiniteDeck.leftCards 99 50 hm5099 d =
+        FiniteDeck.leftPositions 99 50 hm5099 := by
+      rw [← hp]
+      dsimp only [roundEmbedMap, FiniteDeck.leftCards]
+      exact embed_m_imageLeft 99 50 hm5099 p.1 p.2
+    apply (membership_iff_leftCards d).mpr
+    rw [← finiteDeck_leftCards_99_50_eq_commander]
+    exact hleftFin
+  · -- reverse: a deck with the segregated membership is a within-pile relabeling.
+    intro hm
+    have hleftCmd : CommanderPermutation.leftCards d = segLeft :=
+      (membership_iff_leftCards d).mp hm
+    have hleftFd : FiniteDeck.leftCards 99 50 hm5099 d =
+        FiniteDeck.leftPositions 99 50 hm5099 := by
+      rw [finiteDeck_leftCards_99_50_eq_commander]
+      exact hleftCmd
+    have hsegStart : FiniteDeck.leftCards 99 50 hm5099 segStart =
+        FiniteDeck.leftPositions 99 50 hm5099 := by
+      rw [finiteDeck_leftCards_99_50_eq_commander, leftCards_id_eq_segLeft]
+      rfl
+    have hfiber : FiniteDeck.leftCards 99 50 hm5099 d =
+        FiniteDeck.leftCards 99 50 hm5099 segStart :=
+      hleftFd.trans hsegStart.symm
+    obtain ⟨⟨pl, pr⟩, hsurj⟩ := fiberOrbit_surjective 99 50 hm5099 segStart ⟨d, hfiber⟩
+    have hdeck : act_d 99 50 hm5099 segStart pl pr = d :=
+      congrArg (fun z : {e : FiniteDeck.Deck 99 //
+        FiniteDeck.leftCards 99 50 hm5099 e = FiniteDeck.leftCards 99 50 hm5099 segStart} => z.1) hsurj
+    refine ⟨(pl, pr), ?_⟩
+    apply Equiv.ext
+    intro x
+    exact congrArg (fun e => e x) hdeck
+
+/-- **Batch-5b headline** — the within-pile ideal round law is the perfect-local
+  law over the segregated membership: `rhoRoundIdeal 99 50` pushes the uniform
+  two-pile product law through the embedding (the ideal law is alphabet-
+  independent), the `roundEmbedMap` image is exactly the segregated-membership
+  fiber (`roundImage_iff_segMembership`), and the fiber has exactly `50! · 49!`
+  elements (`fiberSet_segMembership_card`) — so the mass at `d` is `1 / (50! · 49!)`
+  inside the fiber and `0` outside.  This is the law the 23-per-pile / 22+22 /
+  22+21 terminal-only certificates use through `rowTV_*` bounds. -/
+theorem rhoRoundIdeal_eq_localLift_segMembership (a : Nat) (ha : 0 < a) :
+    rhoRoundIdeal 99 50 hm5099 (by norm_num) (by norm_num) a ha =
+      CommanderMembershipKernels.localLift segMembership := by
+  ext d
+  change Dist.mass (rhoRoundIdeal 99 50 hm5099 (by norm_num) (by norm_num) a ha) d =
+    Dist.mass (CommanderMembershipKernels.localLift segMembership) d
+  have hcard : Fintype.card (Equiv.Perm (Fin 50) × Equiv.Perm (Fin (99 - 50))) = 50! * 49! := by
+    rw [Fintype.card_prod, Fintype.card_perm, Fintype.card_perm]
+    norm_num [Fintype.card_fin]
+  have hLHS : Dist.mass (rhoRoundIdeal 99 50 hm5099 (by norm_num) (by norm_num) a ha) d =
+      (if ∃ p : Equiv.Perm (Fin 50) × Equiv.Perm (Fin 49), roundEmbedMap 99 50 hm5099 p = d then
+         (↑(50! * 49!) : Rat)⁻¹ else 0) := by
+    unfold rhoRoundIdeal
+    rw [distProduct_uniform_is_uniformProd]
+    have hmap := map_injective_uniform_mass (roundEmbedMap 99 50 hm5099) roundEmbedMap_99_50_injective d
+    rw [hcard] at hmap
+    exact hmap
+  have hRHS : Dist.mass (CommanderMembershipKernels.localLift segMembership) d =
+      (if CommanderMembershipKernels.membership d = segMembership then
+         (↑(50! * 49!) : Rat)⁻¹ else 0) := by
+    rw [CommanderMembershipKernels.localLift_mass, fiberSet_segMembership_card]
+  rw [hLHS, hRHS]
+  by_cases H : CommanderMembershipKernels.membership d = segMembership
+  · rw [if_pos H, if_pos ((roundImage_iff_segMembership d).mpr H)]
+  · rw [if_neg H, if_neg (fun h => H ((roundImage_iff_segMembership d).mp h))]
+
 end Shufflemath
