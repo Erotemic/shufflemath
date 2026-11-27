@@ -279,6 +279,11 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `GSR.map_injective_uniform_mass` + injectivity), `fixedPairKernel_rowSum` (total mass exactly `1`).
 > Wired into the `Shufflemath.lean` aggregator and `dev/verify_next_phase.sh`. Full build green
 > (9044 jobs), 37/37 tests pass, 0 sorry/admit.
+> **Session 112 (2026-11-27, final + delegation):** `mapPick_injective` is now a first-class
+corollary of `mapPick_eq_of_card_eq` (the two-sided transport) — the card set determines the pick;
+the two-sided transport is genuinely consumed by the allocation machinery, not just parallel to it.
+Build green (3194 jobs), 37/37 tests.
+
 > **Session 112 (2026-11-27, final + corollaries):** the two-sided transport is now also consumed —
 `mapPickEquiv_injective` (`Function.Injective (mapPickEquiv A i k)`, one line via `Equiv.injective`)
 and `mapPick_eq_of_card_eq` (two picks whose card sets are equal are equal — the card set determines
