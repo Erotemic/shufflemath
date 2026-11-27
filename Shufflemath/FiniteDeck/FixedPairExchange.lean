@@ -162,6 +162,44 @@ theorem pickOfCardSet'_mapPick {N p : Nat} {n : Fin p → Nat}
     rw [h2]
     exact Equiv.symm_apply_apply _ _
 
+/-- **Round trip (card-hypothesis form).**  The card set of the pick built from `W` by
+     `pickOfCardSet'` is `W` itself. -/
+theorem mapPick_pickOfCardSet' {N p : Nat} {n : Fin p → Nat}
+    (A : Allocation N p n) (i : Fin p) (W : Finset (Fin N))
+    (hsub : ∀ x ∈ W, x ∈ pileCard A i) (hcard : W.card = k) :
+    mapPick A i (pickOfCardSet' A i W hsub hcard) = W := by
+  ext x
+  simp only [mapPick, pickOfCardSet']
+  rw [Finset.image_image]
+  rw [Finset.image_congr (fun p _ => by
+    change (pileEquivOf A i ((pileEquivOf A i).symm ⟨p.1, hsub p.1 p.2⟩)).val = p.1
+    rw [Equiv.apply_symm_apply, Subtype.coe_mk])]
+  constructor
+  · intro hx
+    simp only [Finset.mem_image, Finset.mem_univ, true_and] at hx
+    obtain ⟨p, hp, hxp⟩ := hx
+    exact p.2
+  · intro hx
+    refine Finset.mem_image.mpr ⟨⟨x, hx⟩, ?_, rfl⟩
+    exact Finset.mem_univ _
+
+/-- The pile card sets: the `k`-subsets of pile `i`'s cards. -/
+def pileCardSet (A : Allocation N p n) (i : Fin p) (k : Nat) : Type :=
+  {W : Finset (Fin N) // W ⊆ pileCard A i ∧ W.card = k}
+
+/-- **The two-sided transport.**  `mapPick` (pick → card set) and
+     `pickOfCardSet'` (card set → pick) are inverse bijections between the picks
+     of pile `i` and its `k`-card subsets. -/
+noncomputable def mapPickEquiv (A : Allocation N p n) (i : Fin p) (k : Nat) :
+    Equiv (Pick (n i) k) (pileCardSet A i k) :=
+  Equiv.mk
+    (fun u : Pick (n i) k => (⟨mapPick A i u, mapPick_subset A i u, mapPick_card A i u⟩ : pileCardSet A i k))
+    (fun W => pickOfCardSet' A i W.1 (fun x hx => W.2.1 hx) W.2.2)
+    (fun u => pickOfCardSet'_mapPick A i k u)
+    (fun W => by
+      apply Subtype.ext
+      exact mapPick_pickOfCardSet' A i W.1 (fun x hx => W.2.1 hx) W.2.2)
+
 /-- **Round trip** — the card set of a pick built from `W` is `W`. -/
 theorem mapPick_pickOfCardSet {N p : Nat} {n : Fin p → Nat} (A : Allocation N p n)
     (i : Fin p) (W : Finset (Fin N)) (hsub : ∀ x ∈ W, x ∈ pileCard A i) :
