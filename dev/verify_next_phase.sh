@@ -56,6 +56,7 @@ lake build \
   Shufflemath.FiniteDeck.HistogramFiber \
   Shufflemath.FiniteDeck.HistogramKernel \
   Shufflemath.FiniteDeck.PileEquiv \
+  Shufflemath.FiniteDeck.MultiPileFiber \
   Shufflemath.FiniteDeck.MultiPileOrbit \
   Shufflemath.FiniteDeck.MultiPileExchange \
   Shufflemath.FiniteDeck.A1Witness \
