@@ -420,5 +420,116 @@ theorem binary23_eq_compPow_pullLaw_23 (n : Nat) (hn : 0 < n) :
       FiniteKernel.compPow (permutationActionKernel (pullLaw n 2 (by norm_num) hn)) 23 :=
   (compPow_pullLaw n hn 23).symm
 
+/-! ## The full-deck two-pile composition law (kernel-level) -/
+
+/-- **The kernel-level composition of two action kernels is the action kernel of
+the convolution of the noise laws.**  With `W` the noise of the first round and
+`W'` the noise of the second, the composition
+`PAK W ; PAK W'` is the single action kernel of the `*`-convolution law
+`conv W W'`.  This is the one-step `*`-composition of the action kernels — the
+group-level convolution the two-pile rounds compose by. -/
+theorem comp_pak_eq_pak_conv {N : Nat} (W W' : Dist (Deck N)) :
+    FiniteKernel.comp (permutationActionKernel W) (permutationActionKernel W') =
+      permutationActionKernel (FiniteDeck.conv W W') := by
+  funext d
+  show FiniteKernel.apply ((permutationActionKernel W) d) (permutationActionKernel W') =
+        (permutationActionKernel (FiniteDeck.conv W W')) d
+  show FiniteKernel.apply (W.map fun p => FiniteDeck.act p d) (permutationActionKernel W') =
+        (FiniteDeck.conv W W').map (fun p => FiniteDeck.act p d)
+  exact convMapEqApplyMap W W' d
+
+/-- **The `t`-fold composition of an action kernel is the action kernel of the
+`t`-fold convolution power.**  Induction on `t`: base `compPow 0 = identity`
+(the `a = 1` case is a point mass at the identity, the zero-noise law), step by
+the one-step composition law and `powConv`'s recursive definition. -/
+theorem compPow_pak_eq_pak_powConv {N : Nat} (W : Dist (Deck N)) (t : Nat) :
+    FiniteKernel.compPow (permutationActionKernel W) t =
+      permutationActionKernel (FiniteDeck.powConv W t) := by
+  induction t with
+  | zero =>
+      rw [FiniteKernel.compPow_zero]
+      funext d
+      show Dist.pointMass d = (permutationActionKernel (Dist.pointMass (Equiv.refl (Fin N)))) d
+      show Dist.pointMass d = (Convexity.StdSimplex.single (Equiv.refl (Fin N))).map (fun p => p.trans d)
+      rw [Convexity.StdSimplex.map_single, Equiv.refl_trans]
+      rfl
+  | succ t ih =>
+      rw [FiniteKernel.compPow_succ, ih, comp_pak_eq_pak_conv]
+      rfl
+
+/-- **The two-pile binary-riffle bridge (kernel level).**  The `t`-fold
+iterated binary stable sort of the two-pile round law (left/right within-pile
+`2`-label stable sorts, `t` binary riffles per pile) is exactly the action
+kernel of the `t`-fold convolution power of the two-pile round law — the honest
+`t`-fold full-deck two-pile composition.  The concrete specialization
+`t = 23`, `2 ^ t = 2 ^ 23` labels, is the A2 follow-up; the kernel-level
+identity here is the `2^t`-label content the A2 assembly stands on (the
+within-pile-`2^t` ↔ `t`-fold-binary law identification is the remaining step). -/
+theorem compPow_rhoRoundFinite (N m : Nat) (hm : m ≤ N) (hLpos : 0 < m) (hRpos : 0 < N - m)
+    (t : Nat) :
+    FiniteKernel.compPow (permutationActionKernel (rhoRoundFinite N m hm hLpos hRpos 2 (by norm_num))) t =
+      permutationActionKernel (FiniteDeck.powConv (rhoRoundFinite N m hm hLpos hRpos 2 (by norm_num)) t) :=
+  compPow_pak_eq_pak_powConv _ _
+
+/-- **The two-pile per-deck bridge.**  The `t`-fold two-pile binary-riffle
+kernel applied to a deterministic start `d` is the action kernel of the
+`t`-fold convolution power of the two-pile round law at `d` — the per-deck
+law-level form of the two-pile bridge. -/
+theorem compPow_rhoRoundFinite_apply_pointMass (N m : Nat) (hm : m ≤ N)
+    (hLpos : 0 < m) (hRpos : 0 < N - m) (t : Nat) (d : Deck N) :
+    FiniteKernel.apply (Dist.pointMass d)
+        (FiniteKernel.compPow (permutationActionKernel (rhoRoundFinite N m hm hLpos hRpos 2 (by norm_num))) t) =
+      FiniteKernel.apply (Dist.pointMass d)
+        (permutationActionKernel (FiniteDeck.powConv (rhoRoundFinite N m hm hLpos hRpos 2 (by norm_num)) t)) := by
+  rw [compPow_rhoRoundFinite]
+
+
+/-! ## The law-level composition law -/
+
+/-- **Injectivity of the action kernel** at the identity deck: pushing the
+noise law through `p.trans (Equiv.refl (Fin N)) = id` makes the kernel of two
+laws distinguishable — `PAK S = PAK T → S = T`.  (Concretely: `S.map id =
+T.map id`, so the two source laws coincide.) -/
+theorem permutationActionKernel_injective {N : Nat} (S T : Dist (Deck N))
+    (h : permutationActionKernel S = permutationActionKernel T) : S = T := by
+  have h1 := congrFun h (Equiv.refl (Fin N))
+  simp only [permutationActionKernel] at h1
+  have heq : (fun p : Equiv.Perm (Fin N) => p.trans (Equiv.refl (Fin N))) = id := by
+    funext p
+    rw [Equiv.trans_refl]
+    rfl
+  rw [heq] at h1
+  simp only [Convexity.StdSimplex.map_id] at h1
+  exact h1
+
+/-- **The law-level composition of the pullback laws is the pullback law of the
+product** — the within-pile composition identity the `t`-fold bridge stands on.
+Proved via kernel-level `comp_pullLaw` (the `*`-composition kernel) plus the
+injectivity of the action kernel. -/
+theorem conv_pullLaw (n a b : Nat) (ha : 0 < a) (hb : 0 < b) (hn : 0 < n) :
+    FiniteDeck.conv (pullLaw n a ha hn) (pullLaw n b hb hn) = pullLaw n (a * b) (mul_pos ha hb) hn := by
+  apply permutationActionKernel_injective _ _
+  rw [← comp_pak_eq_pak_conv]
+  exact comp_pullLaw n a b ha hb hn
+
+/-- **The `t`-fold convolution power of the `2`-label pullback law is the
+`2^t`-label pullback law.**  The law-level form of the binary-riffle bridge
+(independent of the kernel-level `compPow_pullLaw`, via the law-level
+composition `conv_pullLaw`). -/
+theorem powConv_pullLaw (n : Nat) (hn : 0 < n) (t : Nat) :
+    FiniteDeck.powConv (pullLaw n 2 (by norm_num) hn) t = pullLaw n (2 ^ t) (by positivity) hn := by
+  induction t with
+  | zero =>
+      show FiniteDeck.powConv (pullLaw n 2 (by norm_num) hn) 0 = pullLaw n 1 (by positivity) hn
+      rw [pullLaw_a1]
+      rfl
+  | succ t ih =>
+      rw [show FiniteDeck.powConv (pullLaw n 2 (by norm_num) hn) (t + 1) =
+            FiniteDeck.conv (FiniteDeck.powConv (pullLaw n 2 (by norm_num) hn) t)
+                              (pullLaw n 2 (by norm_num) hn) from rfl,
+          ih, conv_pullLaw]
+      congr 1
+
+
 end BinaryStableSort
 end Shufflemath
