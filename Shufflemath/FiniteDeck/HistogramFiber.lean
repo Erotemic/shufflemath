@@ -1597,5 +1597,31 @@ theorem histogramTransition_eq_sum_lumpedTransition (N m r0 r1 k : Nat)
     ring
   · rw [ite_eq_right h, ite_eq_right h]
 
+/-- **G5 capstone (two-pile / two-color scope): the histogram-level exchange kernel is a
+stochastic kernel with the lumped π law stationary.**  The three landed pillars —
+the row-sum-1 of the kernel over the valid histogram state space, the πK = π
+stationarity over the same state space, and the π law's total mass — are assembled
+here as one named statement: for any valid `X` (source) and valid `Y` (target), the
+k-exchange histogram-level kernel over the valid two-pile/two-color histogram space sums
+to `1` along the source row, the lumped π law is stationary under the kernel
+(`∑_X π(X)·K(X,Y) = π(Y)`), and the π law itself is a probability measure
+(`∑_X π(X) = 1`).
+
+This is the G5 headline at the two-pile/two-color scope; the general `k`-pile
+`∏_c Sym(color^{-1}(c))` orbit-class theorem is the open extension (recorded as parked
+in `docs/planning/proof-strategies/2026-12-31-g5-multipile-state-and-walls.md`). -/
+theorem histogramExchange_stochastic_stationary (N m r0 r1 k : Nat)
+    (hm : m ≤ N) (hr : r0 + r1 = N)
+    (hk1 : k ≤ m) (hk2 : k ≤ N - m)
+    (X Y : Hist2 N) (hX : X ∈ validHistSet N m r0 r1) (hY : Y ∈ validHistSet N m r0 r1) :
+    (∑ X' ∈ validHistSet N m r0 r1, histogramTransition N m r0 r1 k X X') = 1 ∧
+    (∑ X ∈ validHistSet N m r0 r1,
+      validHistPi N m r0 r1 X * histogramTransition N m r0 r1 k X Y) =
+      validHistPi N m r0 r1 Y ∧
+    (∑ X ∈ validHistSet N m r0 r1, validHistPi N m r0 r1 X) = 1 :=
+  ⟨histogramTransition_rowSum N m r0 r1 k hm hr hk1 hk2 X hX,
+    histogramTransition_stationary N m r0 r1 k hm hr hk1 hk2 Y hY,
+    validHistPi_mass N m r0 r1 hm hr⟩
+
 end FiniteDeck
 end Shufflemath

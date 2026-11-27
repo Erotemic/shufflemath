@@ -241,7 +241,14 @@ they do not establish the separate, still-open F1-F5 theorems.
 > three-round thread below is unchanged.
 >
 > **G5 resume point (2026-12-31/32 update):** the two structural walls from the 2026-12-31
-> follow-up are now **resolved and landed**. (1) `Histograms.lean` (B3 lumping core) builds
+> follow-up are now **resolved and landed**.  A further increment landed 2026-11-26 (session 99):
+> **the G5 capstone (two-pile/two-color scope) is landed** — `histogramExchange_stochastic_stationary`
+> in `Shufflemath/FiniteDeck/HistogramFiber.lean` — the three landed pillars assembled as one
+> named headline: the histogram-level two-pile exchange kernel is a stochastic kernel (row-sum 1
+> over the valid histogram state space), the lumped π law is stationary under the kernel (πK = π
+> at every valid target), and the π law is a probability (`∑ π(X) = 1`). The many-pile
+> `∏_c Sym(color^{-1}(c))` orbit-class theorem remains parked (documented as the open extension
+> in the G5 strategy note). (1) `Histograms.lean` (B3 lumping core) builds
 > green (import-exposure fix) and is integrated. (2) The general-`k` product-factorial fiber
 > count is **landed and green**: `multiPile_equivFiber` (fiber ≃ per-pile equiv family) +
 > `multiPile_card : Fintype.card (MultiFiber N k P C) = ∏_i (|C i|)!` in
