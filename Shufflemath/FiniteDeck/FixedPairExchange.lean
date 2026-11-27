@@ -237,18 +237,12 @@ theorem mapPick_pickOfCardSet {N p : Nat} {n : Fin p → Nat} (A : Allocation N 
     exact Finset.mem_univ _
 
 /-- **Injectivity** — the card map is injective on picks: two picks with the
-    same card set are equal. -/
+    same card set are equal.  (A first-class corollary of the two-sided transport:
+    `mapPick_eq_of_card_eq` reads the card-set equality into the pick equality.) -/
 theorem mapPick_injective {N p : Nat} {n : Fin p → Nat} (A : Allocation N p n)
     (i : Fin p) (k : Nat) :
-    Function.Injective (mapPick A i (k := k)) := by
-  intro u v huhv
-  apply Subtype.ext
-  simp only [mapPick] at huhv
-  have hinj' : Function.Injective (fun y : Fin (n i) => (pileEquivOf A i y).val) := by
-    intro a b h
-    have hval : pileEquivOf A i a = pileEquivOf A i b := Subtype.ext h
-    exact (pileEquivOf A i).injective hval
-  exact (Finset.image_inj hinj').mp huhv
+    Function.Injective (mapPick A i (k := k)) :=
+  fun u v huhv => mapPick_eq_of_card_eq A i k u v huhv
 
 /-- **Reverse of the round trip (finset level).**  The underlying index finset of the pick
     built from `mapPick A i u` is the original index finset `u.1`.  This is the
