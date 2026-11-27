@@ -73,6 +73,7 @@ lake build \
   Shufflemath.FiniteDeck.TwoPositionLaw \
   Shufflemath.FiniteDeck.UniformTransport \
   Shufflemath.FiniteDeck.HandSecrecy \
+  Shufflemath.FiniteDeck.JointHand \
   Shufflemath.IndexedRun \
   Shufflemath.FiniteDeck.IndexedTransfer
 

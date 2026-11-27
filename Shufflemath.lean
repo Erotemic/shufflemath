@@ -71,5 +71,6 @@ public import Shufflemath.FiniteDeck.DealBatch
 public import Shufflemath.FiniteDeck.TwoPositionLaw
 public import Shufflemath.FiniteDeck.UniformTransport
 public import Shufflemath.FiniteDeck.HandSecrecy
+public import Shufflemath.FiniteDeck.JointHand
 public import Shufflemath.IndexedRun
 public import Shufflemath.FiniteDeck.IndexedTransfer
