@@ -845,4 +845,25 @@ theorem uniform_transport_transferKernel_comp
   rw [uniform_transport_transferKernel i₁ j₁ t₁ hij1 ht1 hsum]
   exact uniform_transport_transferKernel i₂ j₂ t₂ hij2 ht2 (transferCap_sum hsum ht1 hij1)
 
+/-- Three-step run — the composition of three transfer kernels along arbitrary
+pile pairs transports the uniform law from the source carrier to the final
+carrier.  Built on `uniform_transport_transferKernel_comp` for the first two
+steps, then the session-94 headline at the third step. -/
+theorem uniform_transport_transferKernel_comp3
+    {i₁ j₁ i₂ j₂ i₃ j₃ : Fin p} {t₁ t₂ t₃ : Nat}
+    (hij1 : i₁ ≠ j₁) (ht1 : t₁ ≤ n i₁)
+    (hij2 : i₂ ≠ j₂) (ht2 : t₂ ≤ (transferCap n i₁ j₁ t₁) i₂)
+    (hij3 : i₃ ≠ j₃) (ht3 : t₃ ≤ (transferCap (transferCap n i₁ j₁ t₁) i₂ j₂ t₂) i₃)
+    (hsum : (∑ k, n k) = N) :
+    FiniteKernel.apply (uniformAlloc hsum)
+        (FiniteKernel.comp (FiniteKernel.comp
+          (transferKernel i₁ j₁ t₁ hij1 ht1) (transferKernel i₂ j₂ t₂ hij2 ht2))
+          (transferKernel i₃ j₃ t₃ hij3 ht3))
+      = uniformTransferAlloc i₃ j₃ t₃ hij3
+          (transferCap_sum (transferCap_sum hsum ht1 hij1) ht2 hij2) ht3 := by
+  rw [← FiniteKernel.apply_comp]
+  rw [uniform_transport_transferKernel_comp hij1 ht1 hij2 ht2 hsum]
+  exact uniform_transport_transferKernel i₃ j₃ t₃ hij3 ht3
+    (transferCap_sum (transferCap_sum hsum ht1 hij1) ht2 hij2)
+
 end Shufflemath.FiniteDeck
