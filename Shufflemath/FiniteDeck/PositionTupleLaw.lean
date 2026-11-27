@@ -1,6 +1,8 @@
 module
 
 public import Shufflemath.FiniteDeck.HandSecrecy
+public import Shufflemath.FiberDisintegration
+public import Shufflemath.FiniteDeck.HistogramKernel
 
 @[expose] public section
 
@@ -11,9 +13,8 @@ The hand-secrecy arc (`HandSecrecy.lean`) lands the *set*-level statement:
 the card set of the first `k` deck positions is uniform over the `k`-subsets.
 This module lands the **identity-level** counterpart: the **ordered `m`-tuple
 of cards at the first `m` deck positions** is uniform over the injective `m`-tuples —
-every ordered tuple `q : Fin m → Fin N` with distinct cards carries mass
-`(Nat.factorial (N - m) : Rat) / (Nat.factorial N : Rat)` under the uniform deck law,
-the reciprocal of `Nat.choose N m * Nat.factorial m`.  This is the "known vs
+every injective ordered tuple `q : Fin m → Fin N` carries mass
+`1 / (N.descFactorial m)` under the uniform deck law.  This is the "known vs
 unknown card identities" extension of the secrecy story: the hand-set law treats
 the hand as *sets* (order discarded); this law treats the hand as an *ordered
 tuple of identities*.
@@ -29,6 +30,15 @@ Proof shape (mirroring the joint-hand and hand-secrecy laws):
    complement, the complement block via `Fintype.equivOfCardEq`).
 5. **`tuple_fiber_card`** — the fibers of the observation for two valid tuples
    are equal (the `d ↦ d.trans τ` bijection).
+6. **`tuple_fiber_empty_of_not_injective`** — non-injective tuples have empty fibers.
+7. **`tupleExtensionEquiv`** — the extension bijection
+   `{q : Fin (k+1) → Fin N // Injective q} ≃ Σ (q : {q' : Fin k → Fin N // Injective q'}), {c : Fin N // c ∉ image q.1 univ}`.
+8. **`card_injective`** — the injective-`m`-tuple count
+   `Fintype.card {q : Fin m → Fin N // Injective q} = N.descFactorial m`
+   (the falling-factorial count; induction via the extension equiv + the complement
+   count `N - k`).
+9. **`tuple_uniform_law`** — the headline: every injective tuple carries mass
+   `1 / N.descFactorial m` under the uniform deck law.
 
 No ratio of factorials is computed except at the final `field_simp`.
 -/
@@ -228,5 +238,195 @@ theorem tuple_fiber_empty_of_not_injective (q : Fin m → Fin N)
     exact hij h5
   rw [hEmpty]
   rfl
+
+
+/-! ## The extension bijection and the falling-factorial count -/
+
+/-- The last position's card is never in the image of the cast-Succ positions. -/
+theorem last_not_in_image (N : Nat) (k : Nat) (q : Fin (k+1) → Fin N) (hq : Function.Injective q) :
+    q (Fin.last k) ∉ Finset.image (q ∘ Fin.castSucc) Finset.univ := by
+  intro h
+  obtain ⟨i, _, hi⟩ := Finset.mem_image.mp h
+  have hEq : q (Fin.castSucc i) = q (Fin.last k) := hi
+  have := hq hEq
+  exact Fin.castSucc_ne_last i this
+
+/-- Extending an injective `k`-tuple by a fresh card yields a fresh injective tuple. -/
+theorem extendTuple_injective (N : Nat) (k : Nat) (q : Fin k → Fin N)
+    (hq : Function.Injective q) (c : Fin N) (hc : c ∉ Finset.image q Finset.univ) :
+    Function.Injective (fun i => Fin.lastCases (motive := fun _ => Fin N) c (fun j => q j) i) := by
+  intro i j hij
+  cases i using Fin.lastCases with
+  | last =>
+    cases j using Fin.lastCases with
+    | last => rfl
+    | cast j =>
+      have hEq : c = q j := by simpa using hij
+      have hmem : c ∈ Finset.image q Finset.univ := by
+        rw [Finset.mem_image]
+        exact ⟨j, Finset.mem_univ _, hEq.symm⟩
+      exact absurd hmem hc
+  | cast i =>
+    cases j using Fin.lastCases with
+    | last =>
+      have hEq : q i = c := by simpa using hij
+      have hmem : c ∈ Finset.image q Finset.univ := by
+        rw [Finset.mem_image]
+        exact ⟨i, Finset.mem_univ _, hEq⟩
+      exact absurd hmem hc
+    | cast j =>
+      have hEq : q i = q j := by simpa using hij
+      have hijs : i = j := hq hEq
+      exact congrArg Fin.castSucc hijs
+
+/-- **The extension bijection.** An injective `(k+1)`-tuple is the same as an
+    injective `k`-tuple plus a fresh card for the last position — the
+    `Fin.lastCases` / `Equiv.ofBijective` idiom. -/
+noncomputable def tupleExtensionEquiv (N k : Nat) :
+    {q : Fin (k+1) → Fin N // Function.Injective q}
+    ≃ Σ (q : {q' : Fin k → Fin N // Function.Injective q'}),
+        {c : Fin N // c ∉ Finset.image q.1 Finset.univ} := by
+  refine Equiv.ofBijective
+    (fun q =>
+      (⟨⟨fun i => q.1 (Fin.castSucc i), by
+        apply Function.Injective.comp q.2 (Fin.castSucc_injective k)⟩,
+       ⟨q.1 (Fin.last k), last_not_in_image N k q.1 q.2⟩⟩))
+    ?_
+  · constructor
+    · intro a b hab
+      have hLast : a.1 (Fin.last k) = b.1 (Fin.last k) := by
+        have := congrArg (fun x => x.2.1) hab
+        exact this
+      have hInit' : ∀ i : Fin k, a.1 (Fin.castSucc i) = b.1 (Fin.castSucc i) := by
+        have := congrArg (fun x => x.1.1) hab
+        intro i
+        exact congrFun this i
+      have deq : a.1 = b.1 := by
+        funext i
+        cases i using Fin.lastCases with
+        | last => exact hLast
+        | cast j => exact hInit' j
+      exact Subtype.ext deq
+    · intro x
+      refine ⟨⟨fun i => Fin.lastCases (motive := fun _ => Fin N) x.2.1 (fun j => x.1.1 j) i,
+        ?_⟩, ?_⟩
+      · apply extendTuple_injective _ _ _ x.1.2 x.2.1 x.2.2
+      · ext
+        simp
+        dsimp only
+        simp [Fin.lastCases]
+
+/-- The complement of the image of an injective `k`-tuple has `N - k` cards. -/
+theorem card_complement (N k : Nat) (q : Fin k → Fin N) (hq : Function.Injective q) :
+    Fintype.card {c : Fin N // c ∉ Finset.image q Finset.univ} = N - k := by
+  rw [Fintype.card_subtype_compl]
+  have hCard : Fintype.card {c : Fin N // c ∈ Finset.image q Finset.univ} = k := by
+    have h1 : Fin k ≃ {c : Fin N // c ∈ Finset.image q Finset.univ} :=
+      Equiv.ofBijective (fun i => ⟨q i, by rw [Finset.mem_image]; exact ⟨i, Finset.mem_univ _, rfl⟩⟩)
+        ⟨by intro a b h; exact hq (congrArg Subtype.val h),
+         fun y => by
+           obtain ⟨i, _, h⟩ := Finset.mem_image.mp y.2
+           exact ⟨i, Subtype.ext h⟩⟩
+    rw [Fintype.card_congr h1.symm, Fintype.card_fin]
+  rw [Fintype.card_fin, hCard]
+
+/-- **The injective-tuple count (the falling factorial).** The number of
+    injective `m`-tuples of cards is `N.descFactorial m` — `N` choices for the
+    first card, `N - 1` for the second, …, `N - m + 1` for the last. Induction
+    via the extension bijection and the complement count `N - k`. -/
+theorem card_injective (N m : Nat) :
+    Fintype.card {q : Fin m → Fin N // Function.Injective q} = N.descFactorial m := by
+  induction m with
+  | zero => rfl
+  | succ k ih =>
+    have he : Fintype.card {q : Fin (k+1) → Fin N // Function.Injective q}
+        = Fintype.card (Σ (q : {q' : Fin k → Fin N // Function.Injective q'}),
+            {c : Fin N // c ∉ Finset.image q.1 Finset.univ}) := by
+      rw [Fintype.card_congr (tupleExtensionEquiv N k)]
+    rw [he, Fintype.card_sigma]
+    have hvals : ∀ q : {q' : Fin k → Fin N // Function.Injective q'},
+        Fintype.card {c : Fin N // c ∉ Finset.image q.1 Finset.univ} = N - k := by
+      intro q
+      exact card_complement N k q.1 q.2
+    simp_rw [hvals]
+    rw [Finset.sum_const, Finset.card_univ, smul_eq_mul, Nat.mul_comm]
+    rw [ih, Nat.descFactorial_succ]
+
+/-- **The ordered-tuple uniform law (headline).** Under the uniform deck law,
+    every injective ordered `m`-tuple of cards at the first `m` positions is
+    uniform over the injective `m`-tuples — each carries mass
+    `1 / (N.descFactorial m)`. The non-injective tuples have empty fibers; the
+    injective tuples number `N.descFactorial m`; the fibers for two injective
+    tuples are equal; the sum over all tuples is `N!`. -/
+theorem tuple_uniform_law (N : Nat) [Nonempty (Equiv.Perm (Fin N))]
+    (m : Nat) (hm : m ≤ N) (q : Fin m → Fin N) (hq : Function.Injective q) :
+    Dist.mass ((GSR.uniformDist (Equiv.Perm (Fin N))).map
+      (fun d => handTuple N m hm d)) q =
+      (1 : Rat) / (N.descFactorial m : Rat) := by
+  set K := ((Finset.univ : Finset (Equiv.Perm (Fin N))).filter
+    (fun d => handTuple N m hm d = q)).card with hK
+  have hsumExact : (∑ q' : Fin m → Fin N, ((Finset.univ : Finset (Equiv.Perm (Fin N))).filter
+      (fun d => handTuple N m hm d = q')).card) = Nat.factorial N := by
+    have h := Shufflemath.FiberDisintegration.sum_fiber_card
+      (fun d : Equiv.Perm (Fin N) => handTuple N m hm d)
+    have hcard_eq : (Fintype.card (Equiv.Perm (Fin N)) : Rat) = (Nat.factorial N : Rat) := by
+      rw [Fintype.card_perm, Fintype.card_fin]
+    rw [hcard_eq] at h
+    exact_mod_cast h
+  have hEmpty : ∀ q' : Fin m → Fin N, ¬ Function.Injective q' →
+      ((Finset.univ : Finset (Equiv.Perm (Fin N))).filter
+        (fun d => handTuple N m hm d = q')).card = 0 := by
+    intro q' hq'
+    exact tuple_fiber_empty_of_not_injective q' hq'
+  have hcard_filter : (Finset.univ.filter (fun q' : Fin m → Fin N => Function.Injective q')).card =
+      N.descFactorial m := by
+    rw [← Fintype.card_subtype]
+    exact card_injective N m
+  have hsumN : (∑ q' : Fin m → Fin N, ((Finset.univ : Finset (Equiv.Perm (Fin N))).filter
+      (fun d => handTuple N m hm d = q')).card) = N.descFactorial m * K := by
+    rw [← Finset.sum_filter_add_sum_filter_not Finset.univ
+      (fun q' : Fin m → Fin N => Function.Injective q')]
+    have hNot : ∑ q' ∈ Finset.univ.filter (fun q' : Fin m → Fin N => ¬ Function.Injective q'),
+        ((Finset.univ : Finset (Equiv.Perm (Fin N))).filter
+          (fun d => handTuple N m hm d = q')).card = 0 := by
+      apply Finset.sum_eq_zero
+      intro q' h'
+      exact hEmpty q' (Finset.mem_filter.mp h').2
+    rw [hNot, add_zero]
+    have hPer : ∑ q' ∈ Finset.univ.filter (fun q' : Fin m → Fin N => Function.Injective q'),
+        ((Finset.univ : Finset (Equiv.Perm (Fin N))).filter
+          (fun d => handTuple N m hm d = q')).card =
+        ∑ q' ∈ Finset.univ.filter (fun q' : Fin m → Fin N => Function.Injective q'), K := by
+      apply Finset.sum_congr rfl
+      intro q' h'
+      have hcard' := tuple_fiber_card (hm := hm) q' q (Finset.mem_filter.mp h').2 hq
+      have hcard'' : (Finset.univ.filter (fun d => handTuple N m hm d = q')).card = K := by
+        calc (Finset.univ.filter (fun d => handTuple N m hm d = q')).card
+            = (Finset.univ.filter (fun d => handTuple N m hm d = q)).card := hcard'
+          _ = K := hK
+      exact hcard''
+    rw [hPer, Finset.sum_const, hcard_filter]
+    ring
+  have hfactN : Nat.factorial N = N.descFactorial m * K := hsumExact.symm.trans hsumN
+  have hchoose_pos : 0 < N.descFactorial m := by
+    rw [Nat.descFactorial_pos]
+    exact hm
+  have hchoose_pos_ne : (N.descFactorial m : Rat) ≠ 0 := by
+    exact Nat.cast_ne_zero.mpr (Nat.ne_of_gt hchoose_pos)
+  have hKpos : 0 < K := by
+    by_contra h
+    have hK0 : K = 0 := by omega
+    have hzero : Nat.factorial N = 0 := by
+      rw [hfactN, hK0, mul_zero]
+    have hNfact : 0 < Nat.factorial N := Nat.factorial_pos N
+    omega
+  rw [Shufflemath.GenericPairObservation.uniformMap_mass_card]
+  have hcard_eq : (Fintype.card (Equiv.Perm (Fin N)) : Rat) = (Nat.factorial N : Rat) := by
+    rw [Fintype.card_perm, Fintype.card_fin]
+  have hfactRat : (Nat.factorial N : Rat) = (N.descFactorial m : Rat) * (K : Rat) := by
+    exact_mod_cast hfactN
+  have hK_ne : (K : Rat) ≠ 0 := by exact_mod_cast (Nat.ne_of_gt hKpos)
+  rw [hcard_eq, hfactRat, ← hK]
+  field_simp [hchoose_pos_ne, hK_ne]
 
 end Shufflemath.FiniteDeck
