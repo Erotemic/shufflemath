@@ -696,6 +696,62 @@ theorem fixedPairKernel_eq_uniformOverRange (A : Allocation N p n) (i j : Fin p)
   rw [fixedPairAlloc_range_card A i j k hij]
   simp only [Nat.cast_mul]
 
+/-- **The owner function is symmetric in the two piles.**  Swapping the two piles
+    and the two picks swaps the two branches of the condition — the two pile sets
+    are disjoint, so the first-branch test kills the second, and the owner is
+    invariant. -/
+theorem fixedPairOwner_swap (A : Allocation N p n) (i j : Fin p) (k : Nat)
+    (hij : i ≠ j) (z : Pick (n i) k × Pick (n j) k) :
+    fixedPairOwner A i j k z = fixedPairOwner A j i k ⟨z.2, z.1⟩ := by
+  ext x
+  simp only [fixedPairOwner]
+  by_cases h1 : x ∈ mapPick A i z.1
+  · have hD : x ∉ mapPick A j z.2 := by
+      intro hj
+      have hx : x ∈ pileCard A i := mapPick_subset A i z.1 h1
+      have hy : x ∈ pileCard A j := mapPick_subset A j z.2 hj
+      exact absurd hx (Finset.disjoint_right.mp (pileCard_disjoint A hij) hy)
+    simp only [h1, hD, ite_true, ite_false]
+  · by_cases h2 : x ∈ mapPick A j z.2
+    · simp only [h2, h1, ite_true, ite_false]
+    · simp only [h2, h1, ite_true, ite_false]
+
+/-- **The allocation is symmetric in the two piles** — the exchanged allocation
+    produced by swapping the two piles and the two picks is the same allocation. -/
+theorem fixedPairAlloc_swap (A : Allocation N p n) (i j : Fin p) (k : Nat)
+    (hij : i ≠ j) (w : Pick (n j) k × Pick (n i) k) :
+    fixedPairAlloc A j i k hij.symm w = fixedPairAlloc A i j k hij ⟨w.2, w.1⟩ :=
+  Subtype.ext (fixedPairOwner_swap A j i k hij.symm w)
+
+/-- **The fixed-pair kernel is symmetric in the two piles** — swapping the two piles
+    (with their two picks) leaves the kernel invariant as a distribution: the same
+    allocations (by `fixedPairAlloc_swap`) with the same mass (the binomial-form
+    denominator is symmetric in the two piles' binomial coefficients).  The
+    fixed-pair analog of the landed `exchangeTargets_symmetric` /
+    `lumpedTransition_swap`. -/
+theorem fixedPairKernel_swap (A : Allocation N p n) (i j : Fin p) (k : Nat)
+    (hij : i ≠ j) (hki : k ≤ n i) (hkj : k ≤ n j) :
+    fixedPairKernel A i j k hij hki hkj =
+      fixedPairKernel A j i k hij.symm hkj hki := by
+  ext B
+  change Dist.mass (fixedPairKernel A i j k hij hki hkj) B =
+    Dist.mass (fixedPairKernel A j i k hij.symm hkj hki) B
+  rw [fixedPairKernel_mass_choose A i j k hij hki hkj B,
+      fixedPairKernel_mass_choose A j i k hij.symm hkj hki B]
+  have hcond : (∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B) ↔
+      ∃ z : Pick (n j) k × Pick (n i) k, fixedPairAlloc A j i k hij.symm z = B := by
+    constructor
+    · intro ⟨z, hz⟩
+      exact ⟨⟨z.2, z.1⟩, by
+        rw [fixedPairAlloc_swap]
+        exact hz⟩
+    · intro ⟨w, hw⟩
+      exact ⟨⟨w.2, w.1⟩, by
+        rw [fixedPairAlloc_swap]
+        exact hw⟩
+  simp only [hcond]
+  simp only [Nat.cast_mul, mul_comm]
+
 /-- **The kernel is a genuine probability law** — total mass `1` (the row-sum
     over the whole allocation carrier is exactly `1`). -/
 theorem fixedPairKernel_rowSum (A : Allocation N p n) (i j : Fin p) (k : Nat)
