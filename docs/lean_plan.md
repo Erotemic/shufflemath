@@ -279,6 +279,12 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `GSR.map_injective_uniform_mass` + injectivity), `fixedPairKernel_rowSum` (total mass exactly `1`).
 > Wired into the `Shufflemath.lean` aggregator and `dev/verify_next_phase.sh`. Full build green
 > (9044 jobs), 37/37 tests pass, 0 sorry/admit.
+> **Session 112 (2026-11-27, final + corollaries):** the two-sided transport is now also consumed —
+`mapPickEquiv_injective` (`Function.Injective (mapPickEquiv A i k)`, one line via `Equiv.injective`)
+and `mapPick_eq_of_card_eq` (two picks whose card sets are equal are equal — the card set determines
+the pick, via `Subtype.ext` on the card-set equality + the equiv's injectivity). 0 sorries, build
+green, 37/37 tests.
+
 > **Session 112 (2026-11-27, final + transport):** the two-sided transport is now a first-class
 object — `pileCardSet` (the `k`-subsets of pile `i`'s cards) and `mapPickEquiv` — the two-sided
 `Equiv (Pick (n i) k) (pileCardSet A i k)` with `mapPick` as the forward map and `pickOfCardSet'` as

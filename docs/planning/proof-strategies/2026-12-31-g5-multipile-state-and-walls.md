@@ -591,6 +591,12 @@ dependent-subtype-rewrite wall documented in `g5-multipile-twoPile-reduction.md`
 it was deleted rather than committed — the landed `multiPile_equivFiber` route
 (`glueBlocks`) is the correct one and needs no new work.
 
+**2026-11-27 session 112 continuation (the two-sided transport consumed):**
+`mapPickEquiv_injective` (`Function.Injective (mapPickEquiv A i k)` — one line via `Equiv.injective`)
+and `mapPick_eq_of_card_eq` (two picks whose card sets are equal are equal — via `Subtype.ext` on the
+card-set equality + the equiv's injectivity). The two-sided transport is now consumed as a first-class
+object, not just a packaged bijection.
+
 **2026-11-27 session 112 continuation (the two-sided transport landed, first-class):**
 `mapPickEquiv` — the two-sided `Equiv (Pick (n i) k) (pileCardSet A i k)`, the G5capstone two-sided
 transport envelope. The forward map is `mapPick` (pick → card set); the inverse is `pickOfCardSet'`
