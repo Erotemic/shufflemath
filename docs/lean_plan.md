@@ -279,6 +279,15 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `GSR.map_injective_uniform_mass` + injectivity), `fixedPairKernel_rowSum` (total mass exactly `1`).
 > Wired into the `Shufflemath.lean` aggregator and `dev/verify_next_phase.sh`. Full build green
 > (9044 jobs), 37/37 tests pass, 0 sorry/admit.
+> **Session 112 (2026-11-27, continuation):** the mapPick bijection is now two-sided at the card-set
+direction: `pickOfCardSet` (the reverse of `mapPick`: the pick whose card set is exactly `W`, via the
+size-bijection applied backwards through `pileEquivOf`, with the card count via `card_image_of_injOn`
+and `Fintype.card_coe`), `mapPick_pickOfCardSet` (the round trip: the card set of the built pick is
+`W`), and `mapPick_injective` (two picks with the same card set are equal). Wired into the aggregator
+and verify script (unchanged); build green, 37/37 tests. The remaining reverse identity
+`pickOfCardSet A i (mapPick A i u) hsub = u` is **recorded as a parked item** — the card
+annotation `(mapPick A i u).card` of the constructed pick cannot be rewritten into the target
+`Pick (n i) k` type (the dependent-subtype friction documented in the G5 strategy note) — not faked.
 > **Next on the G5 thread:** the `G5capstone` multi-pile exchange kernel-equality (the B4
 > histogram lumping + stationary law + final kernel-equality headline). Precise diagnosis + steps:
 > `docs/planning/proof-strategies/2026-12-31-g5-multipile-state-and-walls.md`.
