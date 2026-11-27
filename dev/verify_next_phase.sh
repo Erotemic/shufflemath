@@ -7,6 +7,7 @@ cd "$(dirname "$0")/.."
 lake exe cache get
 lake build \
   Shufflemath.FiberLifting \
+  Shufflemath.KernelReset \
   Shufflemath.BernoulliLaplaceSemantic \
   Shufflemath.GSR \
   Shufflemath.ProtocolCertificate \

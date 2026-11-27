@@ -4,6 +4,7 @@ public import Shufflemath.Finite
 public import Shufflemath.Matrix
 public import Shufflemath.TotalVariation
 public import Shufflemath.Perturbation
+public import Shufflemath.KernelReset
 public import Shufflemath.Dobrushin
 public import Shufflemath.DobrushinContraction
 public import Shufflemath.Markov
