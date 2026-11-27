@@ -552,18 +552,8 @@ theorem fixedPairAlloc_injective (A : Allocation N p n) (i j : Fin p) (k : Nat)
         pileCard A i \ (pileCard A i \ mapPick A i z2.1) := by rw [hEq]
     rw [sdiff_out _ _ (mapPick_subset A i z1.1), sdiff_out _ _ (mapPick_subset A i z2.1)] at h'
     exact h'
-  have hinj : Function.Injective (fun x => (pileEquivOf A i x).val) := by
-    intro a b hvalx
-    have hsub : pileEquivOf A i a = pileEquivOf A i b := Subtype.ext hvalx
-    exact (pileEquivOf A i).injective hsub
-  have hUidx : z1.1.1 = z2.1.1 := (Finset.image_inj hinj).mp hU1e2
-  have hH1 : z1.1 = z2.1 := Subtype.ext hUidx
-  have hinjV : Function.Injective (fun x => (pileEquivOf A j x).val) := by
-    intro a b hvalx
-    have hsub : pileEquivOf A j a = pileEquivOf A j b := Subtype.ext hvalx
-    exact (pileEquivOf A j).injective hsub
-  have hVidx : z1.2.1 = z2.2.1 := (Finset.image_inj hinjV).mp hVeq
-  have hH2 : z1.2 = z2.2 := Subtype.ext hVidx
+  have hH1 : z1.1 = z2.1 := mapPick_injective A i k hU1e2
+  have hH2 : z1.2 = z2.2 := mapPick_injective A j k hVeq
   exact Prod.ext hH1 hH2
 
 theorem fixedPair_nonempty (_A : Allocation N p n) (i j : Fin p) (k : Nat)
