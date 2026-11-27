@@ -600,6 +600,26 @@ theorem fixedPairKernel_mass_choose (A : Allocation N p n) (i j : Fin p) (k : Na
   rw [fixedPairKernel_mass A i j k hij hki hkj B, Fintype.card_prod, Pick.card, Pick.card,
     Nat.cast_mul]
 
+/-- **The kernel is uniform over the range.**  The distinct exchanged allocations are exactly the
+    image of the injective fixed-pair exchange map — so the range has exactly
+    `Nat.choose (n i) k * Nat.choose (n j) k` points, the same denominator as the kernel mass
+    (`fixedPairKernel_mass_choose`).  Hence the row-sum over the range is exactly `1`. -/
+theorem fixedPairAlloc_range_card (A : Allocation N p n) (i j : Fin p) (k : Nat) (hij : i ≠ j) :
+    Fintype.card {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B} =
+      Nat.choose (n i) k * Nat.choose (n j) k := by
+  let f : (Pick (n i) k × Pick (n j) k) → {B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B} :=
+    fun z => ⟨fixedPairAlloc A i j k hij z, ⟨z, rfl⟩⟩
+  have hInj : Function.Injective f := by
+    intro z w h
+    exact fixedPairAlloc_injective A i j k hij (Subtype.ext_iff.mp h)
+  have hSurj : Function.Surjective f := by
+    intro B
+    obtain ⟨z, hz⟩ := B.2
+    exact ⟨z, Subtype.ext hz⟩
+  have hc : Fintype.card (Pick (n i) k × Pick (n j) k) = Fintype.card ({B : Allocation N p n // ∃ z : Pick (n i) k × Pick (n j) k, fixedPairAlloc A i j k hij z = B}) :=
+    Fintype.card_congr (Equiv.ofBijective f ⟨hInj, hSurj⟩)
+  rw [← hc, Fintype.card_prod, Pick.card, Pick.card]
+
 /-- **The kernel is a genuine probability law** — total mass `1` (the row-sum
     over the whole allocation carrier is exactly `1`). -/
 theorem fixedPairKernel_rowSum (A : Allocation N p n) (i j : Fin p) (k : Nat)
