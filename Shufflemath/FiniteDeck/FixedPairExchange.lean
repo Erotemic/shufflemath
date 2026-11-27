@@ -200,6 +200,23 @@ noncomputable def mapPickEquiv (A : Allocation N p n) (i : Fin p) (k : Nat) :
       apply Subtype.ext
       exact mapPick_pickOfCardSet' A i W.1 (fun x hx => W.2.1 hx) W.2.2)
 
+/-- **The two-sided transport is injective.**  The forward map (a pick's card set)
+     determines the pick — the two-sided bijection's injectivity, derived directly
+     from the `Equiv`. -/
+theorem mapPickEquiv_injective {N p : Nat} {n : Fin p → Nat}
+    (A : Allocation N p n) (i : Fin p) (k : Nat) :
+    Function.Injective (mapPickEquiv A i k) :=
+  Equiv.injective _
+
+/-- **Card set determines the pick** (two-sided, by the bijection): two picks whose card sets
+     are equal are equal. -/
+theorem mapPick_eq_of_card_eq {N p : Nat} {n : Fin p → Nat}
+    (A : Allocation N p n) (i : Fin p) (k : Nat)
+    (u v : Pick (n i) k) (h : (mapPickEquiv A i k u).1 = (mapPickEquiv A i k v).1) :
+    u = v := by
+  have h2 : (mapPickEquiv A i k u) = (mapPickEquiv A i k v) := Subtype.ext h
+  exact Equiv.injective (mapPickEquiv A i k) h2
+
 /-- **Round trip** — the card set of a pick built from `W` is `W`. -/
 theorem mapPick_pickOfCardSet {N p : Nat} {n : Fin p → Nat} (A : Allocation N p n)
     (i : Fin p) (W : Finset (Fin N)) (hsub : ∀ x ∈ W, x ∈ pileCard A i) :
