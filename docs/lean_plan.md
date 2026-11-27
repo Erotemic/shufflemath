@@ -279,6 +279,14 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `GSR.map_injective_uniform_mass` + injectivity), `fixedPairKernel_rowSum` (total mass exactly `1`).
 > Wired into the `Shufflemath.lean` aggregator and `dev/verify_next_phase.sh`. Full build green
 > (9044 jobs), 37/37 tests pass, 0 sorry/admit.
+> **Session 112 (2026-11-27, final + uniform-range identity):** `uniformOverRange` +
+`fixedPairKernel_eq_uniformOverRange` landed — the semantic capstone of the fixed-pair
+exchange arc: the kernel is literally the uniform law over its range, pushed forward through the
+subtype's coercion (Dist-level equality, not just the mass-level corollaries). Route: `ext` + `change`
+(weights→mass) + `fixedPairKernel_mass_choose` on the LHS + `unfold uniformOverRange` +
+`GSR.map_injective_uniform_mass` rw on the RHS + the `hcond` condition rewrite (`simp only`) +
+`fixedPairAlloc_range_card` + `Nat.cast_mul`. 0 sorries, build green (3194 jobs), 37/37 tests.
+
 > **Session 112 (2026-11-27, final + range row-sum):** `fixedPairKernel_range_rowSum` landed — the
 row-sum over the range of the injective fixed-pair exchange map is exactly `1`: the mass at each range
 point is `1/M` (`fixedPairKernel_mass_choose`) and the range has exactly `M` points (`fixedPairAlloc_range_card`),

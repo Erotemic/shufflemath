@@ -591,6 +591,15 @@ dependent-subtype-rewrite wall documented in `g5-multipile-twoPile-reduction.md`
 it was deleted rather than committed — the landed `multiPile_equivFiber` route
 (`glueBlocks`) is the correct one and needs no new work.
 
+**2026-11-27 session 112 continuation (uniform-range identity):**
+`uniformOverRange` (the uniform law over the range, pushed forward through the subtype's coercion —
+`GSR.uniformDist {B // ∃ z, fixedPairAlloc … = B}` mapped to `Allocation N p n` via `(fun B => B.1)`)
+and `fixedPairKernel_eq_uniformOverRange` — **the semantic capstone**: the fixed-pair kernel is literally
+the uniform law over its range. Route: `ext` + `change` (weights→mass) + `fixedPairKernel_mass_choose` on
+the LHS + `unfold uniformOverRange` + `GSR.map_injective_uniform_mass` (injective coercion) + `hcond`
+(`∃ a, a.1 = B ↔ ∃ z, fixedPairAlloc … = B`, `simp only`) + `fixedPairAlloc_range_card` + `Nat.cast_mul`.
+0 sorries, build green, 37/37 tests.
+
 **2026-11-27 session 112 continuation (range row-sum):**
 `fixedPairKernel_range_rowSum` — the row-sum over the range of the injective fixed-pair exchange map is
 exactly `1`: the mass at each range point is `1/M` (`fixedPairKernel_mass_choose`) and the range has exactly
