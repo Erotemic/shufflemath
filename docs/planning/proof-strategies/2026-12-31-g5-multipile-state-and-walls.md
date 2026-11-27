@@ -591,6 +591,15 @@ dependent-subtype-rewrite wall documented in `g5-multipile-twoPile-reduction.md`
 it was deleted rather than committed — the landed `multiPile_equivFiber` route
 (`glueBlocks`) is the correct one and needs no new work.
 
+**2026-11-27 session 112 continuation (the FULL reverse identity landed):**
+`pickOfCardSet'_mapPick` — `pickOfCardSet' A i (mapPick A i u) hsub (mapPick_card A i u) = u`. The
+card-hypothesis restatement (`pickOfCardSet'`) avoids the dependent-subtype cast wall entirely: the
+constructed pick's card annotation comes from the hypothesis `hcard : W.card = k`, so both sides of the
+identity are picks of the same type `Pick (n i) k` — no `Equiv.cast`, no projection reduction, no
+dependent-subtype friction. Proved via `ext` + the same image-image membership chain as the
+finset-level identity (the landed `pickOfCardSet_mapPick_underlying` is strictly subsumed). This closes
+the two-sided mapPick bijection at the full Pick level.
+
 **2026-11-27 session 112 continuation v2 (the finset-level reverse identity landed):**
 `pickOfCardSet_mapPick_underlying` proves the underlying index finset of the pick built from
 `mapPick A i u` is the original index finset `u.1` — the load-bearing content of the reverse identity,

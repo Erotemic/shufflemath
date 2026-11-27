@@ -279,6 +279,15 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `GSR.map_injective_uniform_mass` + injectivity), `fixedPairKernel_rowSum` (total mass exactly `1`).
 > Wired into the `Shufflemath.lean` aggregator and `dev/verify_next_phase.sh`. Full build green
 > (9044 jobs), 37/37 tests pass, 0 sorry/admit.
+> **Session 112 (2026-11-27, final):** the reverse identity is now fully landed — `pickOfCardSet'`
+(the card-hypothesis restatement: the pick whose card set is exactly `W`, annotated with the known
+`k` via `hcard : W.card = k` instead of the suffix `W.card`) and `pickOfCardSet'_mapPick`
+(`pickOfCardSet' A i (mapPick A i u) hsub (mapPick_card A i u) = u` — the full Pick-level identity,
+proved via `ext` + the same image-image membership chain as the finset-level identity; the two sides
+are picks of the same type `Pick (n i) k`, so no `Equiv.cast` is needed and the dependent-subtype wall
+— the cast projection not reducing — is bypassed cleanly). The finset-level `pickOfCardSet_mapPick_underlying`
+is strictly subsumed by this. Built and verified at the two-sided level; 37/37 tests, 0 sorries.
+
 > **Session 112 (2026-11-27, continuation):** the mapPick bijection is now two-sided at the card-set
 direction: `pickOfCardSet` (the reverse of `mapPick`: the pick whose card set is exactly `W`, via the
 size-bijection applied backwards through `pileEquivOf`, with the card count via `card_image_of_injOn`
