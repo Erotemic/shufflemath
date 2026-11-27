@@ -384,6 +384,22 @@ strategy note) — not faked; the finset-level content is the honest, landed hal
 > the `hgeo` function equation from `signedHist_transport`, `rw [← map_map, map_bijective_uniformDist]`).
 > 0 sorries, full build green (9045 jobs), 37/37 tests.
 
+> **Session 114 (2026-11-27, continuation):** the uniform allocation law is now stationary under
+> the fixed-pair kernel. On top of the landed transport arc (`fixedPairKernel_strong_lumpable`)
+> and the `fixedPairAlloc_injective` crux, the fiber-symmetry iff is landed and the B4 headline
+> content falls out: (1) **`fixedPairAlloc_reverse`** — the reverse construction (given `z` with
+> `fixedPairAlloc A i j k hij z = B`, produce `z'` with `fixedPairAlloc B i j k hij z' = A` — the
+> borrowed cards in each exchanged pile become the picked sets of the reverse exchange, via
+> `pickOfCardSet'` + `mapPick_pickOfCardSet'` + the pile-set identities `fixedPairOwner_filter_i/j`
+> + `Subtype.ext` on the owner function, case-split on the x-membership of the two picked sets);
+> (2) **`fixedPairAlloc_swap_iff`** — the fiber-symmetry iff (`∃ z, fixedPairAlloc A … z = B` ↔
+> `∃ z', fixedPairAlloc B … z' = A`); and (3) **`fixedPairKernel_uniformStationary`** — the uniform
+> allocation law is stationary under the fixed-pair kernel: detailed balance (via the fiber-symmetry
+> iff + the constant uniform masses) + row-sum 1 (`Dist.sum_mass`), via
+> `detailedBalance_implies_stationary` — mirroring `swapKernel_uniformStationary` for the
+> allocation-independent `Pick`-level k-subset exchange (the B4 "uniform allocations are stationary"
+> content for the fixed-pair chain). 0 sorries; full build green (9045 jobs), 37/37 tests.
+
 > **Next on the G5 thread:** the `G5capstone` multi-pile exchange kernel-equality (the B4
 > histogram lumping + stationary law + final kernel-equality headline). Precise diagnosis + steps:
 > `docs/planning/proof-strategies/2026-12-31-g5-multipile-state-and-walls.md`.

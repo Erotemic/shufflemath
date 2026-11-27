@@ -1051,6 +1051,119 @@ theorem fixedPairKernel_strong_lumpable (color : Fin N → Fin c)
   rw [GSR.map_bijective_uniformDist
     ((pilePickEquiv color A B h i k).prodCongr (pilePickEquiv color A B h j k)).symm]
 
+
+/-- Reverse construction: given `z` with `fixedPairAlloc A i j k hij z = B`,
+    produce `z'` with `fixedPairAlloc B i j k hij z' = A`. -/
+theorem fixedPairAlloc_reverse (A B : Allocation N p n) (i j : Fin p) (k : Nat)
+    (hij : i ≠ j) (z : Pick (n i) k × Pick (n j) k)
+    (hAB : fixedPairAlloc A i j k hij z = B) :
+    ∃ z', fixedPairAlloc B i j k hij z' = A := by
+  have hval : fixedPairOwner A i j k z = B.val := congrArg Subtype.val hAB
+  have hpilei : pileCard B i =
+      (pileCard A i \ mapPick A i z.1) ∪ mapPick A j z.2 := by
+    have hval' : B.val = fixedPairOwner A i j k z := hval.symm
+    have hdef : pileCard B i =
+        Finset.univ.filter (fun x => fixedPairOwner A i j k z x = i) := by
+      unfold pileCard
+      rw [hval']
+    rw [hdef]
+    exact fixedPairOwner_filter_i A i j k hij z
+  have hpilej : pileCard B j =
+      (pileCard A j \ mapPick A j z.2) ∪ mapPick A i z.1 := by
+    have hval' : B.val = fixedPairOwner A i j k z := hval.symm
+    have hdef : pileCard B j =
+        Finset.univ.filter (fun x => fixedPairOwner A i j k z x = j) := by
+      unfold pileCard
+      rw [hval']
+    rw [hdef]
+    exact fixedPairOwner_filter_j A i j k hij z
+  have hsub1 : ∀ x ∈ mapPick A j z.2, x ∈ pileCard B i := by
+    intro x hx
+    rw [hpilei]
+    exact Finset.mem_union_right _ hx
+  have hcard1 : (mapPick A j z.2).card = k := mapPick_card A j z.2
+  have hsub2 : ∀ x ∈ mapPick A i z.1, x ∈ pileCard B j := by
+    intro x hx
+    rw [hpilej]
+    exact Finset.mem_union_right _ hx
+  have hcard2 : (mapPick A i z.1).card = k := mapPick_card A i z.1
+  refine ⟨⟨pickOfCardSet' B i (mapPick A j z.2) hsub1 hcard1,
+    pickOfCardSet' B j (mapPick A i z.1) hsub2 hcard2⟩, ?_⟩
+  have hmap1 : mapPick B i (pickOfCardSet' B i (mapPick A j z.2) hsub1 hcard1) = mapPick A j z.2 :=
+    mapPick_pickOfCardSet' B i _ hsub1 hcard1
+  have hmap2 : mapPick B j (pickOfCardSet' B j (mapPick A i z.1) hsub2 hcard2) = mapPick A i z.1 :=
+    mapPick_pickOfCardSet' B j _ hsub2 hcard2
+  have heq : fixedPairOwner B i j k ⟨pickOfCardSet' B i (mapPick A j z.2) hsub1 hcard1,
+      pickOfCardSet' B j (mapPick A i z.1) hsub2 hcard2⟩ = A.val := by
+    funext x
+    show (if x ∈ mapPick B i (pickOfCardSet' B i (mapPick A j z.2) hsub1 hcard1) then j
+      else if x ∈ mapPick B j (pickOfCardSet' B j (mapPick A i z.1) hsub2 hcard2) then i
+      else B.val x) = A.val x
+    rw [hmap1, hmap2]
+    rw [show B.val x = fixedPairOwner A i j k z x from (congrFun hval x).symm]
+    by_cases hU : x ∈ mapPick A j z.2
+    · rw [ite_eq_left hU]
+      have hxj : x ∈ pileCard A j := mapPick_subset A j z.2 hU
+      simp only [pileCard, Finset.mem_filter, Finset.mem_univ, true_and] at hxj
+      exact hxj.symm
+    · by_cases hV : x ∈ mapPick A i z.1
+      · rw [ite_eq_right hU, ite_eq_left hV]
+        have hxi : x ∈ pileCard A i := mapPick_subset A i z.1 hV
+        simp only [pileCard, Finset.mem_filter, Finset.mem_univ, true_and] at hxi
+        exact hxi.symm
+      · rw [ite_eq_right hU, ite_eq_right hV]
+        show (if x ∈ mapPick A i z.1 then j
+          else if x ∈ mapPick A j z.2 then i
+          else A.val x) = A.val x
+        rw [ite_eq_right hV, ite_eq_right hU]
+  exact Subtype.ext heq
+/-- The fiber-symmetry iff: `(∃ z, fixedPairAlloc A i j k hij z = B) ↔
+    (∃ z', fixedPairAlloc B i j k hij z' = A)`. -/
+theorem fixedPairAlloc_swap_iff (A B : Allocation N p n) (i j : Fin p) (k : Nat)
+    (hij : i ≠ j) :
+    (∃ z, fixedPairAlloc A i j k hij z = B) ↔
+    (∃ z', fixedPairAlloc B i j k hij z' = A) := by
+  constructor
+  · intro ⟨z, hAB⟩
+    exact fixedPairAlloc_reverse A B i j k hij z hAB
+  · intro ⟨z, hBA⟩
+    exact fixedPairAlloc_reverse B A i j k hij z hBA
+/-- **The uniform allocation law is stationary under the fixed-pair kernel** — the
+    B4 "Thus uniform allocations are stationary" for the allocation-independent
+    fixed-pair `k`-subset exchange: detailed balance (via the fiber-symmetry iff,
+    since the uniform masses are equal) plus row-sum 1. -/
+theorem fixedPairKernel_uniformStationary (hsum : (∑ i, n i) = N)
+    (i j : Fin p) (k : Nat) (hij : i ≠ j) (hki : k ≤ n i) (hkj : k ≤ n j)
+    (A : Allocation N p n) :
+    Dist.mass (FiniteKernel.apply (uniformAlloc hsum)
+      (fun B => fixedPairKernel B i j k hij hki hkj)) A =
+      Dist.mass (uniformAlloc hsum) A := by
+  classical
+  letI : Nonempty (Allocation N p n) := nonemptyOfSumCapacities N p n hsum
+  have hdb : DetailedBalance (uniformAlloc hsum)
+      (fun B => fixedPairKernel B i j k hij hki hkj) := by
+    intro x y
+    have hmx : Dist.mass (uniformAlloc hsum) x = (Fintype.card (Allocation N p n) : Rat)⁻¹ := by
+      change Dist.mass (GSR.uniformDist (Allocation N p n)) x =
+        (Fintype.card (Allocation N p n) : Rat)⁻¹
+      exact GSR.mass_uniformDist x
+    have hmy : Dist.mass (uniformAlloc hsum) y = (Fintype.card (Allocation N p n) : Rat)⁻¹ := by
+      change Dist.mass (GSR.uniformDist (Allocation N p n)) y =
+        (Fintype.card (Allocation N p n) : Rat)⁻¹
+      exact GSR.mass_uniformDist y
+    have hsym : Dist.mass (fixedPairKernel x i j k hij hki hkj) y =
+        Dist.mass (fixedPairKernel y i j k hij hki hkj) x := by
+      rw [fixedPairKernel_mass x i j k hij hki hkj y, fixedPairKernel_mass y i j k hij hki hkj x]
+      have hiff : (∃ z, fixedPairAlloc x i j k hij z = y) ↔
+          (∃ z', fixedPairAlloc y i j k hij z' = x) :=
+        fixedPairAlloc_swap_iff x y i j k hij
+      by_cases h : ∃ z, fixedPairAlloc x i j k hij z = y
+      · rw [ite_eq_left h, ite_eq_left (hiff.mp h)]
+      · rw [ite_eq_right h, ite_eq_right (fun h2 => h (hiff.mpr h2))]
+    rw [hmx, hmy, hsym]
+  exact Shufflemath.detailedBalance_implies_stationary (uniformAlloc hsum)
+    (fun B => fixedPairKernel B i j k hij hki hkj) hdb A
+
 end FiniteDeck
 
 end Shufflemath

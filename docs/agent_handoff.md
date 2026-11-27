@@ -4551,5 +4551,22 @@ lake build Shufflemath._ProbeK1comb Shufflemath._ProbeK1uniform
 > multi-pile exchange kernel-equality).
 
 
+> **✅ (session 114, 2026-11-27) — the uniform allocation law is stationary under the fixed-pair kernel** in
+> `Shufflemath/FiniteDeck/FixedPairExchange.lean` (full build green — `lake build Shufflemath`
+> 9045 jobs — 37/37 tests pass, 0 sorry/admit). On top of the landed transport arc, the fiber-symmetry
+> and the B4 headline content fall out: (1) **`fixedPairAlloc_reverse`** — the reverse construction
+> (given `z` with `fixedPairAlloc A i j k hij z = B`, produce `z'` with `fixedPairAlloc B i j k hij z' = A`
+> — the borrowed cards in each exchanged pile become the picked sets of the reverse exchange, via
+> `pickOfCardSet'` + `mapPick_pickOfCardSet'` + the pile-set identities `fixedPairOwner_filter_i/j` +
+> `Subtype.ext` on the owner function, case-split on the x-membership of the two picked sets);
+> (2) **`fixedPairAlloc_swap_iff`** — the fiber-symmetry iff (`∃ z, fixedPairAlloc A … z = B` ↔
+> `∃ z', fixedPairAlloc B … z' = A`); and (3) **`fixedPairKernel_uniformStationary`** — the uniform
+> allocation law is stationary under the fixed-pair kernel: detailed balance (via the fiber-symmetry
+> iff + the constant uniform masses) + row-sum 1 (`Dist.sum_mass`), via
+> `detailedBalance_implies_stationary` — mirroring `swapKernel_uniformStationary` for the
+> allocation-independent `Pick`-level k-subset exchange (the B4 "uniform allocations are stationary"
+> content for the fixed-pair chain).
+
+
 ## Do NOT stop (the standing directive)
 Compaction is not a stopping signal.  Continue from here.
