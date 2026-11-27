@@ -79,7 +79,8 @@ lake build \
   Shufflemath.IndexedRun \
   Shufflemath.FiniteDeck.IndexedTransfer \
   Shufflemath.FiniteDeck.PositionTupleLaw \
-  Shufflemath.FiniteDeck.TerminalReset
+  Shufflemath.FiniteDeck.TerminalReset \
+  Shufflemath.FiniteDeck.TerminalResetLower
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace

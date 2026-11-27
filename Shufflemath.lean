@@ -77,3 +77,4 @@ public import Shufflemath.IndexedRun
 public import Shufflemath.FiniteDeck.IndexedTransfer
 public import Shufflemath.FiniteDeck.PositionTupleLaw
 public import Shufflemath.FiniteDeck.TerminalReset
+public import Shufflemath.FiniteDeck.TerminalResetLower
