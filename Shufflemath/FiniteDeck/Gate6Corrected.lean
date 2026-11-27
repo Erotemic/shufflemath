@@ -6,6 +6,7 @@ public import Shufflemath.GSRSegHeadline
 public import Shufflemath.GSRDeckRound
 public import Shufflemath.FiniteDeck.WithinPileOrbit
 public import Shufflemath.FiniteDeck.Gate6FiniteGSR
+public import Shufflemath.FiniteDeck.BinaryStableSort
 
 @[expose] public section
 
@@ -128,12 +129,53 @@ theorem rhoRoundIdealCorrected_eq_rhoRoundIdeal (N m : Nat) (hm : m ≤ N)
     rw [← Convexity.StdSimplex.map_map, hprod]
   rw [hpush]
 
+/-- **The two-pile corrected-law bridge.** The orientation-corrected finite round
+    law is exactly the product of the two within-pile pullback laws pushed through
+    the two-pile deck embedding:
+    `rhoRoundFiniteCorrected = (distProduct (BinaryStableSort.pullLaw m a ha hLpos)
+      (BinaryStableSort.pullLaw (N - m) a ha hRpos)).map roundEmbedMap`.
+
+    This is the product-map transport law `distProduct_map_comp` applied to the
+    two within-pile `symm` inversions, composed with the map-law `map_map` and the
+    per-pile-`symm` `roundEmbedMap_symm` identity — the identification the A2
+    binary-riffle follow-up (`t = 23`, the concrete 99-card protocol) stands on. -/
+theorem rhoRoundFiniteCorrected_eq_productPullLaw (N m : Nat) (hm : m ≤ N)
+    (hLpos : 0 < m) (hRpos : 0 < N - m) (a : Nat) (ha : 0 < a) :
+    rhoRoundFiniteCorrected N m hm hLpos hRpos a ha =
+      (distProduct (BinaryStableSort.pullLaw m a ha hLpos) (BinaryStableSort.pullLaw (N - m) a ha hRpos)).map
+        (roundEmbedMap N m hm) := by
+  have hprod : distProduct (BinaryStableSort.pullLaw m a ha hLpos) (BinaryStableSort.pullLaw (N - m) a ha hRpos) =
+      (distProduct (PermutationLaw.gsrPermutationLaw m a ha hLpos)
+                   (PermutationLaw.gsrPermutationLaw (N - m) a ha hRpos)).map
+        (fun z => (z.1.symm, z.2.symm)) :=
+    (distProduct_map_comp _ _ _ _).symm
+  have hmap : (fun z => (roundEmbedMap N m hm z).symm) =
+      (fun z => roundEmbedMap N m hm (z.1.symm, z.2.symm)) := by
+    funext z
+    exact roundEmbedMap_symm N m hm z
+  unfold rhoRoundFiniteCorrected rhoRoundFinite
+  rw [Convexity.StdSimplex.map_map, hprod, Convexity.StdSimplex.map_map]
+  simp only [hmap]
+
 section CorrectedFiniteLaw
 
 /-- The concrete orientation-corrected 99-card finite law: the inversion of the
     uncorrected one — the deck permutation the stable-sort pullback actually applies. -/
 noncomputable def correctedFiniteLaw99 : Dist (Equiv.Perm (Fin 99)) :=
   rhoRoundFiniteCorrected 99 50 (by norm_num) (by norm_num) (by norm_num) (2 ^ 23) (by norm_num)
+
+/-- **The 23-riffle specialization of the bridge.** The concrete 99-card
+    orientation-corrected finite law is exactly the product of the two within-pile
+    `2^23`-label pullback laws pushed through the two-pile embedding — the concrete
+    instance of the binary-riffle reading (23 binary riffles per pile, one corrected
+    call per pile) that the A2 follow-up stands on. -/
+theorem correctedFiniteLaw99_eq_productPullLaw :
+    correctedFiniteLaw99 =
+      (distProduct (BinaryStableSort.pullLaw 50 (2 ^ 23) (by norm_num) (by norm_num))
+                   (BinaryStableSort.pullLaw 49 (2 ^ 23) (by norm_num) (by norm_num))).map
+        (roundEmbedMap 99 50 (by norm_num)) :=
+  rhoRoundFiniteCorrected_eq_productPullLaw 99 50 (by norm_num) (by norm_num) (by norm_num)
+    (2 ^ 23) (by norm_num)
 
 /-- The concrete orientation-corrected ideal law — equal to the ideal law by invariance. -/
 noncomputable def correctedIdealLaw99 : Dist (Equiv.Perm (Fin 99)) :=

@@ -506,6 +506,42 @@ theorem distProduct_mass {α β : Type*} [Fintype α] [Fintype β]
     Dist.mass (distProduct μ ν) (a, b) = Dist.mass μ a * Dist.mass ν b := by
   simp [distProduct, Dist.mass_ofFun]
 
+/-- **The product-pushforward identity.**  Pushing an independent product law through
+    a map that acts componentwise (first coordinate through `f`, second through `g`)
+    is the independent product of the pushed component laws:
+    `(distProduct μ ν).map (fun z => (f z.1, g z.2)) = distProduct (μ.map f) (ν.map g)`.
+    This is the product-map transport law the two-pile corrected-law bridge uses
+    (`map_map` + the per-pile `symm` relabeling).  Proved by an `ext` on the target
+    and fiber-sum bookkeeping on both sides. -/
+theorem distProduct_map_comp {α β γ δ : Type*} [Fintype α] [Fintype β] [Fintype γ] [Fintype δ]
+    [DecidableEq α] [DecidableEq β] [DecidableEq γ] [DecidableEq δ]
+    [Nonempty α] [Nonempty β] [Nonempty γ] [Nonempty δ]
+    (μ : Dist α) (ν : Dist β) (f : α → γ) (g : β → δ) :
+    (distProduct μ ν).map (fun z => (f z.1, g z.2)) = distProduct (μ.map f) (ν.map g) := by
+  ext p
+  obtain ⟨x, y⟩ := p
+  change Dist.mass ((distProduct μ ν).map (fun z => (f z.1, g z.2))) (x, y) =
+    Dist.mass (distProduct (μ.map f) (ν.map g)) (x, y)
+  rw [Dist.map_mass_eq_univ_fiber]
+  rw [show (Finset.univ : Finset (α × β)) = (Finset.univ : Finset α) ×ˢ (Finset.univ : Finset β) from by
+    ext q
+    simp [Finset.mem_univ]]
+  rw [Finset.sum_product]
+  simp only [Prod.mk.injEq, ite_and, distProduct_mass]
+  rw [Dist.map_mass_eq_univ_fiber, Dist.map_mass_eq_univ_fiber]
+  rw [Finset.sum_mul_sum]
+  apply Finset.sum_congr rfl
+  intro a _
+  apply Finset.sum_congr rfl
+  intro b _
+  by_cases ha : f a = x
+  · by_cases hb : g b = y
+    · simp [ha, hb]
+    · simp [ha, hb]
+  · by_cases hb : g b = y
+    · simp [ha, hb]
+    · simp [ha, hb]
+
 end
 
 
