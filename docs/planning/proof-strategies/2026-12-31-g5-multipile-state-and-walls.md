@@ -591,6 +591,15 @@ dependent-subtype-rewrite wall documented in `g5-multipile-twoPile-reduction.md`
 it was deleted rather than committed — the landed `multiPile_equivFiber` route
 (`glueBlocks`) is the correct one and needs no new work.
 
+**2026-11-27 session 112 continuation (kernel symmetry):**
+`fixedPairOwner_swap` (the owner function is symmetric under the i↔j exchange — the two condition
+branches swap, disjointness kills the cross-branch test via `pileCard_disjoint` +
+`mapPick_subset` + `Finset.disjoint_right`), `fixedPairAlloc_swap` (`Subtype.ext` of the owner swap),
+and `fixedPairKernel_swap` (the kernel is symmetric: `ext B` + `fixedPairKernel_mass_choose` on both
+sides + the condition-equivalence `hcond` via `simp only` + `Nat.cast_mul` + `mul_comm`) — the
+fixed-pair analog of the landed `exchangeTargets_symmetric` / `lumpedTransition_swap`. 0 sorries,
+build green, 37/37 tests.
+
 **2026-11-27 session 112 continuation (uniform-range identity):**
 `uniformOverRange` (the uniform law over the range, pushed forward through the subtype's coercion —
 `GSR.uniformDist {B // ∃ z, fixedPairAlloc … = B}` mapped to `Allocation N p n` via `(fun B => B.1)`)

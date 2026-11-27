@@ -279,6 +279,14 @@ they do not establish the separate, still-open F1-F5 theorems.
 > `GSR.map_injective_uniform_mass` + injectivity), `fixedPairKernel_rowSum` (total mass exactly `1`).
 > Wired into the `Shufflemath.lean` aggregator and `dev/verify_next_phase.sh`. Full build green
 > (9044 jobs), 37/37 tests pass, 0 sorry/admit.
+> **Session 112 (2026-11-27, final + kernel symmetry):** `fixedPairOwner_swap` /
+`fixedPairAlloc_swap` / `fixedPairKernel_swap` landed — the fixed-pair kernel is symmetric in the two
+piles: the owner function is symmetric (the two condition branches swap, disjointness kills the
+cross-branch test), the exchanged allocation is symmetric, and the kernel is symmetric as a distribution —
+the same allocations (via `fixedPairAlloc_swap`) with the same mass (the binomial denominator symmetric in
+the two piles' factors). The fixed-pair analog of `exchangeTargets_symmetric` / `lumpedTransition_swap`.
+0 sorries, build green (3194 jobs), 37/37 tests.
+
 > **Session 112 (2026-11-27, final + uniform-range identity):** `uniformOverRange` +
 `fixedPairKernel_eq_uniformOverRange` landed — the semantic capstone of the fixed-pair
 exchange arc: the kernel is literally the uniform law over its range, pushed forward through the
