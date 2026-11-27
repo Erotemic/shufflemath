@@ -702,6 +702,15 @@ noncomputable def uniformTransferAlloc (i j : Fin p) (t : Nat) (hij : i ≠ j)
     nonemptyOfSumCapacities N p (transferCap n i j t) (transferCap_sum hsum ht hij)
   exact GSR.uniformDist (Allocation N p (transferCap n i j t))
 
+/-- **Uniform-law bridge.**  `uniformTransferAlloc` and `uniformAlloc` are the same
+law — both are the `GSR.uniformDist` over the same (post-transfer) carrier, differing
+only in the consumed nonemptiness proof. -/
+theorem uniformAlloc_eq_uniformTransferAlloc {i j : Fin p} {t : Nat}
+    (hij : i ≠ j) (ht : t ≤ n i) (hsum : (∑ k, n k) = N) :
+    uniformTransferAlloc i j t hij hsum ht =
+      uniformAlloc (transferCap_sum hsum ht hij) := by
+  rfl
+
 /-- The constant incoming degree of the transfer relation: the number of
 source allocations reaching any target `B` equals the number of `t`-subsets
 of the target's pile `j` — and pile `j` always holds exactly `n j + t`
