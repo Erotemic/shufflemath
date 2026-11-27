@@ -79,3 +79,4 @@ public import Shufflemath.FiniteDeck.PositionTupleLaw
 public import Shufflemath.FiniteDeck.TerminalReset
 public import Shufflemath.FiniteDeck.TerminalResetLower
 public import Shufflemath.FiniteDeck.GeneralSchedule
+public import Shufflemath.FiniteDeck.BinaryStableSort

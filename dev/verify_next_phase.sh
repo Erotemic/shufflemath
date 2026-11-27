@@ -81,7 +81,8 @@ lake build \
   Shufflemath.FiniteDeck.PositionTupleLaw \
   Shufflemath.FiniteDeck.TerminalReset \
   Shufflemath.FiniteDeck.TerminalResetLower \
-  Shufflemath.FiniteDeck.GeneralSchedule
+  Shufflemath.FiniteDeck.GeneralSchedule \
+  Shufflemath.FiniteDeck.BinaryStableSort
 
 if [[ "${1:-}" == "--pair" ]]; then
   lake build Shufflemath.BernoulliLaplace
