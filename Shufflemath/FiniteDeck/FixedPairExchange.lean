@@ -77,6 +77,47 @@ theorem mapPick_subset (A : Allocation N p n) (i : Fin p) (u : Pick (n i) k) :
   obtain ⟨v, -, rfl⟩ := hx
   exact (pileEquivOf A i v).property
 
+/-- **pickOfCardSet** — reverse direction of the mapPick bijection:
+the pick whose card set is exactly `W` (a `k`-subset of the pile `i`'s cards). -/
+noncomputable def pickOfCardSet {N p : Nat} {n : Fin p → Nat} (A : Allocation N p n)
+    (i : Fin p) (W : Finset (Fin N)) (hsub : ∀ x ∈ W, x ∈ pileCard A i) :
+    Pick (n i) W.card := by
+  classical
+  have hinj : Set.InjOn (fun p : {x : Fin N // x ∈ W} =>
+      (pileEquivOf A i).symm ⟨p.1, hsub p.1 p.2⟩)
+      ↑(Finset.univ : Finset {x : Fin N // x ∈ W}) := by
+    intro a ha b hb heq
+    have hval : (pileEquivOf A i).symm ⟨a.1, hsub a.1 a.2⟩ =
+      (pileEquivOf A i).symm ⟨b.1, hsub b.1 b.2⟩ := heq
+    have hvals := (pileEquivOf A i).symm.injective hval
+    exact Subtype.ext (congrArg (fun y : ↥(pileCard A i) => y.val) hvals)
+  have hcard' : ((Finset.univ : Finset {x : Fin N // x ∈ W}).image
+      (fun p : {x : Fin N // x ∈ W} => (pileEquivOf A i).symm ⟨p.1, hsub p.1 p.2⟩)).card
+      = W.card := by
+    rw [Finset.card_image_of_injOn hinj, Finset.card_univ, Fintype.card_coe]
+  exact ⟨(Finset.univ : Finset {x : Fin N // x ∈ W}).image
+    (fun p : {x : Fin N // x ∈ W} => (pileEquivOf A i).symm ⟨p.1, hsub p.1 p.2⟩),
+    Finset.mem_powersetCard.mpr ⟨Finset.subset_univ _, hcard'⟩⟩
+
+/-- **Round trip** — the card set of a pick built from `W` is `W`. -/
+theorem mapPick_pickOfCardSet {N p : Nat} {n : Fin p → Nat} (A : Allocation N p n)
+    (i : Fin p) (W : Finset (Fin N)) (hsub : ∀ x ∈ W, x ∈ pileCard A i) :
+    mapPick A i (pickOfCardSet A i W hsub) = W := by
+  ext x
+  simp only [mapPick, pickOfCardSet]
+  rw [Finset.image_image]
+  rw [Finset.image_congr (fun p _ => by
+    change (pileEquivOf A i ((pileEquivOf A i).symm ⟨p.1, hsub p.1 p.2⟩)).val = p.1
+    rw [Equiv.apply_symm_apply, Subtype.coe_mk])]
+  constructor
+  · intro hx
+    simp only [Finset.mem_image, Finset.mem_univ, true_and] at hx
+    obtain ⟨p, hp, hxp⟩ := hx
+    exact p.2
+  · intro hx
+    refine Finset.mem_image.mpr ⟨⟨x, hx⟩, ?_, rfl⟩
+    exact Finset.mem_univ _
+
 /-- The raw owner function of the fixed-pair exchange: `U` (picked from pile `i`,
     mapped to cards) moves to pile `j`; `V` (picked from pile `j`) moves to pile
     `i`; every other card keeps its pile. -/
